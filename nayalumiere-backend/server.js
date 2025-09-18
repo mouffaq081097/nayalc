@@ -335,7 +335,9 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-app.listen(port, () => {
-    console.log(`Backend server running on port ${port}`);
-    console.log(`NEXT_PUBLIC_BACKEND_URL: ${process.env.NEXT_PUBLIC_BACKEND_URL}`);
-});
+// app.listen(port, () => {
+//     console.log(`Backend server running on port ${port}`);
+//     console.log(`NEXT_PUBLIC_BACKEND_URL: ${process.env.NEXT_PUBLIC_BACKEND_URL}`);
+// });
+
+module.exports = app;
