@@ -1,0 +1,82 @@
+/* Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+@import "tailwindcss";
+
+:root {
+  --brand-blue: #4A6D70;
+  --brand-pink: #D18A90;
+  --brand-background: #FBF9F6;
+  --brand-text: #3D5A5D;
+  --brand-secondary: #F5F3F1;
+  --brand-muted: #A0B8BA;
+  --brand-highlight-bg: #F8E9EA;
+  --brand-premium-bg: #E8F0F1;
+  /* Direct hex values for primary and button-bg as Tailwind uses them directly */
+  --brand-primary: var(--brand-pink);
+  --brand-button-bg: var(--brand-blue);
+  --brand-gray-100: rgba(209, 213, 219, 0.5);
+}
+
+body {
+  background-color: var(--brand-background);
+  font-family: 'Inter', sans-serif; /* Apply Inter as default sans-serif font */
+  color: var(--brand-text); /* Apply brand text color */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hover-brand-primary:hover {
+  color: var(--brand-primary); /* which is var(--brand-pink) */
+}
+
+.hover-brand-blue:hover {
+  color: var(--brand-blue);
+}
+
+.focus-ring-brand-pink:focus {
+  --tw-ring-color: var(--brand-pink);
+}
+
+.focus-border-brand-pink:focus {
+  border-color: var(--brand-pink);
+}
+
+.hover-brand-pink:hover {
+  color: var(--brand-pink);
+}
+
+.hover-brand-text:hover {
+  color: var(--brand-text);
+}
+
+@keyframes modal-scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-modal-scale-in {
+  animation: modal-scale-in 0.2s ease-out forwards;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: .5;
+  }
+}
