@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link'; // Import Link
 import { useAppContext } from './context/AppContext';
 import ProductCard from './components/ProductCard';
@@ -11,12 +11,22 @@ import Slider from 'react-slick';
 
 const HomePage = () => {
     const { products, categories, brands } = useAppContext(); // Added brands
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkIsMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkIsMobile();
+        window.addEventListener('resize', checkIsMobile);
+        return () => window.removeEventListener('resize', checkIsMobile);
+    }, []);
 
     const categorySliderSettings = {
         dots: true,
         infinite: true,
         speed: 300,
-        slidesToShow: 4, // Default for desktop (screens >= 768px)
+        slidesToShow: isMobile ? 2 : 4, // Dynamically set based on isMobile
         slidesToScroll: 1,
         autoplay: true,
         autoplaySpeed: 3000,
