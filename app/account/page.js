@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, FormEvent, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import Modal from '../components/Modal';
 import { Icon } from '../components/Icon';
@@ -51,7 +51,19 @@ const AccountPage = () => {
     
     const handleOpenEditAddressModal = (address) => {
         setEditingAddress(address);
-        setAddressFormData(address);
+        setAddressFormData({
+            shipping_address: address.address_line1 || '',
+            city: address.city || '',
+            zip_code: address.zip_code || '',
+            country: address.country || '',
+            address_line2: address.address_line2 || '',
+            state: address.state || '',
+            address_label: address.address_label || '',
+            customer_name: address.customer_name || '',
+            customer_email: address.customer_email || '',
+            customer_phone: address.customer_phone || '',
+            // Ensure all fields used in inputs are handled
+        });
         setIsAddressModalOpen(true);
     };
 
@@ -61,8 +73,8 @@ const AccountPage = () => {
     };
 
     const handleAddressChange = (e) => {
-        const { name, value } = e.target;
-        setAddressFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        setAddressFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
     const handleAddressSubmit = (e) => {
@@ -169,7 +181,7 @@ const AccountPage = () => {
                                 shippingAddresses.map(addr => (
                                     <div key={addr.id} className="border p-4 rounded-md flex justify-between items-start">
                                         <div>
-                                            <p className="text-sm" style={{ color: 'var(--brand-muted)' }}>{addr.address_line1}, {addr.city}, {addr.zip_code}</p>
+                                            <p className="text-sm" style={{ color: 'var(--brand-muted)' }}>{addr.addressLine1}, {addr.city}, {addr.zipCode}</p>
                                             <p className="text-sm" style={{ color: 'var(--brand-muted)' }}>{addr.country}</p>
                                         </div>
                                         <div className="flex space-x-2 flex-shrink-0 ml-4">
@@ -199,6 +211,10 @@ const AccountPage = () => {
                             <option>Saudi Arabia</option>
                             <option>Qatar</option>
                         </select>
+                        <div className="flex items-center">
+                            <input type="checkbox" name="is_default" id="is_default" checked={addressFormData.is_default} onChange={handleAddressChange} className="h-4 w-4 text-brand-blue border-gray-300 rounded focus:ring-brand-pink" />
+                            <label htmlFor="is_default" className="ml-2 block text-sm font-medium text-gray-700">Set as default shipping address</label>
+                        </div>
                         <div className="pt-4 flex justify-end space-x-2">
                             <button type="button" onClick={handleCloseAddressModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">Cancel</button>
                             <button type="submit" className="px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm hover:opacity-90" style={{ backgroundColor: 'var(--brand-blue)' }}>Save Address</button>

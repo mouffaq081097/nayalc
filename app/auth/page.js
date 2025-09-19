@@ -1,6 +1,6 @@
 'use client';
-import React, { useState, FormEvent, Suspense } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 
@@ -50,7 +50,6 @@ const SignInForm = () => {
 
     const { login } = useAuth();
     const router = useRouter();
-    const pathname = usePathname();
     const searchParams = useSearchParams();
 
     const from = searchParams.get('from') || "/";
@@ -62,7 +61,7 @@ const SignInForm = () => {
         try {
             await login(email, password);
             router.replace(from);
-        } catch (err) {
+        } catch (error) {
             setError('Failed to log in. Please check your credentials.');
         } finally {
             setLoading(false);

@@ -89,11 +89,16 @@ export async function POST(request) {
     const newCategoryId = categoryRows[0].id;
 
     if (productIdsString) {
-      const product_ids = productIdsString.split(',').map(id => parseInt(id.trim()));
+      const product_ids = productIdsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id) && id > 0);
       if (product_ids.length > 0) {
-        const productValues = product_ids.map(productId => `(${newCategoryId}, ${productId})`).join(',');
-        const categoryProductsSql = `INSERT INTO category_products (category_id, product_id) VALUES ${productValues}`;
-        await client.query(categoryProductsSql);
+        const values = [newCategoryId];
+        const placeholders = product_ids.map((id, index) => {
+            values.push(id);
+            return `($1, $${index + 2})`;
+        }).join(',');
+        
+        const categoryProductsSql = `INSERT INTO category_products (category_id, product_id) VALUES ${placeholders}`;
+        await client.query(categoryProductsSql, values);
       }
     }
 

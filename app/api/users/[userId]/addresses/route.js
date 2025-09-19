@@ -12,7 +12,8 @@ import db from '@/lib/db';
  *       500:
  *         description: Server error.
  */
-export async function GET(request, { params }) {
+export async function GET(request, context) {
+    const params = await context.params;
     const { userId } = params;
     try {
         const sql = 'SELECT id, user_id as "userId", address_line1 as "addressLine1", address_line2 as "addressLine2", city, state, zip_code as "zipCode", country, is_default as "isDefault", address_label as "addressLabel", customer_name as "customerName", customer_email as "customerEmail", customer_phone as "customerPhone", created_at as "createdAt", updated_at as "updatedAt" FROM user_addresses WHERE user_id = $1 ORDER BY is_default DESC, created_at DESC';

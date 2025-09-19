@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useContext } from 'react';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 
 import { useAppContext } from '../../context/AppContext';
@@ -68,17 +69,15 @@ const ProductDetailPage = () => {
                 <div style={{display: 'flex', flexDirection: isMobile ? 'column-reverse' : 'row', gap: '1rem'}}>
                      <div style={{display: 'flex', flexDirection: isMobile ? 'row' : 'column', gap: '0.5rem', overflowX: isMobile ? 'auto' : 'hidden', overflowY: isMobile ? 'hidden' : 'auto', paddingBottom: isMobile ? '0.5rem' : '0', paddingRight: isMobile ? '0' : '0.5rem'}}>
                         {images.map((url, index) => (
-                            <img 
+                            <Image 
                                 key={index} 
                                 src={url} 
                                 alt={`${product.name} thumbnail ${index + 1}`}
+                                width={80}
+                                height={80}
+                                objectFit="cover"
+                                className="rounded-md cursor-pointer flex-shrink-0"
                                 style={{
-                                    width: '5rem',
-                                    height: '5rem',
-                                    objectFit: 'cover',
-                                    borderRadius: '0.5rem',
-                                    cursor: 'pointer',
-                                    flexShrink: 0,
                                     border: selectedImage === url ? '2px solid var(--brand-pink)' : '1px solid #E5E7EB'
                                 }}
                                 onClick={() => setSelectedImage(url)}
@@ -86,7 +85,7 @@ const ProductDetailPage = () => {
                         ))}
                     </div>
                     <div style={{flexGrow: 1}}>
-                        <img src={selectedImage || ''} alt={product.name} style={{width: '100%', height: 'auto', objectFit: 'cover', borderRadius: '0.75rem', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)'}} />
+                        <Image src={selectedImage || ''} alt={product.name} layout="responsive" width={700} height={700} objectFit="contain" className="rounded-lg shadow-md" />
                     </div>
                 </div>
 

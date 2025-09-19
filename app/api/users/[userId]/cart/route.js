@@ -13,8 +13,9 @@ import db from '@/lib/db';
  *       500:
  *         description: Server error.
  */
-export async function GET(request, { params }) {
-    const { userId } = params;
+export async function GET(request, context) {
+    const params = await context.params; // Explicitly await params
+    const userId = params.userId;
 
     try {
         const sql = `
@@ -30,6 +31,7 @@ export async function GET(request, { params }) {
         `;
 
         const { rows } = await db.query(sql, [userId]);
+        console.log(`Fetched cart for user ${userId}:`, rows);
         return NextResponse.json({ cart: rows });
 
     } catch (error) {
@@ -66,8 +68,10 @@ export async function GET(request, { params }) {
  *       500:
  *         description: Server error.
  */
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
+    const params = await context.params;
     const { userId } = params;
+    const userIdInt = parseInt(userId, 10);
     const client = await db.connect();
     try {
         const { cart } = await request.json();
@@ -78,20 +82,24 @@ export async function PUT(request, { params }) {
 
         await client.query('BEGIN');
 
-        await client.query('DELETE FROM user_carts WHERE user_id = $1', [userId]);
+        const deleteResult = await client.query('DELETE FROM user_carts WHERE user_id = $1', [userIdInt]);
+        console.log(`Deleted ${deleteResult.rowCount} cart items for user ${userId}.`);
 
         if (cart.length > 0) {
-            const values = cart.map(item => `(${userId}, ${item.productId}, ${item.quantity})`).join(',');
-            const insertSql = `INSERT INTO user_carts (user_id, product_id, quantity) VALUES ${values};`;
-            await client.query(insertSql);
+            for (const item of cart) {
+                const productIdInt = parseInt(item.product._id, 10);
+                const insertSql = `INSERT INTO user_carts (user_id, product_id, quantity) VALUES ($1, $2, $3);`;
+                await client.query(insertSql, [userIdInt, productIdInt, item.quantity]);
+            }
         }
 
         await client.query('COMMIT');
-        return NextResponse.json({ message: 'Cart updated successfully.' });
+        return NextResponse.json({ message: 'Cart updated successfully' }, { status: 200 });
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error(`Error updating cart for user ${userId}:`, error);
+        console.error('Error saving cart:', error); // Log the full error object
+        console.error('Error details:', error);
         return NextResponse.json({ message: 'Failed to update cart.', error: error.message }, { status: 500 });
     } finally {
         client.release();

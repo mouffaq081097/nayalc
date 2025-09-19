@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useCallback } from 'react';
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
 import { useAppContext } from './AppContext'; // Import useAppContext
@@ -19,7 +19,7 @@ export const CartProvider = ({ children }) => {
         }
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/${user.id}/cart`, {
+            const response = await fetch(`/api/users/${user.id}/cart`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -28,7 +28,14 @@ export const CartProvider = ({ children }) => {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to save cart to backend.');
+                let errorData = {};
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    console.error('Failed to parse error response as JSON:', e);
+                }
+                console.error('Failed to save cart to backend:', response.status, response.statusText, errorData);
+                throw new Error(`Failed to save cart: ${response.status} ${response.statusText} - ${errorData.message || JSON.stringify(errorData) || 'No additional error information.'}`);
             }
             
         } catch (error) {
@@ -42,7 +49,7 @@ export const CartProvider = ({ children }) => {
         const fetchUserCart = async () => {
             if (isAuthenticated && user?.id) {
                 try {
-                    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/${user.id}/cart`, {
+                    const response = await fetch(`/api/users/${user.id}/cart`, {
                         headers: {
                             // 'Authorization': `Bearer ${user.token}`,
                         },
@@ -52,10 +59,12 @@ export const CartProvider = ({ children }) => {
                     }
                     const data = await response.json();
                     const parsedCart = (data.cart || []).map(item => ({
-                        ...item,
+                        quantity: item.quantity,
                         product: {
-                            ...item.product,
-                            price: parseFloat(item.product.price)
+                            _id: item.productId,
+                            name: item.name,
+                            price: parseFloat(item.price),
+                            imageUrl: item.imageUrl,
                         }
                     }));
                     setCart(parsedCart); // Use setCart from AppContext
@@ -130,3 +139,5 @@ export const CartProvider = ({ children }) => {
         </CartContext.Provider>
     );
 };
+
+export const useCart = () => useContext(CartContext);

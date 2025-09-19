@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link'; // Import Link
 import { useAppContext } from './context/AppContext';
 import ProductCard from './components/ProductCard';
@@ -10,40 +10,25 @@ import FeaturedBrandCard from './components/FeaturedBrandCard';
 import Slider from 'react-slick';
 
 const HomePage = () => {
-    const { products, categories, featuredProducts, brands } = useAppContext(); // Added brands
+    const { products, categories, brands } = useAppContext(); // Added brands
 
     const categorySliderSettings = {
         dots: true,
         infinite: true,
         speed: 300,
-        slidesToShow: 2,
+        slidesToShow: 4, // Default for desktop (screens >= 768px)
         slidesToScroll: 1,
         autoplay: true,
         autoplaySpeed: 3000,
         lazyLoad: 'ondemand',
         responsive: [
             {
-                breakpoint: 1024,
+                breakpoint: 768, // For screens <= 768px (mobile and tablets)
                 settings: {
-                    slidesToShow: 3,
+                    slidesToShow: 2, // 2 columns for mobile/tablets
                     slidesToScroll: 1,
                     infinite: true,
                     dots: true
-                }
-            },
-            {
-                breakpoint: 600,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1,
-                    initialSlide: 2
-                }
-            },
-            {
-                breakpoint: 480,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1
                 }
             }
         ]
@@ -53,48 +38,39 @@ const HomePage = () => {
         dots: true,
         infinite: true,
         speed: 300,
-        slidesToShow: 2, // Default to 2 columns
+        slidesToShow: 4, // Default for desktop (screens >= 768px)
         slidesToScroll: 1,
         autoplay: true,
         autoplaySpeed: 3000,
         lazyLoad: 'ondemand',
         responsive: [
             {
-                breakpoint: 1024,
+                breakpoint: 768, // For screens <= 768px (mobile and tablets)
                 settings: {
-                    slidesToShow: 2,
+                    slidesToShow: 2, // 2 columns for mobile/tablets
                     slidesToScroll: 1,
                     infinite: true,
                     dots: true
                 }
-            },
-            {
-                breakpoint: 600,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1,
-                    initialSlide: 2
-                }
-            },
-            {
-                breakpoint: 480,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1
-                }
             }
         ]
     };
+
+    const featuredProducts = products.slice(0, 4);
+
+    const editorsChoiceIndex = useMemo(() => {
+        if (featuredProducts.length === 0) return -1;
+        return Math.floor(Math.random() * featuredProducts.length);
+    }, [featuredProducts]);
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Hero />
 
             <section className="mt-16">
-                                <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: 'var(--brand-text)', marginBottom: '0.5rem', fontFamily: 'serif', textAlign: 'left'}}>Shop by Category</h2>
                 <p style={{textAlign: 'left', color: 'var(--brand-muted)', marginBottom: '1.5rem'}}>Explore our curated collections, from essential daily care to targeted treatments for your specific needs.</p>
                 <Slider {...categorySliderSettings}>
-                    {categories.map(category => <CategoryCard key={category.id} category={category} />)}
+                    {categories && categories.map(category => <CategoryCard key={category.id} category={category} />)}
                 </Slider>
             </section>
             
@@ -110,7 +86,7 @@ const HomePage = () => {
                     </Link>
                 </div>
                 <Slider {...productSliderSettings}>
-                    {featuredProducts.map(product => <ProductCard key={product.id} product={product} />)}
+                    {featuredProducts.map((product, index) => <ProductCard key={product.id} product={product} isEditorsChoice={index === editorsChoiceIndex} />)}
                 </Slider>
             </section>
 
@@ -120,7 +96,7 @@ const HomePage = () => {
                         <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: 'var(--brand-text)', marginBottom: '0.5rem', fontFamily: 'serif', textAlign: 'left'}}>New Arrivals</h2>
                         <p style={{textAlign: 'left', color: 'var(--brand-muted)'}}>Check out the latest additions to our collection.</p>
                     </div>
-                    <Link href="/products" style={{color: 'var(--brand-blue)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                    <Link href="/new-arrivals" style={{color: 'var(--brand-blue)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
                         View All
                         <span style={{fontSize: '1.25rem', lineHeight: '1', transform: 'translateY(1px)'}}>&rarr;</span>
                     </Link>

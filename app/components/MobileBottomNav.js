@@ -4,19 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React from 'react';
 import { Icon } from './Icon';
-import { useAppContext } from '../context/AppContext';
+import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
 const MobileBottomNav = () => {
   const pathname = usePathname();
-  const { cart } = useAppContext();
+  const { cartItems } = useCart();
   const { isAuthenticated } = useAuth();
 
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const navItems = [
     { name: 'Home', icon: 'home', href: '/' },
-    { name: 'Shop', icon: 'grid', href: '/products' },
+    { name: 'Shop', icon: 'grid', href: '/all-products' },
     { name: 'Account', icon: 'user', href: isAuthenticated ? '/account' : '/auth' },
     { name: 'Cart', icon: 'bag', href: '/cart', count: cartItemCount },
   ];

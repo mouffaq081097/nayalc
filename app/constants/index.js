@@ -1,5 +1,5 @@
 export const NAV_LINKS = [
-  { name: 'All', href: '/All Products' },
+  { name: 'All', href: '/all-products' },
   { name: 'New Arrivals', href: '/new-arrivals' },
   { name: 'Categories', href: '/categories' },
   { name: 'Brands', href: '/brands' },

@@ -19,7 +19,7 @@ const StatCard = ({ title, value, color }) => (
 );
 
 const AdminDashboard = () => {
-    const { products, categories, brands, orders } = useAppContext();
+    const { products, categories, orders } = useAppContext();
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
                     {order.status}
                 </span>
             </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">AED {order.total.toFixed(2)}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">AED {typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'}</td>
         </tr>
     );
 
@@ -77,7 +77,7 @@ const AdminDashboard = () => {
             <div className="text-sm text-gray-600">
                 <p><span className="font-semibold">Customer:</span> {order.customerName}</p>
                 <p><span className="font-semibold">Date:</span> {new Date(order.orderDate).toLocaleDateString()}</p>
-                <p className="text-right font-bold mt-2">AED {order.total.toFixed(2)}</p>
+                <p className="text-right font-bold mt-2">AED {typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'}</p>
             </div>
         </div>
     );

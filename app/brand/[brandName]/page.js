@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useAppContext } from '../../context/AppContext';
 import ProductCard from '../../components/ProductCard';
@@ -26,7 +27,7 @@ const BrandPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center mb-8">
-        <img src={currentBrand.imageUrl} alt={currentBrand.name} className="w-24 h-24 object-contain mr-6" />
+        <Image src={currentBrand.imageUrl} alt={currentBrand.name} width={96} height={96} objectFit="contain" className="mr-6" />
         <div>
           <h1 className="text-4xl font-bold text-[#3D5A5D] mb-2">{currentBrand.name}</h1>
           <p className="text-lg text-[#A0B8BA]">{currentBrand.description}</p>

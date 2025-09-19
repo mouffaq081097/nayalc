@@ -61,11 +61,19 @@ export async function GET(request, { params }) {
  *         description: Server error.
  */
 export async function PUT(request, { params }) {
-    const { id } = params;
+    const resolvedParams = await Promise.resolve(params);
+    const id = resolvedParams.id;
     const client = await db.connect();
     try {
         const formData = await request.formData();
-        const { name, description, price, stock_quantity, status, product_type, long_description, benefits, how_to_use, specs, autoship_save, gtin, product_dimensions, item_weight, item_model_number, unit_count, brand_id, categoryIds: categoryIdsString } = Object.fromEntries(formData.entries());
+        const { name, description, status, product_type, long_description, benefits, how_to_use, specs, gtin, product_dimensions, item_model_number, categoryIds: categoryIdsString } = Object.fromEntries(formData.entries());
+
+        const price = parseFloat(formData.get('price')) || null;
+        const stock_quantity = parseInt(formData.get('stock_quantity')) || null;
+        const autoship_save = parseFloat(formData.get('autoship_save')) || null;
+        const item_weight = parseFloat(formData.get('item_weight')) || null;
+        const unit_count = parseInt(formData.get('unit_count')) || null;
+        const brand_id = parseInt(formData.get('brand_id')) || null;
 
         await client.query('BEGIN');
 

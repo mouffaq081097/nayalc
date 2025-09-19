@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext.js';
 
 const AppContext = createContext(null);
@@ -15,35 +15,34 @@ export const AppProvider = ({ children }) => {
   const [featuredProducts, setFeaturedProducts] = useState([]); // New state for featured products
 
   // Function to fetch orders from the backend
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!isAuthenticated || !user?.id) {
       setOrders([]);
       return;
     }
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders?userId=${user.id}`);
+      const response = await fetch(`/api/orders?userId=${user.id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch orders');
       }
       const data = await response.json();
       // Parse the 'items' JSON string back into an array of objects
-      const parsedOrders = data.map(order => ({
-        ...order,
-        total_amount: parseFloat(order.total_amount), // Ensure total_amount is a number
-        items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
-        orderDate: new Date(order.orderDate), // Convert date string to Date object
-      }));
-      setOrders(parsedOrders);
+              const parsedOrders = data.map(order => ({
+                  ...order,
+                  totalAmount: parseFloat(order.totalAmount), // Ensure totalAmount is a number
+                  items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+                  orderDate: new Date(order.orderDate), // Convert date string to Date object
+              }));      setOrders(parsedOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
       setOrders([]);
     }
-  };
+  }, [isAuthenticated, user]);
 
   // Function to fetch all products from the backend
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products`);
+      const response = await fetch(`/api/products`);
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
@@ -64,7 +63,7 @@ export const AppProvider = ({ children }) => {
   // Function to fetch products by category from the backend
   const fetchProductsByCategory = async (categoryName) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products?category=${categoryName}`);
+      const response = await fetch(`/api/products?category=${categoryName}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch products for category: ${categoryName}`);
       }
@@ -84,7 +83,7 @@ export const AppProvider = ({ children }) => {
   // Function to fetch random featured products
   const fetchFeaturedProducts = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products?random=true&limit=4`);
+      const response = await fetch(`/api/products?random=true&limit=4`);
       if (!response.ok) {
         throw new Error('Failed to fetch featured products');
       }
@@ -104,12 +103,16 @@ export const AppProvider = ({ children }) => {
   // Function to fetch categories from the backend
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories`);
+      const response = await fetch(`/api/categories`);
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
       }
       const data = await response.json();
-      setCategories(data);
+      const processedCategories = data.map(category => ({
+        ...category,
+        image_url: category.imageUrl, // Map imageUrl from API to image_url for consistency
+      }));
+      setCategories(processedCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
       setCategories([]);
@@ -119,7 +122,7 @@ export const AppProvider = ({ children }) => {
   // Function to fetch brands from the backend
   const fetchBrands = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/brands`);
+      const response = await fetch(`/api/brands`);
       if (!response.ok) {
         throw new Error('Failed to fetch brands');
       }
@@ -132,14 +135,11 @@ export const AppProvider = ({ children }) => {
   };
 
   // Function to add a new brand
-  const addBrand = async (brandData) => {
+  const addBrand = async (brandFormData) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/brands`, {
+      const response = await fetch(`/api/brands`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(brandData),
+        body: brandFormData,
       });
       if (!response.ok) {
         throw new Error('Failed to add brand');
@@ -153,14 +153,11 @@ export const AppProvider = ({ children }) => {
   };
 
   // Function to update an existing brand
-  const updateBrand = async (brandData) => {
+  const updateBrand = async (brandId, brandFormData) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/brands/${brandData.id}`, {
+      const response = await fetch(`/api/brands/${brandId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(brandData),
+        body: brandFormData,
       });
       if (!response.ok) {
         throw new Error('Failed to update brand');
@@ -176,7 +173,7 @@ export const AppProvider = ({ children }) => {
   // Function to delete a brand
   const deleteBrand = async (brandId) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/brands/${brandId}`, {
+      const response = await fetch(`/api/brands/${brandId}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
@@ -193,7 +190,7 @@ export const AppProvider = ({ children }) => {
   // Function to add a new category
   const addCategory = async (categoryData) => { // categoryData will now be FormData
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories`, {
+      const response = await fetch(`/api/categories`, {
         method: 'POST',
         // No 'Content-Type' header when sending FormData, browser sets it
         body: categoryData, // Send FormData directly
@@ -214,7 +211,7 @@ export const AppProvider = ({ children }) => {
   // Function to update an existing category
   const updateCategory = async (categoryId, categoryData) => { // categoryData will now be FormData
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories/${categoryId}`, {
+      const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'PUT',
         // No 'Content-Type' header when sending FormData, browser sets it
         body: categoryData, // Send FormData directly
@@ -236,7 +233,7 @@ export const AppProvider = ({ children }) => {
   // Function to delete a category
   const deleteCategory = async (categoryId) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories/${categoryId}`, {
+      const response = await fetch(`/api/categories/${categoryId}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
@@ -253,7 +250,7 @@ export const AppProvider = ({ children }) => {
   // Function to update order status
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${orderId}/status`, {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -272,14 +269,11 @@ export const AppProvider = ({ children }) => {
   };
 
   // Function to add a new product
-  const addProduct = async (productData) => {
+  const addProduct = async (productFormData) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products`, {
+      const response = await fetch(`/api/products`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(productData),
+        body: productFormData,
       });
       const data = await response.json();
       // Re-fetch products to update the state
@@ -292,14 +286,11 @@ export const AppProvider = ({ children }) => {
   };
 
   // Function to update an existing product
-  const updateProduct = async (productData) => {
+  const updateProduct = async (productId, productFormData) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${productData.id}`, {
+      const response = await fetch(`/api/products/${productId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(productData),
+        body: productFormData,
       });
       if (!response.ok) {
         throw new Error('Failed to update product');
@@ -317,7 +308,7 @@ export const AppProvider = ({ children }) => {
   // Function to delete a product
   const deleteProduct = async (productId) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${productId}`, {
+      const response = await fetch(`/api/products/${productId}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
@@ -340,10 +331,32 @@ export const AppProvider = ({ children }) => {
     if (isAuthenticated && user?.id) {
       fetchOrders(); // Fetch orders only if authenticated
     }
-  }, [isAuthenticated, user]); // Re-fetch when auth status or user changes
+  }, [isAuthenticated, user, fetchOrders]); // Re-fetch when auth status or user changes
+
+  // Function to fetch a single order by ID from the backend
+  const fetchOrderById = async (orderId) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch order details.');
+      }
+      const data = await response.json();
+      // Parse items and totalAmount similar to fetchOrders
+      const parsedOrder = {
+        ...data,
+        totalAmount: parseFloat(data.totalAmount),
+        items: data.items.map(item => ({ ...item, price: parseFloat(item.price) })),
+        createdAt: new Date(data.createdAt),
+      };
+      return parsedOrder;
+    } catch (error) {
+      console.error(`Error fetching order ${orderId}:`, error);
+      throw error;
+    }
+  };
 
   return (
-    <AppContext.Provider value={{ appState, setAppState, cart, setCart, orders, setOrders, products, setProducts, categories, setCategories, brands, setBrands, featuredProducts, setFeaturedProducts, addBrand, updateBrand, deleteBrand, addCategory, updateCategory, deleteCategory, updateOrderStatus, addProduct, updateProduct, deleteProduct, fetchProductsByCategory }}>
+    <AppContext.Provider value={{ appState, setAppState, cart, setCart, orders, setOrders, products, setProducts, categories, setCategories, brands, setBrands, featuredProducts, setFeaturedProducts, addBrand, updateBrand, deleteBrand, addCategory, updateCategory, deleteCategory, updateOrderStatus, addProduct, updateProduct, deleteProduct, fetchProductsByCategory, fetchOrderById, fetchProducts }}>
       {children}
     </AppContext.Provider>
   );

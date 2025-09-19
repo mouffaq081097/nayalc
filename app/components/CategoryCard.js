@@ -19,7 +19,7 @@ const CategoryCard = ({ category }) => {
             className="group relative block h-80 rounded-xl overflow-hidden shadow-lg mx-2"
         >
             <Image 
-                src={category.image_url} 
+                src={category.image_url || 'https://placehold.co/600x400/EEE/31343C?text=No+Image'} 
                 alt={category.name}
                 fill // Use fill to make the image take up the parent's size
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Responsive image sizes

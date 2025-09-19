@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
 
 const Hero = () => {
@@ -36,7 +37,7 @@ const Hero = () => {
                     key={index}
                     className={`absolute inset-0 transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
                 >
-                    <img src={slide.image} alt="Hero background" className="w-full h-full object-cover" />
+                    <Image src={slide.image} alt="Hero background" fill className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/20" />
                     <div className="absolute inset-0 flex flex-col justify-center items-start text-white p-8 sm:p-12 md:p-24">
                         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-serif max-w-md leading-tight">{slide.title}</h1>

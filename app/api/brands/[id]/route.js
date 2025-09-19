@@ -24,7 +24,7 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
 export async function GET(request, { params }) {
   const { id } = params;
   try {
-    const sql = 'SELECT id, name, "imageUrl" FROM brands WHERE id = $1';
+    const sql = 'SELECT id, name, imageurl FROM brands WHERE id = $1';
     const { rows } = await db.query(sql, [id]);
 
     if (rows.length === 0) {
@@ -79,7 +79,7 @@ export async function PUT(request, { params }) {
     const imageFile = formData.get('image');
 
     // First, get the existing brand data
-    const { rows: existingRows } = await db.query('SELECT "imageUrl" FROM brands WHERE id = $1', [id]);
+    const { rows: existingRows } = await db.query('SELECT imageurl FROM brands WHERE id = $1', [id]);
     if (existingRows.length === 0) {
         return NextResponse.json({ message: 'Brand not found' }, { status: 404 });
     }
@@ -94,7 +94,7 @@ export async function PUT(request, { params }) {
         // TODO: Optionally delete the old image from Cloudinary
     }
 
-    const sql = 'UPDATE brands SET name = $1, status = $2, "imageUrl" = $3 WHERE id = $4 RETURNING *;';
+    const sql = 'UPDATE brands SET name = $1, status = $2, imageurl = $3 WHERE id = $4 RETURNING *;';
     const { rows } = await db.query(sql, [name, status, imageUrl, id]);
 
     if (rows.length === 0) {

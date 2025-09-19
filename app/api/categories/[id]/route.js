@@ -60,7 +60,8 @@ export async function GET(request, { params }) {
  *         description: Server error.
  */
 export async function PUT(request, { params }) {
-  const { id } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const id = resolvedParams.id;
   const client = await db.connect();
   try {
     const formData = await request.formData();
@@ -97,11 +98,16 @@ export async function PUT(request, { params }) {
     // Update product associations
     await client.query('DELETE FROM category_products WHERE category_id = $1', [id]);
     if (productIdsString) {
-      const product_ids = productIdsString.split(',').map(id => parseInt(id.trim()));
+      const product_ids = productIdsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id) && id > 0);
       if (product_ids.length > 0) {
-        const productValues = product_ids.map(productId => `(${id}, ${productId})`).join(',');
-        const categoryProductsSql = `INSERT INTO category_products (category_id, product_id) VALUES ${productValues}`;
-        await client.query(categoryProductsSql);
+        const values = [id]; // The category ID is param $1
+        const placeholders = product_ids.map((productId, index) => {
+            values.push(productId);
+            return `($1, $${index + 2})`;
+        }).join(',');
+        
+        const categoryProductsSql = `INSERT INTO category_products (category_id, product_id) VALUES ${placeholders}`;
+        await client.query(categoryProductsSql, values);
       }
     }
 

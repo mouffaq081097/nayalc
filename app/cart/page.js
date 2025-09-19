@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { CartContext } from '../context/CartContext';
+import { useCart } from '../context/CartContext';
 import { Icon } from '../components/Icon';
 
 const CartPage = () => {
-    const { cartItems, updateQuantity, removeFromCart } = useContext(CartContext);
+    const { cartItems, updateQuantity, removeFromCart } = useCart();
 
     const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
     const shipping = subtotal > 50 ? 0 : 10;
@@ -67,7 +68,7 @@ const CartPage = () => {
                             <ul>
                                 {cartItems.map((item, index) => (
                                     <li key={item.product._id || index} style={{ display: isMobile ? 'block' : 'flex', alignItems: 'center', padding: '1.5rem 0', textAlign: isMobile ? 'center' : 'left' }}>
-                                        <img src={item.product.imageUrl} alt={item.product.name} style={{ width: '6rem', height: '6rem', objectFit: 'contain', borderRadius: '0.375rem', margin: isMobile ? '0 auto 1rem' : '0' }} />
+                                    <Image src={item.product.imageUrl} alt={item.product.name} width={96} height={96} objectFit="contain" className="rounded-md" style={{ margin: isMobile ? '0 auto 1rem' : '0' }} />
                                         <div style={{ marginLeft: isMobile ? '0' : '1.5rem', flexGrow: 1 }}>
                                             <h3 style={{ fontSize: '1.125rem', fontWeight: 'semibold', color: 'var(--brand-text)', fontFamily: 'serif' }}>{item.product.name}</h3>
                                             <p style={{ color: 'var(--brand-muted)', fontSize: '0.875rem' }}>AED {item.product.price.toFixed(2)}</p>

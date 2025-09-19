@@ -38,15 +38,10 @@ export async function GET(request) {
 
   try {
     let sql = `
-      SELECT 
-          p.*, 
-          b.name as "brandName", 
-          (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as "imageUrl",
-          STRING_AGG(DISTINCT c.name, ', ') as "categoryNames"
+      SELECT p.*, b.name as "brandName", pi.image_url as "imageUrl"
       FROM products p
       LEFT JOIN brands b ON p.brand_id = b.id
-      LEFT JOIN category_products cp ON p.id = cp.product_id
-      LEFT JOIN categories c ON cp.category_id = c.id
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
     `;
     const params = [];
 
@@ -61,7 +56,7 @@ export async function GET(request) {
       params.push(category);
     }
 
-    sql += ` GROUP BY p.id, b.name`;
+    sql += ` GROUP BY p.id, b.name, pi.image_url`;
 
     if (random === 'true') {
       sql += ` ORDER BY RANDOM()`;

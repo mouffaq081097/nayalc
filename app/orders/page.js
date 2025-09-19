@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react'; // Import useState for hover effects
+import Image from 'next/image';
 import Link from 'next/link';
 import { useAppContext } from '../context/AppContext';
 
@@ -84,19 +85,27 @@ const MyOrdersPage = () => {
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' /* space-y-8 */ }}>
-                        {orders.map(order => (
+                        {orders.map(order => {
+                            console.log('Order object in MyOrdersPage:', order);
+                            return (
                             <div key={order.id} style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' /* bg-white p-6 rounded-lg shadow-md */ }}>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E5E7EB', paddingBottom: '1rem', marginBottom: '1rem', gap: '1rem' /* flex flex-wrap justify-between items-center border-b pb-4 mb-4 gap-4 */ }}>
                                     <div>
                                         <h2 style={{ fontSize: '1.125rem', fontWeight: 'semibold', color: '#3D5A5D' /* text-lg font-semibold text-[#3D5A5D] */ }}>Order ID: {order.id}</h2>
-                                        <p style={{ fontSize: '0.875rem', color: '#A0B8BA' /* text-sm text-[#A0B8BA] */ }}>Date: {new Date(order.orderDate).toLocaleDateString()}</p>
+                                        <p style={{ fontSize: '0.875rem', color: '#A0B8BA' /* text-sm text-[#A0B8BA] */ }}>Date: {new Date(order.createdAt).toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <span style={getStatusChipStyle(order.status)}>
-                                            {order.status}
+                                        <span style={getStatusChipStyle(order.orderStatus)}> {/* Changed order.status to order.orderStatus */}
+                                            {order.orderStatus} {/* Changed order.status to order.orderStatus */}
                                         </span>
-                                        <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#3D5A5D', textAlign: 'right', marginTop: '0.25rem' /* text-lg font-bold text-[#3D5A5D] text-right mt-1 */ }}>AED {order.total_amount.toFixed(2)}</p>
+                                        <p style={{ fontSize: '1.125rem', fontWeight: 'bold', color: '#3D5A5D', textAlign: 'right', marginTop: '0.25rem' /* text-lg font-bold text-[#3D5A5D] text-right mt-1 */ }}>AED {order.totalAmount.toFixed(2)}</p> {/* Changed order.total_amount to order.totalAmount */}
                                     </div>
+                                </div>
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 'semibold', color: '#3D5A5D', marginBottom: '0.5rem' }}>Shipping Details:</h3>
+                                    <p style={{ fontSize: '0.875rem', color: '#A0B8BA' }}>{order.customerName} ({order.customerEmail})</p>
+                                    <p style={{ fontSize: '0.875rem', color: '#A0B8BA' }}>{order.shippingAddress}, {order.city}, {order.zipCode}, {order.country}</p>
+                                    <p style={{ fontSize: '0.875rem', color: '#A0B8BA' }}>Phone: {order.customerPhone}</p>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' /* space-y-4 */ }}>
                                     {order.items.map((item, index) => {
@@ -104,18 +113,21 @@ const MyOrdersPage = () => {
                                         if (!product) return null;
                                         return (
                                             <div key={index} style={{ display: 'flex', alignItems: 'center' /* flex items-center */ }}>
-                                                <img src={product.imageUrls[0]} alt={product.name} style={{ width: '4rem', height: '4rem', objectFit: 'contain', borderRadius: '0.375rem' /* w-16 h-16 object-cover rounded-md */ }}/>
+                                            <Image src={product.imageUrls[0]} alt={product.name} width={64} height={64} objectFit="contain" className="rounded-md"/>
                                                 <div style={{ marginLeft: '1rem', flexGrow: 1 /* ml-4 flex-grow */ }}>
-                                                    <p style={{ fontWeight: 'semibold', color: '#3D5A5D' /* font-semibold text-[#3D5A5D] */ }}>{product.name}</p>
-                                                    <p style={{ fontSize: '0.875rem', color: '#A0B8BA' /* text-sm text-[#A0B8BA] */ }}>{item.quantity} x ${item.price.toFixed(2)}</p>
+                                                    <Link href={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
+                                                        <p style={{ fontWeight: 'semibold', color: '#3D5A5D', '&:hover': { textDecoration: 'underline' } /* font-semibold text-[#3D5A5D] */ }}>{product.name}</p>
+                                                    </Link>
+                                                    <p style={{ fontSize: '0.875rem', color: '#A0B8BA' /* text-sm text-[#A0B8BA] */ }}>{item.quantity} x AED {item.price.toFixed(2)}</p> {/* Added AED */}
                                                 </div>
-                                                <p style={{ fontWeight: 'semibold', color: '#3D5A5D' /* font-semibold text-[#3D5A5D] */ }}>${(item.quantity * item.price).toFixed(2)}</p>
+                                                <p style={{ fontWeight: 'semibold', color: '#3D5A5D' /* font-semibold text-[#3D5A5D] */ }}>AED {(item.quantity * item.price).toFixed(2)}</p>
                                             </div>
                                         );
                                     })}
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
                  <div style={{ marginTop: '2rem', textAlign: 'center' /* mt-8 text-center */ }}>

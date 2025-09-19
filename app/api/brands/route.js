@@ -30,7 +30,7 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
 export async function GET() {
   try {
     // Note: In Postgres, column names with capitals might need to be quoted.
-    const { rows } = await db.query('SELECT id, name, "imageUrl" FROM brands');
+    const { rows } = await db.query('SELECT id, name, imageurl FROM brands');
     return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching brands:', error);
@@ -88,7 +88,7 @@ export async function POST(request) {
     }
 
     // Note the change from ? to $1, $2, etc., for Postgres
-    const sql = 'INSERT INTO brands (name, status, "imageUrl") VALUES ($1, $2, $3) RETURNING id, name, status, "imageUrl"';
+    const sql = 'INSERT INTO brands (name, status, imageurl) VALUES ($1, $2, $3) RETURNING id, name, status, imageurl';
     const values = [name, status, imageUrl];
     
     const { rows } = await db.query(sql, values);

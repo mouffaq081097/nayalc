@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Icon } from '../../components/Icon';
 import Modal from '../../components/Modal';
@@ -10,14 +10,14 @@ const ManageBrands = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingBrand, setEditingBrand] = useState(null);
     
-    const initialFormData = { name: '', logoUrl: '' };
+    const initialFormData = useMemo(() => ({ name: '', logoUrl: '' }), []);
     const [formData, setFormData] = useState(initialFormData);
 
     useEffect(() => {
         if (isModalOpen) {
             setFormData(editingBrand ? { name: editingBrand.name, logoUrl: editingBrand.logoUrl || '' } : initialFormData);
         }
-    }, [isModalOpen, editingBrand]);
+    }, [isModalOpen, editingBrand, initialFormData]);
 
     const handleOpenAddModal = () => {
         setEditingBrand(null);

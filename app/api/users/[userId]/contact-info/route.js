@@ -27,7 +27,8 @@ import db from '@/lib/db';
  *       500:
  *         description: Server error.
  */
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
+    const params = await context.params;
     const { userId } = params;
     const client = await db.connect();
     try {
@@ -64,6 +65,33 @@ export async function PUT(request, { params }) {
         if (client) await client.query('ROLLBACK');
         console.error(`Error updating contact info for user ${userId}:`, error);
         return NextResponse.json({ message: 'Failed to update contact information.', error: error.message }, { status: 500 });
+    } finally {
+        if (client) client.release();
+    }
+}
+
+export async function GET(request, context) {
+    const params = await context.params;
+    const { userId } = params;
+    const client = await db.connect();
+    try {
+        // Find the default address, or the first address if no default is set
+        const { rows: addresses } = await client.query(
+            'SELECT customer_name, customer_email, customer_phone FROM user_addresses WHERE user_id = $1 ORDER BY is_default DESC, created_at ASC LIMIT 1',
+            [userId]
+        );
+        console.log(`Fetched contact info for user ${userId}:`, addresses);
+
+        if (addresses.length === 0) {
+            return NextResponse.json({ name: '', email: '', phone: '' }, { status: 200 }); // Return empty if no address
+        }
+
+        const contactInfo = addresses[0];
+        return NextResponse.json(contactInfo, { status: 200 });
+
+    } catch (error) {
+        console.error(`Error fetching contact info for user ${userId}:`, error);
+        return NextResponse.json({ message: 'Failed to fetch contact information.', error: error.message }, { status: 500 });
     } finally {
         if (client) client.release();
     }

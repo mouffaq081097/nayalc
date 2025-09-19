@@ -82,11 +82,11 @@ const ManageCategories = () => {
             }
 
 
-            let result;
             if (editingCategory) {
-                result = await updateCategory(editingCategory.id, formData);
+            const updatedCategory = await updateCategory(formData.id, categoryFormData);
+            addToast(`Category ${updatedCategory.name} updated successfully!`);
             } else {
-                result = await addCategory(formData);
+                await addCategory(formData);
             }
 
             handleCloseModal();

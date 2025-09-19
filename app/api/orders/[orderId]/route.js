@@ -14,7 +14,7 @@ const fetchOrderItems = async (orderId, client) => {
 
 /**
  * @swagger
- * /api/orders/{id}:
+ * /api/orders/{orderId}:
  *   get:
  *     summary: Get a single order by ID
  *     description: Retrieves a single order and its associated items by its ID.
@@ -26,12 +26,34 @@ const fetchOrderItems = async (orderId, client) => {
  *       500:
  *         description: Server error.
  */
-export async function GET(request, { params }) {
-    const { id } = params;
+export async function GET(request, context) {
+    const params = await context.params;
+    const { orderId } = params;
     const client = await db.connect();
     try {
-        const sql = `SELECT id, customer_name as "customerName", customer_email as "customerEmail", customer_phone as "customerPhone", shipping_address as "shippingAddress", city, zip_code as "zipCode", payment_method as "paymentMethod", total_amount as "totalAmount", order_status as "orderStatus", shipping_scheduled_date as "shippingScheduledDate", payment_confirmed as "paymentConfirmed", created_at as "createdAt", updated_at as "updatedAt", user_id as "userId" FROM orders WHERE id = $1;`;
-        const { rows: orderRows } = await client.query(sql, [id]);
+        const sql = `
+            SELECT
+                o.id,
+                ua.customer_name as "customerName",
+                ua.customer_email as "customerEmail",
+                ua.customer_phone as "customerPhone",
+                ua.shipping_address as "shippingAddress",
+                ua.city,
+                ua.zip_code as "zipCode",
+                o.payment_method as "paymentMethod",
+                o.total_amount as "totalAmount",
+                o.order_status as "orderStatus",
+                o.shipping_scheduled_date as "shippingScheduledDate",
+                o.payment_confirmed as "paymentConfirmed",
+                o.created_at as "createdAt",
+                o.updated_at as "updatedAt",
+                o.user_id as "userId",
+                o.user_address_id as "userAddressId"
+            FROM orders o
+            JOIN user_addresses ua ON o.user_address_id = ua.id
+            WHERE o.id = $1;
+        `;
+        const { rows: orderRows } = await client.query(sql, [orderId]);
 
         if (orderRows.length === 0) {
             return NextResponse.json({ message: 'Order not found' }, { status: 404 });
@@ -43,7 +65,7 @@ export async function GET(request, { params }) {
         return NextResponse.json({ ...order, items });
 
     } catch (error) {
-        console.error(`Error fetching order ${id}:`, error);
+        console.error(`Error fetching order ${orderId}:`, error);
         return NextResponse.json({ message: 'Error fetching order from database', error: error.message }, { status: 500 });
     } finally {
         client.release();

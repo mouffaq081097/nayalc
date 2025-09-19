@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useContext, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { CartContext } from '../context/CartContext';
@@ -54,12 +55,7 @@ const CheckoutPage = () => {
         }
 
         const orderData = {
-            customer_name: contactInfo.name,
-            customer_email: contactInfo.email,
-            customer_phone: contactInfo.phone,
-            shipping_address: selectedAddress.address_line1,
-            city: selectedAddress.city,
-                        zip_code: selectedAddress.zip_code, // Use selectedAddress.zip_code
+            user_address_id: selectedAddressId,
             payment_method: 'Cash on Delivery',
             total_amount: total,
             shipping_scheduled_date: new Date().toISOString().slice(0, 19).replace('T', ' '), // Format for MySQL DATETIME
@@ -73,8 +69,10 @@ const CheckoutPage = () => {
 
         
 
+        console.log('Order Data being sent:', orderData);
+
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders`, {
+            const response = await fetch(`/api/orders`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -267,7 +265,7 @@ const CheckoutPage = () => {
                             {cartItems.map((item, index) => (
                                 <div key={item.product._id || index} style={{ display: 'flex', alignItems: 'center' }}>
                                     <div style={{ position: 'relative' }}>
-                                        <img src={item.product.imageUrl} alt={item.product.name} style={{ width: '4rem', height: '4rem', objectFit: 'cover', borderRadius: '0.375rem' }}/>
+                                    <Image src={item.product.imageUrl} alt={item.product.name} width={64} height={64} objectFit="cover" className="rounded-md"/>
                                         <span style={{ position: 'absolute', top: '-0.5rem', right: '-0.5rem', backgroundColor: 'var(--brand-blue)', color: 'white', fontSize: '0.75rem', borderRadius: '9999px', height: '1.25rem', width: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.quantity}</span>
                                     </div>
                                     <div style={{ marginLeft: '1rem', flexGrow: 1 }}>

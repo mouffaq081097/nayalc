@@ -35,14 +35,34 @@ export async function GET(request) {
     const userId = searchParams.get('userId');
     const client = await db.connect();
     try {
-        let sql = `SELECT id, customer_name as "customerName", customer_email as "customerEmail", customer_phone as "customerPhone", shipping_address as "shippingAddress", city, zip_code as "zipCode", payment_method as "paymentMethod", total_amount as "totalAmount", order_status as "orderStatus", shipping_scheduled_date as "shippingScheduledDate", payment_confirmed as "paymentConfirmed", created_at as "createdAt", updated_at as "updatedAt", user_id as "userId" FROM orders`;
+        let sql = `
+            SELECT
+                o.id,
+                ua.customer_name as "customerName",
+                ua.customer_email as "customerEmail",
+                ua.customer_phone as "customerPhone",
+                ua.shipping_address as "shippingAddress",
+                ua.city,
+                ua.zip_code as "zipCode",
+                o.payment_method as "paymentMethod",
+                o.total_amount as "totalAmount",
+                o.order_status as "orderStatus",
+                o.shipping_scheduled_date as "shippingScheduledDate",
+                o.payment_confirmed as "paymentConfirmed",
+                o.created_at as "createdAt",
+                o.updated_at as "updatedAt",
+                o.user_id as "userId",
+                o.user_address_id as "userAddressId"
+            FROM orders o
+            JOIN user_addresses ua ON o.user_address_id = ua.id
+        `;
         const params = [];
 
         if (userId) {
-            sql += ` WHERE user_id = $1`;
+            sql += ` WHERE o.user_id = $1`;
             params.push(userId);
         }
-        sql += ` ORDER BY created_at DESC;`;
+        sql += ` ORDER BY o.created_at DESC;`;
 
         const { rows: orders } = await client.query(sql, params);
 
@@ -77,19 +97,19 @@ export async function GET(request) {
 export async function POST(request) {
     const client = await db.connect();
     try {
-        const { customer_name, customer_email, customer_phone, shipping_address, city, zip_code, payment_method, total_amount, shipping_scheduled_date, user_id, items } = await request.json();
+        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items } = await request.json();
 
-        if (!customer_name || !customer_email || !shipping_address || !city || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0) {
+        if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0) {
             return NextResponse.json({ message: 'Missing required order information or items.' }, { status: 400 });
         }
 
         await client.query('BEGIN');
 
         const insertOrderSql = `
-            INSERT INTO orders (customer_name, customer_email, customer_phone, shipping_address, city, zip_code, payment_method, total_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9, false, $10) RETURNING id;
+            INSERT INTO orders (user_address_id, payment_method, total_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id)
+            VALUES ($1, $2, $3, $4, $5, false, $6) RETURNING id;
         `;
-        const orderValues = [customer_name, customer_email, customer_phone, shipping_address, city, zip_code, payment_method, total_amount, shipping_scheduled_date, user_id];
+        const orderValues = [user_address_id, payment_method, total_amount, 'pending', shipping_scheduled_date, user_id];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
 

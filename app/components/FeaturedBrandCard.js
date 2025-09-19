@@ -1,11 +1,19 @@
-'use client';
+import Image from 'next/image';
 import React from 'react';
 import Link from 'next/link';
 
 const FeaturedBrandCard = ({ brand }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col md:flex-row items-center p-6">
-      <img src={brand.name === 'Gernetic' ? 'https://gernetic.com/cdn/shop/files/LOGO_OR-01_180x.png?v=1707386090' : brand.name === 'Zorah' ? 'https://zorah.ca/cdn/shop/files/logo-header-grey.png?height=80&v=1669306014' : brand.imageUrl} alt={brand.name} className="w-24 h-24 object-contain mb-4 md:mb-0 md:mr-6" />
+      <div className="relative w-24 h-24 mb-4 md:mb-0 md:mr-6">
+        <Image
+          src={brand.name === 'Gernetic' ? 'https://gernetic.com/cdn/shop/files/LOGO_OR-01_180x.png?v=1707386090' : brand.name === 'Zorah' ? 'https://zorah.ca/cdn/shop/files/logo-header-grey.png?height=80&v=1669306014' : brand.imageUrl || 'https://placehold.co/96x96/EEE/31343C?text=No+Image'}
+          alt={brand.name}
+          fill
+          sizes="96px"
+          className="object-contain"
+        />
+      </div>
       <div className="text-center md:text-left flex-grow">
         <h3 className="text-xl font-bold text-[#3D5A5D] mb-2">{brand.name}</h3>
         <p className="text-sm text-[#A0B8BA] mb-4">

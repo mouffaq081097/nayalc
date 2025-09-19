@@ -80,3 +80,19 @@ body {
     opacity: .5;
   }
 }
+
+/* Ensure all slick-slide items in a row have the same height */
+.slick-track {
+  display: flex !important;
+  padding-bottom: 2rem; /* Added padding to the bottom of the track */
+}
+
+.slick-slide {
+  height: auto !important; /* Allow slide to determine height based on content */
+}
+
+.slick-slide > div {
+  height: 100%; /* Make the direct child of slick-slide (our ProductCard) fill the height */
+  display: flex; /* Use flex to ensure content inside ProductCard stretches */
+  flex-direction: column;
+}

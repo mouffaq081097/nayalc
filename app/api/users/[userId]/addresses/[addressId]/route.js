@@ -16,24 +16,39 @@ import db from '@/lib/db';
  *       500:
  *         description: Server error.
  */
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
+    const params = await context.params;
     const { userId, addressId } = params;
+    const userIdInt = parseInt(userId, 10);
+    const addressIdInt = parseInt(addressId, 10);
     const client = await db.connect();
     try {
-        const { address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email, customer_phone } = await request.json();
-
-        if (!address_line1 || !city || !country) {
-            return NextResponse.json({ message: 'Address Line 1, City, and Country are required.' }, { status: 400 });
-        }
-
         await client.query('BEGIN');
+        const { address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email, customer_phone } = await request.json();
+        console.log(`PUT /api/users/${userId}/addresses/${addressId} - Request Body:`, { address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email, customer_phone });
 
-        if (is_default) {
-            await client.query('UPDATE user_addresses SET is_default = FALSE WHERE user_id = $1 AND id != $2', [userId, addressId]);
-        }
-
-        const sql = 'UPDATE user_addresses SET address_line1 = $1, address_line2 = $2, city = $3, state = $4, zip_code = $5, country = $6, is_default = $7, address_label = $8, customer_name = $9, customer_email = $10, customer_phone = $11 WHERE id = $12 AND user_id = $13';
-        const { rowCount } = await client.query(sql, [address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email, customer_phone, addressId, userId]);
+        const updateSql = `
+            UPDATE user_addresses
+            SET
+                address_line1 = $1,
+                address_line2 = $2,
+                city = $3,
+                state = $4,
+                zip_code = $5,
+                country = $6,
+                is_default = $7,
+                address_label = $8,
+                customer_name = $9,
+                customer_email = $10,
+                customer_phone = $11,
+                shipping_address = $12,
+                updated_at = NOW()
+            WHERE id = $13 AND user_id = $14
+            RETURNING *;
+        `;
+        const updateValues = [address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email, customer_phone, address_line1, addressIdInt, userIdInt];
+        console.log(`PUT /api/users/${userId}/addresses/${addressId} - SQL Update Values:`, updateValues);
+        const { rowCount } = await client.query(updateSql, updateValues);
 
         if (rowCount === 0) {
             await client.query('ROLLBACK');

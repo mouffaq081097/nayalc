@@ -1,5 +1,6 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useAppContext } from '../../context/AppContext';
 import { Icon } from '../../components/Icon';
 import Modal from '../../components/Modal';
@@ -9,31 +10,31 @@ const ManageProducts = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
+    const isEditMode = !!editingProduct;
     const [imageFile, setImageFile] = useState(null);
 
-    const getInitialFormData = () => ({
-        name: '',
-        description: '',
-        price: 0,
-        stock_quantity: 0,
-        categoryIds: [], // Changed from single category to array of IDs
-        brand: brands[0]?.name || '',
-    });
+    const getInitialFormData = useCallback((product) => {
+        return {
+            name: product?.name || '',
+            description: product?.description || '',
+            price: product?.price || 0,
+            stock: product?.stock || 0,
+            category: product?.categoryName || '',
+            brand: product?.brandName || '',
+            imageUrl: product?.imageUrl || '',
+            additionalImages: product?.additionalImages || [],
+        };
+    }, []);
     
     const [formData, setFormData] = useState(getInitialFormData);
 
     useEffect(() => {
-        if (isModalOpen) {
-            if (editingProduct) {
-                setFormData({
-                    ...editingProduct,
-                    categoryIds: editingProduct.categoryIds || [], // Ensure categoryIds is an array
-                });
-            } else {
-                setFormData(getInitialFormData());
-            }
+        if (isEditMode) {
+            setFormData(getInitialFormData(productToEdit));
+        } else {
+            setFormData(getInitialFormData(null));
         }
-    }, [isModalOpen, editingProduct, categories, brands]);
+    }, [isEditMode, getInitialFormData]);
     
     const handleOpenAddModal = () => {
         setEditingProduct(null);
@@ -90,18 +91,29 @@ const ManageProducts = () => {
             };
 
             let productId;
+            const productFormData = new FormData();
+            for (const key in finalProductData) {
+                if (Array.isArray(finalProductData[key])) {
+                    finalProductData[key].forEach(item => productFormData.append(key, item));
+                } else {
+                    productFormData.append(key, finalProductData[key]);
+                }
+            }
+
             if (editingProduct) {
-                const updatedProduct = await updateProduct({ ...finalProductData, id: editingProduct.id });
+                // Append product ID for update
+                productFormData.append('id', editingProduct.id);
+                await updateProduct(editingProduct.id, productFormData);
                 productId = editingProduct.id;
             } else {
-                const newProduct = await addProduct(finalProductData);
+                const newProduct = await addProduct(productFormData);
                 productId = newProduct.productId;
             }
 
             if (imageFile) {
                 const imageFormData = new FormData();
                 imageFormData.append('productImage', imageFile);
-                await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${productId}/image`, {
+                await fetch(`/api/products/${productId}/image`, {
                     method: 'POST',
                     body: imageFormData,
                 });
@@ -145,7 +157,7 @@ const ManageProducts = () => {
                             {products.map(product => (
                                 <tr key={product.id}>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-contain rounded-md" />
+                                        <Image src={product.imageUrl} alt={product.name} width={48} height={48} objectFit="contain" className="rounded-md" />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{product.name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.categoryNames}</td>
