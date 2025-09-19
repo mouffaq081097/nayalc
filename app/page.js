@@ -6,65 +6,17 @@ import ProductCard from './components/ProductCard';
 import Hero from './components/Hero';
 import CategoryCard from './components/CategoryCard';
 import FeaturedBrandCard from './components/FeaturedBrandCard';
+import Carousel from './components/Carousel';
 // import { FEATURED_BRANDS } from './constants'; // Removed
-import Slider from 'react-slick';
+
 
 const HomePage = () => {
     const { products, categories, brands } = useAppContext(); // Added brands
-    const [isMobile, setIsMobile] = useState(false);
 
-    useEffect(() => {
-        const checkIsMobile = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
-        checkIsMobile();
-        window.addEventListener('resize', checkIsMobile);
-        return () => window.removeEventListener('resize', checkIsMobile);
-    }, []);
 
-    const categorySliderSettings = {
-        dots: true,
-        infinite: true,
-        speed: 300,
-        slidesToShow: isMobile ? 2 : 4, // Dynamically set based on isMobile
-        slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 3000,
-        lazyLoad: 'ondemand',
-        responsive: [
-            {
-                breakpoint: 768, // For screens <= 768px (mobile and tablets)
-                settings: {
-                    slidesToShow: 2, // 2 columns for mobile/tablets
-                    slidesToScroll: 1,
-                    infinite: true,
-                    dots: true
-                }
-            }
-        ]
-    };
 
-    const productSliderSettings = {
-        dots: true,
-        infinite: true,
-        speed: 300,
-        slidesToShow: 4, // Default for desktop (screens >= 768px)
-        slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 3000,
-        lazyLoad: 'ondemand',
-        responsive: [
-            {
-                breakpoint: 768, // For screens <= 768px (mobile and tablets)
-                settings: {
-                    slidesToShow: 2, // 2 columns for mobile/tablets
-                    slidesToScroll: 1,
-                    infinite: true,
-                    dots: true
-                }
-            }
-        ]
-    };
+
+
 
     const featuredProducts = products.slice(0, 4);
 
@@ -78,65 +30,65 @@ const HomePage = () => {
             <Hero />
 
             <section className="mt-16">
-                <p style={{textAlign: 'left', color: 'var(--brand-muted)', marginBottom: '1.5rem'}}>Explore our curated collections, from essential daily care to targeted treatments for your specific needs.</p>
-                <Slider {...categorySliderSettings}>
+                <p className="text-left text-[var(--brand-muted)] mb-6">Explore our curated collections, from essential daily care to targeted treatments for your specific needs.</p>
+                <Carousel>
                     {categories && categories.map(category => <CategoryCard key={category.id} category={category} />)}
-                </Slider>
+                </Carousel>
             </section>
             
             <section className="mt-16">
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                <div className="flex justify-between items-center mb-6 flex-col sm:flex-row text-center sm:text-left">
                     <div>
-                        <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: 'var(--brand-text)', marginBottom: '0.5rem', fontFamily: 'serif', textAlign: 'left'}}>Featured Products</h2>
-                        <p style={{textAlign: 'left', color: 'var(--brand-muted)'}}>Discover our top-rated and most popular products, handpicked for their exceptional quality and effectiveness.</p>
+                        <h2 className="text-3xl font-bold text-[var(--brand-text)] mb-2 font-serif">Featured Products</h2>
+                        <p className="text-[var(--brand-muted)]">Discover our top-rated and most popular products, handpicked for their exceptional quality and effectiveness.</p>
                     </div>
-                    <Link href="/products" style={{color: 'var(--brand-blue)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                    <Link href="/products" className="text-[var(--brand-blue)] font-semibold flex items-center gap-1 mt-4 sm:mt-0">
                         View All
-                        <span style={{fontSize: '1.25rem', lineHeight: '1', transform: 'translateY(1px)'}}>&rarr;</span> {/* Right arrow */}
+                        <span className="text-xl leading-none translate-y-px">&rarr;</span> {/* Right arrow */}
                     </Link>
                 </div>
-                <Slider {...productSliderSettings}>
+                <Carousel>
                     {featuredProducts.map((product, index) => <ProductCard key={product.id} product={product} isEditorsChoice={index === editorsChoiceIndex} />)}
-                </Slider>
+                </Carousel>
             </section>
 
             <section className="mt-16">
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                <div className="flex justify-between items-center mb-6 flex-col sm:flex-row text-center sm:text-left">
                     <div>
-                        <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: 'var(--brand-text)', marginBottom: '0.5rem', fontFamily: 'serif', textAlign: 'left'}}>New Arrivals</h2>
-                        <p style={{textAlign: 'left', color: 'var(--brand-muted)'}}>Check out the latest additions to our collection.</p>
+                        <h2 className="text-3xl font-bold text-[var(--brand-text)] mb-2 font-serif">New Arrivals</h2>
+                        <p className="text-[var(--brand-muted)]">Check out the latest additions to our collection.</p>
                     </div>
-                    <Link href="/new-arrivals" style={{color: 'var(--brand-blue)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                    <Link href="/new-arrivals" className="text-[var(--brand-blue)] font-semibold flex items-center gap-1 mt-4 sm:mt-0">
                         View All
-                        <span style={{fontSize: '1.25rem', lineHeight: '1', transform: 'translateY(1px)'}}>&rarr;</span>
+                        <span className="text-xl leading-none translate-y-px">&rarr;</span>
                     </Link>
                 </div>
-                <Slider {...productSliderSettings}>
+                <Carousel>
                     {/* Assuming newArrivals is available in the context */}
                     {products.slice(0, 4).map(product => <ProductCard key={product.id} product={product} />)}
-                </Slider>
+                </Carousel>
             </section>
 
             <section className="mt-16">
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                <div className="flex justify-between items-center mb-6 flex-col sm:flex-row text-center sm:text-left">
                     <div>
-                        <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: 'var(--brand-text)', marginBottom: '0.5rem', fontFamily: 'serif', textAlign: 'left'}}>Best Sellers</h2>
-                        <p style={{textAlign: 'left', color: 'var(--brand-muted)'}}>Discover our most loved and top-selling products.</p>
+                        <h2 className="text-3xl font-bold text-[var(--brand-text)] mb-2 font-serif">Best Sellers</h2>
+                        <p className="text-[var(--brand-muted)]">Discover our most loved and top-selling products.</p>
                     </div>
-                    <Link href="/BestSellers" style={{color: 'var(--brand-blue)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                    <Link href="/BestSellers" className="text-[var(--brand-blue)] font-semibold flex items-center gap-1 mt-4 sm:mt-0">
                         View All
-                        <span style={{fontSize: '1.25rem', lineHeight: '1', transform: 'translateY(1px)'}}>&rarr;</span>
+                        <span className="text-xl leading-none translate-y-px">&rarr;</span>
                     </Link>
                 </div>
-                <Slider {...productSliderSettings}>
+                <Carousel>
                     {/* Assuming bestSellers is available in the context */}
                     {products.slice(4, 8).map(product => <ProductCard key={product.id} product={product} />)}
-                </Slider>
+                </Carousel>
             </section>
             
              <section className="mt-16">
-                                <h2 style={{fontSize: '1.875rem', fontWeight: '700', color: 'var(--brand-text)', marginBottom: '1.5rem', fontFamily: 'serif', textAlign: 'center'}}>Our Partner Brands</h2>
-                <p style={{textAlign: 'center', color: 'var(--brand-muted)', marginBottom: '2rem', maxWidth: '42rem', margin: 'auto'}}>We are proud to partner with industry leaders in skincare innovation, bringing you the best in beauty science and nature.</p>
+                                <h2 className="text-3xl font-bold text-[var(--brand-text)] mb-6 font-serif text-center">Our Partner Brands</h2>
+                <p className="text-center text-[var(--brand-muted)] mb-8 max-w-xl mx-auto">We are proud to partner with industry leaders in skincare innovation, bringing you the best in beauty science and nature.</p>
                 <br />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    {brands.map(brand => <FeaturedBrandCard key={brand.id} brand={brand} />)}

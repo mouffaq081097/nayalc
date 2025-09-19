@@ -31,7 +31,7 @@ const Hero = () => {
     }, [slides.length]);
 
     return (
-        <div className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-lg">
+        <div className="relative w-full h-[250px] sm:h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-lg">
             {slides.map((slide, index) => (
                 <div
                     key={index}
@@ -39,8 +39,8 @@ const Hero = () => {
                 >
                     <Image src={slide.image} alt="Hero background" fill className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/20" />
-                    <div className="absolute inset-0 flex flex-col justify-center items-start text-white p-8 sm:p-12 md:p-24">
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-serif max-w-md leading-tight">{slide.title}</h1>
+                    <div className="absolute inset-0 flex flex-col justify-center items-start text-white p-4 sm:p-12 md:p-24">
+                        <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold font-serif max-w-xs sm:max-w-sm md:max-w-md leading-tight">{slide.title}</h1>
                         <div className="flex flex-wrap gap-2 mt-6">
                             {slide.tags.map(tag => (
                                 <span key={tag} className="bg-white/30 backdrop-blur-sm text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 rounded-full">{tag}</span>

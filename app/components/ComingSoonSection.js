@@ -2,31 +2,31 @@ import React from 'react';
 
 const ComingSoonSection = () => {
     return (
-        <section style={{marginTop: '4rem', backgroundColor: 'var(--brand-premium-bg)', borderRadius: '1rem', padding: '3rem', textAlign: 'center', position: 'relative', overflow: 'hidden'}}>
-            <div style={{position: 'relative', zIndex: 10}}>
-                <h3 style={{fontSize: '0.875rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--brand-blue)'}}>Launching Soon</h3>
-                <h2 style={{fontSize: '2.25rem', fontWeight: '700', color: 'var(--brand-text)', fontFamily: 'serif', marginTop: '1rem'}}>The Bespoke Collection</h2>
-                <p style={{color: 'var(--brand-muted)', marginTop: '1rem', maxWidth: '42rem', marginLeft: 'auto', marginRight: 'auto'}}>
+        <section className="mt-16 bg-[var(--brand-premium-bg)] rounded-2xl p-12 text-center relative overflow-hidden">
+            <div className="relative z-10">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--brand-blue)]">Launching Soon</h3>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[var(--brand-text)] font-serif mt-4">The Bespoke Collection</h2>
+                <p className="text-[var(--brand-muted)] mt-4 max-w-xl mx-auto">
                     Experience skincare tailored to you. Sign up to be the first to know when our personalized collection arrives, and receive an exclusive launch offer.
                 </p>
-                <form style={{marginTop: '2rem', maxWidth: '32rem', marginLeft: 'auto', marginRight: 'auto', display: 'flex'}}>
+                <form className="mt-8 max-w-xl mx-auto flex flex-col sm:flex-row gap-4 sm:gap-0">
                     <input 
                         type="email" 
                         placeholder="Enter your email address" 
-                        style={{flexGrow: 1, border: '1px solid #d1d5db', borderTopLeftRadius: '9999px', borderBottomLeftRadius: '9999px', padding: '1rem', fontSize: '0.875rem', outline: 'none'}} /* focus:ring-brand-pink focus:border-brand-pink */
+                        className="flex-grow border border-gray-300 rounded-full sm:rounded-l-full sm:rounded-r-none p-4 text-sm outline-none focus:ring-2 focus:ring-[var(--brand-pink)] focus:border-[var(--brand-pink)]" 
                         aria-label="Email address for notification"
                     />
                     <button 
                         type="submit" 
-                        style={{backgroundColor: 'var(--brand-button-bg)', color: 'white', paddingLeft: '2rem', paddingRight: '2rem', borderTopRightRadius: '9999px', borderBottomRightRadius: '9999px', fontSize: '0.875rem', fontWeight: '700', transition: 'opacity 150ms', flexShrink: 0}} /* hover:opacity-90 */
+                        className="bg-[var(--brand-button-bg)] text-white px-8 py-4 rounded-full sm:rounded-r-full sm:rounded-l-none font-bold hover:opacity-90 transition-opacity text-sm flex-shrink-0 mt-2 sm:mt-0"
                     >
                         Notify Me
                     </button>
                 </form>
             </div>
             {/* Background decorative elements */}
-            <div style={{position: 'absolute', top: '-4rem', left: '-4rem', width: '12rem', height: '12rem', borderRadius: '9999px', backgroundColor: 'rgba(var(--brand-blue-rgb), 0.05)', opacity: 0.5}}></div>
-            <div style={{position: 'absolute', bottom: '-4rem', right: '-4rem', width: '12rem', height: '12rem', borderRadius: '9999px', backgroundColor: 'rgba(var(--brand-pink-rgb), 0.05)', opacity: 0.5}}></div>
+            <div className="absolute -top-16 -left-16 w-48 h-48 rounded-full bg-[rgba(var(--brand-blue-rgb),0.05)] opacity-50"></div>
+            <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full bg-[rgba(var(--brand-pink-rgb),0.05)] opacity-50"></div>
         </section>
     );
 };
