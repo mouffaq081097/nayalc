@@ -1,69 +1,129 @@
-import React, { useState, useContext, useEffect } from 'react';
+"use client";
+import React, { useState, useContext } from 'react';
 import Image from 'next/image';
-import Link from 'next/link'; // Use next/link
-import { CartContext } from '../context/CartContext'; // Import CartContext
+import Link from 'next/link';
+import { CartContext } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
+import { Heart, ShoppingBag, Star } from 'lucide-react';
 
-// No need for Product type definition here, as it's handled by the API response structure
-// No need for getCloudinaryImageUrl or formatPrice here
+const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCount, isNew, isBestseller, category, brandName }) => {
+  const { addToCart } = useContext(CartContext);
+  const { showToast } = useToast();
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isNameHovered, setIsNameHovered] = useState(false); // New state
 
-const ProductCard = ({ product, isEditorsChoice }) => {
-    const { addToCart } = useContext(CartContext);
-    const { showToast } = useToast();
-    const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
-    const truncateText = (text, maxLength) => {
-        if (!text) return '';
-        if (text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + '...';
-    };
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Reconstruct product object for CartContext, as it expects a product object
+    const productForCart = { id, name, price, imageUrl: image, categoryName: category };
+    addToCart(productForCart, 1);
+    showToast(`Added ${name} to cart!`);
+  };
 
-    const handleAddToCart = (e) => { // Removed React.MouseEvent<HTMLButtonElement> type
-        e.preventDefault();
-        e.stopPropagation();
-        const productWithUnderscoreId = { ...product, _id: product.id };
-        addToCart(productWithUnderscoreId, 1); // Assuming addToCart takes product and quantity
-        showToast(`Added ${product.name} to cart!`);
-    }
+  
 
-    const primaryImageUrl = product.imageUrl || 'https://picsum.photos/400';
-    // Assuming product.additionalImages is an array of URLs if available
-    const secondaryImageUrl = (product.additionalImages && product.additionalImages.length > 0) ? product.additionalImages[0] : primaryImageUrl;
+  return (
+    <div
+      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Product Image */}
+      <Link href={`/product/${id}`} className="relative aspect-square overflow-hidden block p-4">
+        <Image
+          src={image}
+          alt={name}
+          layout="fill"
+          objectFit="contain"
+          className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+        />
 
-    return (
-        <Link href={`/product/${product._id}`} className="relative mx-1 mt-3 flex overflow-hidden rounded-xl"> {/* Reduced px-2 to px-1 for closer spacing */}
-            <div className="bg-white rounded-xl overflow-hidden h-full flex flex-col shadow-sm hover:shadow-lg transition-shadow duration-300">
-                <div className="relative overflow-hidden" style={{ paddingBottom: '100%' }}> {/* 1:1 Aspect Ratio for larger image */}
-                    <Image src={primaryImageUrl} alt={product.name} layout="fill" objectFit="contain" className="transition-opacity duration-500 ease-in-out group-hover:opacity-0" />
-                    <Image src={secondaryImageUrl} alt={`${product.name} alternate view`} layout="fill" objectFit="contain" className="opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100" />
-                    {isEditorsChoice && (
-                        <div className="absolute top-2 right-2 bg-brand-pink text-white text-xs font-semibold px-2 py-1 rounded-full">
-                            Editor&apos;s Choice
-                        </div>
-                    )}
-                </div>
-                <div className="p-5 text-left flex-grow flex flex-col justify-between"> {/* Added justify-between */}
-                    <div className="flex-grow"> {/* Removed min-h-24 */}
-                        <p className="text-xs text-brand-text-muted font-semibold uppercase tracking-wide">{product.brandName}</p> {/* Use brandName */}
-                        <h3 className="text-lg font-medium text-brand-text font-serif mt-1 group-hover:text-brand-accent">{truncateText(product.name, 35)}</h3>
-                        <p className="text-sm text-brand-muted mt-1">{truncateText(product.description, 80)}</p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-2"> {/* New div for price and button */}
-                        <p className="text-[var(--brand-pink)] font-bold">AED {product.price ? product.price.toFixed(2) : '0.00'}</p> {/* Price on left */}
-                        <button
-                            onClick={handleAddToCart}
-                            className={`bg-[var(--brand-blue)] text-white py-2 px-4 rounded-full font-bold text-sm transition-opacity duration-300 ${isButtonHovered ? 'opacity-90' : 'opacity-100'}`}
-                            onMouseEnter={() => setIsButtonHovered(true)}
-                            onMouseLeave={() => setIsButtonHovered(false)}
-                            aria-label={`Add ${product.name} to cart`}
-                        >
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {isNew && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--brand-pink)', color: 'white' }}>New</span>
+          )}
+          {isBestseller && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--brand-blue)', color: 'white' }}>Bestseller</span>
+          )}
+          {discount > 0 && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: '#EF4444', color: 'white' }}>-{discount}%</span>
+          )}
+        </div>
+
+        {/* Wishlist Button */}
+        <button
+          className={`absolute top-3 right-3 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all flex items-center justify-center`}
+          style={{ color: isWishlisted ? 'var(--brand-pink)' : '#4B5563' }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent link click
+            setIsWishlisted(!isWishlisted);
+          }}
+        >
+          <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+        </button>
+
+        {/* Quick Add Button */}
+        <div className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${
+          isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+        }`}>
+          <button
+            onClick={handleAddToCart}
+            className="w-full bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200 py-2 px-4 rounded-md flex items-center justify-center text-sm font-medium" style={{ color: '#111827' }}
+          >
+            <ShoppingBag className="h-4 w-4 mr-2" />
+            Add to cart
+          </button>
+        </div>
+      </Link>
+
+      {/* Product Info */}
+      <div className="p-4 space-y-3">
+        <div>
+          <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--brand-blue)' }}>{brandName}</p> {/* Display brandName */}
+          <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--brand-blue)' }}>{category}</p>
+          <Link
+            href={`/product/${id}`}
+            className="mt-1 transition-colors cursor-pointer block"
+            style={{ color: isNameHovered ? 'var(--brand-pink)' : '#111827' }}
+            onMouseEnter={() => setIsNameHovered(true)}
+            onMouseLeave={() => setIsNameHovered(false)}
+          >
+            {name}
+          </Link>
+          {/* Customer Review Stars and Count */}
+          <div className="flex items-center gap-2 mt-1"> {/* Added mt-1 for spacing */}
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-3 w-3`} // Removed fill-current class
+                  style={{
+                    color: '#D1D5DB', // Default stroke color for all stars
+                    fill: i < Math.floor(rating) ? '#FB923C' : 'transparent' // Fill with orange or transparent
+                  }}
+                />
+              ))}
             </div>
-        </Link>
-    );
+            <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>({reviewCount})</span>
+          </div>
+        </div>
+
+        {/* Price */}
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: '1.125rem', color: '#111827' }}>AED {price ? parseFloat(price).toFixed(2) : '0.00'}</span>
+          {originalPrice && (
+            <span style={{ fontSize: '0.875rem', color: '#6B7280' }} className="line-through">AED {originalPrice ? parseFloat(originalPrice).toFixed(2) : '0.00'}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ProductCard;

@@ -24,6 +24,7 @@ export async function GET(request, context) {
                 uc.quantity,
                 p.name,
                 p.price,
+                p.description,
                 (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as "imageUrl"
             FROM user_carts uc
             JOIN products p ON uc.product_id = p.id
@@ -87,7 +88,7 @@ export async function PUT(request, context) {
 
         if (cart.length > 0) {
             for (const item of cart) {
-                const productIdInt = parseInt(item.product._id, 10);
+                const productIdInt = parseInt(item.product.id, 10);
                 const insertSql = `INSERT INTO user_carts (user_id, product_id, quantity) VALUES ($1, $2, $3);`;
                 await client.query(insertSql, [userIdInt, productIdInt, item.quantity]);
             }

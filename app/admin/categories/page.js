@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Icon } from '../../components/Icon';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import Modal from '../../components/Modal';
 
 const ManageCategories = () => {
@@ -106,7 +106,7 @@ const ManageCategories = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-800">Manage Categories</h1>
                 <button onClick={handleOpenAddModal} className="bg-brand-button-bg text-white px-4 py-2 rounded-md hover:opacity-90 flex items-center space-x-2">
-                    <Icon name="plus" className="w-5 h-5" />
+                    <Plus name="plus" className="w-5 h-5" />
                     <span>Add Category</span>
                 </button>
             </div>
@@ -129,8 +129,8 @@ const ManageCategories = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{category.productsCount}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                         <div className="flex justify-center space-x-3">
-                                            <button onClick={() => handleOpenEditModal(category)} className="text-blue-600 hover:text-blue-900"><Icon name="edit" className="w-5 h-5" /></button>
-                                            <button onClick={() => handleDelete(category.id)} className="text-red-600 hover:text-red-900"><Icon name="delete" className="w-5 h-5" /></button>
+                                            <button onClick={() => handleOpenEditModal(category)} className="text-blue-600 hover:text-blue-900"><Edit className="w-5 h-5" /></button>
+                                            <button onClick={() => handleDelete(category.id)} className="text-red-600 hover:text-red-900"><Trash2 className="w-5 h-5" /></button>
                                         </div>
                                     </td>
                                 </tr>

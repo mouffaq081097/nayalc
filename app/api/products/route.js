@@ -35,30 +35,42 @@ export async function GET(request) {
   const random = searchParams.get('random');
   const limit = searchParams.get('limit');
   const category = searchParams.get('category');
+  const isNew = searchParams.get('isNew');
 
   try {
     let sql = `
-      SELECT p.*, b.name as "brandName", pi.image_url as "imageUrl"
-      FROM products p
-      LEFT JOIN brands b ON p.brand_id = b.id
-      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
+      SELECT
+        p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.product_type, p.vendor, p.long_description, p.benefits, p.how_to_use, p.specs, p.autoship_save, p.gtin, p.product_dimensions, p.item_weight, p.item_model_number, p.unit_count, p.brand_id, pi.created_at,
+        b.name as "brandName",
+        pi.image_url as "imageUrl"
+      FROM
+        products p
+      LEFT JOIN
+        brands b ON p.brand_id = b.id
+      LEFT JOIN
+        product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
     `;
     const params = [];
+    let whereClauses = [];
 
     if (category) {
-      sql += ` 
-        WHERE p.id IN (
-            SELECT product_id FROM category_products
-            JOIN categories ON category_products.category_id = categories.id
-            WHERE categories.name = $${params.length + 1}
-        )
+      sql += `
+        JOIN category_products cp ON p.id = cp.product_id
+        JOIN categories c ON cp.category_id = c.id
       `;
+      whereClauses.push(`c.name = $${params.length + 1}`);
       params.push(category);
     }
 
-    sql += ` GROUP BY p.id, b.name, pi.image_url`;
+    if (whereClauses.length > 0) {
+      sql += ` WHERE ${whereClauses.join(' AND ')}`;
+    }
 
-    if (random === 'true') {
+    sql += ` GROUP BY p.id, b.name, pi.image_url, pi.created_at`;
+
+    if (isNew === 'true') {
+      sql += ` ORDER BY pi.created_at DESC`;
+    } else if (random === 'true') {
       sql += ` ORDER BY RANDOM()`;
     }
 
@@ -67,12 +79,11 @@ export async function GET(request) {
       params.push(parseInt(limit));
     }
 
-    const { rows } = await db.query(sql, params);
+    const { rows } = await db.query(sql, params.length > 0 ? params : undefined);
     return NextResponse.json(rows);
-
   } catch (error) {
     console.error('Error fetching products:', error);
-    return NextResponse.json({ message: 'Error fetching products from database', error: error.message }, { status: 500 });
+    return NextResponse.json({ message: 'Error fetching products from database', error: error }, { status: 500 });
   }
 }
 

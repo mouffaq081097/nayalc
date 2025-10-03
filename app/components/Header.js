@@ -1,271 +1,199 @@
-'use client';
+import { useState, useEffect } from 'react';
+import { ShoppingBag, Search, User, Heart, Menu, X, Star, Gift } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Badge } from './ui/badge';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import React, { useState } from 'react';
-import { NAV_LINKS } from '../constants';
-import { Icon } from './Icon';
+import { Container } from './ui/Container';
+import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { useAppContext } from '../context/AppContext';
+import { useRouter } from 'next/navigation';
 
-const HoverLink = ({ children, href, className, defaultColor, hoverColor }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  return (
-    <Link
-      href={href}
-      className={className}
-      style={{ color: isHovered ? hoverColor : defaultColor }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {children}
-    </Link>
-  );
-};
-
-const HoverButton = ({ children, onClick, className, defaultColor, hoverColor }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      className={className}
-      style={{ color: isHovered ? hoverColor : defaultColor }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {children}
-    </button>
-  );
-};
-
-const Header = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+export function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { cartItems } = useCart();
+  const { user } = useAuth();
   const router = useRouter();
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loyaltyPoints] = useState(1250); // Mock loyalty points
 
-  const handleSearch = (e) => {
-    if (e.key === 'Enter') {
-      router.push(`/search?q=${searchQuery}`);
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setIsScrolled(scrollPosition > 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleAccountClick = () => {
+    if (user) {
+      router.push('/account');
+    } else {
+      router.push('/auth');
     }
   };
-  const { user, logout, isAuthenticated } = useAuth();
-  const { cart } = useAppContext();
-  const pathname = usePathname();
-  
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  
-  const premiumLink = NAV_LINKS.find(link => link.name === 'Premium Beauty');
-  const otherLinks = NAV_LINKS.filter(link => link.name !== 'Premium Beauty');
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      console.log('Searching for:', searchQuery);
+      // Handle search logic here
+    }
+  };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 shadow-sm" style={{ backgroundColor: 'var(--brand-background)' }}>
-      {/* Top Bar */}
-      <div className="text-xs" style={{ backgroundColor: 'var(--brand-secondary)', color: 'var(--brand-muted)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-8">
-          <div className="flex items-center space-x-4">
-            <HoverLink href="#" className="flex items-center" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">
-              <Icon name="map-pin" className="w-4 h-4 mr-1" />
-              <span>Dubai</span>
-            </HoverLink>
-            <HoverLink href="#" className="hidden sm:flex items-center" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">
-              <Icon name="store" className="w-4 h-4 mr-1" />
-              <span>Find My Store</span>
-            </HoverLink>
-          </div>
-          <div className="flex items-center space-x-4">
-            <HoverLink href="#" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">Contact Us</HoverLink>
-            <HoverLink href="#" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">EN</HoverLink>
-          </div>
+    <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+      {/* Top Bar - Enhanced with social proof */}
+      <div className={`bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white text-center transition-all duration-300 overflow-hidden ${
+        isScrolled ? 'h-0 py-0' : 'h-10 py-2'
+      }`}>
+        <div className="flex items-center justify-center gap-4 text-sm">
+          <span>✨ Free shipping on orders over 200 AED</span>
+          <span className="hidden sm:inline">•</span>
+          <span className="hidden sm:inline">🌟 Join 50,000+ happy customers</span>
+          <span className="hidden md:inline">•</span>
+          <span className="hidden md:inline">💎 Earn points with every purchase</span>
         </div>
       </div>
 
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Mobile Menu Toggle */}
-          <div className="lg:hidden">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 -ml-2" style={{ color: 'var(--brand-text)' }}>
-              <Icon name="menu" className="w-6 h-6" />
-            </button>
-          </div>
+      <Container className="py-4">
+        <div className="flex items-center justify-between gap-4">
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
 
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 text-center absolute left-1/2 -translate-x-1/2 lg:static lg:left-auto lg:translate-x-0">
-            <h1 className="text-3xl sm:text-4xl font-serif tracking-wider">
-              {/* Brand colors applied via inline style directly referencing CSS variables */}
-              <span style={{ color: 'var(--brand-blue)' }}>Naya </span>
-              <span style={{ color: 'var(--brand-pink)' }}>Lumière</span>
-            </h1>
-            <p className="hidden sm:block text-xs font-sans tracking-[0.3em] uppercase -mt-1" style={{ color: 'var(--brand-muted)' }}>Cosmetics</p>
-          </Link>
-
-          {/* Search Bar (Desktop) */}
-          <div className="hidden lg:flex flex-1 max-w-lg mx-8">
-            <div className="relative w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Icon name="search" className="w-5 h-5" style={{ color: 'var(--brand-muted)' }} />
-              </div>
-              <input
-                type="text"
-                placeholder="Search in Naya Lumière"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearch}
-                style={{ backgroundColor: 'var(--brand-secondary)', borderColor: 'var(--brand-gray-100)', color: 'var(--brand-text)' }} /* bg-brand-secondary, border-gray-200, text-brand-text */
-                className="block w-full border rounded-md py-2.5 pl-10 pr-3 text-sm focus:outline-none focus:ring-1 focus-border-brand-pink focus-ring-brand-pink"
-              />
-            </div>
-          </div>
-          
-          {/* Icons */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <button onClick={() => setIsMobileSearchOpen(true)} className="lg:hidden p-2" style={{ color: 'var(--brand-text)' }}>
-              <Icon name="search" className="w-6 h-6" />
+          <div className="flex-shrink-0">
+            <button onClick={() => router.push('/')} className="text-left">
+              <h1 className="text-2xl md:text-3xl font-serif bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
+                Naya Lumière
+              </h1>
+              <p className="text-xs text-gray-500 italic">Parisian Beauty</p>
             </button>
-
-            
-
-            
-            {user ? (
-              <div className="flex items-center space-x-2 sm:space-x-4">
-                <HoverLink href="/account" className="hidden sm:flex flex-col items-center text-xs font-medium transition-colors" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">
-                  <Icon name="user" className="w-6 h-6" />
-                  <span className="hidden lg:block mt-1">Welcome, {user.username}</span>
-                </HoverLink>
-                <HoverButton onClick={logout} className="hidden sm:flex flex-col items-center text-xs font-medium transition-colors" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">
-                  <Icon name="logout" className="w-6 h-6" />
-                  <span className="hidden lg:block mt-1">Logout</span>
-                </HoverButton>
-              </div>
-            ) : (
-              <HoverLink href="/auth" className="hidden sm:flex flex-col items-center text-xs font-medium transition-colors" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">
-                  <Icon name="user" className="w-6 h-6" />
-                  <span className="hidden lg:block mt-1">Login</span>
-              </HoverLink>
-            )}
-            {isAuthenticated && (
-              <HoverLink href="#" className="flex flex-col items-center text-xs font-medium transition-colors" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">
-                <Icon name="heart" className="w-6 h-6" />
-                <span className="hidden lg:block mt-1">Favorites</span>
-              </HoverLink>
-            )}
-            {isAuthenticated && (
-             <HoverLink href="/cart" className="relative hidden sm:flex flex-col items-center text-xs font-medium transition-colors" defaultColor="var(--brand-muted)" hoverColor="var(--brand-blue)">
-              <Icon name="bag" className="w-6 h-6" />
-              <span className="hidden lg:block mt-1">Cart</span>
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 right-0 text-white text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center" style={{ backgroundColor: 'var(--brand-pink)' }}>
-                  {cartItemCount}
-                </span>
-              )}
-            </HoverLink>
-            )}
           </div>
-        </div>
-        {isMobileSearchOpen && (
-          <div className="lg:hidden py-4">
-            <div className="relative w-full">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Icon name="search" className="w-5 h-5" style={{ color: 'var(--brand-muted)' }} />
-              </div>
-              <input
+
+          {/* Search Bar - Desktop */}
+          <div className="hidden md:flex flex-1 max-w-md mx-6">
+            <form onSubmit={handleSearch} className="w-full relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
                 type="text"
-                placeholder="Search in Naya Lumière"
+                placeholder="Search products, brands..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearch}
-                style={{ backgroundColor: 'var(--brand-secondary)', borderColor: 'var(--brand-gray-100)', color: 'var(--brand-text)' }}
-                className="block w-full border rounded-md py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:ring-1 focus-border-brand-pink focus-ring-brand-pink"
+                className="w-full pl-10 pr-4 h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-[var(--brand-pink)] focus:ring-[var(--brand-pink)]"
               />
-              <button onClick={() => setIsMobileSearchOpen(false)} className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <Icon name="x" className="w-5 h-5" style={{ color: 'var(--brand-muted)' }} />
-              </button>
-            </div>
+            </form>
           </div>
-        )}
-      </div>
-      
-      {/* Sub Navigation (Desktop) */}
-       {/* Sub Navigation (Desktop) */}
-       <nav className="hidden lg:block border-t" style={{ borderColor: 'rgba(229, 231, 235, 0.5)' }}>
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="relative flex items-center justify-center h-12">
-              
-              {/* Left-aligned Premium link */}
-              <div className="absolute left-8 h-full flex items-center">
-                {premiumLink && (
-                  <Link
-                    href={premiumLink.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`text-sm font-semibold transition-colors duration-200 whitespace-nowrap px-3 py-1 rounded-full ${pathname === premiumLink.href ? 'font-bold cursor-default' : 'hover:opacity-80'}`}
-                    style={{ backgroundColor: 'var(--brand-premium-bg)', color: 'var(--brand-blue)' }}
-                  >
-                    {premiumLink.name}
-                  </Link>
-                )}
-              </div>
 
-              {/* Centered links */}
-              <div className="flex items-center space-x-6 overflow-x-auto no-scrollbar">
-                {otherLinks.map((link) => {
-                  const isPromo = link.name === 'Promotions';
-                  const isBestSeller = link.name === 'Best Sellers';
-                  let specialStyle = {};
-                  if(isPromo) specialStyle = { backgroundColor: 'var(--brand-highlight-bg)', color: 'var(--brand-pink)' };
-                  if(isBestSeller) specialStyle = { backgroundColor: 'var(--brand-highlight-bg)', color: 'var(--brand-pink)' };
+          {/* Right Icons - Enhanced with loyalty */}
+          <div className="flex items-center space-x-2 md:space-x-3">
+            {/* Loyalty Points - Desktop */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => router.push('/loyalty')}
+            >
+              <Star className="h-4 w-4 text-[var(--brand-pink)]" />
+              <span className="text-sm">{loyaltyPoints.toLocaleString()}</span>
+            </Button>
 
-                  const isActive = pathname === link.href;
-                  const stateClasses = isActive
-                    ? 'font-bold cursor-default'
-                    : 'hover:text-brand-blue'; // Non-color classes remain
-
-                  return (
-                    <Link
-                      key={link.name}
-                      href={link.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`text-sm font-semibold transition-colors duration-200 whitespace-nowrap px-3 py-1 rounded-full ${stateClasses}`}
-                      style={{
-                        ...specialStyle,
-                        color: isActive ? 'var(--brand-pink)' : 'var(--brand-text)',
-                      }}
-                    >
-                      {link.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
+            <Button variant="ghost" size="sm" className="md:hidden">
+              <Search className="h-5 w-5" />
+            </Button>
+            
+            <Button variant="ghost" size="sm" onClick={handleAccountClick}>
+              <User className="h-5 w-5" />
+            </Button>
+            
+            <Button variant="ghost" size="sm" className="relative" onClick={() => router.push('/account?tab=wishlist')}>
+              <Heart className="h-5 w-5" />
+              <Badge className="absolute -top-1 -right-1 bg-[var(--brand-pink)] text-white text-xs h-4 w-4 p-0 flex items-center justify-center">
+                2
+              </Badge>
+            </Button>
+            
+            <Button variant="ghost" size="sm" className="relative" onClick={() => router.push('/cart')}>
+              <ShoppingBag className="h-5 w-5" />
+              {cartCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 bg-[var(--brand-pink)] text-white text-xs h-5 w-5 p-0 flex items-center justify-center">
+                  {cartCount}
+                </Badge>
+              )}
+            </Button>
           </div>
-        </nav>
-
-        {/* Mobile Menu */}
-        <div className={`fixed inset-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:hidden`}>
-            <div className="fixed inset-0 bg-black/50" onClick={() => setIsMobileMenuOpen(false)}></div>
-            <div className="relative w-4/5 max-w-sm h-full shadow-xl p-6 flex flex-col" style={{ backgroundColor: 'var(--brand-background)' }}>
-                <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-4 right-4 p-2" style={{ color: 'var(--brand-text)' }}>
-                    <Icon name="x" className="w-6 h-6" />
-                </button>
-                <h2 className="text-2xl font-serif mb-8" style={{ color: 'var(--brand-text)' }}>Menu</h2>
-                <nav className="flex flex-col space-y-4">
-                    {NAV_LINKS.map(link => (
-                        <Link 
-                            key={link.name} 
-                            href={link.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={`text-lg font-medium hover-brand-pink`}
-                            style={{ color: pathname === link.href ? 'var(--brand-pink)' : 'var(--brand-text)' }}
-                        >
-                            {link.name}
-                        </Link>
-                    ))}
-                </nav>
-            </div>
         </div>
-    </header>
-  );
-};
 
-export default Header;
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <nav className="md:hidden mt-4 pb-4 border-t border-gray-100 pt-4">
+            <div className="flex flex-col space-y-3">
+              {/* Loyalty Points - Mobile */}
+              <button 
+                onClick={() => { router.push('/loyalty'); setIsMenuOpen(false); }} 
+                className="flex items-center gap-2 text-[var(--brand-pink)] hover:text-[var(--brand-pink-dark)] transition-colors text-left font-medium"
+              >
+                <Star className="h-4 w-4" />
+                <span>Loyalty Program ({loyaltyPoints.toLocaleString()} points)</span>
+              </button>
+              <div className="border-t border-gray-100 my-2"></div>
+              <button onClick={() => { router.push('/new-arrivals'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">New Arrivals</button>
+              <button onClick={() => { router.push('/SkinCare'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Skincare</button>
+              <button onClick={() => { router.push('/makeup'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Makeup</button>
+              <button onClick={() => { router.push('/fragrance'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Fragrance</button>
+              <button onClick={() => { router.push('/collections'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Collections</button>
+              <button onClick={() => { router.push('/gift-sets'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Gift Sets</button>
+              <button onClick={() => { router.push('/sales'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Sales</button>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <form onSubmit={handleSearch} className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10"
+                />
+              </form>
+            </div>
+                    </nav>
+                  )}
+                </Container>
+          
+                {/* Sub Navigation - Enhanced with loyalty */}
+                <div className={`bg-gray-50 border-b border-gray-100 transition-all duration-300 ${
+                  isScrolled ? 'opacity-0 h-0 py-0' : 'opacity-100 h-auto py-3'
+                } overflow-hidden`}>
+                  <div>
+                    <nav className="hidden md:flex items-center justify-center space-x-8">
+                      <button onClick={() => router.push('/new-arrivals')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">New Arrivals</button>
+                      <button onClick={() => router.push('/SkinCare')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Skincare</button>
+                      <button onClick={() => router.push('/makeup')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Makeup</button>
+                      <button onClick={() => router.push('/fragrance')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Fragrance</button>
+                      <button onClick={() => router.push('/collections')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Collections</button>
+                      <button onClick={() => router.push('/gift-sets')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Gift Sets</button>
+                      <button
+                        onClick={() => router.push('/loyalty')}
+                        className="text-[var(--brand-pink)] hover:text-[var(--brand-pink-dark)] transition-colors text-sm font-medium flex items-center gap-1"
+                      >
+                        <Gift className="h-3 w-3" />
+                        Loyalty
+                      </button>
+                      <button onClick={() => router.push('/sales')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Sales</button>
+                    </nav>
+                  </div>
+                </div>
+              </header>
+            );}

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Icon } from '../components/Icon';
+import { User, ShoppingBag, MapPin, Heart, Package, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AdminLayout = ({ children }) => {
@@ -23,6 +23,16 @@ const AdminLayout = ({ children }) => {
         { to: '/admin/brands', text: 'Brands', icon: 'heart' },
         { to: '/admin/orders', text: 'Orders', icon: 'orders' },
     ];
+
+    const IconMap = {
+        user: User,
+        bag: ShoppingBag,
+        'map-pin': MapPin,
+        heart: Heart,
+        orders: Package, // Assuming 'orders' maps to Package icon
+        logout: LogOut,
+        menu: Menu,
+    };
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -51,7 +61,7 @@ const AdminLayout = ({ children }) => {
                                             }`}
                                             onClick={() => setIsSidebarOpen(false)}
                                         >
-                                            <Icon name={item.icon} className="w-5 h-5" />
+                                            {React.createElement(IconMap[item.icon], { className: "w-5 h-5" })}
                                             <span>{item.text}</span>
                                         </Link>
                                     </li>
@@ -60,11 +70,11 @@ const AdminLayout = ({ children }) => {
                         </nav>
                          <div className="p-4 border-t border-slate-700 space-y-2">
                             <Link href="/" className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-md">
-                                <Icon name="logout" className="w-5 h-5 -scale-x-100"/>
+                                {React.createElement(IconMap['logout'], { className: "w-5 h-5 -scale-x-100"})}
                                 <span>Back to Store</span>
                             </Link>
                             <button onClick={handleLogout} className="w-full flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-md">
-                                <Icon name="logout" className="w-5 h-5"/>
+                                {React.createElement(IconMap['logout'], { className: "w-5 h-5"})}
                                 <span>Logout</span>
                             </button>
                         </div>
@@ -93,7 +103,7 @@ const AdminLayout = ({ children }) => {
                                             : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
                                     }`}
                                 >
-                                    <Icon name={item.icon} className="w-5 h-5" />
+                                    {React.createElement(IconMap[item.icon], { className: "w-5 h-5" })}
                                     <span>{item.text}</span>
                                 </Link>
                             </li>
@@ -102,11 +112,11 @@ const AdminLayout = ({ children }) => {
                 </nav>
                  <div className="p-4 border-t border-slate-700 space-y-2">
                     <Link href="/" className="flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-md">
-                        <Icon name="logout" className="w-5 h-5 -scale-x-100"/>
+                        {React.createElement(IconMap['logout'], { className: "w-5 h-5 -scale-x-100"})}
                         <span>Back to Store</span>
                     </Link>
                     <button onClick={handleLogout} className="w-full flex items-center space-x-3 px-4 py-3 text-slate-300 hover:bg-slate-700/50 hover:text-white rounded-md">
-                        <Icon name="logout" className="w-5 h-5"/>
+                        {React.createElement(IconMap['logout'], { className: "w-5 h-5"})}
                         <span>Logout</span>
                     </button>
                 </div>
@@ -114,7 +124,7 @@ const AdminLayout = ({ children }) => {
             <main className="flex-1 flex flex-col overflow-hidden">
                 <header className="bg-white shadow-sm p-4 flex items-center">
                     <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 -ml-2 mr-2 text-gray-600">
-                        <Icon name="menu" className="w-6 h-6" />
+                        {React.createElement(IconMap['menu'], { className: "w-6 h-6" })}
                     </button>
                     <h1 className="text-xl font-semibold text-gray-800">Admin Portal</h1>
                 </header>

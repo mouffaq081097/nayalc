@@ -4,9 +4,18 @@ import db from '@/lib/db';
 // Helper function to fetch order items for a given order ID using a specific client
 const fetchOrderItems = async (orderId, client) => {
     const sql = `
-        SELECT product_id as "productId", quantity, price
-        FROM order_items
-        WHERE order_id = $1;
+        SELECT 
+            oi.product_id as "productId", 
+            oi.quantity, 
+            oi.price,
+            p.name,
+            b.name as "brandName",
+            pi.image_url as "imageUrl"
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        LEFT JOIN brands b ON p.brand_id = b.id
+        LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
+        WHERE oi.order_id = $1;
     `;
     const { rows } = await client.query(sql, [orderId]);
     return rows.map(item => ({ ...item, price: parseFloat(item.price) }));

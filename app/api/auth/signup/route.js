@@ -34,16 +34,16 @@ import bcrypt from 'bcryptjs';
  */
 export async function POST(request) {
     try {
-        const { username, email, password } = await request.json();
+        const { username, email, password, firstName, lastName } = await request.json();
 
-        if (!username || !email || !password) {
-            return NextResponse.json({ message: 'Username, email, and password are required.' }, { status: 400 });
+        if (!username || !email || !password || !firstName || !lastName) {
+            return NextResponse.json({ message: 'All fields are required.' }, { status: 400 });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const sql = 'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email';
-        const { rows } = await db.query(sql, [username, email, hashedPassword]);
+        const sql = 'INSERT INTO users (username, email, password_hash, first_name, last_name) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, first_name, last_name';
+        const { rows } = await db.query(sql, [username, email, hashedPassword, firstName, lastName]);
 
         return NextResponse.json({ message: 'User registered successfully!', user: rows[0] }, { status: 201 });
 

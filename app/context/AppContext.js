@@ -51,6 +51,7 @@ export const AppProvider = ({ children }) => {
         ...product,
         price: parseFloat(product.price), // Ensure price is a number
         imageUrls: product.imageUrl ? [product.imageUrl] : [], // Convert imageUrl string to imageUrls array
+        image: product.imageUrl || null, // Add 'image' property for ProductCard
         brand: product.brandName, // Map brandName from backend to 'brand' property
       }));
       setProducts(processedProducts);
@@ -72,8 +73,10 @@ export const AppProvider = ({ children }) => {
         ...product,
         price: parseFloat(product.price), // Ensure price is a number
         imageUrls: product.imageUrl ? [product.imageUrl] : [], // Convert imageUrl string to imageUrls array
+        image: product.imageUrl || null, // Add 'image' property for ProductCard
+        brand: product.brandName, // Map brandName from backend to 'brand' property
       }));
-      return processedProducts; // Return the fetched products
+      return processedProducts;
     } catch (error) {
       console.error(`Error fetching products for category ${categoryName}:`, error);
       return []; // Return empty array on error
@@ -127,7 +130,18 @@ export const AppProvider = ({ children }) => {
         throw new Error('Failed to fetch brands');
       }
       const data = await response.json();
-      setBrands(data);
+
+      const brandDescriptions = {
+        'Gernetic': "Gernetic is a pioneering skincare brand renowned for its advanced cellular biology and natural ingredient formulations, offering targeted solutions for diverse skin concerns with a focus on holistic beauty.",
+        'Zorah': "Zorah Biocosmetiques delivers certified organic, high-performance skincare and cosmetics, harnessing the potent benefits of argan oil and other natural ingredients for radiant, healthy skin, committed to ethical and sustainable practices.",
+      };
+
+      const processedBrands = data.map(brand => ({
+        ...brand,
+        description: brandDescriptions[brand.name] || "Discover a world of beauty and wellness with our premium selection of products from this esteemed brand, crafted for exceptional results and a luxurious experience."
+      }));
+
+      setBrands(processedBrands);
     } catch (error) {
       console.error('Error fetching brands:', error);
       setBrands([]);

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useAppContext } from '../../context/AppContext';
-import { Icon } from '../../components/Icon';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import Modal from '../../components/Modal';
 
 const ManageProducts = () => {
@@ -20,6 +20,7 @@ const ManageProducts = () => {
             price: product?.price || 0,
             stock: product?.stock || 0,
             category: product?.categoryName || '',
+            categoryIds: product?.categories?.map(cat => cat.id) || [],
             brand: product?.brandName || '',
             imageUrl: product?.imageUrl || '',
             additionalImages: product?.additionalImages || [],
@@ -136,7 +137,7 @@ const ManageProducts = () => {
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-800">Manage Products</h1>
                 <button onClick={handleOpenAddModal} className="bg-brand-button-bg text-white px-4 py-2 rounded-md hover:opacity-90 flex items-center space-x-2">
-                    <Icon name="plus" className="w-5 h-5" />
+                    <Plus name="plus" className="w-5 h-5" />
                     <span>Add Product</span>
                 </button>
             </div>
@@ -165,8 +166,8 @@ const ManageProducts = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">AED {product.price.toFixed(2)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                         <div className="flex justify-center space-x-3">
-                                            <button onClick={() => handleOpenEditModal(product)} className="text-blue-600 hover:text-blue-900"><Icon name="edit" className="w-5 h-5" /></button>
-                                            <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900"><Icon name="delete" className="w-5 h-5" /></button>
+                                            <button onClick={() => handleOpenEditModal(product)} className="text-blue-600 hover:text-blue-900"><Edit className="w-5 h-5" /></button>
+                                            <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900"><Trash2 className="w-5 h-5" /></button>
                                         </div>
                                     </td>
                                 </tr>

@@ -15,7 +15,7 @@ const CategoryCard = ({ category }) => {
                 alt={category.name}
                 fill // Use fill to make the image take up the parent's size
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" // Responsive image sizes
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                className="object-contain transition-transform duration-500 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white p-6">

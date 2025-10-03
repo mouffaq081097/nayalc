@@ -1,229 +1,264 @@
 'use client';
+import { useState } from 'react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { ArrowLeft, Plus, Minus, X, ShoppingBag, Heart, Gift } from 'lucide-react';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { useRouter } from 'next/navigation';
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useCart } from '../context/CartContext';
-import { Icon } from '../components/Icon';
 
-const CartPage = () => {
-    const { cartItems, updateQuantity, removeFromCart } = useCart();
+export default function CartPage() {
+  const router = useRouter();
+  const { cartItems, updateQuantity, removeFromCart: removeItem } = useCart();
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
 
-    const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    const shipping = subtotal > 50 ? 0 : 10;
-    const total = subtotal + shipping;
+  const handleCheckout = () => {
+    router.push('/checkout');
+  };
 
-    // State for hover effects
-    const [isContinueShoppingHovered, setContinueShoppingHovered] = useState(false);
-    const [isRemoveHovered, setRemoveHovered] = useState({}); // Use an object for multiple remove buttons
-    const [isMinusHovered, setMinusHovered] = useState({}); // Use an object for multiple minus buttons
-    const [isPlusHovered, setPlusHovered] = useState({});   // Use an object for multiple plus buttons
-    const [isApplyPromoHovered, setApplyPromoHovered] = useState(false);
-    const [isProceedToCheckoutHovered, setProceedToCheckoutHovered] = useState(false);
+  const handleBackClick = () => {
+    router.push('/');
+  };
 
-    // State for input focus effects
-    const [isPromoInputFocused, setPromoInputFocused] = useState(false);
-    const [isNotesTextareaFocused, setNotesTextareaFocused] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const savings = cartItems.reduce((sum, item) => 
+    sum + ((item.product.originalPrice || item.product.price) - item.product.price) * item.quantity, 0
+  );
+  const shipping = subtotal >= 200 ? 0 : 8.99;
+  const promoDiscount = appliedPromo === 'WELCOME10' ? subtotal * 0.1 : 0;
+  const total = subtotal + shipping - promoDiscount;
 
-    useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+  const applyPromoCode = () => {
+    if (promoCode.toUpperCase() === 'WELCOME10') {
+      setAppliedPromo('WELCOME10');
+      setPromoCode('');
+    }
+  };
 
-    return (
-        <div style={{ backgroundColor: 'var(--brand-secondary)' }}>
-            <div style={{ maxWidth: '80rem', margin: '0 auto', padding: isMobile ? '1.5rem 1rem' : '3rem 1rem' }}>
-                <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 style={{ fontSize: '2.25rem', fontFamily: 'serif', fontWeight: 'bold', color: 'var(--brand-text)' }}>Shopping Cart</h1>
-                    <p style={{ color: 'var(--brand-muted)', marginTop: '0.5rem' }}>Review your items and proceed to checkout.</p>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={handleBackClick}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Continue Shopping
+            </Button>
+            <div className="text-center flex-1">
+              <h1 className="text-2xl font-serif bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
+                Your Cart
+              </h1>
+              <p className="text-sm text-gray-500">{cartItems.length} items</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        {cartItems.length === 0 ? (
+          /* Empty Cart */
+          <div className="text-center py-16">
+            <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-6" />
+            <h2 className="text-2xl mb-4">Your cart is empty</h2>
+            <p className="text-gray-600 mb-8">Discover our beautiful selection of premium beauty products</p>
+            <Button 
+              onClick={handleBackClick}
+              className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
+            >
+              Start Shopping
+            </Button>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Cart Items */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
+                  <h2 className="text-xl font-medium">Shopping Cart</h2>
+                </div>
+                
+                <div className="space-y-0">
+                  {cartItems.map((item, index) => (
+                    <div key={item.product.id} className={`p-6 flex gap-4 ${index !== cartItems.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                      {/* Product Image */}
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-white flex-shrink-0">
+                        <ImageWithFallback
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="text-gray-900 font-medium truncate">{item.product.name}</h3>
+                            <p className="text-sm text-[var(--brand-blue)]">{item.product.brand}</p>
+                            <p className="text-sm text-gray-500 truncate">{item.product.description}</p>
+                            {(item.product.size || item.product.shade) && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {item.product.size && `Size: ${item.product.size}`}
+                                {item.product.size && item.product.shade && ' • '}
+                                {item.product.shade && `Shade: ${item.product.shade}`}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeItem(item.product.id)}
+                            className="text-gray-400 hover:text-red-500 -mt-1"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-medium">AED {item.product.price}</span>
+                            {item.product.originalPrice && (
+                              <span className="text-sm text-gray-500 line-through">AED {item.product.originalPrice}</span>
+                            )}
+                          </div>
+
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 text-center text-sm">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Promo Code */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h3 className="font-medium mb-4">Promo Code</h3>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter promo code"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={applyPromoCode}
+                    variant="outline"
+                  >
+                    Apply
+                  </Button>
+                </div>
+                {appliedPromo && (
+                  <div className="mt-3 text-sm text-green-600">
+                    ✓ Promo code &quot;{appliedPromo}&quot; applied - 10% off!
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Order Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
+                <h3 className="text-xl font-medium mb-6">Order Summary</h3>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>AED {subtotal.toFixed(2)}</span>
+                  </div>
+                  
+                  {savings > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>You Save</span>
+                      <span>-AED {savings.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {promoDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Promo Discount</span>
+                      <span>-AED {promoDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between text-sm">
+                    <span>Shipping</span>
+                    <span>{shipping === 0 ? 'FREE' : `AED ${shipping}`}</span>
+                  </div>
+                  
+                  {shipping === 0 && (
+                    <div className="text-xs text-green-600">
+                      ✓ Free shipping on orders over 200 AED
+                    </div>
+                  )}
+                </div>
+                
+                <div className="border-t border-gray-100 pt-4 mb-6">
+                  <div className="flex justify-between font-medium text-lg">
+                    <span>Total</span>
+                    <span>AED {total.toFixed(2)}</span>
+                  </div>
                 </div>
 
-                {cartItems.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '5rem 0', backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
-                        <p style={{ fontSize: '1.25rem', color: 'var(--brand-muted)', marginBottom: '1rem' }}>Your cart is empty.</p>
-                        <Link
-                            href="/"
-                            style={{
-                                backgroundColor: 'var(--brand-button-bg)',
-                                color: 'white',
-                                padding: '0.75rem 2rem',
-                                borderRadius: '9999px',
-                                fontWeight: 'bold',
-                                transition: 'opacity 0.3s',
-                                opacity: isContinueShoppingHovered ? 0.9 : 1,
-                            }}
-                            onMouseEnter={() => setContinueShoppingHovered(true)}
-                            onMouseLeave={() => setContinueShoppingHovered(false)}
-                        >
-                            Continue Shopping
-                        </Link>
-                    </div>
-                ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '2rem', alignItems: 'flex-start' }}>
-                        <div style={{ gridColumn: isMobile ? 'span 1' : 'span 2 / span 2', backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
-                             <h2 style={{ fontSize: '1.5rem', fontFamily: 'serif', fontWeight: 'bold', color: 'var(--brand-text)', marginBottom: '1rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '1rem' }}>Your Items ({cartItems.length})</h2>
-                            <ul>
-                                {cartItems.map((item, index) => (
-                                    <li key={item.product._id || index} style={{ display: isMobile ? 'block' : 'flex', alignItems: 'center', padding: '1.5rem 0', textAlign: isMobile ? 'center' : 'left' }}>
-                                    <Image src={item.product.imageUrl} alt={item.product.name} width={96} height={96} objectFit="contain" className="rounded-md" style={{ margin: isMobile ? '0 auto 1rem' : '0' }} />
-                                        <div style={{ marginLeft: isMobile ? '0' : '1.5rem', flexGrow: 1 }}>
-                                            <h3 style={{ fontSize: '1.125rem', fontWeight: 'semibold', color: 'var(--brand-text)', fontFamily: 'serif' }}>{item.product.name}</h3>
-                                            <p style={{ color: 'var(--brand-muted)', fontSize: '0.875rem' }}>AED {item.product.price.toFixed(2)}</p>
-                                            <button
-                                                onClick={() => removeFromCart(item.product._id)}
-                                                style={{
-                                                    marginTop: '0.5rem',
-                                                    fontSize: '0.75rem',
-                                                    color: isRemoveHovered[item.product._id] ? 'rgb(220 38 38)' : 'rgb(239 68 68)',
-                                                    fontWeight: 'semibold',
-                                                }}
-                                                onMouseEnter={() => setRemoveHovered(prev => ({ ...prev, [item.product._id]: true }))}
-                                                onMouseLeave={() => setRemoveHovered(prev => ({ ...prev, [item.product._id]: false }))}
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: isMobile ? 'center' : 'flex-start', marginTop: isMobile ? '1rem' : '0' }}>
-                                             <button
-                                                onClick={() => updateQuantity(item.product._id, item.quantity - 1)}
-                                                style={{
-                                                    padding: '0.25rem',
-                                                    borderRadius: '9999px',
-                                                    border: '1px solid #D1D5DB',
-                                                    opacity: item.quantity <= 1 ? 0.5 : 1,
-                                                    backgroundColor: isMinusHovered[item.product._id] ? '#F3F4F6' : 'transparent',
-                                                }}
-                                                disabled={item.quantity <= 1}
-                                                onMouseEnter={() => setMinusHovered(prev => ({ ...prev, [item.product._id]: true }))}
-                                                onMouseLeave={() => setMinusHovered(prev => ({ ...prev, [item.product._id]: false }))}
-                                            >
-                                                <Icon name="minus" style={{ width: '1rem', height: '1rem', color: 'var(--brand-text)' }}/>
-                                            </button>
-                                            <span style={{ width: '2.5rem', textAlign: 'center', fontWeight: 'semibold', color: 'var(--brand-text)' }}>{item.quantity}</span>
-                                            <button
-                                                onClick={() => updateQuantity(item.product._id, item.quantity + 1)}
-                                                style={{
-                                                    padding: '0.25rem',
-                                                    borderRadius: '9999px',
-                                                    border: '1px solid #D1D5DB',
-                                                    backgroundColor: isPlusHovered[item.product._id] ? '#F3F4F6' : 'transparent',
-                                                }}
-                                                onMouseEnter={() => setPlusHovered(prev => ({ ...prev, [item.product._id]: true }))}
-                                                onMouseLeave={() => setPlusHovered(prev => ({ ...prev, [item.product._id]: false }))}
-                                            >
-                                                <Icon name="plus" style={{ width: '1rem', height: '1rem', color: 'var(--brand-text)' }}/>
-                                            </button>
-                                        </div>
-                                        <p style={{ width: isMobile ? '100%' : '6rem', textAlign: isMobile ? 'center' : 'right', fontWeight: 'semibold', color: 'var(--brand-text)', marginTop: isMobile ? '1rem' : '0' }}>AED {(item.product.price * item.quantity).toFixed(2)}</p>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div style={{ gridColumn: 'span 1', backgroundColor: 'white', padding: '1.5rem', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', height: 'fit-content' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontFamily: 'serif', fontWeight: 'bold', color: 'var(--brand-text)', marginBottom: '1.5rem', borderBottom: '1px solid #E5E7EB', paddingBottom: '1rem' }}>Order Summary</h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--brand-text)' }}>
-                                    <span>Subtotal</span>
-                                    <span style={{ fontWeight: 'semibold' }}>AED {subtotal.toFixed(2)}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--brand-text)' }}>
-                                    <span>Shipping</span>
-                                    <span style={{ fontWeight: 'semibold' }}>{shipping === 0 ? 'Free' : `AED ${shipping.toFixed(2)}`}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.25rem', color: 'var(--brand-text)', borderTop: '1px solid #E5E7EB', paddingTop: '1rem', marginTop: '0.5rem' }}>
-                                    <span>Total</span>
-                                    <span>AED {total.toFixed(2)}</span>
-                                </div>
-                            </div>
-                             <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div>
-                                    <label htmlFor="promo-code" style={{ fontSize: '0.875rem', fontWeight: 'medium', color: 'var(--brand-text)' }}>Promo Code</label>
-                                    <div style={{ display: 'flex', marginTop: '0.25rem' }}>
-                                        <input
-                                            type="text"
-                                            id="promo-code"
-                                            placeholder="Enter code"
-                                            style={{
-                                                flexGrow: 1,
-                                                border: '1px solid #D1D5DB',
-                                                borderRadius: '0.375rem 0 0 0.375rem',
-                                                padding: '0.5rem',
-                                                fontSize: '0.875rem',
-                                                outline: 'none',
-                                                borderColor: isPromoInputFocused ? 'var(--brand-pink)' : '#D1D5DB',
-                                                boxShadow: isPromoInputFocused ? '0 0 0 1px var(--brand-pink)' : 'none',
-                                            }}
-                                            onFocus={() => setPromoInputFocused(true)}
-                                            onBlur={() => setPromoInputFocused(false)}
-                                        />
-                                        <button
-                                            style={{
-                                                backgroundColor: 'var(--brand-text)',
-                                                color: 'white',
-                                                padding: '0.5rem 1rem',
-                                                borderRadius: '0 0.375rem 0.375rem 0',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 'semibold',
-                                                opacity: isApplyPromoHovered ? 0.9 : 1,
-                                            }}
-                                            onMouseEnter={() => setApplyPromoHovered(true)}
-                                            onMouseLeave={() => setApplyPromoHovered(false)}
-                                        >
-                                            Apply
-                                        </button>
-                                    </div>
-                                </div>
-                                <div>
-                                     <label htmlFor="order-notes" style={{ fontSize: '0.875rem', fontWeight: 'medium', color: 'var(--brand-text)' }}>Add a note</label>
-                                     <textarea
-                                        id="order-notes"
-                                        rows={2}
-                                        placeholder="Gift message, special instructions..."
-                                        style={{
-                                            width: '100%',
-                                            marginTop: '0.25rem',
-                                            border: '1px solid #D1D5DB',
-                                            borderRadius: '0.375rem',
-                                            padding: '0.5rem',
-                                            fontSize: '0.875rem',
-                                            outline: 'none',
-                                            borderColor: isNotesTextareaFocused ? 'var(--brand-pink)' : '#D1D5DB',
-                                            boxShadow: isNotesTextareaFocused ? '0 0 0 1px var(--brand-pink)' : 'none',
-                                        }}
-                                        onFocus={() => setNotesTextareaFocused(true)}
-                                        onBlur={() => setNotesTextareaFocused(false)}
-                                    ></textarea>
-                                </div>
-                            </div>
-                            <Link
-                                href="/checkout"
-                                style={{
-                                    display: 'block',
-                                    textAlign: 'center',
-                                    width: '100%',
-                                    marginTop: '1.5rem',
-                                    backgroundColor: 'var(--brand-button-bg)',
-                                    color: 'white',
-                                    padding: '0.75rem 0',
-                                    borderRadius: '9999px',
-                                    fontWeight: 'bold',
-                                    transition: 'opacity 0.3s',
-                                    opacity: isProceedToCheckoutHovered ? 0.9 : 1,
-                                }}
-                                onMouseEnter={() => setProceedToCheckoutHovered(true)}
-                                onMouseLeave={() => setProceedToCheckoutHovered(false)}
-                            >
-                                Proceed to Checkout
-                            </Link>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity"
+                    size="lg"
+                    onClick={handleCheckout}
+                  >
+                    Proceed to Checkout
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleBackClick}
+                  >
+                    Continue Shopping
+                  </Button>
+                </div>
 
-export default CartPage;
+                {/* Features */}
+                <div className="mt-8 space-y-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-[var(--brand-pink)]" />
+                    <span>Free gift with orders over $100</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-[var(--brand-pink)]" />
+                    <span>30-day return policy</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="h-4 w-4 text-[var(--brand-pink)]" />
+                    <span>Secure checkout</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

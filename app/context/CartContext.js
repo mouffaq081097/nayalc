@@ -61,9 +61,10 @@ export const CartProvider = ({ children }) => {
                     const parsedCart = (data.cart || []).map(item => ({
                         quantity: item.quantity,
                         product: {
-                            _id: item.productId,
+                            id: item.productId,
                             name: item.name,
                             price: parseFloat(item.price),
+                            description: item.description,
                             imageUrl: item.imageUrl,
                         }
                     }));
@@ -88,15 +89,20 @@ export const CartProvider = ({ children }) => {
 
 
     const addToCart = (product, quantity) => {
+        const productWithParsedPrice = {
+            ...product,
+            price: parseFloat(product.price),
+        };
+
         setCart((prevItems) => { // Use setCart from AppContext
-            const existingItemIndex = prevItems.findIndex(item => item.product._id === product._id);
+            const existingItemIndex = prevItems.findIndex(item => item.product.id === productWithParsedPrice.id);
 
             let updatedItems;
             if (existingItemIndex > -1) {
                 updatedItems = [...prevItems];
                 updatedItems[existingItemIndex].quantity += quantity;
             } else {
-                updatedItems = [...prevItems, { product, quantity }];
+                updatedItems = [...prevItems, { product: productWithParsedPrice, quantity }];
             }
             return updatedItems;
         });
@@ -104,7 +110,7 @@ export const CartProvider = ({ children }) => {
 
     const removeFromCart = (productId) => {
         setCart((prevItems) => { // Use setCart from AppContext
-            const updatedItems = prevItems.filter(item => item.product._id !== productId);
+            const updatedItems = prevItems.filter(item => item.product.id !== productId);
             addToast("Item removed from cart!");
             return updatedItems;
         });
@@ -113,7 +119,7 @@ export const CartProvider = ({ children }) => {
     const updateQuantity = (productId, newQuantity) => {
         setCart((prevItems) => { // Use setCart from AppContext
             const updatedItems = prevItems.map(item =>
-                item.product._id === productId ? { ...item, quantity: newQuantity } : item
+                item.product.id === productId ? { ...item, quantity: newQuantity } : item
             );
             return updatedItems;
         });

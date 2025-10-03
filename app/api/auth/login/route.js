@@ -44,7 +44,7 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Email and password are required.' }, { status: 400 });
         }
 
-        const sql = 'SELECT id, username, email, password_hash FROM users WHERE email = $1';
+        const sql = 'SELECT id, username, email, password_hash, first_name, last_name FROM users WHERE email = $1';
         const { rows } = await db.query(sql, [email]);
 
         if (rows.length === 0) {

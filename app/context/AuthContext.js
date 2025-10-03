@@ -44,13 +44,13 @@ export const AuthProvider = ({ children }) => {
     // localStorage.setItem('token', data.token);
   };
 
-  const register = async (username, email, password) => {
+  const register = async (username, email, password, firstName, lastName) => {
     const response = await fetch(`/api/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, firstName, lastName }),
     });
 
     if (!response.ok) {

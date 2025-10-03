@@ -1,46 +1,131 @@
 'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import React from 'react';
-import { Icon } from './Icon';
+import { Home, ShoppingBag, Star, User, Heart } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
 
-const MobileBottomNav = () => {
+
+
+const navItems = [
+  { id: 'home', icon: Home, label: 'Home' },
+  { id: 'wishlist', icon: Heart, label: 'Wishlist' },
+  { id: 'loyalty', icon: Star, label: 'Rewards' },
+  { id: 'cart', icon: ShoppingBag, label: 'Cart' },
+  { id: 'account', icon: User, label: 'Account' },
+];
+
+function MobileBottomNav() {
+  const router = useRouter();
   const pathname = usePathname();
+  const currentPage = pathname.substring(1);
   const { cartItems } = useCart();
-  const { isAuthenticated } = useAuth();
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const handleItemClick = (itemId) => {
+    const routeMap = {
+      home: '/',
+      cart: '/cart',
+      account: '/account',
+      loyalty: '/loyalty',
+      wishlist: '/wishlist',
+    };
+    const route = routeMap[itemId] || `/${itemId}`;
+    router.push(route);
+  };
 
-  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
-  const navItems = [
-    { name: 'Home', icon: 'home', href: '/' },
-    { name: 'Shop', icon: 'grid', href: '/all-products' },
-    { name: 'Account', icon: 'user', href: isAuthenticated ? '/account' : '/auth' },
-    { name: 'Cart', icon: 'bag', href: '/cart', count: cartItemCount },
-  ];
+  const isActive = (itemId) => {
+    const activeMap = {
+      home: '',
+      cart: 'cart',
+      account: 'account',
+      loyalty: 'loyalty',
+      wishlist: 'wishlist',
+    };
+    return itemId in activeMap && activeMap[itemId] === currentPage;
+  };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 lg:hidden">
-      <div className="flex justify-around h-16 items-center max-w-lg mx-auto">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+      {/* Background with blur effect */}
+      <div className="absolute inset-0 bg-white/95 backdrop-blur-lg border-t border-gray-100"></div>
+      
+      {/* Navigation Items */}
+      <nav className="relative flex items-center justify-around px-2 py-2 safe-area-bottom">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isItemActive = isActive(item.id);
+          
           return (
-            <Link href={item.href} key={item.name} className="flex flex-col items-center justify-center text-xs font-medium relative" style={{ color: isActive ? 'var(--brand-pink)' : 'var(--brand-muted)' }}>
-              <Icon name={item.icon} className="w-6 h-6" />
-              <span className="mt-1">{item.name}</span>
-              {item.count > 0 && item.name === 'Cart' && (
-                <span className="absolute top-0 right-0 -mt-1 -mr-2 bg-brand-pink text-white text-[10px] font-semibold rounded-full h-4 w-4 flex items-center justify-center">
-                  {item.count}
-                </span>
+            <button
+              key={item.id}
+              onClick={() => handleItemClick(item.id)}
+              className="relative flex flex-col items-center justify-center p-3 min-w-[60px] group"
+            >
+              {/* Active indicator */}
+              {isItemActive && (
+                <motion.div
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-gradient-to-r from-[var(--brand-blue)]/10 to-[var(--brand-pink)]/10 rounded-2xl"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
               )}
-            </Link>
+              
+              {/* Icon Container */}
+              <div className="relative">
+                <item.icon 
+                  className={`h-6 w-6 transition-colors duration-200 ${
+                    isItemActive 
+                      ? 'text-[var(--brand-pink)]' 
+                      : 'text-gray-400 group-hover:text-gray-600'
+                  }`} 
+                />
+                
+                {/* Cart Badge */}
+                {item.id === 'cart' && cartCount > 0 && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-2 -right-2 bg-[var(--brand-pink)] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                  >
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </motion.div>
+                )}
+
+                {/* Loyalty Points Badge */}
+                {item.id === 'loyalty' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white text-xs rounded-full h-4 w-4 flex items-center justify-center"
+                  >
+                    <Star className="h-2 w-2 fill-current" />
+                  </motion.div>
+                )}
+              </div>
+              
+              {/* Label */}
+              <span 
+                className={`text-xs mt-1 transition-colors duration-200 ${
+                  isItemActive 
+                    ? 'text-[var(--brand-pink)]' 
+                    : 'text-gray-400 group-hover:text-gray-600'
+                }`}
+              >
+                {item.label}
+              </span>
+              
+              {/* Active dot indicator */}
+              {isItemActive && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -bottom-1 w-1 h-1 bg-[var(--brand-pink)] rounded-full"
+                />
+              )}
+            </button>
           );
         })}
-      </div>
+      </nav>
     </div>
   );
-};
+}
 
 export default MobileBottomNav;

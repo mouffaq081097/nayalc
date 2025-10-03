@@ -1,158 +1,144 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useAppContext } from '../context/AppContext';
+import React, { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Filter, SortAsc, Grid, List } from 'lucide-react';
 
-const NewArrivalsPage = () => {
-  const { products, categories, brands, fetchProducts, loading } = useAppContext();
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedBrands, setSelectedBrands] = useState([]);
-  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [sortOption, setSortOption] = useState('default');
+export default function NewArrivalsPage() {
+  const [newArrivalProducts, setNewArrivalProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    const fetchNewArrivals = async () => {
+      try {
+        const response = await fetch('/api/products?isNew=true'); // Assuming an API endpoint for new arrivals
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        const processedProducts = data.map(product => ({
+          ...product,
+          price: parseFloat(product.price), // Ensure price is a number
+          image: product.imageUrl || null, // Add 'image' property for ProductCard
+        }));
+        setNewArrivalProducts(processedProducts);
+      } catch (error) {
+        setError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleCategoryChange = (e) => {
-    const { value, checked } = e.target;
-    setSelectedCategories(prev => checked ? [...prev, value] : prev.filter(c => c !== value));
-  };
-
-  const handleBrandChange = (e) => {
-    const { value, checked } = e.target;
-    setSelectedBrands(prev => checked ? [...prev, value] : prev.filter(b => b !== value));
-  };
-  
-  const handlePriceChange = (e) => {
-    const { name, value } = e.target;
-    setPriceRange(prev => ({...prev, [name]: value }));
-  }
-
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...products.slice(0, 8)];
-
-    if (selectedCategories.length > 0) {
-        filtered = filtered.filter(p => selectedCategories.includes(p.categoryName));
-    }
-
-    if (selectedBrands.length > 0) {
-        filtered = filtered.filter(p => selectedBrands.includes(p.brandName));
-    }
-    
-    const minPrice = parseFloat(priceRange.min);
-    const maxPrice = parseFloat(priceRange.max);
-
-    if (!isNaN(minPrice)) {
-        filtered = filtered.filter(p => p.price >= minPrice);
-    }
-    if (!isNaN(maxPrice)) {
-        filtered = filtered.filter(p => p.price <= maxPrice);
-    }
-    
-    switch (sortOption) {
-        case 'price-asc':
-            filtered.sort((a, b) => a.price - b.price);
-            break;
-        case 'price-desc':
-            filtered.sort((a, b) => b.price - a.price);
-            break;
-        case 'name-asc':
-            filtered.sort((a, b) => a.name.localeCompare(b.name));
-            break;
-        case 'name-desc':
-            filtered.sort((a, b) => b.name.localeCompare(a.name));
-            break;
-        default:
-            break;
-    }
-
-    return filtered;
-  }, [products, selectedCategories, selectedBrands, priceRange, sortOption]);
+    fetchNewArrivals();
+  }, []);
 
   if (loading) {
-      return <div className="text-center py-20">Loading...</div>;
+    return <div className="text-center py-16">Loading new arrivals...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-16 text-red-500">Error: {error.message}</div>;
   }
 
   return (
-    <div className="bg-brand-secondary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-serif font-bold text-brand-text">New Arrivals</h1>
-                <p className="text-brand-muted mt-2 max-w-2xl mx-auto">Check out the latest additions to our collection.</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-[var(--brand-rose)] via-white to-[var(--brand-cream)] py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto">
+            <Badge className="mb-6 bg-[var(--brand-pink)] text-white">Just Arrived</Badge>
+            <h1 className="text-4xl md:text-5xl mb-6">
+              <span className="text-gray-900">New </span>
+              <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
+                Arrivals
+              </span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Discover the latest additions to our curated collection of premium beauty products. 
+              Each piece represents the pinnacle of luxury and innovation.
+            </p>
+            <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
+              <span>• Fresh from Paris</span>
+              <span>• Limited Edition</span>
+              <span>• Premium Quality</span>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* Filters Sidebar */}
-                <aside className="lg:col-span-1 bg-white p-6 rounded-lg shadow-md h-fit sticky top-28">
-                    <h3 className="text-xl font-serif font-semibold text-brand-text border-b pb-3 mb-4">Filters</h3>
-                    
-                    {/* Category Filter */}
-                    <div className="mb-6">
-                        <h4 className="font-semibold text-brand-text mb-2">Category</h4>
-                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                            {categories.map(cat => (
-                                <label key={cat.id} className="flex items-center text-sm text-brand-muted cursor-pointer">
-                                    <input type="checkbox" value={cat.name} onChange={handleCategoryChange} className="h-4 w-4 rounded border-gray-300 text-brand-pink focus:ring-brand-pink" />
-                                    <span className="ml-2">{cat.name}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Brand Filter */}
-                    <div className="mb-6">
-                        <h4 className="font-semibold text-brand-text mb-2">Brand</h4>
-                        <div className="space-y-2">
-                            {brands.map(brand => (
-                                <label key={brand.id} className="flex items-center text-sm text-brand-muted cursor-pointer">
-                                    <input type="checkbox" value={brand.name} onChange={handleBrandChange} className="h-4 w-4 rounded border-gray-300 text-brand-pink focus:ring-brand-pink" />
-                                    <span className="ml-2">{brand.name}</span>
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                    
-                    {/* Price Filter */}
-                    <div>
-                        <h4 className="font-semibold text-brand-text mb-2">Price</h4>
-                         <div className="flex items-center space-x-2">
-                            <input type="number" name="min" placeholder="Min" value={priceRange.min} onChange={handlePriceChange} className="w-full border-gray-300 rounded-md p-2 text-sm focus:ring-brand-pink focus:border-brand-pink" />
-                            <span className="text-gray-500">-</span>
-                            <input type="number" name="max" placeholder="Max" value={priceRange.max} onChange={handlePriceChange} className="w-full border-gray-300 rounded-md p-2 text-sm focus:ring-brand-pink focus:border-brand-pink" />
-                        </div>
-                    </div>
-
-                </aside>
-
-                {/* Product Grid */}
-                <main className="lg:col-span-3">
-                    <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
-                        <p className="text-sm text-brand-muted"><span className="font-semibold text-brand-text">{filteredAndSortedProducts.length}</span> products found</p>
-                        <select value={sortOption} onChange={(e) => setSortOption(e.target.value)} className="border-gray-300 rounded-md p-2 text-sm focus:ring-brand-pink focus:border-brand-pink">
-                            <option value="default">Default Sorting</option>
-                            <option value="price-asc">Price: Low to High</option>
-                            <option value="price-desc">Price: High to Low</option>
-                            <option value="name-asc">Name: A to Z</option>
-                            <option value="name-desc">Name: Z to A</option>
-                        </select>
-                    </div>
-
-                    {filteredAndSortedProducts.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                            {filteredAndSortedProducts.map(product => <ProductCard key={product.id} product={product} />)}
-                        </div>
-                    ) : (
-                        <div className="text-center py-20 bg-white rounded-lg shadow-md">
-                            <p className="text-xl text-brand-muted">No products match your filters.</p>
-                        </div>
-                    )}
-                </main>
-            </div>
+          </div>
         </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+          {/* Filter Bar */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl text-gray-900">{newArrivalProducts.length} Products</h2>
+              <Badge variant="secondary" className="bg-green-100 text-green-800">New This Week</Badge>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
+              </Button>
+              <Button variant="outline" size="sm">
+                <SortAsc className="h-4 w-4 mr-2" />
+                Sort
+              </Button>
+              <div className="flex border border-gray-200 rounded-lg">
+                <Button variant="ghost" size="sm" className="border-r">
+                  <Grid className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm">
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Products Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {newArrivalProducts.map((product) => (
+              <ProductCard key={product.id} {...product} />
+            ))}
+          </div>
+
+          {/* Load More */}
+          <div className="text-center mt-12">
+            <Button 
+              size="lg"
+              variant="outline"
+              className="border-[var(--brand-pink)] text-[var(--brand-pink)] hover:bg-[var(--brand-pink)] hover:text-white"
+            >
+              Load More Products
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter CTA */}
+      <section className="bg-gradient-to-r from-[var(--brand-blue)]/5 to-[var(--brand-pink)]/5 py-16">
+        <div className="container mx-auto px-4 text-center">
+          <h3 className="text-2xl md:text-3xl mb-4">
+            <span className="text-gray-900">Be the first to know about </span>
+            <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
+              New Arrivals
+            </span>
+          </h3>
+          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+            Join our VIP list and get early access to new products, exclusive previews, and special launch events.
+          </p>
+          <Button 
+            size="lg"
+            className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
+          >
+            Join VIP Newsletter
+          </Button>
+        </div>
+      </section>
     </div>
   );
-};
-
-export default NewArrivalsPage;
+}
