@@ -16,6 +16,7 @@ export async function GET(request) {
                 p.name,
                 p.description,
                 p.price,
+                p.stock_quantity as "stockQuantity",
                 b.name as "brandName",
                 pi.image_url as "imageUrl"
             FROM wishlists w
@@ -26,6 +27,7 @@ export async function GET(request) {
             ORDER BY w.added_at DESC;
         `;
         const { rows } = await db.query(sql, [userId]);
+        console.log('Wishlist API Response Rows:', rows); // Debugging line
         return NextResponse.json(rows);
     } catch (error) {
         console.error('Error fetching wishlist:', error);

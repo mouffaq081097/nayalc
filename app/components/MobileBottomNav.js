@@ -3,6 +3,7 @@ import { Home, ShoppingBag, Star, User, Heart } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 
 
@@ -19,6 +20,7 @@ function MobileBottomNav() {
   const pathname = usePathname();
   const currentPage = pathname.substring(1);
   const { cartItems } = useCart();
+  const { isAuthenticated } = useAuth();
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const handleItemClick = (itemId) => {
     const routeMap = {
@@ -28,6 +30,14 @@ function MobileBottomNav() {
       loyalty: '/loyalty',
       wishlist: '/wishlist',
     };
+
+    const authenticatedRoutes = ['account', 'loyalty', 'wishlist'];
+
+    if (authenticatedRoutes.includes(itemId) && !isAuthenticated) {
+      router.push('/auth');
+      return;
+    }
+
     const route = routeMap[itemId] || `/${itemId}`;
     router.push(route);
   };

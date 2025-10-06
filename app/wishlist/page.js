@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -28,96 +28,9 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-
-const wishlistItems = [
-  {
-    id: 1,
-    name: "Radiance Renewal Serum",
-    brand: "Gernetic",
-    price: 185,
-    originalPrice: 220,
-    image: "https://images.unsplash.com/photo-1751131964776-57e3cbca0a14?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBza2luY2FyZSUyMHNlcnVtfGVufDF8fHx8MTc1ODM1MjkxNXww&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "Skincare",
-    rating: 4.8,
-    reviews: 245,
-    inStock: true,
-    isOnSale: true,
-    discount: 16,
-    addedDate: "2024-01-15",
-    priceHistory: [220, 210, 185],
-    description: "Advanced vitamin C serum with hyaluronic acid for radiant, youthful skin.",
-    keyIngredients: ["Vitamin C", "Hyaluronic Acid", "Niacinamide"]
-  },
-  {
-    id: 2,
-    name: "Velvet Matte Lipstick",
-    brand: "Naya Lumière",
-    price: 45,
-    originalPrice: 45,
-    image: "https://images.unsplash.com/photo-1586495985372-e8b3c0fb344f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBtYWtldXAlMjBsaXBzdGlja3xlbnwxfHx8fDE3NTgzNTI5MTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "Makeup",
-    rating: 4.9,
-    reviews: 189,
-    inStock: true,
-    isOnSale: false,
-    addedDate: "2024-01-12",
-    priceHistory: [45, 45, 45],
-    description: "Luxurious matte lipstick with 12-hour wear and comfortable formula.",
-    shades: ["Rouge Noir", "Rose Parisien", "Coral Sunset"]
-  },
-  {
-    id: 3,
-    name: "Nuit de Paris Perfume",
-    brand: "Zorah Biocosmetics",
-    price: 0, // Out of stock
-    originalPrice: 135,
-    image: "https://images.unsplash.com/photo-1719175936556-dbd05e415913?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBwZXJmdW1lJTIwYm90dGxlfGVufDF8fHx8MTc1ODI2NzUxOHww&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "Fragrance",
-    rating: 4.7,
-    reviews: 156,
-    inStock: false,
-    isOnSale: false,
-    addedDate: "2024-01-10",
-    priceHistory: [135, 135, 135],
-    description: "Elegant evening fragrance with notes of jasmine, vanilla, and sandalwood.",
-    notes: ["Top: Bergamot", "Heart: Jasmine", "Base: Vanilla & Sandalwood"]
-  },
-  {
-    id: 4,
-    name: "Hydrating Eye Cream",
-    brand: "Gernetic",
-    price: 95,
-    originalPrice: 95,
-    image: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvcmdhbmljJTIwY29zbWV0aWNzfGVufDF8fHx8MTc1ODM1MjkxNnww&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "Skincare",
-    rating: 4.6,
-    reviews: 98,
-    inStock: true,
-    isOnSale: false,
-    addedDate: "2024-01-08",
-    priceHistory: [95, 95, 95],
-    description: "Intensive eye cream targeting fine lines, puffiness, and dark circles.",
-    benefits: ["Reduces fine lines", "Diminishes puffiness", "Brightens dark circles"]
-  },
-  {
-    id: 5,
-    name: "Luxe Face Mask Set",
-    brand: "Naya Lumière",
-    price: 120,
-    originalPrice: 150,
-    image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBmYWNlJTIwbWFza3xlbnwxfHx8fDE3NTgzNTI5MTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-    category: "Skincare",
-    rating: 4.8,
-    reviews: 203,
-    inStock: true,
-    isOnSale: true,
-    discount: 20,
-    addedDate: "2024-01-05",
-    priceHistory: [150, 140, 120],
-    description: "Curated collection of 5 premium face masks for different skin concerns.",
-    included: ["Hydrating Mask", "Purifying Clay Mask", "Brightening Mask", "Anti-Aging Mask", "Soothing Mask"]
-  }
-];
+import { useAppContext } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { formatPrice } from '../lib/utils';
 
 const collections = [
   { id: 1, name: "Skincare Favorites", count: 3, isDefault: true },
@@ -126,6 +39,8 @@ const collections = [
 ];
 
 export default function WishlistPage() {
+  const { user, isAuthenticated } = useAuth();
+  const [wishlistItems, setWishlistItems] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -133,6 +48,33 @@ export default function WishlistPage() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [showPriceAlert, setShowPriceAlert] = useState(false);
   const [activeCollection, setActiveCollection] = useState(1);
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!isAuthenticated || !user?.id) {
+        setWishlistItems([]);
+        return;
+      }
+      try {
+        const response = await fetch(`/api/wishlist?userId=${user.id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch wishlist');
+        }
+        const data = await response.json();
+        const processedWishlistItems = data.map(item => ({
+          ...item,
+          image: item.imageUrl || null, // Add 'image' property for ImageWithFallback
+          inStock: item.stockQuantity > 0, // Derive inStock from stockQuantity
+        }));
+        setWishlistItems(processedWishlistItems);
+      } catch (error) {
+        console.error('Error fetching wishlist:', error);
+        setWishlistItems([]);
+      }
+    };
+
+    fetchWishlist();
+  }, [isAuthenticated, user]);
 
   const categories = ['All', 'Skincare', 'Makeup', 'Fragrance'];
   const sortOptions = [
@@ -175,18 +117,66 @@ export default function WishlistPage() {
     );
   };
 
-  const handleRemoveItem = (itemId) => {
-    // Handle item removal logic
-    console.log('Remove item:', itemId);
+  const handleRemoveItem = async (productId) => {
+    if (!isAuthenticated || !user?.id) {
+      console.error('User not authenticated.');
+      return;
+    }
+    try {
+      const response = await fetch(`/api/wishlist/${user.id}/${productId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to remove item from wishlist');
+      }
+      // Re-fetch wishlist items to update the UI
+      const updatedWishlist = await fetch(`/api/wishlist?userId=${user.id}`);
+      const data = await updatedWishlist.json();
+      setWishlistItems(data);
+    } catch (error) {
+      console.error('Error removing item from wishlist:', error);
+    }
   };
 
-  const handleAddToCart = (item) => {
-    // Handle add to cart logic
-    console.log('Add to cart:', item);
+  const handleAddToCart = async (item) => {
+    if (!isAuthenticated || !user?.id) {
+      console.error('User not authenticated.');
+      return;
+    }
+    try {
+      const response = await fetch(`/api/users/${user.id}/cart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: item.id,
+          quantity: 1, // Assuming adding one item at a time from wishlist
+          price: item.price,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add item to cart');
+      }
+      // Optionally, update cart context here if useCart provides a way to refetch or update
+      console.log('Item added to cart:', item.id);
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+    }
   };
 
-  const handleMoveToCart = () => {
-    console.log('Move selected items to cart:', selectedItems);
+  const handleMoveToCart = async () => {
+    if (!isAuthenticated || !user?.id) {
+      console.error('User not authenticated.');
+      return;
+    }
+    for (const itemId of selectedItems) {
+      const itemToMove = wishlistItems.find(item => item.id === itemId);
+      if (itemToMove) {
+        await handleAddToCart(itemToMove);
+        await handleRemoveItem(itemId); // Remove from wishlist after adding to cart
+      }
+    }
     setSelectedItems([]);
   };
 
@@ -223,11 +213,11 @@ export default function WishlistPage() {
                 <div className="text-sm text-gray-600">Items Saved</div>
               </div>
               <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-2xl font-bold text-[var(--brand-pink)]">${totalValue}</div>
+                <div className="text-2xl font-bold text-[var(--brand-pink)]">{formatPrice(totalValue)}</div>
                 <div className="text-sm text-gray-600">Total Value</div>
               </div>
               <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-2xl font-bold text-green-600">${totalSavings}</div>
+                <div className="text-2xl font-bold text-green-600">{formatPrice(totalSavings)}</div>
                 <div className="text-sm text-gray-600">Potential Savings</div>
               </div>
             </div>
@@ -383,7 +373,7 @@ export default function WishlistPage() {
                               <ImageWithFallback
                                 src={item.image}
                                 alt={item.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                               />
                               
                               {/* Badges */}
@@ -393,7 +383,7 @@ export default function WishlistPage() {
                                     -{item.discount}%
                                   </Badge>
                                 )}
-                                {!item.inStock && (
+                                {!item.stockQuantity || item.stockQuantity <= 0 && (
                                   <Badge className="bg-gray-500 text-white">
                                     Out of Stock
                                   </Badge>
@@ -442,11 +432,11 @@ export default function WishlistPage() {
                                   {item.inStock ? (
                                     <>
                                       <span className="text-xl font-bold text-[var(--brand-blue)]">
-                                        ${item.price}
+                                        {formatPrice(item.price)}
                                       </span>
                                       {item.isOnSale && (
                                         <span className="text-sm text-gray-500 line-through">
-                                          ${item.originalPrice}
+                                          {formatPrice(item.originalPrice)}
                                         </span>
                                       )}
                                     </>
@@ -458,7 +448,7 @@ export default function WishlistPage() {
                                 </div>
 
                                 {/* Price History Trend */}
-                                {item.priceHistory.length > 1 && (
+                                {item.priceHistory && item.priceHistory.length > 1 && (
                                   <div className="flex items-center gap-2 mb-3">
                                     <TrendingUp className={`h-4 w-4 ${
                                       item.priceHistory[0] > item.priceHistory[item.priceHistory.length - 1] 
@@ -479,7 +469,7 @@ export default function WishlistPage() {
 
                               {/* Actions */}
                               <div className={`flex gap-2 ${viewMode === 'list' ? 'flex-col w-32' : ''}`}>
-                                {item.inStock ? (
+                                {item.stockQuantity > 0 ? (
                                   <Button 
                                     onClick={() => handleAddToCart(item)}
                                     className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 flex-1"
