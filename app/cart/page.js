@@ -1,32 +1,29 @@
-'use client';
+"use client"; // Added use client directive
 import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Checkbox } from '../components/ui/checkbox';
+import { Separator } from '../components/ui/separator';
 import { ArrowLeft, Plus, Minus, X, ShoppingBag, Heart, Gift } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { useRouter } from 'next/navigation';
-
+import { useRouter } from 'next/navigation'; // Added useRouter import
 import { useCart } from '../context/CartContext';
 
 export default function CartPage() {
-  const router = useRouter();
-  const { cartItems, updateQuantity, removeFromCart: removeItem } = useCart();
+  const { cartItems, removeFromCart, updateQuantity } = useCart();
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
+  const router = useRouter(); // Initialize useRouter
 
-  const handleCheckout = () => {
-    router.push('/checkout');
-  };
-
-  const handleBackClick = () => {
-    router.push('/');
-  };
-
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const savings = cartItems.reduce((sum, item) => 
-    sum + ((item.product.originalPrice || item.product.price) - item.product.price) * item.quantity, 0
+    sum + ((item.originalPrice || item.price) - item.price) * item.quantity, 0
   );
-  const shipping = subtotal >= 200 ? 0 : 8.99;
+  const FREE_SHIPPING_THRESHOLD = 200;
+  const SHIPPING_COST = 30;
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const promoDiscount = appliedPromo === 'WELCOME10' ? subtotal * 0.1 : 0;
   const total = subtotal + shipping - promoDiscount;
 
@@ -43,7 +40,7 @@ export default function CartPage() {
       <div className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={handleBackClick}>
+            <Button variant="ghost" size="sm" onClick={() => router.back()}> {/* Changed onClick */}
               <ArrowLeft className="h-4 w-4 mr-2" />
               Continue Shopping
             </Button>
@@ -57,7 +54,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {cartItems.length === 0 ? (
           /* Empty Cart */
           <div className="text-center py-16">
@@ -65,7 +62,7 @@ export default function CartPage() {
             <h2 className="text-2xl mb-4">Your cart is empty</h2>
             <p className="text-gray-600 mb-8">Discover our beautiful selection of premium beauty products</p>
             <Button 
-              onClick={handleBackClick}
+              onClick={() => router.back()} // Changed onClick
               className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
             >
               Start Shopping
@@ -82,46 +79,45 @@ export default function CartPage() {
                 
                 <div className="space-y-0">
                   {cartItems.map((item, index) => (
-                    <div key={item.product.id} className={`p-6 flex gap-4 ${index !== cartItems.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                    <div key={item.id} className={`p-6 flex flex-col sm:flex-row gap-4 ${index !== cartItems.length - 1 ? 'border-b border-gray-100' : ''}`}>
                       {/* Product Image */}
-                      <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-white flex-shrink-0">
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-white flex-shrink-0 mx-auto sm:mx-0">
                         <ImageWithFallback
-                          src={item.product.imageUrl}
-                          alt={item.product.name}
+                          src={item.image}
+                          alt={item.name}
                           className="w-full h-full object-contain"
                         />
                       </div>
 
                       {/* Product Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="text-gray-900 font-medium truncate">{item.product.name}</h3>
-                            <p className="text-sm text-[var(--brand-blue)]">{item.product.brand}</p>
-                            <p className="text-sm text-gray-500 truncate">{item.product.description}</p>
-                            {(item.product.size || item.product.shade) && (
+                      <div className="flex-1 min-w-0 text-center sm:text-left">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
+                          <div className="mb-2 sm:mb-0">
+                            <h3 className="text-gray-900 font-medium">{item.name}</h3>
+                            <p className="text-sm text-[var(--brand-blue)]">Brand: {item.brand}</p>
+                            {(item.size || item.shade) && (
                               <p className="text-xs text-gray-500 mt-1">
-                                {item.product.size && `Size: ${item.product.size}`}
-                                {item.product.size && item.product.shade && ' • '}
-                                {item.product.shade && `Shade: ${item.product.shade}`}
+                                {item.size && `Size: ${item.size}`}
+                                {item.size && item.shade && ' • '}
+                                {item.shade && `Shade: ${item.shade}`}
                               </p>
                             )}
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeItem(item.product.id)}
+                            onClick={() => removeFromCart(item.id)}
                             className="text-gray-400 hover:text-red-500 -mt-1"
                           >
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-medium">AED {item.product.price}</span>
-                            {item.product.originalPrice && (
-                              <span className="text-sm text-gray-500 line-through">AED {item.product.originalPrice}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-2 sm:mt-0">
+                          <div className="flex items-center gap-2 mb-2 sm:mb-0">
+                            <span className="text-lg font-medium">AED {item.price}</span>
+                            {item.originalPrice && (
+                              <span className="text-sm text-gray-500 line-through">AED {item.originalPrice}</span>
                             )}
                           </div>
 
@@ -130,7 +126,7 @@ export default function CartPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
                               className="h-8 w-8 p-0"
                             >
                               <Minus className="h-3 w-3" />
@@ -139,7 +135,7 @@ export default function CartPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
                               className="h-8 w-8 p-0"
                             >
                               <Plus className="h-3 w-3" />
@@ -171,7 +167,7 @@ export default function CartPage() {
                 </div>
                 {appliedPromo && (
                   <div className="mt-3 text-sm text-green-600">
-                    ✓ Promo code &quot;{appliedPromo}&quot; applied - 10% off!
+                    ✓ Promo code "{appliedPromo}" applied - 10% off!
                   </div>
                 )}
               </div>
@@ -204,12 +200,25 @@ export default function CartPage() {
                   
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
-                    <span>{shipping === 0 ? 'FREE' : `AED ${shipping}`}</span>
+                    <span>{shipping === 0 ? 'FREE' : `AED ${shipping.toFixed(2)}`}</span>
                   </div>
                   
-                  {shipping === 0 && (
+                  {shipping === 0 ? (
                     <div className="text-xs text-green-600">
-                      ✓ Free shipping on orders over 200 AED
+                      &check; Free shipping on orders over AED {FREE_SHIPPING_THRESHOLD}
+                    </div>
+                  ) : (
+                    <div className="mt-4">
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Add AED {(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} for &quot;FREE&quot; Shipping</span>
+                        <span>{((subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-[var(--brand-blue)] h-2 rounded-full" 
+                          style={{ width: `${((subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(0)}%` }}
+                        ></div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -225,7 +234,7 @@ export default function CartPage() {
                   <Button 
                     className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity"
                     size="lg"
-                    onClick={handleCheckout}
+                    onClick={() => router.push('/checkout')} // Changed onClick
                   >
                     Proceed to Checkout
                   </Button>
@@ -233,7 +242,7 @@ export default function CartPage() {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={handleBackClick}
+                    onClick={() => router.back()} // Changed onClick
                   >
                     Continue Shopping
                   </Button>
@@ -243,7 +252,7 @@ export default function CartPage() {
                 <div className="mt-8 space-y-3 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <Gift className="h-4 w-4 text-[var(--brand-pink)]" />
-                    <span>Free gift with orders over $100</span>
+                    <span>Free gift with orders over AED 1,000</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Heart className="h-4 w-4 text-[var(--brand-pink)]" />

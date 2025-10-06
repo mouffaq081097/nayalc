@@ -7,11 +7,11 @@ import { useCart } from '../context/CartContext';
 
 
 const navItems = [
-  { id: 'home', icon: Home, label: 'Home' },
-  { id: 'wishlist', icon: Heart, label: 'Wishlist' },
-  { id: 'loyalty', icon: Star, label: 'Rewards' },
-  { id: 'cart', icon: ShoppingBag, label: 'Cart' },
-  { id: 'account', icon: User, label: 'Account' },
+  { id: 'home', icon: Home, label: 'Home' },                                                     
+  { id: 'wishlist', icon: Heart, label: 'Wishlist' },                                             
+  { id: 'loyalty', icon: Star, label: 'Rewards' },                                                
+  { id: 'cart', icon: ShoppingBag, label: 'Cart' },                                               
+  { id: 'account', icon: User, label: 'Account' }
 ];
 
 function MobileBottomNav() {
@@ -75,7 +75,7 @@ function MobileBottomNav() {
                     isItemActive 
                       ? 'text-[var(--brand-pink)]' 
                       : 'text-gray-400 group-hover:text-gray-600'
-                  }`} 
+                  }`}
                 />
                 
                 {/* Cart Badge */}

@@ -1,6 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 // Define OrderStatus as a JavaScript object
 const OrderStatus = {
@@ -19,25 +21,45 @@ const StatCard = ({ title, value, color }) => (
 );
 
 const AdminDashboard = () => {
-    const { products, categories, orders } = useAppContext();
+    const { products, categories, allOrders, fetchAllOrders } = useAppContext();
+    const { user, loading } = useAuth();
+    const router = useRouter();
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
+        if (!loading) {
+            if (!user) {
+                router.push('/auth'); // Redirect to login if not authenticated
+            } else if (user.id !== 2) {
+                router.push('/'); // Redirect to home if not admin (user.id !== 2)
+            }
+        }
+    }, [user, loading, router]);
+
+    useEffect(() => {
+        if (user && user.id === 2) { // Only fetch data if authorized
+            fetchAllOrders();
+        }
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
         checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+    }, [fetchAllOrders, user]);
     
-    // Ensure orders is an array before filtering and reducing
-    const totalRevenue = Array.isArray(orders)
-        ? orders
-            .filter(o => o.status === OrderStatus.Delivered)
-            .reduce((sum, order) => sum + order.total, 0)
+    // Render nothing or a loading spinner if not authorized or still loading
+    if (loading || !user || user.id !== 2) {
+        return <div className="min-h-screen flex items-center justify-center">Loading or Unauthorized...</div>;
+    }
+    
+    // Ensure allOrders is an array before filtering and reducing
+    const totalRevenue = Array.isArray(allOrders)
+        ? allOrders
+            .filter(o => o.status !== OrderStatus.Cancelled)
+            .reduce((sum, order) => sum + order.totalAmount, 0)
         : 0;
     
-    const pendingOrders = Array.isArray(orders)
-        ? orders.filter(o => o.status === OrderStatus.Pending).length
+    const pendingOrders = Array.isArray(allOrders)
+        ? allOrders.filter(o => o.status === OrderStatus.Pending).length
         : 0;
 
     const renderOrderRow = (order) => (
@@ -56,7 +78,7 @@ const AdminDashboard = () => {
                     {order.status}
                 </span>
             </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">AED {typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">AED {typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : '0.00'}</td>
         </tr>
     );
 
@@ -77,7 +99,7 @@ const AdminDashboard = () => {
             <div className="text-sm text-gray-600">
                 <p><span className="font-semibold">Customer:</span> {order.customerName}</p>
                 <p><span className="font-semibold">Date:</span> {new Date(order.orderDate).toLocaleDateString()}</p>
-                <p className="text-right font-bold mt-2">AED {typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'}</p>
+                <p className="text-right font-bold mt-2">AED {typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : '0.00'}</p>
             </div>
         </div>
     );
@@ -95,7 +117,7 @@ const AdminDashboard = () => {
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Recent Orders</h2>
                 {isMobile ? (
                     <div>
-                        {Array.isArray(orders) && orders.slice(0, 5).map(order => renderOrderCard(order))}
+                        {Array.isArray(allOrders) && allOrders.slice(0, 5).map(order => renderOrderCard(order))}
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -110,7 +132,7 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {Array.isArray(orders) && orders.slice(0, 5).map(order => renderOrderRow(order))}
+                                {Array.isArray(allOrders) && allOrders.slice(0, 5).map(order => renderOrderRow(order))}
                             </tbody>
                         </table>
                     </div>

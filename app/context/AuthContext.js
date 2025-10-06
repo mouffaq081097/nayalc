@@ -9,15 +9,21 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const loadUserFromLocalStorage = () => {
+      console.log('AuthContext: Attempting to load user from local storage.');
       try {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          console.log('AuthContext: User loaded from local storage:', parsedUser);
+        } else {
+          console.log('AuthContext: No user found in local storage.');
         }
       } catch (error) {
-        console.error('Failed to load user from local storage:', error);
+        console.error('AuthContext: Failed to load user from local storage:', error);
       } finally {
         setLoading(false);
+        console.log('AuthContext: Loading finished.');
       }
     };
     loadUserFromLocalStorage();
@@ -40,6 +46,7 @@ export const AuthProvider = ({ children }) => {
     const data = await response.json();
     setUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
+    console.log('AuthContext: User logged in and saved to local storage:', data.user);
     // Assuming the backend sends a token, you might store it here as well
     // localStorage.setItem('token', data.token);
   };
@@ -61,6 +68,7 @@ export const AuthProvider = ({ children }) => {
     const data = await response.json();
     setUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
+    console.log('AuthContext: User registered and saved to local storage:', data.user);
     // Assuming the backend sends a token, you might store it here as well
     // localStorage.setItem('token', data.token);
   };
@@ -68,6 +76,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    console.log('AuthContext: User logged out and removed from local storage.');
     // localStorage.removeItem('token');
   };
 

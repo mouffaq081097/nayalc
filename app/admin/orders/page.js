@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 
 // Define OrderStatus as a JavaScript object
@@ -12,7 +12,11 @@ const OrderStatus = {
 };
 
 const ManageOrders = () => {
-    const { orders, updateOrderStatus } = useAppContext();
+    const { allOrders, fetchAllOrders, updateOrderStatus } = useAppContext();
+
+    useEffect(() => {
+        fetchAllOrders();
+    }, [fetchAllOrders]);
 
     const handleStatusChange = (orderId, newStatus) => {
         updateOrderStatus(orderId, newStatus);
@@ -34,12 +38,12 @@ const ManageOrders = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {Array.isArray(orders) && orders.map((order) => (
+                            {Array.isArray(allOrders) && allOrders.map((order) => (
                                 <tr key={order.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.customerName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.orderDate).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">AED {typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">AED {typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : '0.00'}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <select
                                             value={order.status}

@@ -67,7 +67,7 @@ export function Categories() {
         >
           <CarouselContent>
             {categories.map((category, index) => (
-              <CarouselItem key={category.name} className="md:basis-1/2 lg:basis-1/3">
+              <CarouselItem key={category.name} className="basis-1/2 md:basis-1/2 lg:basis-1/3">
                 <div
                   className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >

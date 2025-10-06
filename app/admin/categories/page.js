@@ -83,8 +83,8 @@ const ManageCategories = () => {
 
 
             if (editingCategory) {
-            const updatedCategory = await updateCategory(formData.id, categoryFormData);
-            addToast(`Category ${updatedCategory.name} updated successfully!`);
+                const updatedCategory = await updateCategory(editingCategory.id, formData);
+                addToast(`Category ${updatedCategory.name} updated successfully!`);
             } else {
                 await addCategory(formData);
             }

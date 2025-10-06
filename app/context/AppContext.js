@@ -9,6 +9,7 @@ export const AppProvider = ({ children }) => {
   const [appState, setAppState] = useState({}); 
   const [cart, setCart] = useState([]); 
   const [orders, setOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]); 
   const [brands, setBrands] = useState([]); // New state for brands
@@ -39,6 +40,26 @@ export const AppProvider = ({ children }) => {
     }
   }, [isAuthenticated, user]);
 
+  const fetchAllOrders = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/orders`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch all orders');
+      }
+      const data = await response.json();
+      const parsedOrders = data.map(order => ({
+          ...order,
+          totalAmount: parseFloat(order.totalAmount),
+          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+          orderDate: new Date(order.orderDate),
+      }));
+      setAllOrders(parsedOrders);
+    } catch (error) {
+      console.error('Error fetching all orders:', error);
+      setAllOrders([]);
+    }
+  }, []);
+
   // Function to fetch all products from the backend
   const fetchProducts = async () => {
     try {
@@ -62,9 +83,9 @@ export const AppProvider = ({ children }) => {
   };
 
   // Function to fetch products by category from the backend
-  const fetchProductsByCategory = async (categoryName) => {
+  const fetchProductsByCategory = async (categoryIds) => {
     try {
-      const response = await fetch(`/api/products?category=${categoryName}`);
+      const response = await fetch(`/api/products?categoryIds=${categoryIds.join(',')}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch products for category: ${categoryName}`);
       }
@@ -78,7 +99,7 @@ export const AppProvider = ({ children }) => {
       }));
       return processedProducts;
     } catch (error) {
-      console.error(`Error fetching products for category ${categoryName}:`, error);
+      console.error(`Error fetching products for categories ${categoryIds}:`, error);
       return []; // Return empty array on error
     }
   };
@@ -275,7 +296,7 @@ export const AppProvider = ({ children }) => {
         throw new Error('Failed to update order status');
       }
       // Re-fetch orders to update the state
-      fetchOrders();
+      fetchAllOrders();
     } catch (error) {
       console.error('Error updating order status:', error);
       throw error;
@@ -370,7 +391,7 @@ export const AppProvider = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ appState, setAppState, cart, setCart, orders, setOrders, products, setProducts, categories, setCategories, brands, setBrands, featuredProducts, setFeaturedProducts, addBrand, updateBrand, deleteBrand, addCategory, updateCategory, deleteCategory, updateOrderStatus, addProduct, updateProduct, deleteProduct, fetchProductsByCategory, fetchOrderById, fetchProducts }}>
+    <AppContext.Provider value={{ appState, setAppState, cart, setCart, orders, setOrders, allOrders, fetchAllOrders, products, setProducts, categories, setCategories, brands, setBrands, featuredProducts, setFeaturedProducts, addBrand, updateBrand, deleteBrand, addCategory, updateCategory, deleteCategory, updateOrderStatus, addProduct, updateProduct, deleteProduct, fetchProductsByCategory, fetchOrderById, fetchProducts }}>
       {children}
     </AppContext.Provider>
   );

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { sendOrderConfirmationEmail } from '@/lib/mail';
 
 // Helper function to fetch order items for a given order ID using a specific client
 const fetchOrderItems = async (orderId, client) => {
@@ -55,6 +56,7 @@ export async function GET(request) {
                 ua.zip_code as "zipCode",
                 o.payment_method as "paymentMethod",
                 o.total_amount as "totalAmount",
+                o.tax_amount as "taxAmount",
                 o.order_status as "orderStatus",
                 o.shipping_scheduled_date as "shippingScheduledDate",
                 o.payment_confirmed as "paymentConfirmed",
@@ -104,29 +106,75 @@ export async function GET(request) {
  *         description: Server error.
  */
 export async function POST(request) {
+    console.log('--- NEW ORDER REQUEST ---');
     const client = await db.connect();
     try {
-        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items } = await request.json();
+        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items, taxAmount } = await request.json();
 
-        if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0) {
+        if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0 || taxAmount === undefined) {
             return NextResponse.json({ message: 'Missing required order information or items.' }, { status: 400 });
         }
 
         await client.query('BEGIN');
 
         const insertOrderSql = `
-            INSERT INTO orders (user_address_id, payment_method, total_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id)
-            VALUES ($1, $2, $3, $4, $5, false, $6) RETURNING id;
+            INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id)
+            VALUES ($1, $2, $3, $4, $5, $6, false, $7) RETURNING id;
         `;
-        const orderValues = [user_address_id, payment_method, total_amount, 'pending', shipping_scheduled_date, user_id];
+        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'pending', shipping_scheduled_date, user_id];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
+
+        const { rows: userRows } = await client.query('SELECT email FROM users WHERE id = $1', [user_id]);
+        const userEmail = userRows.length > 0 ? userRows[0].email : null;
+        console.log('User Email:', userEmail);
 
         const itemValues = items.map(item => `(${orderId}, ${item.productId}, ${item.quantity}, ${item.price})`).join(',');
         const insertItemsSql = `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ${itemValues};`;
         await client.query(insertItemsSql);
 
+        // Fetch shipping address details
+        const { rows: addressRows } = await client.query(
+            `SELECT shipping_address, city, zip_code, country FROM user_addresses WHERE id = $1`,
+            [user_address_id]
+        );
+        const shippingAddress = addressRows.length > 0 ? {
+            street: addressRows[0].shipping_address,
+            city: addressRows[0].city,
+            zip: addressRows[0].zip_code,
+            country: addressRows[0].country,
+            state: '' // Assuming state is not stored or can be empty
+        } : null;
+
         await client.query('COMMIT');
+
+        if (userEmail) {
+            const productIds = items.map(item => item.productId);
+            const { rows: products } = await db.query(
+                'SELECT p.id, p.name, pi.image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE WHERE p.id = ANY($1)',
+                [productIds]
+            );
+            const itemsWithDetails = items.map(item => {
+                const product = products.find(p => p.id === item.productId);
+                return { 
+                    ...item, 
+                    name: product ? product.name : 'Unknown Product',
+                    imageUrl: product ? product.image_url : '' // Include imageUrl
+                };
+            });
+
+            console.log('Sending order confirmation email...');
+            await sendOrderConfirmationEmail(userEmail, {
+                orderId,
+                items: itemsWithDetails,
+                totalAmount: total_amount,
+                taxAmount,
+                shippingAddress
+            });
+        } else {
+            console.log('No user email found. Skipping email confirmation.');
+        }
+
         return NextResponse.json({ message: 'Order created successfully', orderId }, { status: 201 });
 
     } catch (error) {

@@ -50,11 +50,16 @@ const ManageBrands = () => {
         if (!formData.name.trim()) return;
 
         setIsSubmitting(true);
+        
+        const brandData = new FormData();
+        brandData.append('name', formData.name);
+        brandData.append('logoUrl', formData.logoUrl);
+
         try {
             if (editingBrand) {
-                await updateBrand({ ...formData, id: editingBrand.id });
+                await updateBrand(editingBrand.id, brandData);
             } else {
-                await addBrand(formData);
+                await addBrand(brandData);
             }
             handleCloseModal();
         } catch (error) {

@@ -40,7 +40,7 @@ export const CartProvider = ({ children }) => {
             
         } catch (error) {
             console.error('Error saving cart to backend:', error);
-            addToast('Failed to save cart changes.', 'error');
+            setTimeout(() => addToast('Failed to save cart changes.', 'error'), 0);
         }
     }, [isAuthenticated, user, addToast]);
 
@@ -59,19 +59,20 @@ export const CartProvider = ({ children }) => {
                     }
                     const data = await response.json();
                     const parsedCart = (data.cart || []).map(item => ({
+                        id: item.productId, // Map productId to id
+                        name: item.name,
+                        brand: item.brand, // Assuming brand is directly available in API response
+                        price: parseFloat(item.price),
+                        originalPrice: parseFloat(item.originalPrice) || parseFloat(item.price), // Handle optional originalPrice
                         quantity: item.quantity,
-                        product: {
-                            id: item.productId,
-                            name: item.name,
-                            price: parseFloat(item.price),
-                            description: item.description,
-                            imageUrl: item.imageUrl,
-                        }
+                        image: item.imageUrl, // Map imageUrl to image
+                        size: item.size || undefined, // Handle optional size
+                        shade: item.shade || undefined, // Handle optional shade
                     }));
                     setCart(parsedCart); // Use setCart from AppContext
                 } catch (error) {
                     console.error('Error fetching user cart:', error);
-                    addToast('Failed to load your cart.', 'error');
+                    setTimeout(() => addToast('Failed to load your cart.', 'error'), 0);
                     setCart([]); // Clear cart on error
                 }
             } else {
@@ -89,20 +90,25 @@ export const CartProvider = ({ children }) => {
 
 
     const addToCart = (product, quantity) => {
-        const productWithParsedPrice = {
-            ...product,
-            price: parseFloat(product.price),
-        };
-
-        setCart((prevItems) => { // Use setCart from AppContext
-            const existingItemIndex = prevItems.findIndex(item => item.product.id === productWithParsedPrice.id);
+        setCart((prevItems) => {
+            const existingItemIndex = prevItems.findIndex(item => item.id === product.id);
 
             let updatedItems;
             if (existingItemIndex > -1) {
                 updatedItems = [...prevItems];
                 updatedItems[existingItemIndex].quantity += quantity;
             } else {
-                updatedItems = [...prevItems, { product: productWithParsedPrice, quantity }];
+                updatedItems = [...prevItems, {
+                    id: product.id,
+                    name: product.name,
+                    brand: product.brand,
+                    price: parseFloat(product.price),
+                    originalPrice: parseFloat(product.originalPrice) || parseFloat(product.price),
+                    quantity: quantity,
+                    image: product.imageUrl,
+                    size: product.size,
+                    shade: product.shade,
+                }];
             }
             return updatedItems;
         });
@@ -110,7 +116,7 @@ export const CartProvider = ({ children }) => {
 
     const removeFromCart = (productId) => {
         setCart((prevItems) => { // Use setCart from AppContext
-            const updatedItems = prevItems.filter(item => item.product.id !== productId);
+            const updatedItems = prevItems.filter(item => item.id !== productId);
             addToast("Item removed from cart!");
             return updatedItems;
         });
@@ -119,7 +125,7 @@ export const CartProvider = ({ children }) => {
     const updateQuantity = (productId, newQuantity) => {
         setCart((prevItems) => { // Use setCart from AppContext
             const updatedItems = prevItems.map(item =>
-                item.product.id === productId ? { ...item, quantity: newQuantity } : item
+                item.id === productId ? { ...item, quantity: newQuantity } : item
             );
             return updatedItems;
         });
@@ -130,7 +136,7 @@ export const CartProvider = ({ children }) => {
         addToast("Cart cleared!");
     };
 
-    const cartTotal = cart.reduce((total, item) => total + item.product.price * item.quantity, 0); // Use cart from AppContext
+    const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0); // Use cart from AppContext
 
     return (
         <CartContext.Provider value={{

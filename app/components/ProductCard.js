@@ -19,8 +19,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
     e.preventDefault();
     e.stopPropagation();
     // Reconstruct product object for CartContext, as it expects a product object
-    const productForCart = { id, name, price, imageUrl: image, categoryName: category };
-    addToCart(productForCart, 1);
+            const productForCart = { id, name, price, imageUrl: image, categoryName: category, brand: brandName };    addToCart(productForCart, 1);
     showToast(`Added ${name} to cart!`);
   };
 
@@ -28,7 +27,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
 
   return (
     <div
-      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100"
+      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col mb-4"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -83,13 +82,13 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
       </Link>
 
       {/* Product Info */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-3 flex-grow flex flex-col justify-between min-h-[120px]">
         <div>
           <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--brand-blue)' }}>{brandName}</p> {/* Display brandName */}
           <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--brand-blue)' }}>{category}</p>
           <Link
             href={`/product/${id}`}
-            className="mt-1 transition-colors cursor-pointer block"
+            className="mt-1 transition-colors cursor-pointer block truncate-2-lines"
             style={{ color: isNameHovered ? 'var(--brand-pink)' : '#111827' }}
             onMouseEnter={() => setIsNameHovered(true)}
             onMouseLeave={() => setIsNameHovered(false)}

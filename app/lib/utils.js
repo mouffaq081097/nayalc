@@ -1,6 +1,10 @@
 import { clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+export function convertToAED(usdAmount, rate = 3.67) {
+  return (usdAmount * rate).toFixed(2);
+}
+
 export function cn(...inputs) {
   return twMerge(clsx(inputs))
 }

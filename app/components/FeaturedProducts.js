@@ -33,7 +33,7 @@ export function FeaturedProducts({ products }) { // Accept products prop
         >
           <CarouselContent>
             {displayedProducts.map((product) => (
-              <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4">
+              <CarouselItem key={product.id} className="basis-1/2 md:basis-1/2 lg:basis-1/4">
                 <ProductCard
                   id={product.id}
                   name={product.name}

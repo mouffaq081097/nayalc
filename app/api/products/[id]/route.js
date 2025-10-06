@@ -1,53 +1,71 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 
-export async function GET(request, { params }) {
-  const { id } = params;
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   get:
+ *     summary: Get a single product by ID
+ *     description: Retrieves a single product by its ID.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the product to retrieve.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: The requested product.
+ *       404:
+ *         description: Product not found.
+ *       500:
+ *         description: Server error.
+ */
+export async function GET(request, context) {
+    const params = await context.params;
+    const { id } = params;
+    const client = await db.connect();
+    try {
+        const productSql = `
+            SELECT
+                id,
+                name,
+                description,
+                price,
+                vendor as "brand",
+                stock_quantity as "stockQuantity",
+                long_description,
+                benefits,
+                how_to_use,
+                ingredients
+            FROM products
+            WHERE id = $1;
+        `;
+        const { rows: productRows } = await client.query(productSql, [id]);
 
-  try {
-    // Fetch product details
-    const productResult = await db.query(
-      `SELECT
-        p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.product_type, p.vendor, p.long_description, p.benefits, p.how_to_use, p.specs, p.autoship_save, p.gtin, p.product_dimensions, p.item_weight, p.item_model_number, p.unit_count, p.brand_id, p.category_id,
-        b.name as brand_name
-      FROM
-        products p
-      LEFT JOIN
-        brands b ON p.brand_id = b.id
-      WHERE p.id = $1`,
-      [id]
-    );
+        if (productRows.length === 0) {
+            return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+        }
 
-    if (productResult.rows.length === 0) {
-      return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+        const product = productRows[0];
+
+        const imagesSql = `
+            SELECT image_url
+            FROM product_images
+            WHERE product_id = $1
+            ORDER BY display_order ASC, id ASC;
+        `;
+        const { rows: imageRows } = await client.query(imagesSql, [id]);
+
+        product.images = imageRows.map(row => row.image_url);
+
+        return NextResponse.json(product);
+
+    } catch (error) {
+        console.error(`Error fetching product ${id}:`, error);
+        return NextResponse.json({ message: 'Error fetching product from database', error: error.message }, { status: 500 });
+    } finally {
+        client.release();
     }
-
-    const product = productResult.rows[0];
-
-    // Fetch product images
-    const imagesResult = await db.query(
-      `SELECT image_url
-       FROM product_images
-       WHERE product_id = $1
-       ORDER BY display_order ASC`,
-      [id]
-    );
-
-    const images = imagesResult.rows.map(row => row.image_url);
-
-    // Add mock values for properties not in the database
-    const processedProduct = {
-      ...product,
-      brand: product.brand_name, // Map brand_name to brand
-      rating: 4.5, // Mock value
-      reviewCount: 100, // Mock value
-      sizes: ['15ml', '30ml', '50ml'], // Mock value
-    };
-
-    // Return the product data with the images array
-    return NextResponse.json({ ...processedProduct, images });
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    return NextResponse.json({ message: 'Error fetching product', error: error.message }, { status: 500 });
-  }
 }

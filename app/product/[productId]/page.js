@@ -145,7 +145,7 @@ export default function ProductDetailPage({ params }) {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                  className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${ 
                     selectedImage === index ? 'border-[var(--brand-pink)]' : 'border-gray-200'
                   }`}
                 >
@@ -276,7 +276,7 @@ export default function ProductDetailPage({ params }) {
             <TabsContent value="details" className="mt-6">
               <div className="bg-white rounded-2xl p-8">
                 <h3 className="text-xl mb-4">Product Details</h3>
-                <p className="text-gray-600 leading-relaxed">{product.longDescription}</p>
+                <p className="text-gray-600 leading-relaxed">{product.long_description}</p>
               </div>
             </TabsContent>
 
@@ -284,7 +284,7 @@ export default function ProductDetailPage({ params }) {
               <div className="bg-white rounded-2xl p-8">
                 <h3 className="text-xl mb-4">Key Benefits</h3>
                 <div className="space-y-3">
-                  {Array.isArray(product.benefits) && product.benefits.map((benefit, index) => (
+                  {product.benefits && product.benefits.split('\n').map((benefit, index) => (
                     <div key={index} className="flex items-center gap-3">
                       <Check className="h-5 w-5 text-green-600" />
                       <span className="text-gray-600">{benefit}</span>
@@ -298,7 +298,7 @@ export default function ProductDetailPage({ params }) {
               <div className="bg-white rounded-2xl p-8">
                 <h3 className="text-xl mb-4">Key Ingredients</h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {Array.isArray(product.ingredients) && product.ingredients.map((ingredient, index) => (
+                  {product.ingredients && product.ingredients.split('\n').map((ingredient, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                       <div className="w-2 h-2 bg-[var(--brand-pink)] rounded-full"></div>
                       <span className="text-gray-700">{ingredient}</span>
@@ -312,7 +312,7 @@ export default function ProductDetailPage({ params }) {
               <div className="bg-white rounded-2xl p-8">
                 <h3 className="text-xl mb-4">How to Use</h3>
                 <div className="space-y-4">
-                  {Array.isArray(product.howToUse) && product.howToUse.map((step, index) => (
+                  {product.how_to_use && product.how_to_use.split('\n').map((step, index) => (
                     <div key={index} className="flex items-start gap-4">
                       <div className="w-8 h-8 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white rounded-full flex items-center justify-center text-sm flex-shrink-0">
                         {index + 1}

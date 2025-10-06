@@ -3,8 +3,11 @@ import { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+
+import { Container } from '../components/ui/Container';
 import { Flower, Heart, Star, Sparkles } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { useAppContext } from '../context/AppContext';
 
 const fragranceFamilies = [
   {
@@ -38,29 +41,26 @@ const fragranceFamilies = [
 ];
 
 export default function FragrancePage() {
+  const { fetchProductsByCategory } = useAppContext();
   const [fragranceProducts, setFragranceProducts] = useState([]);
 
   useEffect(() => {
     const fetchFragranceProducts = async () => {
       try {
-        const response = await fetch('/api/products?category=Fragrance');
-        if (!response.ok) {
-          throw new Error('Failed to fetch fragrance products');
-        }
-        const data = await response.json();
-        setFragranceProducts(data);
+        const products = await fetchProductsByCategory([4]);
+        setFragranceProducts(products);
       } catch (error) {
         console.error(error);
       }
     };
 
     fetchFragranceProducts();
-  }, []);
+  }, [fetchProductsByCategory]);
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-[var(--brand-rose)] via-white to-[var(--brand-cream)] py-20">
-        <div className="container mx-auto px-4">
+        <Container>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <Badge className="mb-6 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white">
@@ -94,18 +94,19 @@ export default function FragrancePage() {
             </div>
             <div className="relative">
               <ImageWithFallback
-                src="https://images.unsplash.com/photo-1719175936556-dbd05e415913?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBwZXJmdW1lJTIwYm90dGxlfGVufDF8fHx8MTc1ODI2NzUxOHww&ixlib=rb-4.1.0&q=80&w=1080"
+                src="/WhatsApp Image 2025-07-14 at 19.58.12_7d2e719f.jpg"
                 alt="Luxury fragrance collection"
                 className="w-full h-[400px] object-cover rounded-2xl shadow-2xl"
               />
             </div>
           </div>
-        </div>
+        </Container>
       </section>
+
 
       {/* Fragrance Families */}
       <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
+        <Container>
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl mb-4">Explore Fragrance Families</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
@@ -131,12 +132,11 @@ export default function FragrancePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
+        </Container>
+</section>
       {/* Featured Fragrances */}
       <section className="py-16">
-        <div className="container mx-auto px-4">
+        <Container>
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl">Signature Fragrances</h2>
             <div className="flex gap-2">
@@ -152,12 +152,12 @@ export default function FragrancePage() {
               <ProductCard key={product.id} {...product} image={product.imageUrl} />
             ))}
           </div>
-        </div>
-      </section>
+        </Container>
 
+</section>
       {/* Fragrance Layering Guide */}
       <section className="py-16 bg-gradient-to-br from-[var(--brand-blue)]/5 to-[var(--brand-pink)]/5">
-        <div className="container mx-auto px-4">
+        <Container>
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl mb-4">
               <span className="text-gray-900">The Art of </span>
@@ -193,12 +193,12 @@ export default function FragrancePage() {
               <Button variant="outline" size="sm">Shop Top Notes</Button>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* Fragrance Care */}
       <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
+        <Container>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl mb-6">
@@ -255,8 +255,8 @@ export default function FragrancePage() {
               </Button>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
-    </div>
+      </div>
   );
 }

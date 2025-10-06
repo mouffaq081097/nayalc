@@ -113,18 +113,19 @@ export function Header() {
               <Search className="h-5 w-5" />
             </Button>
             
-            <Button variant="ghost" size="sm" onClick={handleAccountClick}>
+            <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-1" onClick={handleAccountClick}>
               <User className="h-5 w-5" />
+              {user ? <span className="text-sm">Hi, {user.username || 'there!'}</span> : null}
             </Button>
             
-            <Button variant="ghost" size="sm" className="relative" onClick={() => router.push('/account?tab=wishlist')}>
+            <Button variant="ghost" size="sm" className="relative hidden md:flex" onClick={() => router.push('/account?tab=wishlist')}>
               <Heart className="h-5 w-5" />
               <Badge className="absolute -top-1 -right-1 bg-[var(--brand-pink)] text-white text-xs h-4 w-4 p-0 flex items-center justify-center">
                 2
               </Badge>
             </Button>
             
-            <Button variant="ghost" size="sm" className="relative" onClick={() => router.push('/cart')}>
+            <Button variant="ghost" size="sm" className="relative hidden md:flex" onClick={() => router.push('/cart')}>
               <ShoppingBag className="h-5 w-5" />
               {cartCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 bg-[var(--brand-pink)] text-white text-xs h-5 w-5 p-0 flex items-center justify-center">
@@ -150,7 +151,7 @@ export function Header() {
               <div className="border-t border-gray-100 my-2"></div>
               <button onClick={() => { router.push('/new-arrivals'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">New Arrivals</button>
               <button onClick={() => { router.push('/SkinCare'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Skincare</button>
-              <button onClick={() => { router.push('/makeup'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Makeup</button>
+              <button onClick={() => { router.push('/all-products'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">All Products</button>
               <button onClick={() => { router.push('/fragrance'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Fragrance</button>
               <button onClick={() => { router.push('/collections'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Collections</button>
               <button onClick={() => { router.push('/gift-sets'); setIsMenuOpen(false); }} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-left">Gift Sets</button>
@@ -180,7 +181,7 @@ export function Header() {
                     <nav className="hidden md:flex items-center justify-center space-x-8">
                       <button onClick={() => router.push('/new-arrivals')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">New Arrivals</button>
                       <button onClick={() => router.push('/SkinCare')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Skincare</button>
-                      <button onClick={() => router.push('/makeup')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Makeup</button>
+                      <button onClick={() => router.push('/all-products')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">All Products</button>
                       <button onClick={() => router.push('/fragrance')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Fragrance</button>
                       <button onClick={() => router.push('/collections')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Collections</button>
                       <button onClick={() => router.push('/gift-sets')} className="text-gray-700 hover:text-[var(--brand-pink)] transition-colors text-sm">Gift Sets</button>

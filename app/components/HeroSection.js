@@ -118,7 +118,7 @@ export function HeroSection({ onNavigate }) {
   return (
     <>
       <section className="relative bg-white">
-        <Container className="py-16">
+        <Container className="py-0 md:py-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
             {/* Main Slider - Left Column */}
             <div className="relative">
@@ -210,7 +210,7 @@ export function HeroSection({ onNavigate }) {
             </div>
 
             {/* Mobile Search Bar */}
-            <div className="mt-6 lg:hidden">
+            <div className="mt-6 hidden">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -224,9 +224,9 @@ export function HeroSection({ onNavigate }) {
 
           {/* Personal Widget - Right Column */}
           <div className="relative">
-            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden h-[500px] lg:h-[580px] shadow-xl flex flex-col">
+            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden h-[500px] lg:h-[580px] shadow-xl flex flex-col hidden md:block">
               {/* Header */}
-              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white ">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-pink)] rounded-2xl flex items-center justify-center shadow-lg">
                     <User className="h-6 w-6 text-white" />

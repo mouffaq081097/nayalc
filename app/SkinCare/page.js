@@ -36,7 +36,7 @@ export default function SkincarePage() {
 
   useEffect(() => {
     const getProducts = async () => {
-      const products = await fetchProductsByCategory('Skincare');
+      const products = await fetchProductsByCategory([1, 3, 5, 6, 7, 8]);
       setSkincareProducts(products);
       console.log(products)
     };
