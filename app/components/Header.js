@@ -77,7 +77,7 @@ export function Header() {
           <div className="flex-shrink-0">
             <button onClick={() => router.push('/')} className="text-left">
               <h1 className="text-2xl md:text-3xl font-serif bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-                Naya Lumière
+                Naya Lumière Cosmetics
               </h1>
               <p className="text-xs text-gray-500 italic">Parisian Beauty</p>
             </button>

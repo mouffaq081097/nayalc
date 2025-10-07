@@ -16,7 +16,8 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
  *         description: Server error.
  */
 export async function GET(request, { params }) {
-  const { id } = params;
+  const resolvedParams = await Promise.resolve(params);
+  const id = resolvedParams.id;
   try {
     const categorySql = 'SELECT id, name, image_url as "imageUrl" FROM categories WHERE id = $1';
     const { rows: categoryRows } = await db.query(categorySql, [id]);
@@ -27,9 +28,17 @@ export async function GET(request, { params }) {
     const category = categoryRows[0];
 
     const productsSql = `
-      SELECT p.id, p.name 
+      SELECT 
+        p.id, 
+        p.name, 
+        p.description, 
+        p.price, 
+        b.name as "brandName",
+        pi.image_url as "imageUrl"
       FROM products p
       JOIN category_products cp ON p.id = cp.product_id
+      JOIN brands b ON p.brand_id = b.id
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
       WHERE cp.category_id = $1
     `;
     const { rows: productRows } = await db.query(productsSql, [id]);

@@ -2,6 +2,7 @@ import { Button } from './ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from './ui/carousel.tsx';
 import { Container } from './ui/Container';
 import ProductCard from './ProductCard';
+import Link from 'next/link';
 
 export function FeaturedProducts({ products }) { // Accept products prop
   // Use products prop to select featured products
@@ -56,13 +57,15 @@ export function FeaturedProducts({ products }) { // Accept products prop
 
         {/* Call to Action */}
         <div className="text-center mt-12">
-          <Button
-            size="lg"
-            variant="outline"
-            className="border-[var(--brand-pink)] text-[var(--brand-pink)] hover:bg-[var(--brand-pink)] hover:text-white"
-          >
-            View all products
-          </Button>
+          <Link href="/all-products" passHref>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-[var(--brand-pink)] text-[var(--brand-pink)] hover:bg-[var(--brand-pink)] hover:text-white"
+            >
+              View all products
+            </Button>
+          </Link>
         </div>
       </Container>
     </section>

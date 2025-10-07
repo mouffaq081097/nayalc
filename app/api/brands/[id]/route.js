@@ -21,19 +21,18 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
  *       500:
  *         description: Server error.
  */
-export async function GET(request, { params }) {
-  const { id } = params;
+export async function GET(request, context) {
+  const id = context.params.id;
   try {
-    const sql = 'SELECT id, name, imageurl FROM brands WHERE id = $1';
-    const { rows } = await db.query(sql, [id]);
-
+    const { rows } = await db.query('SELECT id, name, imageurl FROM brands WHERE id = $1', [id]);
+    
     if (rows.length === 0) {
       return NextResponse.json({ message: 'Brand not found' }, { status: 404 });
     }
-
+    
     return NextResponse.json(rows[0]);
   } catch (error) {
-    console.error(`Error fetching brand ${id}:`, error);
+    console.error(`Error fetching brand with ID ${id}:`, error);
     return NextResponse.json({ message: 'Error fetching brand from database' }, { status: 500 });
   }
 }
@@ -70,8 +69,8 @@ export async function GET(request, { params }) {
  *       500:
  *         description: Server error.
  */
-export async function PUT(request, { params }) {
-  const { id } = params;
+export async function PUT(request, context) {
+  const id = context.params.id;
   try {
     const formData = await request.formData();
     const name = formData.get('name');
@@ -103,7 +102,7 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json({ message: 'Brand updated successfully', brand: rows[0] });
   } catch (error) {
-    console.error(`Error updating brand ${id}:`, error);
+    console.error(`Error updating brand with ID ${id}:`, error);
     return NextResponse.json({ message: 'Error updating brand in database', error: error.message }, { status: 500 });
   }
 }
@@ -127,8 +126,8 @@ export async function PUT(request, { params }) {
  *       500:
  *         description: Server error.
  */
-export async function DELETE(request, { params }) {
-  const { id } = params;
+export async function DELETE(request, context) {
+  const id = context.params.id;
   try {
     const sql = 'DELETE FROM brands WHERE id = $1 RETURNING id';
     const { rowCount } = await db.query(sql, [id]);
@@ -139,7 +138,7 @@ export async function DELETE(request, { params }) {
 
     return NextResponse.json({ message: 'Brand deleted successfully' });
   } catch (error) {
-    console.error(`Error deleting brand ${id}:`, error);
+    console.error(`Error deleting brand with ID ${id}:`, error);
     return NextResponse.json({ message: 'Error deleting brand from database', error: error.message }, { status: 500 });
   }
 }

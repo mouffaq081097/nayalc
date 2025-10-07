@@ -34,8 +34,8 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
       {/* Product Image */}
       <Link href={`/product/${id}`} className="relative aspect-square overflow-hidden block p-4">
         <Image
-          src={image}
-          alt={name}
+          src={image || '/placeholder-image.jpg'} // Use a placeholder if image is null or empty
+          alt={name || 'Product Image'} // Use product name for alt text
           layout="fill"
           objectFit="contain"
           className="w-full h-full group-hover:scale-105 transition-transform duration-300"

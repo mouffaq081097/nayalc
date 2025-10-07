@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container } from './ui/Container';
-import { ChevronLeft, ChevronRight, Search, User, ShoppingBag, Heart, Gift, Star, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, User, ShoppingBag, Gift, Star, Clock } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import Link from 'next/link'; // Import Link
 
 const heroSlides = [
   {
@@ -89,16 +90,16 @@ export function HeroSection({ onNavigate }) {
     setIsFullscreen(!isFullscreen);
   };
 
-  const handleEscape = (e) => {
+  const handleEscape = useCallback((e) => {
     if (e.key === 'Escape' && isFullscreen) {
       setIsFullscreen(false);
     }
-  };
+  }, [isFullscreen]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isFullscreen]);
+  }, [handleEscape]);
 
   const renderIcon = (iconType, className) => {
     switch (iconType) {
@@ -310,12 +311,13 @@ export function HeroSection({ onNavigate }) {
 
               {/* Bottom Banner */}
               <div className="p-6 pt-0">
-                <button 
-                  className="w-full h-16 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] rounded-2xl flex items-center justify-center cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-md"
-                  onClick={() => onNavigate?.('collections')}
-                >
-                  <span className="text-white font-medium">Download Our App</span>
-                </button>
+                <Link href="/coming-soon" passHref>
+                  <button 
+                    className="w-full h-16 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] rounded-2xl flex items-center justify-center cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-md"
+                  >
+                    <span className="text-white font-medium">Download Our App</span>
+                  </button>
+                </Link>
               </div>
             </div>
 

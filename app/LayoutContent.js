@@ -1,5 +1,5 @@
 'use client';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useCart } from './context/CartContext';
 import { Header } from './components/Header';
 import Footer from './components/Footer';
@@ -9,9 +9,9 @@ import { AdminButton } from './components/AdminButton';
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { cartItems } = useCart();
-  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  useCart();
+
   const isAuthPage = pathname === '/auth';
   const isAdminPage = pathname.startsWith('/admin');
   const isCartPage = pathname === '/cart';

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Heart, ShoppingBag, Users, Award, CheckCircle } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/badge';
+
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 const testimonials = [

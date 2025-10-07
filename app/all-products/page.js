@@ -20,7 +20,7 @@ export default function AllProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   const categories = useMemo(() => {
     const uniqueCategories = new Set(appCategories.map(cat => cat.name.toLowerCase()));

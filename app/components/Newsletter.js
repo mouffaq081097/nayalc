@@ -34,7 +34,7 @@ export function Newsletter() {
               <Button type="submit" className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity px-8">Subscribe</Button>
             </form>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 text-sm text-gray-600">
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
             <div className="flex items-center justify-center gap-2">
               <div className="w-2 h-2 bg-[var(--brand-pink)] rounded-full"></div>
               <span>Exclusive 20% off offers</span>

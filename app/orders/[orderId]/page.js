@@ -1,17 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { getOrderById, getProductById } from '@/app/lib/api';
-import { useUser } from '@/app/context/UserContext';
+
 import { OrderConfirmationPage } from '@/app/components/OrderConfirmationPage';
 
 export default function OrderPage({ params }) {
   const { orderId } = params;
-  const router = useRouter();
+
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useUser();
+
 
   useEffect(() => {
     const fetchOrder = async () => {

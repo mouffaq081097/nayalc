@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image'; // Using next/image instead of ImageWithFallback
+import Link from 'next/link'; // Import Link
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from './ui/carousel.tsx';
 import { Container } from './ui/Container';
 
@@ -17,6 +18,7 @@ export function Categories() {
         }
         const data = await response.json();
         const formattedCategories = data.map(cat => ({
+          id: cat.id, // Include the category ID
           name: cat.name,
           description: cat.description || 'Explore this category',
           image: cat.imageUrl,
@@ -66,39 +68,41 @@ export function Categories() {
           className="w-full"
         >
           <CarouselContent>
-            {categories.map((category, index) => (
+            {categories.map((category) => (
               <CarouselItem key={category.name} className="basis-1/2 md:basis-1/2 lg:basis-1/3">
-                <div
-                  className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-                >
-                  {/* Background Image */}
-                  <div className="relative h-80">
-                    <Image
-                      src={category.image}
-                      alt={category.name}
-                      layout="fill"
-                      objectFit="cover"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
+                <Link href={category.id === 4 ? '/fragrance' : `/collections/${String(category.id)}`} passHref>
+                  <div
+                    className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+                  >
+                    {/* Background Image */}
+                    <div className="relative h-80">
+                      <Image
+                        src={category.image}
+                        alt={category.name}
+                        layout="fill"
+                        objectFit="cover"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      
+                      {/* Overlay */}
+                      <div className={`absolute inset-0 bg-gradient-to-t ${category.color} group-hover:opacity-80 transition-opacity duration-300`} />
+                    </div>
                     
-                    {/* Overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-t ${category.color} group-hover:opacity-80 transition-opacity duration-300`} />
+                    {/* Content */}
+                    <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
+                      <h3 className="text-2xl mb-2 group-hover:transform group-hover:-translate-y-1 transition-transform duration-300">
+                        {category.name}
+                      </h3>
+                      <p className="text-white/90 mb-4 group-hover:transform group-hover:-translate-y-1 transition-transform duration-300 delay-75">
+                        {category.description}
+                      </p>
+                      <div className="w-12 h-0.5 bg-white group-hover:w-20 transition-all duration-300 delay-100" />
+                    </div>
+                    
+                    {/* Decorative Element */}
+                    <div className="absolute top-4 right-4 w-8 h-8 border border-white/30 rounded-full group-hover:scale-125 group-hover:rotate-90 transition-all duration-300" />
                   </div>
-                  
-                  {/* Content */}
-                  <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
-                    <h3 className="text-2xl mb-2 group-hover:transform group-hover:-translate-y-1 transition-transform duration-300">
-                      {category.name}
-                    </h3>
-                    <p className="text-white/90 mb-4 group-hover:transform group-hover:-translate-y-1 transition-transform duration-300 delay-75">
-                      {category.description}
-                    </p>
-                    <div className="w-12 h-0.5 bg-white group-hover:w-20 transition-all duration-300 delay-100" />
-                  </div>
-                  
-                  {/* Decorative Element */}
-                  <div className="absolute top-4 right-4 w-8 h-8 border border-white/30 rounded-full group-hover:scale-125 group-hover:rotate-90 transition-all duration-300" />
-                </div>
+                </Link>
               </CarouselItem>
             ))}
           </CarouselContent>

@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { CheckCircle, Package, Truck, Mail, ArrowRight, Calendar, MapPin, CreditCard } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { convertToAED, formatPrice } from '@/app/lib/utils';
+import { formatPrice } from '@/app/lib/utils';
 
 /**
  * @typedef {object} OrderConfirmationPageProps
@@ -20,8 +20,8 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
   const customerFirstName = order.customerName ? order.customerName.split(' ')[0] : 'Customer';
   const customerLastName = order.customerName ? order.customerName.split(' ').slice(1).join(' ') : '';
   const shippingState = 'N/A'; // Not available in current API response
-  const paymentCardNumber = '**** **** **** 1234'; // Placeholder, not available in current API response
-  const nameOnCard = order.customerName || 'N/A'; // Using customerName as placeholder
+  
+  
 
   // Calculate subtotal for display purposes
   const subtotal = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -11,14 +11,11 @@ import {
   Heart, 
   ShoppingBag, 
   Share2, 
-  Filter, 
   Search,
   Grid3X3,
   List,
   Star,
   X,
-  Plus,
-  Minus,
   Eye,
   Gift,
   Sparkles,
@@ -28,7 +25,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
-import { useAppContext } from '../context/AppContext';
+
 import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../lib/utils';
 
@@ -46,7 +43,6 @@ export default function WishlistPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
   const [selectedItems, setSelectedItems] = useState([]);
-  const [showPriceAlert, setShowPriceAlert] = useState(false);
   const [activeCollection, setActiveCollection] = useState(1);
 
   useEffect(() => {

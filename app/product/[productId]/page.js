@@ -24,7 +24,6 @@ export default function ProductDetailPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
@@ -37,7 +36,7 @@ export default function ProductDetailPage({ params }) {
         }
         const data = await response.json();
         setProduct(data);
-        setSelectedSize(data.sizes && data.sizes.length > 0 ? data.sizes[0] : null); // Set default size
+
 
         if (user) {
           const wishlistResponse = await fetch(`/api/wishlist?userId=${user.id}`);

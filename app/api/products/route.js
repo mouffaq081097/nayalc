@@ -8,6 +8,7 @@ export async function GET(request) {
   const limit = searchParams.get('limit');
   const categoryIdsParam = searchParams.get('categoryIds');
   const isNew = searchParams.get('isNew');
+  const brandId = searchParams.get('brandId');
 
   try {
     let sql;
@@ -54,6 +55,11 @@ export async function GET(request) {
           whereClauses.push(`cp.category_id IN (${ids.map((_, i) => `$${params.length + 1 + i}`).join(',')})`);
           params.push(...ids);
         }
+      }
+
+      if (brandId) {
+        whereClauses.push(`p.brand_id = $${params.length + 1}`);
+        params.push(parseInt(brandId));
       }
 
       if (whereClauses.length > 0) {

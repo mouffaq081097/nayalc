@@ -2,6 +2,7 @@
 import { Button } from './ui/button';
 import { Gift } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link'; // Import Link
 
 export default function CollectionsGrid({ collections }) {
   return (
@@ -38,12 +39,14 @@ export default function CollectionsGrid({ collections }) {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button 
-                    className="flex-1 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
-                    size="sm"
-                  >
-                    View Collection
-                  </Button>
+                  <Link href={`/collections/${collection._id}`} passHref>
+                    <Button 
+                      className="flex-1 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
+                      size="sm"
+                    >
+                      View Collection
+                    </Button>
+                  </Link>
                   <Button variant="outline" size="sm" className="px-3">
                     <Gift className="h-4 w-4" />
                   </Button>

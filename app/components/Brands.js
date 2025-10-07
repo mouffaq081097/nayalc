@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from './ui/button';
 import { Container } from './ui/Container';
+
 const Brands = () => {
   return (
     <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
@@ -29,7 +30,7 @@ const Brands = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center ">
             <div className="relative ">
               <div className="relative overflow-hidden rounded-3xl shadow-2xl">
-                <img src="https://gernetic.com/cdn/shop/files/LAPORTE8_edited_edited_1296x.jpg?v=1723020147" alt="Gernétic products" className="w-full h-[500px] object-cover"/>
+                <Image src="https://gernetic.com/cdn/shop/files/LAPORTE8_edited_edited_1296x.jpg?v=1723020147" alt="Gernétic products" width={1000} height={500} className="w-full h-[500px] object-cover"/>
                 <div className="absolute inset-0 bg-gradient-to-t from-[var(--brand-blue)]/80 to-[var(--brand-blue)]/60 opacity-20"></div>
               </div>
               <div className="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
@@ -79,9 +80,11 @@ const Brands = () => {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive text-primary-foreground hover:bg-primary/90 h-10 rounded-md px-6 has-[&>svg]:px-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity">
-                  Explore Gernétic
-                </button>
+                <Link href="/brand/2" passHref>
+                  <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive text-primary-foreground hover:bg-primary/90 h-10 rounded-md px-6 has-[&>svg]:px-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity">
+                    Explore Gernétic
+                  </button>
+                </Link>
                 <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-10 rounded-md px-6 has-[&>svg]:px-4 border-gray-300 text-gray-700 hover:bg-gray-50">
                   View All Products
                 </button>
@@ -91,7 +94,7 @@ const Brands = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center lg:flex-row-reverse">
               <div className="relative lg:order-2">
                 <div className="relative overflow-hidden rounded-3xl shadow-2xl">
-                  <img src="https://zorah.ca/cdn/shop/collections/3b92c066554239f206b5fb184b9c0dc3.png?v=1724698885&width=1100" alt="Zorah Biocosmetics products" className="w-full h-[500px] object-cover"/>
+                  <Image src="https://zorah.ca/cdn/shop/collections/3b92c066554239f206b5fb184b9c0dc3.png?v=1724698885&width=1100" alt="Zorah Biocosmetics products" width={1100} height={500} className="w-full h-[500px] object-cover"/>
                   <div className="absolute inset-0 bg-gradient-to-t from-[var(--brand-pink)]/80 to-[var(--brand-pink)]/60 opacity-20"></div>
                 </div>
                 <div className="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-lg border border-gray-100">
@@ -141,9 +144,11 @@ const Brands = () => {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive text-primary-foreground hover:bg-primary/90 h-10 rounded-md px-6 has-[&>svg]:px-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity">
-                    Explore Zorah Biocosmetics
-                  </button>
+                  <Link href="/brand/1" passHref>
+                    <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive text-primary-foreground hover:bg-primary/90 h-10 rounded-md px-6 has-[&>svg]:px-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity">
+                      Explore Zorah Biocosmetics
+                    </button>
+                  </Link>
                   <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-10 rounded-md px-6 has-[&>svg]:px-4 border-gray-300 text-gray-700 hover:bg-gray-50">
                     View All Products
                   </button>

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -48,7 +48,7 @@ export default function CheckoutPage() {
     newsletter: false
   });
 
-  const fetchShippingAddresses = async () => {
+  const fetchShippingAddresses = useCallback(async () => {
     if (!user || !user.id) return;
     try {
         // Assuming API returns addresses in camelCase, matching the component's state (e.g., 'addressLine1')
@@ -66,7 +66,7 @@ export default function CheckoutPage() {
         console.error("Error fetching shipping addresses:", error);
         toast.error("Error fetching shipping addresses.");
     }
-};
+}, [user]);
 
   useEffect(() => {
       if (user) {
@@ -75,7 +75,7 @@ export default function CheckoutPage() {
           setShippingAddresses([]);
           setSelectedAddressId(null);
       }
-  }, [user]);
+  }, [user, fetchShippingAddresses]);
 
   const handleAddAddress = async (e) => {
       e.preventDefault();

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
