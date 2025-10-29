@@ -1,0 +1,91 @@
+/* Carousel.css */
+
+.carousel-container {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.carousel-wrapper {
+  display: flex;
+  overflow-x: scroll;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; /* For smooth scrolling on iOS */
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+  gap: 10px; /* Added gap between items */
+}
+
+.carousel-wrapper::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+}
+
+.carousel-item {
+  flex: 0 0 50%; /* Show 2 items at a time on mobile */
+  width: 50%;
+  scroll-snap-align: start;
+  padding: 0; /* Removed padding between items */
+  box-sizing: border-box; /* Include padding in the width */
+}
+
+/* Responsive adjustments */
+@media (min-width: 1024px) { /* lg breakpoint */
+  .carousel-item {
+    flex: 0 0 25%; /* Show 4 items on large screens */
+    width: 25%;
+  }
+}
+
+/* Navigation buttons */
+.carousel-nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 10;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.carousel-nav-button.left {
+  left: 10px;
+}
+
+.carousel-nav-button.right {
+  right: 10px;
+}
+
+.carousel-nav-button:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Pagination dots */
+.carousel-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.carousel-pagination-dot {
+  width: 10px;
+  height: 10px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.carousel-pagination-dot.active {
+  background-color: rgba(0, 0, 0, 0.8);
+}
