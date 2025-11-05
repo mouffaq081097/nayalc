@@ -72,7 +72,8 @@ export async function POST(request) {
             { expiresIn: '1d' } // Token expires in 1 day
         );
 
-        const { password_hash, ...userWithoutPassword } = user;
+        const userWithoutPassword = { ...user };
+        delete userWithoutPassword.password_hash;
 
         // Send login confirmation email
         await sendLoginConfirmationEmail(user.email, user.first_name);

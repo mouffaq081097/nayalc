@@ -1,9 +1,10 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image'; // Import Next.js Image component
 import { MapPin, ChevronDown } from 'lucide-react';
 
-export function SubNavBar({ isScrolled }) {
+export function SubNavBar() {
   return (
     <div className={`bg-gray-100 text-gray-800 text-center overflow-hidden transition-[height] duration-300 ease-in-out h-10 py-2`}>
       <div className="flex items-center justify-between gap-4 text-sm h-full px-4">
@@ -16,7 +17,7 @@ export function SubNavBar({ isScrolled }) {
 
         {/* Center Section: Store Finder */}
         <a href="/help/stores" className="flex items-center gap-1 hover:underline">
-          <img src="https://s3.letoilegulf.com/oasis-strapi-ae-prod/find_You_Store_Icon_488f6c096d.svg" alt="Find My Store Icon" className="h-4 w-4" />
+          <Image src="https://s3.letoilegulf.com/oasis-strapi-ae-prod/find_You_Store_Icon_488f6c096d.svg" alt="Find My Store Icon" width={16} height={16} className="h-4 w-4" />
           <span>Find My Store</span>
         </a>
 

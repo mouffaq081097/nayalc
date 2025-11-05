@@ -27,7 +27,7 @@ export async function getNewArrivals() {
 }
 
 // This function fetches a single product by its ID
-export async function getProduct(id) {
+export async function getProductById(id) {
   if (!id) {
     console.error("getProduct requires an ID.");
     return null;
@@ -104,6 +104,24 @@ export async function getBrand(id) {
     return await response.json();
   } catch (error) {
     console.error("Error in getBrand:", error);
+    return null;
+  }
+}
+
+// This function fetches a single order by its ID
+export async function getOrderById(id) {
+  if (!id) {
+    console.error("getOrderById requires an ID.");
+    return null;
+  }
+  try {
+    const response = await fetch(`/api/orders/${id}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch order');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error in getOrderById:", error);
     return null;
   }
 }

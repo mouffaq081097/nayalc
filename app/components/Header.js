@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingBag, Search, User, Heart, Menu, X, Star, Gift, MapPin, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Search, Heart, Menu, X, MapPin } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -9,13 +9,13 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import React, { forwardRef, useLayoutEffect } from 'react';
-import { SubNavBar } from './SubNavBar';
+
 import { MainSubNavBar } from './MainSubNavBar';
 import { TopBar } from './TopBar'; // Import TopBar
-import { NayaLumiereLogo, CartIcon, HeartIcon, ProfileIcon, SearchIcon, UaeFlagIcon } from './Icons';
+import { NayaLumiereLogo } from './Icons';
 import Link from 'next/link';
 
-const Header = forwardRef(({ onMiddleBarHeightChange }, ref) => {
+const Header = forwardRef(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
@@ -32,19 +32,13 @@ const Header = forwardRef(({ onMiddleBarHeightChange }, ref) => {
   const [loyaltyPoints] = useState(1250); // Mock loyalty points
 
   const topBarRef = useRef(null);
-  const middleBarRef = useRef(null);
-  const mainSubNavBarRef = useRef(null);
 
-  const [middleBarHeight, setMiddleBarHeight] = useState(0);
   const [topBarHeight, setTopBarHeight] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
 
   useLayoutEffect(() => {
     if (topBarRef.current) {
       setTopBarHeight(topBarRef.current.offsetHeight);
-    }
-    if (middleBarRef.current) {
-      setMiddleBarHeight(middleBarRef.current.offsetHeight);
     }
   }, []);
 
@@ -125,7 +119,7 @@ const Header = forwardRef(({ onMiddleBarHeightChange }, ref) => {
                 </form>
               </div>
             )}
-                          <div ref={middleBarRef} className={`bg-white border-b border-gray-100 sticky !top-0 z-50 w-full ${isSticky ? 'shadow-md' : ''}`}>              <Container className="py-2">
+                          <div className={`bg-white border-b border-gray-100 sticky !top-0 z-50 w-full ${isSticky ? 'shadow-md' : ''}`}>              <Container className="py-2">
                 <div className="flex items-center justify-between gap-4">
                   {/* Mobile Menu Button */}
                   <Button
@@ -248,11 +242,13 @@ const Header = forwardRef(({ onMiddleBarHeightChange }, ref) => {
                   )}
                 </Container>
               </div>
-            <div ref={mainSubNavBarRef}>
+            <div>
               <MainSubNavBar loyaltyPoints={loyaltyPoints} user={user} />
             </div>
           </>
         );
 });
+
+Header.displayName = 'Header';
 
 export default Header;

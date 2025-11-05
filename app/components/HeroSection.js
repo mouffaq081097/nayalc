@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Container } from './ui/Container';
+
 import { ChevronLeft, ChevronRight, Search, User, ShoppingBag, Gift, Star, Clock } from 'lucide-react';
 import Image from 'next/image';
 import imagePng from '../../public/Untitled design.png';
 import imageTwoJpg from '../../public/2.jpg';
 import Link from 'next/link'; // Import Link
+import { ImageWithFallback } from './figma/ImageWithFallback';
 
 const heroSlides = [
   {

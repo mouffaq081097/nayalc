@@ -1,6 +1,6 @@
 'use client';
 import { usePathname } from 'next/navigation';
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import { useCart } from './context/CartContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -10,13 +10,7 @@ import { AdminButton } from './components/AdminButton';
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
-  const [middleBarHeight, setMiddleBarHeight] = useState(0);
-
   useCart();
-
-  const handleMiddleBarHeightChange = (height) => {
-    setMiddleBarHeight(height);
-  };
 
   const isAuthPage = pathname === '/auth';
   const isAdminPage = pathname.startsWith('/admin');
@@ -26,7 +20,7 @@ export default function LayoutContent({ children }) {
     <>
       <AdminButton />
       {!isAuthPage && !isAdminPage && !isCartPage && (
-        <Header onMiddleBarHeightChange={handleMiddleBarHeightChange} />
+        <Header />
       )}
       <main>
         {children}
