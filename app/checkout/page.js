@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from '../components/ui/checkbox';
 import { Separator } from '../components/ui/separator';
 import { Card, CardTitle } from '../components/ui/card';
-import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, Tag } from 'lucide-react';
 import { FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
@@ -17,13 +17,14 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function CheckoutPage() {
-  const { cartItems, clearCart } = useCart();
+  const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [shippingAddresses, setShippingAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
   
   // State for new address form
   const [newAddressLine1, setNewAddressLine1] = useState('');
@@ -137,11 +138,10 @@ export default function CheckoutPage() {
       }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const shipping = subtotal > 200 ? 0 : 30; // Free shipping if subtotal > 200 AED, otherwise 30 AED
   const tax = subtotal * 0.05; // 5% tax on AED subtotal
   const giftWrapFee = formData.giftWrap ? 20 : 0; // Assuming 20 AED for gift wrap
-  const total = subtotal + shipping + tax + giftWrapFee;
+  const total = finalTotal + shipping + tax + giftWrapFee;
 
   const truncateDescription = (description, maxLength = 100) => {
     if (!description) return '';
@@ -203,6 +203,8 @@ export default function CheckoutPage() {
         price: item.price,
       })),
       taxAmount: tax,
+      applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
+      discount_amount: discountAmount,
     };
 
     try {
@@ -228,6 +230,12 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error placing order:', error);
       toast.error('Error placing order: ' + error.message);
+    }
+  };
+
+  const handleApplyCoupon = () => {
+    if (couponCode.trim()) {
+      applyCoupon(couponCode.trim());
     }
   };
 
@@ -610,12 +618,36 @@ export default function CheckoutPage() {
 
               <Separator className="my-4" />
 
+              {/* Coupon Code */}
+              <div className="mb-4">
+                <Label htmlFor="couponCode">Discount Code</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    id="couponCode"
+                    placeholder="Enter your code"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    disabled={!!appliedCoupon}
+                  />
+                  <Button onClick={handleApplyCoupon} disabled={!!appliedCoupon}>
+                    Apply
+                  </Button>
+                </div>
+              </div>
+
               {/* Totals */}
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>AED {subtotal.toFixed(2)}</span>
                 </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ({appliedCoupon.code})</span>
+                    <span>- AED {discountAmount.toFixed(2)}</span>
+                    <Button variant="ghost" size="sm" onClick={removeCoupon}>Remove</Button>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span>{shipping === 0 ? 'FREE' : `AED ${shipping.toFixed(2)}`}</span>

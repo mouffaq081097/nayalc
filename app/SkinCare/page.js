@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import { Droplets, Leaf, Award, Sparkles } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useAppContext } from '../context/AppContext';
+import { useRouter } from 'next/navigation';
 
 const skincareBenefits = [
   {
@@ -33,6 +34,7 @@ const skincareBenefits = [
 export default function SkincarePage() {
   const { fetchProductsByCategory } = useAppContext();
   const [skincareProducts, setSkincareProducts] = useState([]);
+  const router = useRouter();
 
   useEffect(() => {
     const getProducts = async () => {
@@ -72,6 +74,7 @@ export default function SkincarePage() {
                   variant="outline" 
                   size="lg"
                   className="border-[var(--brand-blue)] text-[var(--brand-blue)]"
+                  onClick={() => router.push('/skin-quiz')}
                 >
                   Take Skin Quiz
                 </Button>
@@ -100,12 +103,14 @@ export default function SkincarePage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {skincareBenefits.map((benefit, index) => (
-              <div key={index} className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[var(--brand-blue)]/10 to-[var(--brand-pink)]/10 rounded-2xl mb-4">
+              <div key={index} className="flex items-start gap-4">
+                <div className="flex-shrink-0 inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[var(--brand-blue)]/10 to-[var(--brand-pink)]/10 rounded-2xl">
                   <benefit.icon className="h-8 w-8 text-[var(--brand-blue)]" />
                 </div>
-                <h3 className="text-lg mb-2">{benefit.title}</h3>
-                <p className="text-gray-600 text-sm">{benefit.description}</p>
+                <div>
+                  <h3 className="text-lg mb-1 font-semibold">{benefit.title}</h3>
+                  <p className="text-gray-600 text-sm">{benefit.description}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -125,7 +130,7 @@ export default function SkincarePage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {skincareProducts && skincareProducts.map((product) => (
               <ProductCard key={product.id} {...product} />
             ))}

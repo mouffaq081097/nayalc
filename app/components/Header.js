@@ -75,17 +75,10 @@ const Header = forwardRef(() => {
 
 
   const handleSearch = (e) => {
-
     e.preventDefault();
-
     if (searchQuery.trim()) {
-
-      console.log('Searching for:', searchQuery);
-
-      // Handle search logic here
-
+      router.push(`/search?q=${searchQuery}`);
     }
-
   };
 
 
@@ -173,10 +166,6 @@ const Header = forwardRef(() => {
                   {/* Right Icons - Enhanced with loyalty */}
                   <div className="flex items-center space-x-2 md:space-x-3">
                     {/* Loyalty Points - Desktop */}
-
-                    <Button variant="ghost" size="sm" className="md:hidden">
-                      <Search className="h-5 w-5" />
-                    </Button>
 
                     {user && (
                         <button onClick={handleAccountClick} className="hidden md:flex flex-col items-start justify-center p-1 rounded-md hover:bg-gray-100/50">

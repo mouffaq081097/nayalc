@@ -70,7 +70,7 @@ export const NayaLumiereLogo = ({ className }) => (
                 <stop offset="100%" style={{ stopColor: '#D4AF37', stopOpacity: 1 }} />
             </linearGradient>
         </defs>
-        <image href="/favicon.jpeg" x="0" y="0" height="40" width="40" />
+        <image href="/Adobe Express - file (5).png" x="0" y="0" height="40" width="40" />
         <text x="50" y="24" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" fontSize="20" fontWeight="600" fill="#2d3748">
             NAYA
         </text>

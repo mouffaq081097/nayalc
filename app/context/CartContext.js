@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useState } from 'react';
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
 import { useAppContext } from './AppContext'; // Import useAppContext
@@ -11,6 +11,8 @@ export const CartProvider = ({ children }) => {
     const { showToast: addToast } = useToast();
     const { user, isAuthenticated } = useAuth();
     const { cart, setCart } = useAppContext(); // Consume cart and setCart from AppContext
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [discountAmount, setDiscountAmount] = useState(0);
 
     // Helper function to save cart to backend
     const saveCartToBackend = useCallback(async (currentCart) => {
@@ -136,16 +138,61 @@ export const CartProvider = ({ children }) => {
         addToast("Cart cleared!");
     };
 
-    const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0); // Use cart from AppContext
+    const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+
+    const applyCoupon = async (code) => {
+        try {
+            const response = await fetch('/api/coupons/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, totalAmount: subtotal }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to apply coupon');
+            }
+
+            const coupon = data;
+            let discount = 0;
+            if (coupon.discount_type === 'percentage') {
+                discount = (subtotal * coupon.discount_value) / 100;
+            } else if (coupon.discount_type === 'fixed_amount') {
+                discount = coupon.discount_value;
+            }
+
+            setDiscountAmount(discount);
+            setAppliedCoupon(coupon);
+            addToast('Coupon applied successfully!', 'success');
+        } catch (error) {
+            setDiscountAmount(0);
+            setAppliedCoupon(null);
+            addToast(error.message, 'error');
+        }
+    };
+
+    const removeCoupon = () => {
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
+        addToast('Coupon removed.');
+    };
+
+    const finalTotal = subtotal - discountAmount;
 
     return (
         <CartContext.Provider value={{
-            cartItems: cart, // Expose cart from AppContext as cartItems
+            cartItems: cart,
             addToCart,
             removeFromCart,
             updateQuantity,
             clearCart,
-            cartTotal
+            subtotal,
+            appliedCoupon,
+            discountAmount,
+            finalTotal,
+            applyCoupon,
+            removeCoupon,
         }}>
             {children}
         </CartContext.Provider>

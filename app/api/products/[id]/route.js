@@ -69,3 +69,33 @@ export async function GET(request, context) {
         client.release();
     }
 }
+export async function DELETE(request, { params }) {
+  const { id } = params;
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Delete from product_images
+    await client.query('DELETE FROM product_images WHERE product_id = $1', [id]);
+
+    // Delete from category_products
+    await client.query('DELETE FROM category_products WHERE product_id = $1', [id]);
+
+    // Delete from products
+    const deleteProductResult = await client.query('DELETE FROM products WHERE id = $1', [id]);
+
+    if (deleteProductResult.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+    }
+
+    await client.query('COMMIT');
+    return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error(`Error deleting product ${id}:`, error);
+    return NextResponse.json({ message: 'Error deleting product', error: error.message }, { status: 500 });
+  } finally {
+    client.release();
+  }
+}

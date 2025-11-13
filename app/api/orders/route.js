@@ -110,7 +110,7 @@ export async function POST(request) {
     console.log('--- NEW ORDER REQUEST ---');
     const client = await db.connect();
     try {
-        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items, taxAmount } = await request.json();
+        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items, taxAmount, applied_coupon_id, discount_amount } = await request.json();
 
         if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0 || taxAmount === undefined) {
             return NextResponse.json({ message: 'Missing required order information or items.' }, { status: 400 });
@@ -119,12 +119,16 @@ export async function POST(request) {
         await client.query('BEGIN');
 
         const insertOrderSql = `
-            INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id)
-            VALUES ($1, $2, $3, $4, $5, $6, false, $7) RETURNING id;
+            INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount)
+            VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9) RETURNING id;
         `;
-        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'pending', shipping_scheduled_date, user_id];
+        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
+
+        if (applied_coupon_id) {
+            await client.query('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = $1', [applied_coupon_id]);
+        }
 
         const { rows: userRows } = await client.query('SELECT email FROM users WHERE id = $1', [user_id]);
         const userEmail = userRows.length > 0 ? userRows[0].email : null;

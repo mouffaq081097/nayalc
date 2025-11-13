@@ -2,31 +2,28 @@
 import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { ArrowLeft, Plus, Minus, X, ShoppingBag, Heart, Gift } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, X, ShoppingBag, Heart, Gift, Check } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useRouter } from 'next/navigation'; // Added useRouter import
 import { useCart } from '../context/CartContext';
 
 export default function CartPage() {
-  const { cartItems, removeFromCart, updateQuantity } = useCart();
-  const [promoCode, setPromoCode] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState(null);
+  const { cartItems, removeFromCart, updateQuantity, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon } = useCart();
+  const [couponCode, setCouponCode] = useState('');
   const router = useRouter(); // Initialize useRouter
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const savings = cartItems.reduce((sum, item) => 
     sum + ((item.originalPrice || item.price) - item.price) * item.quantity, 0
   );
   const FREE_SHIPPING_THRESHOLD = 200;
   const SHIPPING_COST = 30;
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const promoDiscount = appliedPromo === 'WELCOME10' ? subtotal * 0.1 : 0;
-  const total = subtotal + shipping - promoDiscount;
+  const total = finalTotal + shipping;
 
-  const applyPromoCode = () => {
-    if (promoCode.toUpperCase() === 'WELCOME10') {
-      setAppliedPromo('WELCOME10');
-      setPromoCode('');
+  const handleApplyCoupon = () => {
+    if (couponCode.trim()) {
+      applyCoupon(couponCode.trim());
+      setCouponCode('');
     }
   };
 
@@ -150,20 +147,23 @@ export default function CartPage() {
                 <div className="flex gap-2">
                   <Input
                     placeholder="Enter promo code"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
                     className="flex-1"
+                    disabled={!!appliedCoupon}
                   />
                   <Button 
-                    onClick={applyPromoCode}
+                    onClick={handleApplyCoupon}
                     variant="outline"
+                    disabled={!!appliedCoupon}
                   >
                     Apply
                   </Button>
                 </div>
-                {appliedPromo && (
-                  <div className="mt-3 text-sm text-green-600">
-                    ✓ Promo code "{appliedPromo}" applied - 10% off!
+                {appliedCoupon && (
+                  <div className="mt-3 text-sm text-green-600 flex justify-between items-center">
+                    <span>✓ Promo code "{appliedCoupon.code}" applied!</span>
+                    <Button variant="ghost" size="sm" onClick={removeCoupon}>Remove</Button>
                   </div>
                 )}
               </div>
@@ -187,10 +187,10 @@ export default function CartPage() {
                     </div>
                   )}
 
-                  {promoDiscount > 0 && (
+                  {discountAmount > 0 && (
                     <div className="flex justify-between text-sm text-green-600">
                       <span>Promo Discount</span>
-                      <span>-AED {promoDiscount.toFixed(2)}</span>
+                      <span>-AED {discountAmount.toFixed(2)}</span>
                     </div>
                   )}
                   
@@ -199,24 +199,28 @@ export default function CartPage() {
                     <span>{shipping === 0 ? 'FREE' : `AED ${shipping.toFixed(2)}`}</span>
                   </div>
                   
-                  {shipping === 0 ? (
-                    <div className="text-xs text-green-600">
-                      &check; Free shipping on orders over AED {FREE_SHIPPING_THRESHOLD}
-                    </div>
-                  ) : (
-                    <div className="mt-4">
-                      <div className="flex justify-between text-xs text-gray-600 mb-1">
-                        <span>Add AED {(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} for &quot;FREE&quot; Shipping</span>
-                        <span>{((subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(0)}%</span>
+                  {/* Free Shipping Progress Bar */}
+                  <div className="mt-4">
+                    {subtotal >= FREE_SHIPPING_THRESHOLD ? (
+                      <div className="text-sm text-green-600 font-medium flex items-center gap-2">
+                        <Check className="h-4 w-4" />
+                        <span>Your order qualifies for FREE Shipping!</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-[var(--brand-blue)] h-2 rounded-full" 
-                          style={{ width: `${((subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(0)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>Add AED {(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} for FREE Shipping</span>
+                          <span>{((subtotal / FREE_SHIPPING_THRESHOLD) * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-[var(--brand-blue)] h-2 rounded-full transition-all duration-500 ease-out" 
+                            style={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
+                          ></div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="border-t border-gray-100 pt-4 mb-6">

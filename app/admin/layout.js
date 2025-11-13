@@ -22,6 +22,7 @@ const AdminLayout = ({ children }) => {
         { to: '/admin/categories', text: 'Categories', icon: 'map-pin' },
         { to: '/admin/brands', text: 'Brands', icon: 'heart' },
         { to: '/admin/orders', text: 'Orders', icon: 'orders' },
+        { to: '/admin/coupons', text: 'Coupons', icon: 'bag' },
     ];
 
     const IconMap = {

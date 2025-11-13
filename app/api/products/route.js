@@ -9,6 +9,7 @@ export async function GET(request) {
   const categoryIdsParam = searchParams.get('categoryIds');
   const isNew = searchParams.get('isNew');
   const brandId = searchParams.get('brandId');
+  const searchQuery = searchParams.get('search');
 
   try {
     let sql;
@@ -60,6 +61,11 @@ export async function GET(request) {
       if (brandId) {
         whereClauses.push(`p.brand_id = $${params.length + 1}`);
         params.push(parseInt(brandId));
+      }
+
+      if (searchQuery) {
+        whereClauses.push(`(p.name ILIKE $${params.length + 1} OR p.description ILIKE $${params.length + 1} OR b.name ILIKE $${params.length + 1})`);
+        params.push(`%${searchQuery}%`);
       }
 
       if (whereClauses.length > 0) {
