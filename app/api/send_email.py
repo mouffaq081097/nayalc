@@ -5,6 +5,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import sys
 import base64
+import os
 
 def send_email(receiver_email, subject, body):
     """
@@ -18,11 +19,13 @@ def send_email(receiver_email, subject, body):
     smtp_port = 587
 
     # --- Email Credentials ---
-    # Replace with your email address
-    sender_email = "mouffaq.dalloul@gmail.com"
-    # IMPORTANT: It's recommended to use an app-specific password if your email provider supports it.
-    # Replace with your email password or app-specific password
-    password = "tjnw yxtv ydso odrl"
+    # It's recommended to use an app-specific password if your email provider supports it.
+    sender_email = os.environ.get("SENDER_EMAIL")
+    password = os.environ.get("SENDER_PASSWORD")
+
+    if not sender_email or not password:
+        print("Error: SENDER_EMAIL and SENDER_PASSWORD environment variables are not set.")
+        return
 
     # --- Create the Email Message ---
     message = MIMEMultipart("alternative")

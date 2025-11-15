@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
+import { useParams } from 'next/navigation';
 import { getOrderById, getProductById } from '@/app/lib/api';
 
 import { OrderConfirmationPage } from '@/app/components/OrderConfirmationPage';
 
-export default function OrderPage({ params }) {
+export default function OrderPage() {
+  const params = useParams();
   const { orderId } = params;
 
   const [orderData, setOrderData] = useState(null);

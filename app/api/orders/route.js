@@ -130,8 +130,9 @@ export async function POST(request) {
             await client.query('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = $1', [applied_coupon_id]);
         }
 
-        const { rows: userRows } = await client.query('SELECT email FROM users WHERE id = $1', [user_id]);
+        const { rows: userRows } = await client.query('SELECT email, first_name FROM users WHERE id = $1', [user_id]);
         const userEmail = userRows.length > 0 ? userRows[0].email : null;
+        const firstName = userRows.length > 0 ? userRows[0].first_name : 'Customer';
         console.log('User Email:', userEmail);
 
         const itemValues = items.map(item => `(${orderId}, ${item.productId}, ${item.quantity}, ${item.price})`).join(',');
@@ -169,7 +170,7 @@ export async function POST(request) {
             });
 
             // Execute Python script for sending email to customer
-            const pythonScriptPath = './send_email.py';
+            const pythonScriptPath = 'app/api/send_email.py';
             const customerSubject = 'Order Confirmation - nayalc.com';
             const customerBody = `
 <!DOCTYPE html>
@@ -199,35 +200,34 @@ export async function POST(request) {
             <h2>Your Order Confirmation - nayalc.com</h2>
         </div>
         <div class="content">
-            <p>Dear Customer,</p>
+            <p>Dear ${firstName},</p>
             <p>Thank you for your recent purchase from nayalc.com! We're excited to confirm your order.</p>
             
             <div class="order-summary">
                 <p><strong>Order ID:</strong> ${orderId}</p>
-                <p><strong>Total Amount:</strong> AED ${total_amount.toFixed(2)}</p>
-                <p><strong>Tax Amount:</strong> AED ${taxAmount.toFixed(2)}</p>
-            </div>
-
-            <h3>Order Details</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${itemsWithDetails.map(item => `
-                    <tr>
-                        <td>${item.name}</td>
-                        <td>${item.quantity}</td>
-                        <td>AED ${(item.price * item.quantity).toFixed(2)}</td>
-                    </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-
+                            <p><strong>Total Amount:</strong> AED ${Number(total_amount).toFixed(2)}</p>
+                            <p><strong>Tax Amount:</strong> AED ${Number(taxAmount).toFixed(2)}</p>
+                            </div>
+                
+                            <h3>Order Details</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${itemsWithDetails.map(item => `
+                                    <tr>
+                                        <td>${item.name}</td>
+                                        <td>${item.quantity}</td>
+                                        <td>AED ${(Number(item.price) * Number(item.quantity)).toFixed(2)}</td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
             <h3>Shipping Address</h3>
             <p>
                 ${shippingAddress.street}<br>
@@ -260,9 +260,10 @@ export async function POST(request) {
             });
 
             // Execute Python script for sending email to administrator
-            const adminEmail = 'mouffaq@nayalc.com'; // TODO: Replace with actual administrator email
-            const adminSubject = `New Order #${orderId} - Action Required`;
-            const adminBody = `
+            const adminEmail = process.env.ADMIN_EMAIL;
+            if (adminEmail) {
+                const adminSubject = `New Order #${orderId} - Action Required`;
+                const adminBody = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -286,7 +287,7 @@ export async function POST(request) {
             <h3>Order Details</h3>
             <p><strong>Order ID:</strong> ${orderId}</p>
             <p><strong>Customer Email:</strong> ${userEmail}</p>
-            <p><strong>Total Amount:</strong> AED ${total_amount.toFixed(2)}</p>
+            <p><strong>Total Amount:</strong> AED ${Number(total_amount).toFixed(2)}</p>
             <p><strong>Shipping Address:</strong></p>
             <p>
                 ${shippingAddress.street}<br>
@@ -304,17 +305,18 @@ export async function POST(request) {
 </body>
 </html>
 `;
-            const encodedAdminBody = Buffer.from(adminBody).toString('base64');
-            const adminCommand = `python ${pythonScriptPath} "${adminEmail}" "${adminSubject}" "${encodedAdminBody}"`;
+                const encodedAdminBody = Buffer.from(adminBody).toString('base64');
+                const adminCommand = `python ${pythonScriptPath} "${adminEmail}" "${adminSubject}" "${encodedAdminBody}"`;
 
-            exec(adminCommand, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`exec error (admin email): ${error}`);
-                    return;
-                }
-                console.log(`stdout (admin email): ${stdout}`);
-                console.error(`stderr (admin email): ${stderr}`);
-            });
+                exec(adminCommand, (error, stdout, stderr) => {
+                    if (error) {
+                        console.error(`exec error (admin email): ${error}`);
+                        return;
+                    }
+                    console.log(`stdout (admin email): ${stdout}`);
+                    console.error(`stderr (admin email): ${stderr}`);
+                });
+            }
         } else {
             console.log('No user email found. Skipping email confirmation.');
         }

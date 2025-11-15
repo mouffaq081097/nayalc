@@ -4,18 +4,25 @@ import { Badge } from './ui/badge';
 import { CheckCircle, Package, Truck, Mail, ArrowRight, Calendar, MapPin, CreditCard } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { formatPrice } from '@/app/lib/utils';
+import { useState } from 'react';
+import { useUser } from '@/app/context/UserContext';
 
 /**
  * @typedef {object} OrderConfirmationPageProps
  * @property {any} order - The order data.
- * @property {function(): void} onContinueShopping - Callback for continue shopping action.
- * @property {function(): void} onViewAccount - Callback for view account action.
+ * @property {() => void} onContinueShopping - Callback for continue shopping action.
+ * @property {() => void} onViewAccount - Callback for view account action.
  */
 
 /**
  * @param {OrderConfirmationPageProps} props
  */
 export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount }) {
+  const { contactInfo } = useUser();
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const [resendError, setResendError] = useState(null);
+
   // Derive missing fields or use placeholders
   const customerFirstName = order.customerName ? order.customerName.split(' ')[0] : 'Customer';
   const customerLastName = order.customerName ? order.customerName.split(' ').slice(1).join(' ') : '';
@@ -60,6 +67,25 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
       date: 'Jan 27' // Placeholder, actual date not available
     }
   ];
+
+  const handleResendEmail = async () => {
+    setIsResending(true);
+    setResendSuccess(false);
+    setResendError(null);
+    try {
+      const response = await fetch(`/api/orders/${order.id}/resend-email`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to resend email.');
+      }
+      setResendSuccess(true);
+    } catch (error) {
+      setResendError(error.message);
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -218,7 +244,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                   </div>
                   <hr className="my-2" />
                   <div className="flex justify-between font-medium text-lg">
-                    <span>Total Paid</span>
+                    <span>Order Total</span>
                     <span>{formatPrice(parseFloat(order.totalAmount))}</span>
                   </div>
                 </div>
@@ -257,7 +283,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                   Payment Method
                 </h3>
                 <div className="text-sm text-gray-600">
-                  <p>Cash on Delivery</p>
+                  <p>Payment on Delivery</p>
                 </div>
               </motion.div>
 
@@ -285,7 +311,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
               {/* Help */}
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.7 }}
                 className="bg-gradient-to-br from-[var(--brand-blue)]/5 to-[var(--brand-pink)]/5 rounded-2xl p-6"
               >
@@ -310,9 +336,16 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
             <Mail className="h-8 w-8 text-blue-600 mx-auto mb-3" />
             <h3 className="text-lg mb-2">Confirmation Email Sent</h3>
             <p className="text-gray-600">
-              We&apos;ve sent a detailed order confirmation to <strong>your email address ({order.customerEmail})</strong>. 
+              We&apos;ve sent a detailed order confirmation to <strong>your email address ({contactInfo.email})</strong>. 
               You&apos;ll also receive updates as your order progresses.
             </p>
+            <div className="mt-4">
+              <Button onClick={handleResendEmail} disabled={isResending}>
+                {isResending ? 'Resending...' : 'Resend Email'}
+              </Button>
+              {resendSuccess && <p className="text-green-600 mt-2">Email resent successfully!</p>}
+              {resendError && <p className="text-red-600 mt-2">{resendError}</p>}
+            </div>
           </motion.div>
         </div>
       </div>

@@ -48,14 +48,21 @@ export async function POST(request, { params }) {
             return NextResponse.json({ message: 'Address Line 1, City, and Country are required.' }, { status: 400 });
         }
 
+        const { rows: userRows } = await client.query('SELECT email, first_name, last_name FROM users WHERE id = $1', [userId]);
+        if (userRows.length === 0) {
+            return NextResponse.json({ message: 'User not found' }, { status: 404 });
+        }
+        const user = userRows[0];
+        const customerName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+
         await client.query('BEGIN');
 
         if (is_default) {
             await client.query('UPDATE user_addresses SET is_default = FALSE WHERE user_id = $1', [userId]);
         }
 
-        const sql = 'INSERT INTO user_addresses (user_id, address_line1, address_line2, city, state, zip_code, country, is_default, address_label) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id';
-        const { rows } = await client.query(sql, [userId, address_line1, address_line2, city, state, zip_code, country, is_default, address_label]);
+        const sql = 'INSERT INTO user_addresses (user_id, address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id';
+        const { rows } = await client.query(sql, [userId, address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customerName, user.email]);
         
         await client.query('COMMIT');
 

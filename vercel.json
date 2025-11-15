@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "nodejs18.x",
+      "includedFiles": ["app/api/send_email.py"]
+    }
+  }
+}

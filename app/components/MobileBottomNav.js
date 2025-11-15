@@ -20,7 +20,7 @@ function MobileBottomNav() {
   const pathname = usePathname();
   const currentPage = pathname.substring(1);
   const { cartItems } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const handleItemClick = (itemId) => {
     const routeMap = {
@@ -80,13 +80,21 @@ function MobileBottomNav() {
               
               {/* Icon Container */}
               <div className="relative">
-                <item.icon 
-                  className={`h-6 w-6 transition-colors duration-200 ${
-                    isItemActive 
-                      ? 'text-[var(--brand-pink)]' 
-                      : 'text-gray-400 group-hover:text-gray-600'
-                  }`}
-                />
+                {item.id === 'account' && user ? (
+                  // Display user image or initial if available
+                  // For now, just display a placeholder or initial
+                  <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                    {user.first_name ? user.first_name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
+                  </div>
+                ) : (
+                  <item.icon 
+                    className={`h-6 w-6 transition-colors duration-200 ${
+                      isItemActive 
+                        ? 'text-[var(--brand-pink)]' 
+                        : 'text-gray-400 group-hover:text-gray-600'
+                    }`}
+                  />
+                )}
                 
                 {/* Cart Badge */}
                 {item.id === 'cart' && cartCount > 0 && (
@@ -119,7 +127,7 @@ function MobileBottomNav() {
                     : 'text-gray-400 group-hover:text-gray-600'
                 }`}
               >
-                {item.label}
+                {item.id === 'account' && user ? (user.first_name || user.username) : item.label}
               </span>
               
               {/* Active dot indicator */}
