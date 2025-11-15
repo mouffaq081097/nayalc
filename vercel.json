@@ -1,6 +1,2 @@
 {
-  "functions": {
-    "app/api/**/*.js": {
-    }
-  }
 }
