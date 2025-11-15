@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { exec } from 'child_process';
-import { Buffer } from 'buffer';
+import { sendLoginConfirmationEmail } from '@/lib/mail'; // Import the new function
 
 /**
  * @swagger
@@ -23,7 +22,7 @@ import { Buffer } from 'buffer';
  *             properties:
  *               email: { type: 'string', format: 'email' }
  *               password: { type: 'string', format: 'password' }
- *     responses:
+ *     responses: 
  *       200:
  *         description: Login successful, returns JWT.
  *         content:
@@ -76,51 +75,8 @@ export async function POST(request) {
         const userWithoutPassword = { ...user };
         delete userWithoutPassword.password_hash;
 
-        // Send login confirmation email
-        const pythonScriptPath = 'app/api/send_email.py';
-        const subject = 'Login Confirmation - nayalc.com';
-        const body = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f4f7fa; margin: 0; padding: 0; }
-                .container { width: 100%; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-                .header { background-color: #007bff; color: white; padding: 25px 20px; text-align: center; }
-                .header h2 { margin: 0; font-size: 28px; }
-                .content { padding: 30px; }
-                .content p { margin-bottom: 15px; }
-                .footer { text-align: center; font-size: 0.85em; color: #777; margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-top: 1px solid #e0e0e0; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h2>Login Confirmation</h2>
-                </div>
-                <div class="content">
-                    <p>Dear ${user.first_name},</p>
-                    <p>This is to confirm that you have successfully logged into your nayalc.com account.</p>
-                    <p>If you did not initiate this login, please change your password immediately and contact our support team.</p>
-                </div>
-                <div class="footer">
-                    <p>&copy; ${new Date().getFullYear()} nayalc.com. All rights reserved.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        `;
-        const encodedBody = Buffer.from(body).toString('base64');
-        const command = `python ${pythonScriptPath} "${user.email}" "${subject}" "${encodedBody}"`;
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`exec error (login email): ${error}`);
-                return;
-            }
-            console.log(`stdout (login email): ${stdout}`);
-            console.error(`stderr (login email): ${stderr}`);
-        });
+        // Send login confirmation email using Nodemailer
+        await sendLoginConfirmationEmail(user.email, user.first_name);
 
         return NextResponse.json({ message: 'Login successful!', token, user: userWithoutPassword });
 
