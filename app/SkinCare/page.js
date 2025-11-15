@@ -1,9 +1,12 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
-import { Droplets, Leaf, Award, Sparkles } from 'lucide-react';
+import { Droplets, Leaf, Award, Sparkles, Filter, ArrowDownUp, X } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useAppContext } from '../context/AppContext';
 import { useRouter } from 'next/navigation';
@@ -34,16 +37,60 @@ const skincareBenefits = [
 export default function SkincarePage() {
   const { fetchProductsByCategory } = useAppContext();
   const [skincareProducts, setSkincareProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]); // New state for filtered products
+  const [isFilterOpen, setIsFilterOpen] = useState(false); // New state for filter modal
+  const [isSortOpen, setIsSortOpen] = useState(false); // New state for sort modal
+  const [selectedFilters, setSelectedFilters] = useState({}); // New state for selected filters
+  const [selectedSort, setSelectedSort] = useState('default'); // New state for selected sort
   const router = useRouter();
+
+  // Placeholder functions
+  const handleFilterClick = () => setIsFilterOpen(!isFilterOpen);
+  const handleSortClick = () => setIsSortOpen(!isSortOpen);
+
+  // Function to apply filters and sort (placeholder for now)
+  const applyFiltersAndSort = useCallback(() => {
+    let products = [...skincareProducts]; // Start with all products
+
+    // Apply filters
+    if (selectedFilters.brand) {
+      products = products.filter(product =>
+        product.brand && product.brand.toLowerCase().includes(selectedFilters.brand.toLowerCase())
+      );
+    }
+
+    if (selectedFilters.maxPrice !== undefined) {
+      products = products.filter(product =>
+        product.price <= selectedFilters.maxPrice
+      );
+    }
+    // ... more filter logic here ...
+
+    // Apply sorting
+    if (selectedSort === 'price_asc') {
+      products.sort((a, b) => a.price - b.price);
+    } else if (selectedSort === 'price_desc') {
+      products.sort((a, b) => b.price - a.price);
+    }
+    // ... more sort logic here ...
+
+    setFilteredProducts(products);
+  }, [skincareProducts, selectedFilters, selectedSort]);
 
   useEffect(() => {
     const getProducts = async () => {
       const products = await fetchProductsByCategory([1, 3, 5, 6, 7, 8]);
       setSkincareProducts(products);
+      setFilteredProducts(products); // Initialize filtered products
       console.log(products)
     };
     getProducts();
   }, [fetchProductsByCategory]);
+
+  // Apply filters and sort whenever skincareProducts, selectedFilters, or selectedSort changes
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [skincareProducts, selectedFilters, selectedSort, applyFiltersAndSort]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -67,6 +114,9 @@ export default function SkincarePage() {
                 <Button 
                   size="lg"
                   className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
+                  onClick={() => {
+                    document.getElementById('skincare-products-grid').scrollIntoView({ behavior: 'smooth' });
+                  }}
                 >
                   Shop Skincare
                 </Button>
@@ -118,20 +168,24 @@ export default function SkincarePage() {
       </section>
 
       {/* Products Section */}
-      <section className="py-16">
+      <section id="skincare-products-grid" className="py-16">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl">All Skincare Products</h2>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">All Skin Types</Button>
-              <Button variant="outline" size="sm">Dry Skin</Button>
-              <Button variant="outline" size="sm">Oily Skin</Button>
-              <Button variant="outline" size="sm">Sensitive</Button>
+              <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={handleFilterClick}>
+                <Filter className="h-4 w-4" />
+                Filter
+              </Button>
+              <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={handleSortClick}>
+                <ArrowDownUp className="h-4 w-4" />
+                Sort
+              </Button>
             </div>
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {skincareProducts && skincareProducts.map((product) => (
+            {filteredProducts && filteredProducts.map((product) => (
               <ProductCard key={product.id} {...product} />
             ))}
           </div>
@@ -177,6 +231,122 @@ export default function SkincarePage() {
           </div>
         </div>
       </section>
+
+      {/* Filter Modal/Panel */}
+      {isFilterOpen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2 lg:w-1/3 relative">
+            <button
+              onClick={() => setIsFilterOpen(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold mb-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">Filter Products</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="brand-filter" className="mb-2 block">Brand</Label>
+                <Input
+                  id="brand-filter"
+                  placeholder="e.g., The Ordinary"
+                  value={selectedFilters.brand || ''}
+                  onChange={(e) => setSelectedFilters({ ...selectedFilters, brand: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="mb-2 block">Max Price (AED)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={selectedFilters.maxPrice || 200} // Assuming a max price for now
+                    onChange={(e) => setSelectedFilters({ ...selectedFilters, maxPrice: Number(e.target.value) })}
+                    className="w-full"
+                    min="0"
+                  />
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="200" // Max price should be dynamic based on available products
+                  value={selectedFilters.maxPrice || 200}
+                  onChange={(e) => setSelectedFilters({ ...selectedFilters, maxPrice: Number(e.target.value) })}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
+                  style={{
+                    '--range-thumb-color': 'var(--brand-blue)',
+                    '--range-track-color': '#E5E7EB', // light gray
+                    '--webkit-slider-thumb-background': 'var(--range-thumb-color)',
+                    '--moz-range-thumb-background': 'var(--range-thumb-color)',
+                    '--webkit-slider-runnable-track-background': 'var(--range-track-color)',
+                    '--moz-range-track-background': 'var(--range-track-color)',
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex justify-between mt-6">
+              <Button
+                variant="outline"
+                className="border-[var(--brand-blue)] text-[var(--brand-blue)]"
+                onClick={() => {
+                  setSelectedFilters({});
+                  applyFiltersAndSort();
+                }}
+              >
+                Clear Filters
+              </Button>
+              <Button
+                className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
+                onClick={() => {
+                  applyFiltersAndSort();
+                  setIsFilterOpen(false);
+                }}
+              >
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sort Modal/Panel */}
+      {isSortOpen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2 lg:w-1/3 relative">
+            <button
+              onClick={() => setIsSortOpen(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-semibold mb-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">Sort Products</h3>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="sort-by" className="mb-2 block">Sort By</Label>
+                <Select value={selectedSort} onValueChange={setSelectedSort}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a sort option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default</SelectItem>
+                    <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                    <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end mt-6">
+              <Button
+                className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
+                onClick={() => {
+                  applyFiltersAndSort();
+                  setIsSortOpen(false);
+                }}
+              >
+                Apply Sort
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
