@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false }) => {
   useEffect(() => {
     const handleEsc = (event) => {
       if (event.keyCode === 27) {
@@ -20,7 +20,8 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none transition-opacity duration-300 ease-in-out bg-black bg-opacity-10 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none transition-opacity duration-300 ease-in-out backdrop-blur-sm"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
       onClick={onClose}
     >
       <div 
@@ -44,7 +45,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             </button>
           </div>
           {/*body*/}
-          <div className="relative p-6 flex-auto max-h-[70vh] overflow-y-auto">
+          <div className={`relative flex-auto max-h-[70vh] overflow-y-auto ${noBodyPadding ? '' : 'p-6'}`}>
             {children}
           </div>
         </div>

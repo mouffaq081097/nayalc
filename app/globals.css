@@ -301,3 +301,12 @@ html {
   transition: transform 500ms ease-in-out;
   will-change: transform;
 }
+
+/* CSS class for the UAE flag icon */
+.uae-flag-icon {
+  background-image: url('https://flagcdn.com/w20/ae.png'); /* Publicly hosted UAE flag image */
+  background-size: 20px 14px; /* Adjust size as needed */
+  background-repeat: no-repeat;
+  background-position: 8px center; /* Position the flag inside the select */
+  padding-left: 35px !important; /* Make space for the flag icon */
+}

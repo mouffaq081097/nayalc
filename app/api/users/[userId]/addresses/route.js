@@ -16,7 +16,7 @@ export async function GET(request, context) {
     const params = await context.params;
     const { userId } = params;
     try {
-        const sql = 'SELECT id, user_id as "userId", address_line1 as "addressLine1", address_line2 as "addressLine2", city, state, zip_code as "zipCode", country, is_default as "isDefault", address_label as "addressLabel", customer_name as "customerName", customer_email as "customerEmail", customer_phone as "customerPhone", created_at as "createdAt", updated_at as "updatedAt" FROM user_addresses WHERE user_id = $1 ORDER BY is_default DESC, created_at DESC';
+        const sql = 'SELECT id, user_id as "userId", address_line1 as "addressLine1", address_line2 as "addressLine2", city, state, zip_code as "zipCode", country, is_default as "isDefault", address_label as "addressLabel", customer_email as "customerEmail", customer_phone as "customerPhone", shipping_address as "shippingAddress", created_at as "createdAt", updated_at as "updatedAt" FROM user_addresses WHERE user_id = $1 ORDER BY is_default DESC, created_at DESC';
         const { rows } = await db.query(sql, [userId]);
         return NextResponse.json(rows);
     } catch (error) {
@@ -38,11 +38,12 @@ export async function GET(request, context) {
  *       500:
  *         description: Server error.
  */
-export async function POST(request, { params }) {
+export async function POST(request, context) {
+    const params = await context.params;
     const { userId } = params;
     const client = await db.connect();
     try {
-        const { address_line1, address_line2, city, state, zip_code, country, is_default, address_label = 'Other' } = await request.json();
+        const { address_line1, address_line2, city, state, zip_code, country, is_default, address_label = 'Other', customer_phone, shipping_address } = await request.json();
 
         if (!address_line1 || !city || !country) {
             return NextResponse.json({ message: 'Address Line 1, City, and Country are required.' }, { status: 400 });
@@ -61,8 +62,8 @@ export async function POST(request, { params }) {
             await client.query('UPDATE user_addresses SET is_default = FALSE WHERE user_id = $1', [userId]);
         }
 
-        const sql = 'INSERT INTO user_addresses (user_id, address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id';
-        const { rows } = await client.query(sql, [userId, address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customerName, user.email]);
+        const sql = 'INSERT INTO user_addresses (user_id, address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_email, customer_phone, shipping_address) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id';
+        const { rows } = await client.query(sql, [userId, address_line1, address_line2, city, state, zip_code, country, is_default, address_label, user.email, customer_phone, shipping_address]);
         
         await client.query('COMMIT');
 

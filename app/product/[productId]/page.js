@@ -69,6 +69,10 @@ export default function ProductDetailPage({ params }) {
   }
 
   const handleAddToCart = () => {
+    if (!user) {
+      router.push('/auth');
+      return;
+    }
     addToCart(product, quantity);
   };
 

@@ -16,6 +16,13 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
+
+import PhoneNumberInput from '../components/PhoneNumberInput'; // Used by AddressInputForm
+import MapPicker from '../components/MapPicker'; // Used by AddressInputForm
+import Modal from '../components/Modal'; // New import for modal component
+import AddressInputForm from '../components/AddressInputForm'; // New import for reusable address form
+import { User } from 'lucide-react'; // Used by AddressInputForm
+
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon } = useCart();
   const { user } = useAuth();
@@ -24,20 +31,9 @@ export default function CheckoutPage() {
   const [shippingAddresses, setShippingAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
   const [couponCode, setCouponCode] = useState('');
-  
-  // State for new address form
-  const [newAddressLine1, setNewAddressLine1] = useState('');
-  const [newAddressLine2, setNewAddressLine2] = useState('');
-  const [newCity, setNewCity] = useState('');
-  const [newState, setNewState] = useState('');
-  const [newZipCode, setNewZipCode] = useState('');
-  const [newCountry, setNewCountry] = useState('');
-  const [newAddressLabel, setNewAddressLabel] = useState('Other');
-  const [newCustomerName, setNewCustomerName] = useState('');
-  const [newCustomerEmail, setNewCustomerEmail] = useState('');
-  const [newCustomerPhone, setNewCustomerPhone] = useState('');
-  const [newIsDefault, setNewIsDefault] = useState(false);
 
   const [formData, setFormData] = useState({
     // Payment Info
@@ -52,7 +48,6 @@ export default function CheckoutPage() {
   const fetchShippingAddresses = useCallback(async () => {
     if (!user || !user.id) return;
     try {
-        // Assuming API returns addresses in camelCase, matching the component's state (e.g., 'addressLine1')
         const response = await fetch(`/api/users/${user.id}/addresses`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -60,7 +55,7 @@ export default function CheckoutPage() {
         const data = await response.json();
         setShippingAddresses(data);
         if (data.length > 0) {
-            const defaultAddress = data.find(addr => addr.is_default || addr.isDefault); // Check both cases
+            const defaultAddress = data.find(addr => addr.is_default || addr.isDefault);
             setSelectedAddressId(defaultAddress ? defaultAddress.id : data[0].id);
         }
     } catch (error) {
@@ -78,64 +73,49 @@ export default function CheckoutPage() {
       }
   }, [user, fetchShippingAddresses]);
 
-  const handleAddAddress = async (e) => {
-      e.preventDefault();
-      if (!user || !user.id) {
-          toast.error("User not authenticated.");
-          return;
+  const openAddressModal = (address) => {
+    setEditingAddress(address); // Pass the address as is, without fullName property
+    setIsAddressModalOpen(true);
+  };
+
+  const closeAddressModal = () => {
+    setEditingAddress(null);
+    setIsAddressModalOpen(false);
+  };
+
+  const handleCheckoutAddressSave = async (addressData) => {
+    if (!user) return;
+
+    const method = editingAddress ? 'PUT' : 'POST';
+    const endpoint = editingAddress
+      ? `/api/users/${user.id}/addresses/${editingAddress.id}`
+      : `/api/users/${user.id}/addresses`;
+
+    try {
+      const payload = {
+        ...addressData,
+      };
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload), // Send the transformed payload
+      });
+
+      if (response.ok) {
+        closeAddressModal();
+        fetchShippingAddresses(); // Refresh addresses
+        toast.success(`Address ${editingAddress ? 'updated' : 'saved'} successfully!`);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to save address with status: ${response.status}`);
       }
-
-      if (!newAddressLine1 || !newCity || !newCountry) {
-          toast.error("Address Line 1, City, and Country are required.");
-          return;
-      }
-
-      try {
-          // Send data with snake_case if your API expects it
-          const response = await fetch(`/api/users/${user.id}/addresses`, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                  address_line1: newAddressLine1,
-                  address_line2: newAddressLine2,
-                  city: newCity,
-                  state: newState,
-                  zip_code: newZipCode,
-                  country: newCountry,
-                  is_default: newIsDefault,
-                  address_label: newAddressLabel,
-                  customer_name: newCustomerName,
-                  customer_email: newCustomerEmail,
-                  customer_phone: newCustomerPhone,
-              }),
-          });
-
-          if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-          }
-
-          toast.success("Address added successfully!");
-          // Clear form fields
-          setNewAddressLine1('');
-          setNewAddressLine2('');
-          setNewCity('');
-          setNewState('');
-          setNewZipCode('');
-          setNewCountry('');
-          setNewAddressLabel('Other');
-          setNewCustomerName('');
-          setNewCustomerEmail('');
-          setNewCustomerPhone('');
-          setNewIsDefault(false);
-          setShowAddAddressForm(false);
-          fetchShippingAddresses(); // Re-fetch addresses to update the list
-      } catch (error) {
-          console.error("Error adding address:", error);
-          toast.error(`Error adding address: ${error.message}`);
-      }
+    } catch (error) {
+      console.error('Failed to save address:', error);
+      toast.error('An error occurred while saving the address: ' + error.message);
+    }
   };
 
   const shipping = subtotal > 200 ? 0 : 30; // Free shipping if subtotal > 200 AED, otherwise 30 AED
@@ -315,12 +295,15 @@ export default function CheckoutPage() {
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="font-semibold">{address.customerName || user?.name}</p>
+                              <h3 className="text-lg font-bold">
+                                {`${address.city}, ${address.country}`}
+                              </h3>
                               <p>{address.addressLine1}, {address.addressLine2}</p>
                               <p>{address.city}, {address.state} {address.zipCode}</p>
                               <p>{address.country}</p>
                               <p className="text-sm text-gray-500">{address.customerPhone}</p>
-                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
                             <input
                               type="radio"
                               name="selectedAddress"
@@ -328,8 +311,10 @@ export default function CheckoutPage() {
                               onChange={() => setSelectedAddressId(address.id)}
                               className="form-radio h-4 w-4 text-[var(--brand-blue)]"
                             />
+                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openAddressModal(address); }}>Edit</Button>
                           </div>
-                        </Card>
+                        </div>
+                      </Card>
                       ))}
                     </div>
                   )}
@@ -337,133 +322,10 @@ export default function CheckoutPage() {
                   <Button
                     variant="outline"
                     className="w-full mt-4 flex items-center gap-2"
-                    onClick={() => setShowAddAddressForm(!showAddAddressForm)}
+                    onClick={() => openAddressModal(null)}
                   >
-                    <FaPlus /> {showAddAddressForm ? 'Cancel Add New Address' : 'Add New Address'}
+                    <FaPlus /> Add New Address
                   </Button>
-
-                  {showAddAddressForm && (
-                    <Card className="p-6 mt-4">
-                      <CardTitle className="mb-4">Add New Address</CardTitle>
-                      <form onSubmit={handleAddAddress} className="space-y-4">
-                        <div>
-                          <Label htmlFor="newCustomerName">Full Name</Label>
-                          <Input
-                            id="newCustomerName"
-                            value={newCustomerName}
-                            onChange={(e) => setNewCustomerName(e.target.value)}
-                            placeholder="Enter full name"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="newCustomerEmail">Email Address</Label>
-                          <Input
-                            id="newCustomerEmail"
-                            type="email"
-                            value={newCustomerEmail}
-                            onChange={(e) => setNewCustomerEmail(e.target.value)}
-                            placeholder="Enter email address"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="newCustomerPhone">Phone Number</Label>
-                          <Input
-                            id="newCustomerPhone"
-                            type="tel"
-                            value={newCustomerPhone}
-                            onChange={(e) => setNewCustomerPhone(e.target.value)}
-                            placeholder="Enter phone number"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="newAddressLine1">Address Line 1</Label>
-                          <Input
-                            id="newAddressLine1"
-                            value={newAddressLine1}
-                            onChange={(e) => setNewAddressLine1(e.target.value)}
-                            placeholder="Street address, P.O. Box"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="newAddressLine2">Address Line 2 (Optional)</Label>
-                          <Input
-                            id="newAddressLine2"
-                            value={newAddressLine2}
-                            onChange={(e) => setNewAddressLine2(e.target.value)}
-                            placeholder="Apartment, suite, unit, building, floor, etc."
-                          />
-                        </div>
-                        <div className="grid md:grid-cols-3 gap-4">
-                          <div>
-                            <Label htmlFor="newCity">City</Label>
-                            <Input
-                              id="newCity"
-                              value={newCity}
-                              onChange={(e) => setNewCity(e.target.value)}
-                              placeholder="City"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="newState">State/Province</Label>
-                            <Input
-                              id="newState"
-                              value={newState}
-                              onChange={(e) => setNewState(e.target.value)}
-                              placeholder="State/Province"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="newZipCode">ZIP/Postal Code</Label>
-                            <Input
-                              id="newZipCode"
-                              value={newZipCode}
-                              onChange={(e) => setNewZipCode(e.target.value)}
-                              placeholder="ZIP/Postal Code"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="newCountry">Country</Label>
-                          <Input
-                            id="newCountry"
-                            value={newCountry}
-                            onChange={(e) => setNewCountry(e.target.value)}
-                            placeholder="Country"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="newAddressLabel">Address Label</Label>
-                          <Select value={newAddressLabel} onValueChange={setNewAddressLabel}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a label" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Home">Home</SelectItem>
-                              <SelectItem value="Work">Work</SelectItem>
-                              <SelectItem value="Other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="newIsDefault"
-                            checked={newIsDefault}
-                            onCheckedChange={setNewIsDefault}
-                          />
-                          <Label htmlFor="newIsDefault">Set as default address</Label>
-                        </div>
-                        <Button type="submit" className="w-full">
-                          Save Address
-                        </Button>
-                      </form>
-                    </Card>
-                  )}
                 </div>
               )}
 
@@ -678,6 +540,13 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit Address' : 'Add New Address'}>
+        <AddressInputForm
+          initialData={editingAddress}
+          onSave={handleCheckoutAddressSave}
+          onCancel={closeAddressModal}
+        />
+      </Modal>
     </div>
   );
 }

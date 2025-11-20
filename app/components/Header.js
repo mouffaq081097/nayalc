@@ -124,8 +124,11 @@ const Header = forwardRef(() => {
 
                 {/* Desktop Header */}
                 <div className="hidden md:flex items-center justify-between gap-4">
+                  <Link href="/" className="flex items-center">
+                      <NayaLumiereLogo className="h-8 w-auto" />
+                  </Link>
                   {/* Location Selector Placeholder */}
-                  <div className="flex items-center text-black bg-gray-100 hover:bg-gray-200 p-2 rounded-md cursor-pointer" onClick={() => router.push('/account?tab=addresses')}>
+                  <div className="flex items-center text-black bg-gray-100 hover:bg-gray-200 p-2 rounded-md cursor-pointer" onClick={() => user ? router.push('/account?tab=addresses') : router.push('/auth')}>
                     <MapPin className="h-5 w-5 mr-1" />
                     <div className="flex flex-col text-xs leading-tight">
                       <span className="text-black">Deliver to</span>

@@ -23,9 +23,6 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState(null);
 
-  // Derive missing fields or use placeholders
-  const customerFirstName = order.customerName ? order.customerName.split(' ')[0] : 'Customer';
-  const customerLastName = order.customerName ? order.customerName.split(' ').slice(1).join(' ') : '';
   const shippingState = 'N/A'; // Not available in current API response
   
   
@@ -265,7 +262,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                   Shipping Address
                 </h3>
                 <div className="text-sm text-gray-600">
-                  <p>{customerFirstName} {customerLastName}</p>
+                  <p>{order.customerName}</p>
                   <p>{order.shippingAddress}</p>
                   <p>{order.city}, {shippingState} {order.zipCode}</p>
                 </div>

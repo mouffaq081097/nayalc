@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { exec } from 'child_process';
-import { Buffer } from 'buffer';
+import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail'; // Import the new functions
 
 // Helper function to fetch order items for a given order ID using a specific client
 const fetchOrderItems = async (orderId, client) => {
@@ -48,10 +47,8 @@ export async function GET(request) {
     try {
         let sql = `
             SELECT
-                o.id,
-                ua.customer_name as "customerName",
-                ua.customer_email as "customerEmail",
-                ua.customer_phone as "customerPhone",
+                            o.id,
+                            ua.customer_email as "customerEmail",                ua.customer_phone as "customerPhone",
                 ua.shipping_address as "shippingAddress",
                 ua.city,
                 ua.zip_code as "zipCode",
@@ -169,153 +166,13 @@ export async function POST(request) {
                 };
             });
 
-            // Execute Python script for sending email to customer
-            const pythonScriptPath = 'app/api/send_email.py';
-            const customerSubject = 'Order Confirmation - nayalc.com';
-            const customerBody = `
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f4f7fa; margin: 0; padding: 0; }
-        .container { width: 100%; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-        .header { background-color: #007bff; color: white; padding: 25px 20px; text-align: center; }
-        .header h2 { margin: 0; font-size: 28px; }
-        .content { padding: 30px; }
-        .content p { margin-bottom: 15px; }
-        .order-summary { background-color: #e9f5ff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 25px; border-radius: 5px; }
-        .order-summary p { margin: 5px 0; font-size: 1.1em; }
-        .order-summary strong { color: #0056b3; }
-        h3 { color: #007bff; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 30px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #e0e0e0; padding: 12px; text-align: left; }
-        th { background-color: #f0f0f0; color: #555; font-weight: bold; }
-        .footer { text-align: center; font-size: 0.85em; color: #777; margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-top: 1px solid #e0e0e0; }
-        .button { display: inline-block; background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Your Order Confirmation - nayalc.com</h2>
-        </div>
-        <div class="content">
-            <p>Dear ${firstName},</p>
-            <p>Thank you for your recent purchase from nayalc.com! We're excited to confirm your order.</p>
-            
-            <div class="order-summary">
-                <p><strong>Order ID:</strong> ${orderId}</p>
-                            <p><strong>Total Amount:</strong> AED ${Number(total_amount).toFixed(2)}</p>
-                            <p><strong>Tax Amount:</strong> AED ${Number(taxAmount).toFixed(2)}</p>
-                            </div>
-                
-                            <h3>Order Details</h3>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Product</th>
-                                        <th>Quantity</th>
-                                        <th>Price</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${itemsWithDetails.map(item => `
-                                    <tr>
-                                        <td>${item.name}</td>
-                                        <td>${item.quantity}</td>
-                                        <td>AED ${(Number(item.price) * Number(item.quantity)).toFixed(2)}</td>
-                                    </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-            <h3>Shipping Address</h3>
-            <p>
-                ${shippingAddress.street}<br>
-                ${shippingAddress.city}, ${shippingAddress.zip}<br>
-                ${shippingAddress.country}
-            </p>
-
-            <p>We will send you another email with tracking information once your order has been shipped.</p>
-            <p>If you have any questions, please don't hesitate to contact our support team.</p>
-            <a href="#" class="button">View Your Order</a> <!-- Placeholder for a link to order details -->
-        </div>
-        <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} nayalc.com. All rights reserved.</p>
-            <p><a href="#" style="color: #007bff;">Privacy Policy</a> | <a href="#" style="color: #007bff;">Contact Us</a></p>
-        </div>
-    </div>
-</body>
-</html>
-`;
-            const encodedCustomerBody = Buffer.from(customerBody).toString('base64');
-            const customerCommand = `python ${pythonScriptPath} "${userEmail}" "${customerSubject}" "${encodedCustomerBody}"`;
-
-            exec(customerCommand, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`exec error (customer email): ${error}`);
-                    return;
-                }
-                console.log(`stdout (customer email): ${stdout}`);
-                console.error(`stderr (customer email): ${stderr}`);
-            });
+            // Send order confirmation email to customer using Nodemailer
+            await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, itemsWithDetails, shippingAddress);
 
             // Execute Python script for sending email to administrator
             const adminEmail = process.env.ADMIN_EMAIL;
             if (adminEmail) {
-                const adminSubject = `New Order #${orderId} - Action Required`;
-                const adminBody = `
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px; border-radius: 8px; }
-        .header { background-color: #FFC107; color: white; padding: 10px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { padding: 20px; background-color: #ffffff; border-radius: 0 0 8px 8px; }
-        .footer { text-align: center; font-size: 0.8em; color: #777; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>New Order Received - Action Required!</h2>
-        </div>
-        <div class="content">
-            <p>Dear Administrator,</p>
-            <p>A new order has been placed on nayalc.com. Please process this order promptly.</p>
-            
-            <h3>Order Details</h3>
-            <p><strong>Order ID:</strong> ${orderId}</p>
-            <p><strong>Customer Email:</strong> ${userEmail}</p>
-            <p><strong>Total Amount:</strong> AED ${Number(total_amount).toFixed(2)}</p>
-            <p><strong>Shipping Address:</strong></p>
-            <p>
-                ${shippingAddress.street}<br>
-                ${shippingAddress.city}, ${shippingAddress.zip}<br>
-                ${shippingAddress.country}
-            </p>
-
-            <p>Please log in to the admin panel to view full order details and initiate shipping.</p>
-            <p>Thank you,<br>nayalc.com Automated System</p>
-        </div>
-        <div class="footer">
-            <p>&copy; ${new Date().getFullYear()} nayalc.com. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
-`;
-                const encodedAdminBody = Buffer.from(adminBody).toString('base64');
-                const adminCommand = `python ${pythonScriptPath} "${adminEmail}" "${adminSubject}" "${encodedAdminBody}"`;
-
-                exec(adminCommand, (error, stdout, stderr) => {
-                    if (error) {
-                        console.error(`exec error (admin email): ${error}`);
-                        return;
-                    }
-                    console.log(`stdout (admin email): ${stdout}`);
-                    console.error(`stderr (admin email): ${stderr}`);
-                });
+                await sendAdminNotificationEmail(adminEmail, orderId, userEmail, total_amount, shippingAddress);
             }
         } else {
             console.log('No user email found. Skipping email confirmation.');

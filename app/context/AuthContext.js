@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('user');
     console.log('AuthContext: User logged out and removed from local storage.');
+    window.location.reload();
     // localStorage.removeItem('token');
   };
 

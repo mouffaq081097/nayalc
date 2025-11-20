@@ -12,7 +12,15 @@ import { useCart } from '../context/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 
+import PhoneNumberInput from '../components/PhoneNumberInput';
+import MapPicker from '../components/MapPicker'; // New import
 import Modal from '../components/Modal';
+import AddressInputForm from '../components/AddressInputForm'; // New import for the reusable form
+
+
+// InputField and AddressForm components have been moved into AddressInputForm.js for reusability.
+
+
 
 const AccountPageContent = () => {
   const { user, logout } = useAuth();
@@ -38,6 +46,12 @@ const AccountPageContent = () => {
     phone: '',
     birthday: ''
   });
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/auth');
+    }
+  }, [user, router]);
 
   useEffect(() => {
     if (user) {
@@ -198,7 +212,7 @@ const AccountPageContent = () => {
   };
 
   const openAddressModal = (address) => {
-    setEditingAddress(address);
+    setEditingAddress(address); // Pass the address as is, without fullName property
     setIsAddressModalOpen(true);
   };
 
@@ -216,12 +230,16 @@ const AccountPageContent = () => {
       : `/api/users/${user.id}/addresses`;
 
     try {
+      const payload = {
+        ...addressData,
+      };
+
       const response = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(addressData),
+        body: JSON.stringify(payload), // Send the transformed payload
       });
 
       if (response.ok) {
@@ -269,72 +287,6 @@ const AccountPageContent = () => {
         alert('An error occurred while removing the address.');
       }
     }
-  };
-
-  const AddressForm = ({ address, onSave, onCancel }) => {
-    const [formData, setFormData] = useState({
-      addressLabel: address?.addressLabel || '',
-      addressLine1: address?.addressLine1 || '',
-      addressLine2: address?.addressLine2 || '',
-      city: address?.city || '',
-      state: address?.state || '',
-      zipCode: address?.zipCode || '',
-      country: address?.country || '',
-      isDefault: address?.isDefault || false,
-    });
-
-    const handleChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    };
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      onSave(formData);
-    };
-
-    return (
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <Label htmlFor="addressLabel">Address Label</Label>
-            <Input id="addressLabel" name="addressLabel" value={formData.addressLabel} onChange={handleChange} />
-          </div>
-          <div className="col-span-2">
-            <Label htmlFor="addressLine1">Address Line 1</Label>
-            <Input id="addressLine1" name="addressLine1" value={formData.addressLine1} onChange={handleChange} required />
-          </div>
-          <div className="col-span-2">
-            <Label htmlFor="addressLine2">Address Line 2</Label>
-            <Input id="addressLine2" name="addressLine2" value={formData.addressLine2} onChange={handleChange} />
-          </div>
-          <div>
-            <Label htmlFor="city">City</Label>
-            <Input id="city" name="city" value={formData.city} onChange={handleChange} required />
-          </div>
-          <div>
-            <Label htmlFor="state">State</Label>
-            <Input id="state" name="state" value={formData.state} onChange={handleChange} />
-          </div>
-          <div>
-            <Label htmlFor="zipCode">Zip Code</Label>
-            <Input id="zipCode" name="zipCode" value={formData.zipCode} onChange={handleChange} />
-          </div>
-          <div>
-            <Label htmlFor="country">Country</Label>
-            <Input id="country" name="country" value={formData.country} onChange={handleChange} required />
-          </div>
-          <div className="col-span-2 flex items-center">
-            <input type="checkbox" id="isDefault" name="isDefault" checked={formData.isDefault} onChange={handleChange} className="mr-2" />
-            <Label htmlFor="isDefault">Set as default address</Label>
-          </div>
-        </div>
-        <div className="flex justify-end gap-4 mt-6">
-          <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button type="submit">Save Address</Button>
-        </div>
-      </form>
-    );
   };
 
   return (
@@ -693,7 +645,9 @@ const AccountPageContent = () => {
                       <div key={address.id} className="bg-gray-50 rounded-2xl p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div>
-                            <h3 className="text-lg font-bold">{address.addressLabel}</h3>
+                            <h3 className="text-lg font-bold">
+                              {`${address.city}, ${address.country}`}
+                            </h3>
                             {address.isDefault && <Badge className="text-xs font-semibold">Default</Badge>}
                           </div>
                           <div className="flex gap-2">
@@ -701,12 +655,13 @@ const AccountPageContent = () => {
                             <Button variant="outline" size="sm" onClick={() => handleAddressRemove(address.id)}>Remove</Button>
                           </div>
                         </div>
-                        <p className="text-gray-600">
-                          {address.addressLine1}<br />
-                          {address.addressLine2 && <span>{address.addressLine2}<br /></span>}
-                          {address.city}, {address.state} {address.zipCode}<br />
-                          {address.country}
-                        </p>
+                        <ul className="list-none space-y-1 text-gray-600">
+                          {address.customerName && <li><span className="font-bold">{address.customerName}</span></li>}
+                          {address.shippingAddress && <li><span>{address.shippingAddress}</span></li>}
+                          {address.apartment && <li><span>{address.apartment}</span></li>}
+                          {(address.city || address.country) && <li><span>{address.city}{address.city && address.country && ', '}{address.country}</span></li>}
+                          {address.customerPhone && <li><span>Phone number: {address.customerPhone}</span></li>}
+                        </ul>
                       </div>
                     ))}
                   </div>
@@ -733,8 +688,8 @@ const AccountPageContent = () => {
         </div>
       </div>
       <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit Address' : 'Add New Address'}>
-        <AddressForm
-          address={editingAddress}
+        <AddressInputForm
+          initialData={editingAddress}
           onSave={handleAddressSave}
           onCancel={closeAddressModal}
         />

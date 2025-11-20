@@ -34,7 +34,7 @@ export async function GET(request, context) {
         const sql = `
             SELECT
                 o.id,
-                ua.customer_name as "customerName",
+                (u.first_name || ' ' || u.last_name) as "customerName",
                 ua.customer_email as "customerEmail",
                 ua.customer_phone as "customerPhone",
                 ua.shipping_address as "shippingAddress",
@@ -51,6 +51,7 @@ export async function GET(request, context) {
                 o.user_address_id as "userAddressId"
             FROM orders o
             JOIN user_addresses ua ON o.user_address_id = ua.id
+            JOIN users u ON o.user_id = u.id
             WHERE o.id = $1;
         `;
         const { rows: orderRows } = await client.query(sql, [orderId]);
