@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
-import { User, Package, Heart, Settings, MapPin, CreditCard, Bell, LogOut, Eye, HandCoins, Mail, Phone, Cake, Lock, Truck, Plus } from 'lucide-react';
+import { User, Package, Heart, Settings, MapPin, CreditCard, Bell, LogOut, Eye, HandCoins, Mail, Phone, Cake, Lock, Truck, Plus, ArrowLeft } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -29,6 +29,8 @@ const AccountPageContent = () => {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'profile';
   const [activeTab, setActiveTab] = useState(initialTab);
+  // Control visibility of sidebar vs content on mobile
+  const [showSidebarOnMobile, setShowSidebarOnMobile] = useState(initialTab === 'profile');
   const [isEditMode, setIsEditMode] = useState(false);
   const [orders, setOrders] = useState([]);
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
@@ -231,8 +233,26 @@ const AccountPageContent = () => {
 
     try {
       const payload = {
-        ...addressData,
+        address_line1: addressData.addressLine1,
+        apartment: addressData.apartment,
+        city: addressData.city,
+        country: addressData.country,
+        latitude: addressData.latitude,
+        longitude: addressData.longitude,
+        is_default: addressData.isDefault,
+        zip_code: addressData.zipCode,
+        state: addressData.state,
+        customer_phone: addressData.customerPhone,
+        address_label: addressData.addressLine1 || 'New Address',
+        customer_email: user.email, // Add customer email from user object
       };
+
+      // Remove undefined or empty string values from payload to avoid sending them
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined || payload[key] === '') {
+          delete payload[key];
+        }
+      });
 
       const response = await fetch(endpoint, {
         method,
@@ -291,10 +311,10 @@ const AccountPageContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full px-4 py-10">
         <div className="grid lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Sidebar - Visible on mobile when showSidebarOnMobile is true, always on lg and up */}
+          <div className={`${showSidebarOnMobile ? 'block' : 'hidden'} lg:block lg:col-span-1`}>
             <div className="bg-white rounded-2xl p-6 sticky top-24">
               {/* Profile Header */}
               <div className="text-center mb-6 pb-6 border-b border-gray-100">
@@ -320,7 +340,10 @@ const AccountPageContent = () => {
                 ].map((item) => (
                   <button
                     key={item.id}
-                    onClick={item.onClick || (() => setActiveTab(item.id))}
+                    onClick={item.onClick || (() => {
+                      setActiveTab(item.id);
+                      setShowSidebarOnMobile(false);
+                    })}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                       activeTab === item.id
                         ? 'bg-gradient-to-r from-[var(--brand-blue)]/10 to-[var(--brand-pink)]/10 text-[var(--brand-pink)]'
@@ -335,16 +358,21 @@ const AccountPageContent = () => {
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3">
+          {/* Main Content - Visible on mobile when showSidebarOnMobile is false, always on lg and up */}
+          <div className={`${!showSidebarOnMobile ? 'block' : 'hidden'} lg:block lg:col-span-3`}>
             <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-2xl p-8"
-            >
-              {/* Profile Tab */}
+                                className="bg-white rounded-2xl p-8"
+                              >
+                                {/* Back button for mobile */}
+                                <div className="lg:hidden mb-4">
+                                  <Button variant="ghost" onClick={() => setShowSidebarOnMobile(true)}>
+                                    <ArrowLeft className="h-5 w-5 mr-2" /> Back to Menu
+                                  </Button>
+                                </div>              {/* Profile Tab */}
               {activeTab === 'profile' && (
                 <div>
                   {isEditMode ? (
@@ -476,12 +504,12 @@ const AccountPageContent = () => {
                     <h2 className="text-2xl">Order History</h2>
                   </div>
                   <div className="flex justify-between items-center mb-6">
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
                       <Input
                         placeholder="Search by order # or product"
                         value={orderSearchQuery}
                         onChange={(e) => setOrderSearchQuery(e.target.value)}
-                        className="w-64"
+                        className="w-full sm:w-64"
                       />
                       <select
                         value={orderStatusFilter}
@@ -564,7 +592,7 @@ const AccountPageContent = () => {
                           ))}
                         </div>
                         
-                        <div className="flex gap-4 pt-4 border-t border-gray-200">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-4 border-t border-gray-200">
                           <Button variant="outline" size="sm" className="flex-1">
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
@@ -686,9 +714,9 @@ const AccountPageContent = () => {
             </motion.div>
           </div>
         </div>
-      </div>
-      <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit Address' : 'Add New Address'}>
-        <AddressInputForm
+
+          </div>
+          <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit Address' : 'Add New Address'}>        <AddressInputForm
           initialData={editingAddress}
           onSave={handleAddressSave}
           onCancel={closeAddressModal}
@@ -697,9 +725,6 @@ const AccountPageContent = () => {
     </div>
   );
 };
-
-
-
 
 export default function AccountPage() {
   return (

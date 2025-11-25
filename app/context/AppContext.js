@@ -10,6 +10,8 @@ export const AppProvider = ({ children }) => {
   const [cart, setCart] = useState([]); 
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
+  const [deliveredOrders, setDeliveredOrders] = useState([]);
+  const [cancelledOrders, setCancelledOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]); 
   const [brands, setBrands] = useState([]); // New state for brands
@@ -51,12 +53,52 @@ export const AppProvider = ({ children }) => {
           ...order,
           totalAmount: parseFloat(order.totalAmount),
           items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
-          orderDate: new Date(order.orderDate),
+          orderDate: new Date(order.createdAt),
       }));
       setAllOrders(parsedOrders);
     } catch (error) {
       console.error('Error fetching all orders:', error);
       setAllOrders([]);
+    }
+  }, []);
+
+  const fetchDeliveredOrders = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/orders/delivered`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch delivered orders');
+      }
+      const data = await response.json();
+      const parsedOrders = data.map(order => ({
+          ...order,
+          totalAmount: parseFloat(order.totalAmount),
+          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+          deliveredAt: new Date(order.deliveredAt),
+      }));
+      setDeliveredOrders(parsedOrders);
+    } catch (error) {
+      console.error('Error fetching delivered orders:', error);
+      setDeliveredOrders([]);
+    }
+  }, []);
+
+  const fetchCancelledOrders = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/orders/cancelled`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch cancelled orders');
+      }
+      const data = await response.json();
+      const parsedOrders = data.map(order => ({
+          ...order,
+          totalAmount: parseFloat(order.totalAmount),
+          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+          cancelledAt: new Date(order.cancelledAt),
+      }));
+      setCancelledOrders(parsedOrders);
+    } catch (error) {
+      console.error('Error fetching cancelled orders:', error);
+      setCancelledOrders([]);
     }
   }, []);
 
@@ -71,8 +113,8 @@ export const AppProvider = ({ children }) => {
       const processedProducts = data.map(product => ({
         ...product,
         price: parseFloat(product.price), // Ensure price is a number
-        imageUrls: product.imageUrl ? [product.imageUrl] : [], // Convert imageUrl string to imageUrls array
-        image: product.imageUrl || null, // Add 'image' property for ProductCard
+        imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Ensure imageUrls always has at least one value
+        image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
         brand: product.brandName, // Map brandName from backend to 'brand' property
       }));
       setProducts(processedProducts);
@@ -93,8 +135,8 @@ export const AppProvider = ({ children }) => {
       const processedProducts = data.map(product => ({
         ...product,
         price: parseFloat(product.price), // Ensure price is a number
-        imageUrls: product.imageUrl ? [product.imageUrl] : [], // Convert imageUrl string to imageUrls array
-        image: product.imageUrl || null, // Add 'image' property for ProductCard
+        imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Ensure imageUrls always has at least one value
+        image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
         brand: product.brandName, // Map brandName from backend to 'brand' property
       }));
       return processedProducts;
@@ -115,7 +157,8 @@ export const AppProvider = ({ children }) => {
       const processedProducts = data.map(product => ({
         ...product,
         price: parseFloat(product.price), // Ensure price is a number
-        imageUrls: product.imageUrl ? [product.imageUrl] : [], // Convert imageUrl string to imageUrls array
+        imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Convert imageUrl string to imageUrls array
+        image: product.imageUrl || '/placeholder-image.jpg',
       }));
       setFeaturedProducts(processedProducts);
     } catch (error) {
@@ -283,14 +326,24 @@ export const AppProvider = ({ children }) => {
   };
 
   // Function to update order status
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (orderId, newStatus, trackingNumber, courierName, courierWebsite) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/status`, {
+      const body = { status: newStatus };
+      if (trackingNumber !== undefined) { // Only add trackingNumber if explicitly provided
+        body.trackingNumber = trackingNumber;
+      }
+      if (courierName !== undefined) { // Only add courierName if explicitly provided
+        body.courierName = courierName;
+      }
+      if (courierWebsite !== undefined) { // Only add courierWebsite if explicitly provided
+        body.courierWebsite = courierWebsite;
+      }
+      const response = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(body),
       });
       if (!response.ok) {
         throw new Error('Failed to update order status');
@@ -369,7 +422,7 @@ export const AppProvider = ({ children }) => {
   }, [isAuthenticated, user, fetchOrders]); // Re-fetch when auth status or user changes
 
   // Function to fetch a single order by ID from the backend
-  const fetchOrderById = async (orderId) => {
+  const fetchOrderById = useCallback(async (orderId) => {
     try {
       const response = await fetch(`/api/orders/${orderId}`);
       if (!response.ok) {
@@ -377,21 +430,39 @@ export const AppProvider = ({ children }) => {
       }
       const data = await response.json();
       // Parse items and totalAmount similar to fetchOrders
-      const parsedOrder = {
-        ...data,
-        totalAmount: parseFloat(data.totalAmount),
-        items: data.items.map(item => ({ ...item, price: parseFloat(item.price) })),
-        createdAt: new Date(data.createdAt),
-      };
-      return parsedOrder;
+              const parsedOrder = {
+                ...data,
+                totalAmount: parseFloat(data.totalAmount),
+                subtotal: parseFloat(data.subtotal),
+                discountAmount: parseFloat(data.discountAmount),
+                taxAmount: parseFloat(data.taxAmount), // Add taxAmount parsing
+                items: data.items.map(item => ({ ...item, price: parseFloat(item.price) })),
+                createdAt: new Date(data.createdAt),
+              };      return parsedOrder;
     } catch (error) {
       console.error(`Error fetching order ${orderId}:`, error);
       throw error;
     }
-  };
+  }, []);
 
   return (
-    <AppContext.Provider value={{ appState, setAppState, cart, setCart, orders, setOrders, allOrders, fetchAllOrders, products, setProducts, categories, setCategories, brands, setBrands, featuredProducts, setFeaturedProducts, addBrand, updateBrand, deleteBrand, addCategory, updateCategory, deleteCategory, updateOrderStatus, addProduct, updateProduct, deleteProduct, fetchProductsByCategory, fetchOrderById, fetchProducts }}>
+    <AppContext.Provider value={{ 
+        appState, setAppState, 
+        cart, setCart, 
+        orders, setOrders, 
+        allOrders, fetchAllOrders,
+        deliveredOrders, fetchDeliveredOrders,
+        cancelledOrders, fetchCancelledOrders,
+        products, setProducts, 
+        categories, setCategories, 
+        brands, setBrands, 
+        featuredProducts, setFeaturedProducts, 
+        addBrand, updateBrand, deleteBrand, 
+        addCategory, updateCategory, deleteCategory, 
+        updateOrderStatus, 
+        addProduct, updateProduct, deleteProduct, 
+        fetchProductsByCategory, fetchOrderById, fetchProducts 
+    }}>
       {children}
     </AppContext.Provider>
   );

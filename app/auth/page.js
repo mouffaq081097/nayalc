@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image'; // Using next/image instead of ImageWithFallback
 
@@ -12,10 +12,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
 // Import your local Icon component
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../context/AuthContext'; // Assuming you'll use AuthContext for actual auth
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, User, XCircle } from 'lucide-react'; // Import XCircle
+import { useAuth } from '../context/AuthContext';
+import Modal from '../components/Modal'; // Import the Modal component
 
-export default function SignInPage() { // Changed to default export and removed onBackClick prop
+import { NayaLumiereLogo } from '../components/Icons'; // Import NayaLumiereLogo
+
+export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [signInData, setSignInData] = useState({ email: '', password: '' });
   const [signUpData, setSignUpData] = useState({
@@ -26,17 +29,27 @@ export default function SignInPage() { // Changed to default export and removed 
     password: '',
     confirmPassword: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false); // State for error modal
+  const [errorMessage, setErrorMessage] = useState(''); // State for error message
+
+  // State for spotlight effect
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const imageRef = useRef(null); // Ref to track image container
 
   const router = useRouter();
   const { login, register } = useAuth(); // Assuming useAuth provides login and register functions
 
-  const handleSignIn = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       await login(signInData.email, signInData.password);
-      router.push('/'); // Redirect to home after successful login
     } catch (error) {
-      alert(error.message); // Display error message
+      setErrorMessage(error.message || "Login failed");
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,10 +86,23 @@ export default function SignInPage() { // Changed to default export and removed 
     }
   };
 
+  const Spinner = () => (
+    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[var(--brand-rose)] via-white to-[var(--brand-cream)]">
+        <div className="min-h-screen bg-gradient-to-br from-[var(--brand-rose)] via-white to-[var(--brand-cream)] relative overflow-hidden">
+          {/* Floating Shapes */}
+          <div className="absolute top-1/4 left-1/4 w-24 h-24 rounded-full bg-brand-blue-light opacity-30 animate-float-slow z-0" style={{ animationDelay: '0s' }}></div>      <div className="absolute bottom-1/3 right-1/4 w-32 h-32 rounded-full bg-brand-pink-light opacity-30 animate-float-slow z-0" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute top-1/2 left-1/2 w-20 h-20 rounded-full bg-brand-blue-extra-light opacity-30 animate-float-slow z-0" style={{ animationDelay: '4s' }}></div>
+      <div className="absolute top-1/3 right-1/3 w-28 h-28 rounded-full bg-brand-pink-extra-light opacity-30 animate-float-slow z-0" style={{ animationDelay: '6s' }}></div>
+      <div className="absolute bottom-1/4 left-1/3 w-16 h-16 rounded-full bg-brand-blue-light opacity-30 animate-float-slow z-0" style={{ animationDelay: '8s' }}></div>
+      {/* End Floating Shapes */}
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-white border-b border-gray-100 relative z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={handleBackClick}>
@@ -84,10 +110,7 @@ export default function SignInPage() { // Changed to default export and removed 
               Back to Store
             </Button>
             <div className="text-center flex-1">
-              <h1 className="text-2xl font-serif bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-                Naya Lumière
-              </h1>
-              <p className="text-xs text-gray-500 italic">Parisian Beauty</p>
+              <NayaLumiereLogo className="h-8 w-auto mx-auto" />
             </div>
           </div>
         </div>
@@ -98,18 +121,39 @@ export default function SignInPage() { // Changed to default export and removed 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Side - Image */}
           <div className="hidden lg:block">
-            <div className="relative">
+            <div
+              ref={imageRef}
+              onMouseMove={(e) => {
+                if (imageRef.current) {
+                  const { left, top, width, height } = imageRef.current.getBoundingClientRect();
+                  const x = (e.clientX - left) / width * 100; // x as percentage
+                  const y = (e.clientY - top) / height * 100; // y as percentage
+                  setMousePosition({ x, y });
+                }
+              }}
+              onMouseLeave={() => setMousePosition({ x: 0, y: 0 })} // Reset on mouse leave
+              className="relative overflow-hidden rounded-2xl shadow-2xl"
+            >
               <Image
-                src="https://images.unsplash.com/photo-1750271336429-8b0a507785c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWF1dHklMjBzcGElMjBwcm9kdWN0c3xlbnwxfHx8fDE3NTgzNTI5MTZ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                src="/Gemini_Generated_Image_1d4x5g1d4x5g1d4x.png"
                 alt="Luxury beauty products"
-                width={1080} // Added width
-                height={600} // Added height
-                className="w-full h-[600px] object-cover rounded-2xl shadow-2xl"
+                width={1080}
+                height={600}
+                className="w-full h-[600px] object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl" />
-              <div className="absolute bottom-8 left-8 text-white">
-                <h2 className="text-3xl mb-2">Welcome to Naya Lumière</h2>
-                <p className="text-lg opacity-90">Discover French elegance in beauty</p>
+              {/* Dynamic Overlay with Spotlight Effect */}
+              <div
+                className="absolute inset-0 transition-opacity duration-300"
+                style={{
+                  background: mousePosition.x !== 0 || mousePosition.y !== 0
+                    ? `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, transparent 5%, rgba(var(--brand-blue-rgb), 0.7) 30%, rgba(var(--brand-pink-rgb), 0.7))`
+                    : 'linear-gradient(to top, rgba(var(--brand-blue-rgb), 0.8), rgba(var(--brand-pink-rgb), 0.6))',
+                }}
+              />
+              <div className="absolute top-8 left-8 text-white pointer-events-none z-10">
+                <p className="text-xl italic font-serif text-shadow-md">Naya Lumière</p>
+                <h2 className="text-5xl font-bold mb-2 text-shadow-md">Unlocking Beauty</h2>
+                <p className="text-lg text-shadow-md">Your journey to radiant skin starts here.</p>
               </div>
             </div>
           </div>
@@ -131,9 +175,8 @@ export default function SignInPage() { // Changed to default export and removed 
                       Sign in to your account to continue your beauty journey
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleSignIn} className="space-y-4">
-                      <div className="space-y-2">
+                                     <CardContent>
+                                       <form onSubmit={handleLogin} className="space-y-4">                      <div className="space-y-2">
                         <Label htmlFor="signin-email">Email</Label>
                         <div className="relative">
                           {React.createElement(getIconComponent('Mail'), { className: "absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" })}
@@ -141,7 +184,7 @@ export default function SignInPage() { // Changed to default export and removed 
                             id="signin-email"
                             type="email"
                             placeholder="Enter your email"
-                            className="pl-10"
+                            className="pl-10 focus:ring-2 focus:ring-pink-300 focus:border-transparent hover:shadow-md transition-all duration-200"
                             value={signInData.email}
                             onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
                             required
@@ -157,7 +200,7 @@ export default function SignInPage() { // Changed to default export and removed 
                             id="signin-password"
                             type={showPassword ? "text" : "password"}
                             placeholder="Enter your password"
-                            className="pl-10 pr-10"
+                            className="pl-10 pr-10 focus:ring-2 focus:ring-pink-300 focus:border-transparent hover:shadow-md transition-all duration-200"
                             value={signInData.password}
                             onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
                             required
@@ -184,13 +227,14 @@ export default function SignInPage() { // Changed to default export and removed 
                         </a>
                       </div>
 
-                      <Button
-                        type="submit"
-                        className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
-                        size="lg"
-                      >
-                        Sign In
-                      </Button>
+            <button
+              onClick={handleLogin}
+              disabled={loading}
+              className="mt-4 w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white p-3 rounded-md hover:from-[var(--brand-pink)] hover:to-[var(--brand-blue)] transition duration-300 flex items-center justify-center"
+            >
+              {loading && <Spinner />}
+              {loading ? "Loading..." : "Sign In"}
+            </button>
                     </form>
 
                     <div className="mt-6">
@@ -244,7 +288,7 @@ export default function SignInPage() { // Changed to default export and removed 
                             <Input
                               id="firstName"
                               placeholder="First name"
-                              className="pl-10"
+                              className="pl-10 focus:ring-2 focus:ring-pink-300 focus:border-transparent hover:shadow-md transition-all duration-200"
                               value={signUpData.firstName}
                               onChange={(e) => setSignUpData({ ...signUpData, firstName: e.target.value })}
                               required
@@ -257,6 +301,7 @@ export default function SignInPage() { // Changed to default export and removed 
                           <Input
                             id="lastName"
                             placeholder="Last name"
+                            className="focus:ring-2 focus:ring-pink-300 focus:border-transparent hover:shadow-md transition-all duration-200"
                             value={signUpData.lastName}
                             onChange={(e) => setSignUpData({ ...signUpData, lastName: e.target.value })}
                             required
@@ -271,7 +316,7 @@ export default function SignInPage() { // Changed to default export and removed 
                           <Input
                             id="username"
                             placeholder="Username"
-                            className="pl-10"
+                            className="pl-10 focus:ring-2 focus:ring-pink-300 focus:border-transparent hover:shadow-md transition-all duration-200"
                             value={signUpData.username}
                             onChange={(e) => setSignUpData({ ...signUpData, username: e.target.value })}
                             required
@@ -287,7 +332,7 @@ export default function SignInPage() { // Changed to default export and removed 
                             id="signup-email"
                             type="email"
                             placeholder="Enter your email"
-                            className="pl-10"
+                            className="pl-10 focus:ring-2 focus:ring-pink-300 focus:border-transparent hover:shadow-md transition-all duration-200"
                             value={signUpData.email}
                             onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })}
                             required
@@ -303,7 +348,7 @@ export default function SignInPage() { // Changed to default export and removed 
                             id="signup-password"
                             type={showPassword ? "text" : "password"}
                             placeholder="Create a password"
-                            className="pl-10 pr-10"
+                            className="pl-10 pr-10 focus:ring-2 focus:ring-pink-300 focus:border-transparent hover:shadow-md transition-all duration-200"
                             value={signUpData.password}
                             onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
                             required
@@ -328,7 +373,7 @@ export default function SignInPage() { // Changed to default export and removed 
                             id="confirmPassword"
                             type={showPassword ? "text" : "password"}
                             placeholder="Confirm your password"
-                            className="pl-10"
+                            className="pl-10 focus:ring-2 focus:ring-pink-300 focus:border-transparent hover:shadow-md transition-all duration-200"
                             value={signUpData.confirmPassword}
                             onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })}
                             required
@@ -352,7 +397,7 @@ export default function SignInPage() { // Changed to default export and removed 
 
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
+                        className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:from-[var(--brand-pink)] hover:to-[var(--brand-blue)] transition-all duration-300"
                         size="lg"
                       >
                         Create Account
@@ -372,6 +417,39 @@ export default function SignInPage() { // Changed to default export and removed 
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Error"
+      >
+        <ErrorModalContent
+          message={errorMessage}
+          onClose={() => setShowErrorModal(false)}
+        />
+      </Modal>
     </div>
   );
 }
+
+// Custom error content for the modal
+const ErrorModalContent = ({ message, onClose }) => (
+  <div className="text-center p-4 relative overflow-hidden">
+    <h3 className="text-2xl font-bold text-gray-800 mb-2">Oops, Something Went Wrong!</h3>
+
+    {/* Stylized Error X CSS Emoji */}
+    <div className="mx-auto mb-4 w-20 h-20 relative flex items-center justify-center">
+      {/* Ripple Effect */}
+      <div className="absolute w-16 h-16 rounded-full bg-red-500 animate-ripple-urgent opacity-0"></div>
+      <div className="absolute w-16 h-16 rounded-full bg-red-500 flex items-center justify-center border-2 border-red-700">
+        {/* X Mark */}
+        <div className="absolute w-10 h-2 bg-white transform rotate-45"></div>
+        <div className="absolute w-10 h-2 bg-white transform -rotate-45"></div>
+      </div>
+    </div>
+    <p className="text-lg text-gray-700 mb-6">{message}</p>
+    <Button onClick={onClose} className="bg-red-500 hover:bg-red-600 text-white">
+      Got It
+    </Button>
+  </div>
+);

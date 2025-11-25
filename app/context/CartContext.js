@@ -1,18 +1,20 @@
-'use client';
-
 import React, { createContext, useContext, useEffect, useCallback, useState } from 'react';
-import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
 import { useAppContext } from './AppContext'; // Import useAppContext
 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-    const { showToast: addToast } = useToast();
     const { user, isAuthenticated } = useAuth();
     const { cart, setCart } = useAppContext(); // Consume cart and setCart from AppContext
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [discountAmount, setDiscountAmount] = useState(0);
+    const [isCartOpen, setIsCartOpen] = useState(false); // New state for side cart
+    const [selectedShippingAddressId, setSelectedShippingAddressId] = useState(null);
+
+    const openCart = () => setIsCartOpen(true); // New function
+    const closeCart = () => setIsCartOpen(false); // New function
+    const toggleCart = () => setIsCartOpen(prev => !prev); // New function
 
     // Helper function to save cart to backend
     const saveCartToBackend = useCallback(async (currentCart) => {
@@ -42,9 +44,9 @@ export const CartProvider = ({ children }) => {
             
         } catch (error) {
             console.error('Error saving cart to backend:', error);
-            setTimeout(() => addToast('Failed to save cart changes.', 'error'), 0);
+            // setTimeout(() => addToast('Failed to save cart changes.', 'error'), 0); // Removed toast
         }
-    }, [isAuthenticated, user, addToast]);
+    }, [isAuthenticated, user]);
 
     // Fetch user's cart from backend on login
     useEffect(() => {
@@ -74,7 +76,7 @@ export const CartProvider = ({ children }) => {
                     setCart(parsedCart); // Use setCart from AppContext
                 } catch (error) {
                     console.error('Error fetching user cart:', error);
-                    setTimeout(() => addToast('Failed to load your cart.', 'error'), 0);
+                    // setTimeout(() => addToast('Failed to load your cart.', 'error'), 0); // Removed toast
                     setCart([]); // Clear cart on error
                 }
             } else {
@@ -83,7 +85,7 @@ export const CartProvider = ({ children }) => {
         };
 
         fetchUserCart();
-    }, [isAuthenticated, user, addToast, setCart]); // Add setCart to dependency array
+    }, [isAuthenticated, user, setCart]); // Removed addToast from dependency array
 
     // Effect to save cart to backend whenever cart changes (debounced or immediate)
     useEffect(() => {
@@ -114,18 +116,32 @@ export const CartProvider = ({ children }) => {
             }
             return updatedItems;
         });
+        openCart(); // Open cart when item is added
     };
 
     const removeFromCart = (productId) => {
         setCart((prevItems) => { // Use setCart from AppContext
             const updatedItems = prevItems.filter(item => item.id !== productId);
-            addToast("Item removed from cart!");
+            // addToast("Item removed from cart!"); // Removed toast
+            // If cart becomes empty, close the side cart
+            if (updatedItems.length === 0) {
+              closeCart();
+            }
             return updatedItems;
         });
     };
 
     const updateQuantity = (productId, newQuantity) => {
         setCart((prevItems) => { // Use setCart from AppContext
+            if (newQuantity < 1) {
+                // addToast("Item removed from cart!"); // Removed toast
+                const updatedItems = prevItems.filter(item => item.id !== productId);
+                // If cart becomes empty, close the side cart
+                if (updatedItems.length === 0) {
+                  closeCart();
+                }
+                return updatedItems;
+            }
             const updatedItems = prevItems.map(item =>
                 item.id === productId ? { ...item, quantity: newQuantity } : item
             );
@@ -135,7 +151,8 @@ export const CartProvider = ({ children }) => {
 
     const clearCart = () => {
         setCart([]); // Use setCart from AppContext
-        addToast("Cart cleared!");
+        // addToast("Cart cleared!"); // Removed toast
+        closeCart(); // Close cart when cleared
     };
 
     const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -164,18 +181,18 @@ export const CartProvider = ({ children }) => {
 
             setDiscountAmount(discount);
             setAppliedCoupon(coupon);
-            addToast('Coupon applied successfully!', 'success');
+            // addToast('Coupon applied successfully!', 'success'); // Removed toast
         } catch (error) {
             setDiscountAmount(0);
             setAppliedCoupon(null);
-            addToast(error.message, 'error');
+            // addToast(error.message, 'error'); // Removed toast
         }
     };
 
     const removeCoupon = () => {
         setAppliedCoupon(null);
         setDiscountAmount(0);
-        addToast('Coupon removed.');
+        // addToast('Coupon removed.'); // Removed toast
     };
 
     const finalTotal = subtotal - discountAmount;
@@ -193,6 +210,12 @@ export const CartProvider = ({ children }) => {
             finalTotal,
             applyCoupon,
             removeCoupon,
+            isCartOpen, // Expose side cart state
+            openCart,   // Expose open function
+            closeCart,  // Expose close function
+            toggleCart,  // Expose toggle function
+            selectedShippingAddressId, // Expose selected shipping address ID
+            setSelectedShippingAddressId // Expose setter for selected shipping address ID
         }}>
             {children}
         </CartContext.Provider>

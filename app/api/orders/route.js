@@ -55,7 +55,7 @@ export async function GET(request) {
                 o.payment_method as "paymentMethod",
                 o.total_amount as "totalAmount",
                 o.tax_amount as "taxAmount",
-                o.order_status as "orderStatus",
+                o.order_status as "status",
                 o.shipping_scheduled_date as "shippingScheduledDate",
                 o.payment_confirmed as "paymentConfirmed",
                 o.created_at as "createdAt",
@@ -119,7 +119,7 @@ export async function POST(request) {
             INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount)
             VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9) RETURNING id;
         `;
-        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount];
+        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
 
@@ -167,7 +167,7 @@ export async function POST(request) {
             });
 
             // Send order confirmation email to customer using Nodemailer
-            await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, itemsWithDetails, shippingAddress);
+            await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, itemsWithDetails, shippingAddress);
 
             // Execute Python script for sending email to administrator
             const adminEmail = process.env.ADMIN_EMAIL;

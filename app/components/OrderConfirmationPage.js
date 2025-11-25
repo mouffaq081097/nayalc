@@ -40,28 +40,24 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
       title: 'Order Confirmed',
       description: 'Your order has been placed successfully',
       completed: order.orderStatus === 'confirmed' || order.orderStatus === 'processing' || order.orderStatus === 'shipped' || order.orderStatus === 'delivered',
-      date: new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     },
     {
       icon: Package,
       title: 'Processing',
-      description: "We&apos;re preparing your items",
+      description: "We're preparing your items",
       completed: order.orderStatus === 'processing' || order.orderStatus === 'shipped' || order.orderStatus === 'delivered',
-      date: 'Tomorrow' // Placeholder, actual date not available
     },
     {
       icon: Truck,
       title: 'Shipped',
       description: 'Your order is on its way',
       completed: order.orderStatus === 'shipped' || order.orderStatus === 'delivered',
-      date: 'Jan 25' // Placeholder, actual date not available
     },
     {
       icon: Mail,
       title: 'Delivered',
       description: 'Enjoy your beautiful products',
       completed: order.orderStatus === 'delivered',
-      date: 'Jan 27' // Placeholder, actual date not available
     }
   ];
 
@@ -151,9 +147,6 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                               {step.description}
                             </p>
                           </div>
-                          <span className={`text-sm ${step.completed ? 'text-gray-600' : 'text-gray-400'}`}>
-                            {step.date}
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -263,8 +256,10 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                 </h3>
                 <div className="text-sm text-gray-600">
                   <p>{order.customerName}</p>
-                  <p>{order.shippingAddress}</p>
-                  <p>{order.city}, {shippingState} {order.zipCode}</p>
+                  <p>{order.shippingAddress.addressLine1}</p>
+                  {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
+                  <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}</p>
+                  <p>{order.shippingAddress.country}</p>
                 </div>
               </motion.div>
 

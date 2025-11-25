@@ -49,7 +49,7 @@ export async function POST(request) {
         const { rows } = await db.query(sql, [email]);
 
         if (rows.length === 0) {
-            return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
+            return NextResponse.json({ message: 'Email not found.' }, { status: 401 });
         }
 
         const user = rows[0];
@@ -57,7 +57,7 @@ export async function POST(request) {
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (!isMatch) {
-            return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
+            return NextResponse.json({ message: 'Incorrect password.' }, { status: 401 });
         }
 
         // IMPORTANT: You must set JWT_SECRET in your .env file or Vercel environment variables

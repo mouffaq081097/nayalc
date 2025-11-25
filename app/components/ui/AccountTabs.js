@@ -11,9 +11,9 @@ const AccountTabs = ({ children }) => {
   ];
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="p-4">
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        <nav className="-mb-px flex overflow-x-auto whitespace-nowrap gap-x-4" aria-label="Tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}

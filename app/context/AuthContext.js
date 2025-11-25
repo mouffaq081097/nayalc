@@ -1,11 +1,13 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
     const loadUserFromLocalStorage = () => {
@@ -47,6 +49,7 @@ export const AuthProvider = ({ children }) => {
     setUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
     console.log('AuthContext: User logged in and saved to local storage:', data.user);
+    router.push('/'); // Redirect after successful login
     // Assuming the backend sends a token, you might store it here as well
     // localStorage.setItem('token', data.token);
   };

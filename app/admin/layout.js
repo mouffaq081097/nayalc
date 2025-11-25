@@ -23,6 +23,7 @@ const AdminLayout = ({ children }) => {
         { to: '/admin/brands', text: 'Brands', icon: 'heart' },
         { to: '/admin/orders', text: 'Orders', icon: 'orders' },
         { to: '/admin/coupons', text: 'Coupons', icon: 'bag' },
+        { to: '/admin/users', text: 'All Users', icon: 'user' },
     ];
 
     const IconMap = {

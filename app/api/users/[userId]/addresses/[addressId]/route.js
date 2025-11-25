@@ -1,96 +1,77 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 
-/**
- * @swagger
- * /api/users/{userId}/addresses/{addressId}:
- *   put:
- *     summary: Update an existing address
- *     responses:
- *       200:
- *         description: Address updated successfully.
- *       400:
- *         description: Bad request, missing required fields.
- *       404:
- *         description: Address not found.
- *       500:
- *         description: Server error.
- */
-export async function PUT(request, context) {
-    const params = await context.params;
-    const { userId, addressId } = params;
-    const userIdInt = parseInt(userId, 10);
-    const addressIdInt = parseInt(addressId, 10);
-    const client = await db.connect();
+// UPDATE an address
+export async function PUT(request, { params }) {
+    const { userId, addressId } = await params;
+    const {
+        address_line1,
+        city,
+        zip_code,
+        country,
+        address_line2,
+        state,
+        is_default,
+        address_label,
+        customer_email,
+        customer_phone
+    } = await request.json();
+
+    if (!address_line1 || !city || !zip_code || !country || !customer_phone) {
+        return NextResponse.json({ message: 'Missing required address fields' }, { status: 400 });
+    }
+
     try {
-        await client.query('BEGIN');
-        const { address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email, customer_phone } = await request.json();
-
+        // If this is the new default, set all others to false first
         if (is_default) {
-            await client.query('UPDATE user_addresses SET is_default = FALSE WHERE user_id = $1 AND id != $2', [userId, addressIdInt]);
+            await db.query('UPDATE user_addresses SET is_default = false WHERE user_id = $1', [userId]);
         }
 
-        const updateSql = `
-            UPDATE user_addresses
-            SET
-                address_line1 = $1,
-                address_line2 = $2,
-                city = $3,
-                state = $4,
-                zip_code = $5,
-                country = $6,
-                is_default = $7,
-                address_label = $8,
-                customer_name = $9,
-                customer_email = $10,
-                customer_phone = $11,
-                updated_at = NOW()
-            WHERE id = $12 AND user_id = $13
-            RETURNING *;
-        `;
-        const updateValues = [address_line1, address_line2, city, state, zip_code, country, is_default, address_label, customer_name, customer_email, customer_phone, addressIdInt, userIdInt];
-        const { rowCount } = await client.query(updateSql, updateValues);
+        const { rows } = await db.query(
+            `UPDATE user_addresses
+             SET shipping_address = $1, address_line1 = $2, city = $3, zip_code = $4, country = $5, address_line2 = $6, state = $7, is_default = $8, address_label = $9, customer_email = $10, customer_phone = $11
+             WHERE id = $12 AND user_id = $13
+             RETURNING *`,
+            [address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_email, customer_phone, addressId, userId]
+        );
 
-        if (rowCount === 0) {
-            await client.query('ROLLBACK');
-            return NextResponse.json({ message: 'Address not found or not authorized.' }, { status: 404 });
+        if (rows.length === 0) {
+            return NextResponse.json({ message: 'Address not found or user mismatch' }, { status: 404 });
         }
 
-        await client.query('COMMIT');
-        return NextResponse.json({ message: 'Address updated successfully' });
-
+        return NextResponse.json(rows[0]);
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error(`Error updating address ${addressId}:`, error);
-        return NextResponse.json({ message: 'Error updating address.', error: error.message }, { status: 500 });
-    } finally {
-        client.release();
+        console.error('Error updating address:', error);
+        return NextResponse.json({ message: 'Internal server error', error: error.message }, { status: 500 });
     }
 }
 
-/**
- * @swagger
- * /api/users/{userId}/addresses/{addressId}:
- *   delete:
- *     summary: Delete an address
- *     responses:
- *       200:
- *         description: Address deleted successfully.
- *       404:
- *         description: Address not found.
- *       500:
- *         description: Server error.
- */
+// DELETE an address
 export async function DELETE(request, { params }) {
-    const { userId, addressId } = params;
+    const { userId, addressId } = await params;
     try {
-        const { rowCount } = await db.query('DELETE FROM user_addresses WHERE id = $1 AND user_id = $2', [addressId, userId]);
-        if (rowCount === 0) {
-            return NextResponse.json({ message: 'Address not found or not authorized.' }, { status: 404 });
+        // Check if the address is referenced by any orders
+        const { rowCount: orderCount } = await db.query(
+            'SELECT 1 FROM orders WHERE user_address_id = $1 LIMIT 1',
+            [addressId]
+        );
+
+        if (orderCount > 0) {
+            return NextResponse.json({ message: 'Address cannot be deleted as it is associated with existing orders.' }, { status: 409 });
         }
+
+        const result = await db.query(
+            'DELETE FROM user_addresses WHERE id = $1 AND user_id = $2',
+            [addressId, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return NextResponse.json({ message: 'Address not found or user mismatch' }, { status: 404 });
+        }
+
         return NextResponse.json({ message: 'Address deleted successfully' });
     } catch (error) {
-        console.error(`Error deleting address ${addressId}:`, error);
-        return NextResponse.json({ message: 'Error deleting address.', error: error.message }, { status: 500 });
+        console.error('Error deleting address:', error);
+        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }

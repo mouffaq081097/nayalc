@@ -7,8 +7,9 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Checkbox } from '../components/ui/checkbox';
 import { Separator } from '../components/ui/separator';
+import { Badge } from '../components/ui/badge'; // New import for Badge
 import { Card, CardTitle } from '../components/ui/card';
-import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, Tag } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, Tag, Info, Trash2 } from 'lucide-react';
 import { FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
@@ -24,16 +25,17 @@ import AddressInputForm from '../components/AddressInputForm'; // New import for
 import { User } from 'lucide-react'; // Used by AddressInputForm
 
 export default function CheckoutPage() {
-  const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon } = useCart();
+  const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [shippingAddresses, setShippingAddresses] = useState([]);
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [selectedAddressId, setSelectedAddressId] = useState(selectedShippingAddressId); // Initialize from CartContext
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [couponCode, setCouponCode] = useState('');
+  const [showAllAddresses, setShowAllAddresses] = useState(false); // New state for address visibility
 
   const [formData, setFormData] = useState({
     // Payment Info
@@ -54,15 +56,15 @@ export default function CheckoutPage() {
         }
         const data = await response.json();
         setShippingAddresses(data);
-        if (data.length > 0) {
-            const defaultAddress = data.find(addr => addr.is_default || addr.isDefault);
+        if (data.length > 0 && !selectedShippingAddressId) { // Only set if no address pre-selected from cart
+            const defaultAddress = data.find(addr => addr.isDefault);
             setSelectedAddressId(defaultAddress ? defaultAddress.id : data[0].id);
         }
     } catch (error) {
         console.error("Error fetching shipping addresses:", error);
         toast.error("Error fetching shipping addresses.");
     }
-}, [user]);
+}, [user, selectedShippingAddressId]); // Add selectedShippingAddressId to dependencies
 
   useEffect(() => {
       if (user) {
@@ -72,6 +74,11 @@ export default function CheckoutPage() {
           setSelectedAddressId(null);
       }
   }, [user, fetchShippingAddresses]);
+
+  // Update CartContext whenever local selectedAddressId changes
+  useEffect(() => {
+      setSelectedShippingAddressId(selectedAddressId);
+  }, [selectedAddressId, setSelectedShippingAddressId]);
 
   const openAddressModal = (address) => {
     setEditingAddress(address); // Pass the address as is, without fullName property
@@ -83,6 +90,17 @@ export default function CheckoutPage() {
     setIsAddressModalOpen(false);
   };
 
+  const toSnakeCase = (obj) => {
+    const newObj = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const snakeCaseKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        newObj[snakeCaseKey] = obj[key];
+      }
+    }
+    return newObj;
+  };
+
   const handleCheckoutAddressSave = async (addressData) => {
     if (!user) return;
 
@@ -92,9 +110,18 @@ export default function CheckoutPage() {
       : `/api/users/${user.id}/addresses`;
 
     try {
-      const payload = {
+      const transformedAddressData = {
         ...addressData,
+        addressLine2: addressData.apartment, // Map apartment to addressLine2
+        customerEmail: user.email, // Use user's email
+        addressLabel: addressData.addressLine1, // Use addressLine1 as a default label
+        // Explicitly remove latitude and longitude as they are not supported by the backend
+        latitude: undefined,
+        longitude: undefined,
       };
+
+      const payload = toSnakeCase(transformedAddressData);
+      console.log('Frontend: Submitting payload:', payload); // Log the payload being sent
 
       const response = await fetch(endpoint, {
         method,
@@ -110,11 +137,43 @@ export default function CheckoutPage() {
         toast.success(`Address ${editingAddress ? 'updated' : 'saved'} successfully!`);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to save address with status: ${response.status}`);
+        console.error('Frontend: API error response:', errorData); // Log the full error response
+        toast.error(`Failed to save address: ${errorData.message || response.statusText}`);
       }
     } catch (error) {
-      console.error('Failed to save address:', error);
+      console.error('Frontend: Network or unexpected error:', error); // Log unexpected errors
       toast.error('An error occurred while saving the address: ' + error.message);
+    }
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    if (!user) {
+      toast.error('Please login to delete an address.');
+      return;
+    }
+    if (!window.confirm('Are you sure you want to delete this address?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/users/${user.id}/addresses/${addressId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || 'Address deleted successfully!');
+        fetchShippingAddresses(); // Refresh the list of addresses
+        if (selectedAddressId === addressId) {
+          setSelectedAddressId(null); // Clear selection if deleted address was selected
+        }
+      } else {
+        throw new Error(data.message || 'Failed to delete address.');
+      }
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      toast.error('Error deleting address: ' + error.message);
     }
   };
 
@@ -221,20 +280,21 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" onClick={() => router.back()}> 
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/cart')} // Changed to navigate to /cart
+              className="text-gray-400 hover:text-gray-700"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Cart
+              Return to Cart
             </Button>
-            <h1 className="text-xl font-serif bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-              Secure Checkout
-            </h1>
-            <div className="flex items-center gap-1">
-              <Lock className="h-4 w-4 text-green-600" />
-              <span className="text-sm text-green-600">Secure</span>
+            <div className="text-center flex-1">
+              <h1 className="text-2xl font-serif bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">Checkout</h1> {/* Changed title */}
+              <p className="text-sm text-gray-500">{cartItems.length} items</p> {/* Dynamic item count */}
             </div>
           </div>
         </div>
@@ -282,46 +342,104 @@ export default function CheckoutPage() {
               {/* Step 1: Shipping */}
               {currentStep === 1 && (
                 <div className="space-y-6">
-                  <h2 className="text-2xl mb-6">Shipping Information</h2>
+                  <h2 className="text-3xl font-serif mb-6 text-gray-900">Where should we send your order?</h2>
 
                   {shippingAddresses.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-xl font-medium">Select a Shipping Address</h3>
-                      {shippingAddresses.map((address) => (
-                        <Card
-                          key={address.id}
-                          className={`p-4 cursor-pointer ${selectedAddressId === address.id ? 'border-2 border-[var(--brand-blue)] bg-blue-50' : 'border-gray-200'}`}
-                          onClick={() => setSelectedAddressId(address.id)}
+                    <>
+                      <div className="mb-4">
+                        <h3 className="text-2xl font-semibold mb-4 text-gray-800">Choose your delivery address</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Always show the default address first, if it exists */}
+                        {shippingAddresses.filter(addr => addr.isDefault).map((address) => (
+                          <Card
+                            key={address.id}
+                            className={`p-6 cursor-pointer rounded-xl shadow-sm border ${selectedAddressId === address.id ? 'border-2 border-[var(--brand-pink)] bg-brand-pink-extra-light' : 'border-gray-200'}`}
+                            onClick={() => setSelectedAddressId(address.id)}
+                          >
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="text-lg font-bold">
+                                      {`${address.city ?? ''}, ${address.country ?? ''}`}
+                                    </h3>
+                                    {address.isDefault && <Badge className="text-xs font-semibold">Default</Badge>}
+                                  </div>
+                                  <ul className="list-none space-y-1 text-gray-600">
+                                    {address.shipping_address && <li><span>{address.shipping_address}</span></li>}
+                                    {!address.shipping_address && address.addressLine1 && <li><span>{address.addressLine1}</span></li>}
+                                    {address.addressLine2 && <li><span>{address.addressLine2}</span></li>}
+                                    {(address.city || address.state || address.zipCode) && <li><span>{`${address.city ?? ''}${address.city && address.state ? ', ' : ''}${address.state ?? ''} ${address.zipCode ?? ''}`}</span></li>}
+                                    {address.country && <li><span>{address.country}</span></li>}
+                                    {address.customerPhone && <li><span>Phone: {address.customerPhone ?? ''}</span></li>}
+                                  </ul>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {address.isDeletable && (
+                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteAddress(address.id); }} className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  <Button variant="outline" size="icon" onClick={(e) => { e.stopPropagation(); openAddressModal(address); }} className="h-8 w-8">
+                                    <User className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                            </div>
+                          </Card>
+                        ))}
+
+                        {/* Conditionally show other addresses */}
+                        {showAllAddresses && shippingAddresses.filter(addr => !addr.isDefault).map((address) => (
+                          <Card
+                            key={address.id}
+                            className={`p-6 cursor-pointer rounded-xl shadow-sm border ${selectedAddressId === address.id ? 'border-2 border-[var(--brand-pink)] bg-brand-pink-extra-light' : 'border-gray-200'}`}
+                            onClick={() => setSelectedAddressId(address.id)}
+                          >
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="text-lg font-bold">
+                                      {`${address.city ?? ''}, ${address.country ?? ''}`}
+                                    </h3>
+                                    {address.isDefault && <Badge className="text-xs font-semibold">Default</Badge>}
+                                  </div>
+                                  <ul className="list-none space-y-1 text-gray-600">
+                                    {address.shipping_address && <li><span>{address.shipping_address}</span></li>}
+                                    {!address.shipping_address && address.addressLine1 && <li><span>{address.addressLine1}</span></li>}
+                                    {address.addressLine2 && <li><span>{address.addressLine2}</span></li>}
+                                    {(address.city || address.state || address.zipCode) && <li><span>{`${address.city ?? ''}${address.city && address.state ? ', ' : ''}${address.state ?? ''} ${address.zipCode ?? ''}`}</span></li>}
+                                    {address.country && <li><span>{address.country}</span></li>}
+                                    {address.customerPhone && <li><span>Phone: {address.customerPhone ?? ''}</span></li>}
+                                  </ul>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {address.isDeletable && (
+                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteAddress(address.id); }} className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  <Button variant="outline" size="icon" onClick={(e) => { e.stopPropagation(); openAddressModal(address); }} className="h-8 w-8">
+                                    <User className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                      {shippingAddresses.filter(addr => !addr.isDefault).length > 0 && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => setShowAllAddresses(!showAllAddresses)}
+                          className="w-full mt-4 text-[var(--brand-pink)] hover:bg-[var(--brand-pink)]/10"
                         >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-lg font-bold">
-                                {`${address.city}, ${address.country}`}
-                              </h3>
-                              <p>{address.addressLine1}, {address.addressLine2}</p>
-                              <p>{address.city}, {address.state} {address.zipCode}</p>
-                              <p>{address.country}</p>
-                              <p className="text-sm text-gray-500">{address.customerPhone}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              name="selectedAddress"
-                              checked={selectedAddressId === address.id}
-                              onChange={() => setSelectedAddressId(address.id)}
-                              className="form-radio h-4 w-4 text-[var(--brand-blue)]"
-                            />
-                            <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openAddressModal(address); }}>Edit</Button>
-                          </div>
-                        </div>
-                      </Card>
-                      ))}
-                    </div>
+                          {showAllAddresses ? 'Show Less' : 'Select More'}
+                        </Button>
+                      )}
+                    </>
                   )}
 
                   <Button
-                    variant="outline"
-                    className="w-full mt-4 flex items-center gap-2"
+                    className="w-full mt-4 flex items-center gap-2 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white hover:opacity-90"
                     onClick={() => openAddressModal(null)}
                   >
                     <FaPlus /> Add New Address

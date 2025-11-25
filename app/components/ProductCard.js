@@ -1,16 +1,13 @@
-"use client";
 import React, { useState, useContext } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartContext } from '../context/CartContext';
-import { useToast } from '../context/ToastContext';
 import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCount, isNew, isBestseller, category, brandName }) => {
   const { addToCart } = useContext(CartContext);
-  const { showToast } = useToast();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const { isAuthenticated } = useAuth();
@@ -23,7 +20,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
     e.stopPropagation();
 
     if (!isAuthenticated) {
-      showToast('Please log in to add items to your cart.');
+      // showToast('Please log in to add items to your cart.'); // Removed toast
       router.push('/auth'); // Redirect to login/signup page
       return;
     }
@@ -31,7 +28,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
     // Reconstruct product object for CartContext, as it expects a product object
     const productForCart = { id, name, price, imageUrl: image, categoryName: category, brand: brandName };
     addToCart(productForCart, 1);
-    showToast(`Added ${name} to cart!`);
+    // showToast(`Added ${name} to cart!`); // Removed toast
   };
 
   

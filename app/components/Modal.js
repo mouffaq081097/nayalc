@@ -24,9 +24,8 @@ const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false }) => {
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
       onClick={onClose}
     >
-      <div 
-        className="relative w-full max-w-4xl mx-auto my-6 transition-transform duration-300 ease-in-out transform scale-95 opacity-0 animate-modal-scale-in"
-        onClick={(e) => e.stopPropagation()}
+            <div
+              className="relative w-full max-w-md mx-auto my-6 transition-transform duration-300 ease-in-out transform scale-95 opacity-0 animate-modal-scale-in"        onClick={(e) => e.stopPropagation()}
       >
         {/*content*/}
         <div className="relative flex flex-col w-full bg-white border-0 rounded-lg shadow-lg outline-none focus:outline-none z-50">
