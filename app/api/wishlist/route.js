@@ -27,7 +27,7 @@ export async function GET(request) {
             ORDER BY w.added_at DESC;
         `;
         const { rows } = await db.query(sql, [userId]);
-        console.log('Wishlist API Response Rows:', rows); // Debugging line
+        
         return NextResponse.json(rows);
     } catch (error) {
         console.error('Error fetching wishlist:', error);

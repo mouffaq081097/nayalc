@@ -1,16 +1,16 @@
 import React, { createContext, useContext, useEffect, useCallback, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { useAppContext } from './AppContext'; // Import useAppContext
 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
     const { user, isAuthenticated } = useAuth();
-    const { cart, setCart } = useAppContext(); // Consume cart and setCart from AppContext
+    const [cart, setCart] = useState([]); // Manage cart state locally
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [discountAmount, setDiscountAmount] = useState(0);
     const [isCartOpen, setIsCartOpen] = useState(false); // New state for side cart
     const [selectedShippingAddressId, setSelectedShippingAddressId] = useState(null);
+    const [couponError, setCouponError] = useState(null); // New state for coupon error
 
     const openCart = () => setIsCartOpen(true); // New function
     const closeCart = () => setIsCartOpen(false); // New function
@@ -41,7 +41,7 @@ export const CartProvider = ({ children }) => {
                 console.error('Failed to save cart to backend:', response.status, response.statusText, errorData);
                 throw new Error(`Failed to save cart: ${response.status} ${response.statusText} - ${errorData.message || JSON.stringify(errorData) || 'No additional error information.'}`);
             }
-            
+
         } catch (error) {
             console.error('Error saving cart to backend:', error);
             // setTimeout(() => addToast('Failed to save cart changes.', 'error'), 0); // Removed toast
@@ -72,8 +72,9 @@ export const CartProvider = ({ children }) => {
                         image: item.imageUrl, // Map imageUrl to image
                         size: item.size || undefined, // Handle optional size
                         shade: item.shade || undefined, // Handle optional shade
+                        stock_quantity: item.stock_quantity, // Add stock_quantity
                     }));
-                    setCart(parsedCart); // Use setCart from AppContext
+                    setCart(parsedCart);
                 } catch (error) {
                     console.error('Error fetching user cart:', error);
                     // setTimeout(() => addToast('Failed to load your cart.', 'error'), 0); // Removed toast
@@ -85,33 +86,55 @@ export const CartProvider = ({ children }) => {
         };
 
         fetchUserCart();
-    }, [isAuthenticated, user, setCart]); // Removed addToast from dependency array
+    }, [isAuthenticated, user]);
 
     // Effect to save cart to backend whenever cart changes (debounced or immediate)
     useEffect(() => {
-        saveCartToBackend(cart); // Use cart from AppContext
+        saveCartToBackend(cart);
     }, [cart, saveCartToBackend]);
 
 
     const addToCart = (product, quantity) => {
+        // Prevent adding if stock is 0 or invalid
+        if (!product.stock_quantity || product.stock_quantity <= 0) {
+            // Optionally, show a toast message here
+            console.warn(`Attempted to add out-of-stock item to cart: ${product.name}`);
+            return;
+        }
+
         setCart((prevItems) => {
             const existingItemIndex = prevItems.findIndex(item => item.id === product.id);
 
             let updatedItems;
             if (existingItemIndex > -1) {
                 updatedItems = [...prevItems];
-                updatedItems[existingItemIndex].quantity += quantity;
+                const currentItem = updatedItems[existingItemIndex];
+
+                // Prevent increasing quantity if already at stock limit
+                if (currentItem.quantity >= currentItem.stock_quantity) {
+                    console.warn(`Cannot add more of ${product.name}, stock limit reached.`);
+                    return prevItems; // Return original items without change
+                }
+
+                // Cap quantity at available stock
+                currentItem.quantity = Math.min(
+                    currentItem.quantity + quantity,
+                    currentItem.stock_quantity
+                );
             } else {
+                // Cap initial quantity at available stock
+                const validatedQuantity = Math.min(quantity, product.stock_quantity);
                 updatedItems = [...prevItems, {
                     id: product.id,
                     name: product.name,
                     brand: product.brand,
                     price: parseFloat(product.price),
                     originalPrice: parseFloat(product.originalPrice) || parseFloat(product.price),
-                    quantity: quantity,
+                    quantity: validatedQuantity,
                     image: product.imageUrl,
                     size: product.size,
                     shade: product.shade,
+                    stock_quantity: product.stock_quantity,
                 }];
             }
             return updatedItems;
@@ -120,37 +143,42 @@ export const CartProvider = ({ children }) => {
     };
 
     const removeFromCart = (productId) => {
-        setCart((prevItems) => { // Use setCart from AppContext
+        setCart((prevItems) => {
             const updatedItems = prevItems.filter(item => item.id !== productId);
             // addToast("Item removed from cart!"); // Removed toast
             // If cart becomes empty, close the side cart
             if (updatedItems.length === 0) {
-              closeCart();
+                closeCart();
             }
             return updatedItems;
         });
     };
 
     const updateQuantity = (productId, newQuantity) => {
-        setCart((prevItems) => { // Use setCart from AppContext
+        setCart((prevItems) => {
             if (newQuantity < 1) {
                 // addToast("Item removed from cart!"); // Removed toast
                 const updatedItems = prevItems.filter(item => item.id !== productId);
                 // If cart becomes empty, close the side cart
                 if (updatedItems.length === 0) {
-                  closeCart();
+                    closeCart();
                 }
                 return updatedItems;
             }
-            const updatedItems = prevItems.map(item =>
-                item.id === productId ? { ...item, quantity: newQuantity } : item
-            );
+            const updatedItems = prevItems.map(item => {
+                if (item.id === productId) {
+                    // Prevent adding more than available stock
+                    const validatedQuantity = Math.min(newQuantity, item.stock_quantity);
+                    return { ...item, quantity: validatedQuantity };
+                }
+                return item;
+            });
             return updatedItems;
         });
     };
 
     const clearCart = () => {
-        setCart([]); // Use setCart from AppContext
+        setCart([]);
         // addToast("Cart cleared!"); // Removed toast
         closeCart(); // Close cart when cleared
     };
@@ -168,6 +196,7 @@ export const CartProvider = ({ children }) => {
             const data = await response.json();
 
             if (!response.ok) {
+                setCouponError(data.message || 'Failed to apply coupon'); // Set error message
                 throw new Error(data.message || 'Failed to apply coupon');
             }
 
@@ -181,10 +210,12 @@ export const CartProvider = ({ children }) => {
 
             setDiscountAmount(discount);
             setAppliedCoupon(coupon);
+            setCouponError(null); // Clear error on success
             // addToast('Coupon applied successfully!', 'success'); // Removed toast
         } catch (error) {
             setDiscountAmount(0);
             setAppliedCoupon(null);
+            setCouponError(error.message); // Set error message
             // addToast(error.message, 'error'); // Removed toast
         }
     };
@@ -192,6 +223,7 @@ export const CartProvider = ({ children }) => {
     const removeCoupon = () => {
         setAppliedCoupon(null);
         setDiscountAmount(0);
+        setCouponError(null); // Clear error
         // addToast('Coupon removed.'); // Removed toast
     };
 
@@ -215,7 +247,8 @@ export const CartProvider = ({ children }) => {
             closeCart,  // Expose close function
             toggleCart,  // Expose toggle function
             selectedShippingAddressId, // Expose selected shipping address ID
-            setSelectedShippingAddressId // Expose setter for selected shipping address ID
+            setSelectedShippingAddressId, // Expose setter for selected shipping address ID
+            couponError // Expose coupon error
         }}>
             {children}
         </CartContext.Provider>

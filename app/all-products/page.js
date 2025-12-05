@@ -275,6 +275,7 @@ export default function AllProductsPage() {
                   isBestseller={product.isBestseller}
                   category={product.categoryNames}
                   brandName={product.brand}
+                  stock_quantity={product.stock_quantity}
                 />
               ))}
             </div>

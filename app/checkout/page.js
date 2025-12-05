@@ -9,7 +9,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Separator } from '../components/ui/separator';
 import { Badge } from '../components/ui/badge'; // New import for Badge
 import { Card, CardTitle } from '../components/ui/card';
-import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, Tag, Info, Trash2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, Tag, Info, Trash2, Pencil } from 'lucide-react';
 import { FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
@@ -25,7 +25,7 @@ import AddressInputForm from '../components/AddressInputForm'; // New import for
 import { User } from 'lucide-react'; // Used by AddressInputForm
 
 export default function CheckoutPage() {
-  const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId } = useCart();
+  const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -40,44 +40,46 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({
     // Payment Info
     paymentMethod: 'cashOnDelivery',
-    
+
     // Options
     giftWrap: false,
     giftMessage: '',
     newsletter: false
   });
 
+  const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity); // Define hasStockIssues here
+
   const fetchShippingAddresses = useCallback(async () => {
     if (!user || !user.id) return;
     try {
-        const response = await fetch(`/api/users/${user.id}/addresses`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setShippingAddresses(data);
-        if (data.length > 0 && !selectedShippingAddressId) { // Only set if no address pre-selected from cart
-            const defaultAddress = data.find(addr => addr.isDefault);
-            setSelectedAddressId(defaultAddress ? defaultAddress.id : data[0].id);
-        }
+      const response = await fetch(`/api/users/${user.id}/addresses`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setShippingAddresses(data);
+      if (data.length > 0 && !selectedShippingAddressId) { // Only set if no address pre-selected from cart
+        const defaultAddress = data.find(addr => addr.isDefault);
+        setSelectedAddressId(defaultAddress ? defaultAddress.id : data[0].id);
+      }
     } catch (error) {
-        console.error("Error fetching shipping addresses:", error);
-        toast.error("Error fetching shipping addresses.");
+      console.error("Error fetching shipping addresses:", error);
+      toast.error("Error fetching shipping addresses.");
     }
-}, [user, selectedShippingAddressId]); // Add selectedShippingAddressId to dependencies
+  }, [user, selectedShippingAddressId]); // Add selectedShippingAddressId to dependencies
 
   useEffect(() => {
-      if (user) {
-          fetchShippingAddresses();
-      } else {
-          setShippingAddresses([]);
-          setSelectedAddressId(null);
-      }
+    if (user) {
+      fetchShippingAddresses();
+    } else {
+      setShippingAddresses([]);
+      setSelectedAddressId(null);
+    }
   }, [user, fetchShippingAddresses]);
 
   // Update CartContext whenever local selectedAddressId changes
   useEffect(() => {
-      setSelectedShippingAddressId(selectedAddressId);
+    setSelectedShippingAddressId(selectedAddressId);
   }, [selectedAddressId, setSelectedShippingAddressId]);
 
   const openAddressModal = (address) => {
@@ -121,7 +123,7 @@ export default function CheckoutPage() {
       };
 
       const payload = toSnakeCase(transformedAddressData);
-      console.log('Frontend: Submitting payload:', payload); // Log the payload being sent
+
 
       const response = await fetch(endpoint, {
         method,
@@ -179,7 +181,7 @@ export default function CheckoutPage() {
 
   const shipping = subtotal > 200 ? 0 : 30; // Free shipping if subtotal > 200 AED, otherwise 30 AED
   const tax = subtotal * 0.05; // 5% tax on AED subtotal
-  const giftWrapFee = formData.giftWrap ? 20 : 0; // Assuming 20 AED for gift wrap
+  const giftWrapFee = formData.giftWrap ? 100 : 0; // Assuming 100 AED for gift wrap
   const total = finalTotal + shipping + tax + giftWrapFee;
 
   const truncateDescription = (description, maxLength = 100) => {
@@ -194,15 +196,15 @@ export default function CheckoutPage() {
     { id: 3, title: 'Review', icon: Check }
   ];
 
-  const handleInputChange = (field, value) => { 
+  const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleNextStep = () => {
     // Basic validation before moving to next step
     if (currentStep === 1 && !selectedAddressId) {
-        toast.error('Please select a shipping address before continuing.');
-        return;
+      toast.error('Please select a shipping address before continuing.');
+      return;
     }
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
@@ -215,6 +217,8 @@ export default function CheckoutPage() {
     }
   };
 
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
   const handlePlaceOrder = async () => {
     if (!user) {
       toast.error('Please login to place an order.');
@@ -223,16 +227,20 @@ export default function CheckoutPage() {
     }
 
     if (!selectedAddressId) {
-        toast.error('A shipping address must be selected.');
-        return;
+      toast.error('A shipping address must be selected.');
+      return;
     }
-    
+
+    setIsPlacingOrder(true);
+
     const shippingDate = new Date();
     shippingDate.setDate(shippingDate.getDate() + 7);
 
     const orderData = {
       user_address_id: selectedAddressId, // Use the selected address ID
       payment_method: formData.paymentMethod,
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      shipping_cost: parseFloat(shipping.toFixed(2)),
       total_amount: parseFloat(total.toFixed(2)),
       shipping_scheduled_date: shippingDate.toISOString(),
       user_id: user.id,
@@ -244,6 +252,8 @@ export default function CheckoutPage() {
       taxAmount: tax,
       applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
       discount_amount: discountAmount,
+      gift_wrap: formData.giftWrap,
+      gift_wrap_cost: giftWrapFee,
     };
 
     try {
@@ -261,7 +271,7 @@ export default function CheckoutPage() {
       }
 
       const result = await response.json();
-      console.log('Order Placed Successfully:', result);
+
       toast.success('Order Placed Successfully! Order ID: ' + result.orderId);
       clearCart();
       router.push(`/orders/${result.orderId}`);
@@ -269,6 +279,7 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error placing order:', error);
       toast.error('Error placing order: ' + error.message);
+      setIsPlacingOrder(false);
     }
   };
 
@@ -300,31 +311,28 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-8 order-1 lg:order-1">
             {/* Progress Steps */}
             <div className="bg-white rounded-2xl p-6 mb-6">
               <div className="flex items-center justify-between">
                 {steps.map((step, index) => (
                   <div key={step.id} className="flex items-center flex-1">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                      currentStep >= step.id 
-                        ? 'bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white'
-                        : 'bg-gray-200 text-gray-400'
-                    }`}>
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-full ${currentStep >= step.id
+                      ? 'bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white'
+                      : 'bg-gray-200 text-gray-400'
+                      }`}>
                       <step.icon className="h-5 w-5" />
                     </div>
-                    <span className={`ml-3 text-sm ${
-                      currentStep >= step.id ? 'text-gray-900' : 'text-gray-400'
-                    }`}>
+                    <span className={`ml-3 text-sm ${currentStep >= step.id ? 'text-gray-900' : 'text-gray-400'
+                      }`}>
                       {step.title}
                     </span>
                     {index < steps.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-4 ${
-                        currentStep > step.id ? 'bg-[var(--brand-pink)]' : 'bg-gray-200'
-                      }`} />
+                      <div className={`flex-1 h-0.5 mx-4 ${currentStep > step.id ? 'bg-[var(--brand-pink)]' : 'bg-gray-200'
+                        }`} />
                     )}
                   </div>
                 ))}
@@ -354,36 +362,39 @@ export default function CheckoutPage() {
                         {shippingAddresses.filter(addr => addr.isDefault).map((address) => (
                           <Card
                             key={address.id}
-                            className={`p-6 cursor-pointer rounded-xl shadow-sm border ${selectedAddressId === address.id ? 'border-2 border-[var(--brand-pink)] bg-brand-pink-extra-light' : 'border-gray-200'}`}
+                            className={`relative p-6 cursor-pointer rounded-xl shadow-sm border transition-all duration-200 hover:shadow-md ${selectedAddressId === address.id ? 'border-2 border-[var(--brand-pink)] bg-brand-pink-extra-light' : 'border-gray-200'}`}
                             onClick={() => setSelectedAddressId(address.id)}
                           >
+                            {selectedAddressId === address.id && (
+                              <Check className="absolute top-3 right-3 h-5 w-5 text-[var(--brand-pink)]" />
+                            )}
                             <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="text-lg font-bold">
-                                      {`${address.city ?? ''}, ${address.country ?? ''}`}
-                                    </h3>
-                                    {address.isDefault && <Badge className="text-xs font-semibold">Default</Badge>}
-                                  </div>
-                                  <ul className="list-none space-y-1 text-gray-600">
-                                    {address.shipping_address && <li><span>{address.shipping_address}</span></li>}
-                                    {!address.shipping_address && address.addressLine1 && <li><span>{address.addressLine1}</span></li>}
-                                    {address.addressLine2 && <li><span>{address.addressLine2}</span></li>}
-                                    {(address.city || address.state || address.zipCode) && <li><span>{`${address.city ?? ''}${address.city && address.state ? ', ' : ''}${address.state ?? ''} ${address.zipCode ?? ''}`}</span></li>}
-                                    {address.country && <li><span>{address.country}</span></li>}
-                                    {address.customerPhone && <li><span>Phone: {address.customerPhone ?? ''}</span></li>}
-                                  </ul>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="text-base font-semibold text-gray-900">
+                                    {address.customerName || user?.name || 'Shipping Address'}
+                                  </h3>
+                                  {address.isDefault && <Badge variant="secondary" className="text-xs font-medium bg-[var(--brand-blue)] text-white">Default</Badge>}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  {address.isDeletable && (
-                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteAddress(address.id); }} className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                  <Button variant="outline" size="icon" onClick={(e) => { e.stopPropagation(); openAddressModal(address); }} className="h-8 w-8">
-                                    <User className="h-4 w-4" />
+                                <div className="text-sm text-gray-700 space-y-1">
+                                  {address.shipping_address && <p>{address.shipping_address}</p>}
+                                  {!address.shipping_address && address.addressLine1 && <p>{address.addressLine1}</p>}
+                                  {address.addressLine2 && <p>{address.addressLine2}</p>}
+                                  <p>{`${address.city ?? ''}${address.city && address.state ? ', ' : ''}${address.state ?? ''} ${address.zipCode ?? ''}`}</p>
+                                  <p>{address.country}</p>
+                                  {address.customerPhone && <p className="font-medium mt-2">Phone: {address.customerPhone}</p>}
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                {address.isDeletable && (
+                                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteAddress(address.id); }} className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700">
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
-                                </div>
+                                )}
+                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openAddressModal(address); }} className="h-8 w-8 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </Card>
                         ))}
@@ -392,36 +403,39 @@ export default function CheckoutPage() {
                         {showAllAddresses && shippingAddresses.filter(addr => !addr.isDefault).map((address) => (
                           <Card
                             key={address.id}
-                            className={`p-6 cursor-pointer rounded-xl shadow-sm border ${selectedAddressId === address.id ? 'border-2 border-[var(--brand-pink)] bg-brand-pink-extra-light' : 'border-gray-200'}`}
+                            className={`relative p-6 cursor-pointer rounded-xl shadow-sm border transition-all duration-200 hover:shadow-md ${selectedAddressId === address.id ? 'border-2 border-[var(--brand-pink)] bg-brand-pink-extra-light' : 'border-gray-200'}`}
                             onClick={() => setSelectedAddressId(address.id)}
                           >
+                            {selectedAddressId === address.id && (
+                              <Check className="absolute top-3 right-3 h-5 w-5 text-[var(--brand-pink)]" />
+                            )}
                             <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="text-lg font-bold">
-                                      {`${address.city ?? ''}, ${address.country ?? ''}`}
-                                    </h3>
-                                    {address.isDefault && <Badge className="text-xs font-semibold">Default</Badge>}
-                                  </div>
-                                  <ul className="list-none space-y-1 text-gray-600">
-                                    {address.shipping_address && <li><span>{address.shipping_address}</span></li>}
-                                    {!address.shipping_address && address.addressLine1 && <li><span>{address.addressLine1}</span></li>}
-                                    {address.addressLine2 && <li><span>{address.addressLine2}</span></li>}
-                                    {(address.city || address.state || address.zipCode) && <li><span>{`${address.city ?? ''}${address.city && address.state ? ', ' : ''}${address.state ?? ''} ${address.zipCode ?? ''}`}</span></li>}
-                                    {address.country && <li><span>{address.country}</span></li>}
-                                    {address.customerPhone && <li><span>Phone: {address.customerPhone ?? ''}</span></li>}
-                                  </ul>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="text-base font-semibold text-gray-900">
+                                    {address.customerName || user?.name || 'Shipping Address'}
+                                  </h3>
+                                  {address.isDefault && <Badge variant="secondary" className="text-xs font-medium bg-[var(--brand-blue)] text-white">Default</Badge>}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  {address.isDeletable && (
-                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteAddress(address.id); }} className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                  <Button variant="outline" size="icon" onClick={(e) => { e.stopPropagation(); openAddressModal(address); }} className="h-8 w-8">
-                                    <User className="h-4 w-4" />
+                                <div className="text-sm text-gray-700 space-y-1">
+                                  {address.shipping_address && <p>{address.shipping_address}</p>}
+                                  {!address.shipping_address && address.addressLine1 && <p>{address.addressLine1}</p>}
+                                  {address.addressLine2 && <p>{address.addressLine2}</p>}
+                                  <p>{`${address.city ?? ''}${address.city && address.state ? ', ' : ''}${address.state ?? ''} ${address.zipCode ?? ''}`}</p>
+                                  <p>{address.country}</p>
+                                  {address.customerPhone && <p className="font-medium mt-2">Phone: {address.customerPhone}</p>}
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                {address.isDeletable && (
+                                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteAddress(address.id); }} className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700">
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
-                                </div>
+                                )}
+                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openAddressModal(address); }} className="h-8 w-8 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </Card>
                         ))}
@@ -450,34 +464,35 @@ export default function CheckoutPage() {
               {/* Step 2: Payment */}
               {currentStep === 2 && (
                 <div className="space-y-6">
-                  <h2 className="text-2xl mb-6">Payment Information</h2>
-                  
+                  <h2 className="text-3xl font-serif mb-6 text-gray-900">Payment Information</h2>
+
                   <div className="p-4 bg-gray-50 rounded-xl flex items-center gap-3">
                     <CreditCard className="h-5 w-5 text-gray-600" />
-                    <span className="font-medium">Cash on Delivery</span>
+                    <span className="font-semibold text-gray-800">Cash on Delivery</span>
                   </div>
 
                   <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
+                    <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
+                      <Checkbox
                         id="giftWrap"
                         checked={formData.giftWrap}
                         onCheckedChange={(checked) => handleInputChange('giftWrap', checked)}
                       />
-                      <Label htmlFor="giftWrap" className="flex items-center gap-2">
-                        <Gift className="h-4 w-4" />
-                        Gift wrap my order (+$5.99)
+                      <Label htmlFor="giftWrap" className="flex items-center gap-2 text-gray-700"> {/* Added text-gray-700 */}
+                        <Gift className="h-4 w-4 text-[var(--brand-pink)]" /> {/* Added text-[var(--brand-pink)] */}
+                        Gift wrap my order (+100 AED) {/* Updated price to match giftWrapFee */}
                       </Label>
                     </div>
 
                     {formData.giftWrap && (
                       <div>
-                        <Label htmlFor="giftMessage">Gift Message (Optional)</Label>
-                        <Input 
+                        <Label htmlFor="giftMessage" className="mb-2 block text-gray-700">Gift Message (Optional)</Label> {/* Added mb-2 block text-gray-700 */}
+                        <Input
                           id="giftMessage"
                           value={formData.giftMessage}
                           onChange={(e) => handleInputChange('giftMessage', e.target.value)}
                           placeholder="Enter gift message"
+                          className="mt-1"
                         />
                       </div>
                     )}
@@ -488,25 +503,26 @@ export default function CheckoutPage() {
               {/* Step 3: Review */}
               {currentStep === 3 && (
                 <div className="space-y-6">
-                  <h2 className="text-2xl mb-6">Review Your Order</h2>
-                  
+                  <h2 className="text-3xl font-serif mb-6 text-gray-900">Review Your Order</h2>
+
                   {/* Shipping Info */}
                   <div className="p-4 bg-gray-50 rounded-xl">
-                    <h3 className="font-medium mb-2 flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
+                    <h3 className="font-semibold mb-2 flex items-center gap-2 text-gray-800"> {/* Changed font-medium to font-semibold, added text-gray-800 */}
+                      <MapPin className="h-5 w-5 text-[var(--brand-pink)]" /> {/* Increased icon size, added brand color */}
                       Shipping Address
                     </h3>
                     {selectedAddressId && shippingAddresses.length > 0 ? (
                       (() => {
                         const selectedAddress = shippingAddresses.find(addr => addr.id === selectedAddressId);
                         return selectedAddress ? (
-                          <p className="text-gray-600">
-                            {selectedAddress.customerName || user?.name}<br />
-                            {selectedAddress.customerPhone}<br />
-                            {selectedAddress.addressLine1}, {selectedAddress.addressLine2}<br />
-                            {selectedAddress.city}, {selectedAddress.state} {selectedAddress.zipCode}<br />
-                            {selectedAddress.country}
-                          </p>
+                          <div className="text-sm text-gray-700 space-y-1"> {/* Structured address into a div with spacing */}
+                            <p className="font-medium">{selectedAddress.customerName || user?.name}</p>
+                            <p>{selectedAddress.customerPhone}</p>
+                            <p>{selectedAddress.addressLine1}</p>
+                            {selectedAddress.addressLine2 && <p>{selectedAddress.addressLine2}</p>}
+                            <p>{`${selectedAddress.city ?? ''}, ${selectedAddress.state ?? ''} ${selectedAddress.zipCode ?? ''}`}</p>
+                            <p>{selectedAddress.country}</p>
+                          </div>
                         ) : (
                           <p className="text-gray-600">No address selected or found.</p>
                         );
@@ -518,38 +534,38 @@ export default function CheckoutPage() {
 
                   {/* Payment Info */}
                   <div className="p-4 bg-gray-50 rounded-xl">
-                    <h3 className="font-medium mb-2 flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
+                    <h3 className="font-semibold mb-2 flex items-center gap-2 text-gray-800"> {/* Changed font-medium to font-semibold, added text-gray-800 */}
+                      <CreditCard className="h-5 w-5 text-[var(--brand-pink)]" /> {/* Increased icon size, added brand color */}
                       Payment Method
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-sm text-gray-700"> {/* Added text-sm text-gray-700 */}
                       Cash on Delivery
                     </p>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
+                  <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
+                    <Checkbox
                       id="newsletter"
                       checked={formData.newsletter}
                       onCheckedChange={(checked) => handleInputChange('newsletter', checked)}
                     />
-                    <Label htmlFor="newsletter">Subscribe to our newsletter for exclusive offers</Label>
+                    <Label htmlFor="newsletter" className="text-gray-700">Subscribe to our newsletter for exclusive offers</Label> {/* Added text-gray-700 */}
                   </div>
                 </div>
               )}
 
               {/* Navigation Buttons */}
               <div className="flex justify-between pt-6 border-t border-gray-100 mt-6"> {/* Added margin-top here for better spacing */}
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handlePreviousStep}
                   disabled={currentStep === 1}
                 >
                   Previous
                 </Button>
-                
+
                 {currentStep < 3 ? (
-                  <Button 
+                  <Button
                     onClick={handleNextStep}
                     className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
                     disabled={currentStep === 1 && shippingAddresses.length > 0 && !selectedAddressId}
@@ -557,23 +573,22 @@ export default function CheckoutPage() {
                     Continue
                   </Button>
                 ) : (
-                  <Button 
+                  <Button
                     onClick={handlePlaceOrder}
                     className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
-                    disabled={!selectedAddressId}
+                    disabled={!selectedAddressId || hasStockIssues || isPlacingOrder}
                   >
-                    Place Order
-                  </Button>
-                )}
+                    {isPlacingOrder ? 'Processing...' : 'Place Order'}
+                  </Button>)}
               </div>
             </motion.div>
           </div>
 
           {/* Order Summary */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-4 order-2 lg:order-2">
             <div className="bg-white rounded-2xl p-6 sticky top-24">
               <h3 className="text-xl mb-6">Order Summary</h3>
-              
+
               {/* Items */}
               <div className="space-y-4 mb-6">
                 {cartItems.map((item) => (
@@ -591,6 +606,12 @@ export default function CheckoutPage() {
                         <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
                         <span className="text-sm font-medium">AED {item.price.toFixed(2)}</span>
                       </div>
+                      {item.stock_quantity === 0 && ( // Display Out of Stock
+                        <p className="text-xs font-semibold text-red-500 mt-1">Out of Stock</p>
+                      )}
+                      {item.stock_quantity > 0 && item.quantity > item.stock_quantity && ( // Display warning if quantity exceeds stock
+                        <p className="text-xs font-semibold text-orange-500 mt-1">Only {item.stock_quantity} in stock!</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -613,6 +634,9 @@ export default function CheckoutPage() {
                     Apply
                   </Button>
                 </div>
+                {couponError && (
+                  <p className="text-sm text-red-500 mt-1">{couponError}</p>
+                )}
               </div>
 
               {/* Totals */}

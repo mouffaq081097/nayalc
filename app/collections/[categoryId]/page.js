@@ -84,8 +84,8 @@ export default function CollectionDetailsPage() {
           {products.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product) => (
-                <ProductCard 
-                  key={product.id} 
+                <ProductCard
+                  key={product.id}
                   id={product.id}
                   name={product.name}
                   price={product.price}
@@ -93,7 +93,8 @@ export default function CollectionDetailsPage() {
                   rating={4.5} // Hardcoded dummy rating
                   reviewCount={120} // Hardcoded dummy review count
                   brandName={product.brandName}
-                  // Add other product properties as needed by ProductCard
+                  stock_quantity={product.stock_quantity}
+                // Add other product properties as needed by ProductCard
                 />
               ))}
             </div>

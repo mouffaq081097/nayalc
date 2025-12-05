@@ -6,6 +6,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { formatPrice } from '@/app/lib/utils';
 import { useState } from 'react';
 import { useUser } from '@/app/context/UserContext';
+import { Separator } from '@/app/components/ui/separator'; // Import Separator
 
 /**
  * @typedef {object} OrderConfirmationPageProps
@@ -23,16 +24,12 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState(null);
 
-  const shippingState = 'N/A'; // Not available in current API response
-  
-  
-
-  // Calculate subtotal for display purposes
-  const subtotal = order.items.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
-  // Calculate display-only shipping based on subtotal
-  const displayShipping = subtotal < 200 ? 30 : 0;
-  // Calculate display-only tax (5% of subtotal)
-  const displayTax = subtotal * 0.05;
+  // Use values directly from order object
+  const subtotal = order.subtotal;
+  const shippingCost = order.shippingCost;
+  const taxAmount = order.taxAmount;
+  const discountAmount = order.discountAmount;
+  const totalAmount = order.totalAmount;
 
   const deliverySteps = [
     {
@@ -110,8 +107,11 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
             <p className="text-xl text-gray-600 mb-4">
               Thank you for your order! We're excited to get your beautiful products to you.
             </p>
+            <p className="text-lg text-gray-700 mb-6">
+              Expected delivery: <span className="font-semibold">2-3 business days</span>
+            </p>
             
-            <Badge className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white text-lg px-4 py-2">
+            <Badge className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent text-lg px-4 py-2">
               Order {order.id}
             </Badge>
           </motion.div>
@@ -166,13 +166,12 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                   {order.items.map((item, index) => (
                     <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
                       <ImageWithFallback
-                        src={item.images && item.images.length > 0 ? item.images[0] : '/placeholder-image.jpg'} // Use actual image from enriched data
-                        alt={item.name || 'Product Image'}
-                        className="w-16 h-16 object-cover rounded-lg"
+                        src={item.product?.imageUrl || '/placeholder-image.jpg'} // Access item.product.imageUrl
+                        alt={item.product?.name || 'Product Image'} // Access item.product.name
+                        className="w-16 h-16 object-contain rounded-lg"
                       />
                       <div className="flex-1">
-                        <h3 className="font-medium">{item.name || `Product ${item.productId}`}</h3>
-                        <p className="text-sm text-gray-500">{item.brand || 'N/A'}</p>
+                        <h3 className="font-medium">{item.product?.name || `Product ${item.product?.id}`}</h3>
                         {item.size && <p className="text-sm text-gray-500">Size: {item.size}</p>}
                         {item.shade && <p className="text-sm text-gray-500">Shade: {item.shade}</p>}
                       </div>
@@ -224,18 +223,30 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                     <span>Subtotal</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-red-500">
+                      <span>Discount</span>
+                      <span>- {formatPrice(discountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>{displayShipping === 0 ? 'FREE' : formatPrice(displayShipping)}</span>
+                    <span>{!shippingCost || shippingCost === 0 ? 'FREE' : formatPrice(shippingCost)}</span>
                   </div>
+                  {order.giftWrapCost > 0 && (
+                    <div className="flex justify-between">
+                      <span>Gift Wrap</span>
+                      <span>{formatPrice(order.giftWrapCost)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>{formatPrice(displayTax)}</span>
+                    <span>{formatPrice(taxAmount)}</span>
                   </div>
-                  <hr className="my-2" />
+                  <Separator className="my-2" />
                   <div className="flex justify-between font-medium text-lg">
                     <span>Order Total</span>
-                    <span>{formatPrice(parseFloat(order.totalAmount))}</span>
+                    <span>{formatPrice(totalAmount)}</span>
                   </div>
                 </div>
                 <Badge className="w-full justify-center bg-green-100 text-green-800">
@@ -256,10 +267,10 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                 </h3>
                 <div className="text-sm text-gray-600">
                   <p>{order.customerName}</p>
-                  <p>{order.shippingAddress.addressLine1}</p>
-                  {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
-                  <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}</p>
-                  <p>{order.shippingAddress.country}</p>
+                  <p>{order.shippingAddressDetails.addressLine1}</p>
+                  {order.shippingAddressDetails.addressLine2 && <p>{order.shippingAddressDetails.addressLine2}</p>}
+                  <p>{order.shippingAddressDetails.city}, {order.shippingAddressDetails.state} {order.shippingAddressDetails.postalCode}</p>
+                  <p>{order.shippingAddressDetails.country}</p>
                 </div>
               </motion.div>
 

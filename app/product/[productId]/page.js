@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -11,12 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 
 import { ArrowLeft, Heart, Share2, Star, Plus, Minus, ShoppingBag, Truck, RotateCcw, Shield, Check } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
+import Reviews from '../../components/Reviews';
 
 
 
 
 export default function ProductDetailPage({ params }) {
-  const { productId } = use(params);
+  const { productId } = params;
   const { addToCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
@@ -35,6 +36,10 @@ export default function ProductDetailPage({ params }) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        data.price = parseFloat(data.price);
+        if (data.originalPrice) {
+          data.originalPrice = parseFloat(data.originalPrice);
+        }
         setProduct(data);
 
 
@@ -124,7 +129,7 @@ export default function ProductDetailPage({ params }) {
           {/* Product Images */}
           <div className="space-y-4">
             {/* Main Image */}
-            <div 
+            <div
               className="aspect-square bg-white rounded-2xl overflow-hidden shadow-lg mx-auto max-w-md"
             >
               <ImageWithFallback
@@ -140,13 +145,12 @@ export default function ProductDetailPage({ params }) {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${ 
-                    selectedImage === index ? 'border-[var(--brand-pink)]' : 'border-gray-200'
-                  }`}
+                  className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImage === index ? 'border-[var(--brand-pink)]' : 'border-gray-200'
+                    }`}
                 >
                   <ImageWithFallback
                     src={image}
-                  alt={product.name}
+                    alt={product.name}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -162,14 +166,14 @@ export default function ProductDetailPage({ params }) {
                 {product.brand}
               </Badge>
               <h1 className="text-3xl md:text-4xl mb-4">{product.name}</h1>
-              
+
               {/* Rating */}
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center gap-1">
                   {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
                     />
                   ))}
                 </div>
@@ -195,38 +199,45 @@ export default function ProductDetailPage({ params }) {
 
 
 
-            {/* Quantity */}
-            <div className="space-y-3">
-              <label className="text-sm uppercase tracking-wide text-gray-700">Quantity</label>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="h-10 w-10 p-0"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="w-12 text-center">{quantity}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="h-10 w-10 p-0"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+            {product.stock_quantity > 0 ? (
+              <div className="space-y-3">
+                <label className="text-sm uppercase tracking-wide text-gray-700">Quantity</label>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="h-10 w-10 p-0"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-12 text-center">{quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="h-10 w-10 p-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                <label className="text-sm uppercase tracking-wide text-gray-700">Availability</label>
+                <p className="text-xl font-bold text-red-600">Out of Stock</p>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex gap-4">
-              <Button 
+              <Button
                 onClick={handleAddToCart}
+                disabled={!product.stock_quantity || product.stock_quantity <= 0}
                 className="flex-1 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 text-lg py-6"
               >
                 <ShoppingBag className="h-5 w-5 mr-2" />
-                Add to Bag - AED {(product.price * quantity).toFixed(2)}
+                {!product.stock_quantity || product.stock_quantity <= 0 ? 'Out of Stock' : `Add to Bag - AED ${(product.price * quantity).toFixed(2)}`}
               </Button>
               <Button
                 variant="outline"
@@ -267,7 +278,7 @@ export default function ProductDetailPage({ params }) {
               <TabsTrigger value="ingredients">Ingredients</TabsTrigger>
               <TabsTrigger value="how-to-use">How to Use</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="details" className="mt-6">
               <div className="bg-white rounded-2xl p-8">
                 <h3 className="text-xl mb-4">Product Details</h3>
@@ -320,6 +331,8 @@ export default function ProductDetailPage({ params }) {
             </TabsContent>
           </Tabs>
         </div>
+
+        <Reviews productId={product.id} />
       </div>
     </div>
   );

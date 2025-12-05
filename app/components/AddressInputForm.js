@@ -30,7 +30,7 @@ const InputField = ({ id, name, value, onChange, placeholder, required, icon: Ic
 
 
 const AddressInputForm = ({ initialData, onSave, onCancel }) => {
-    console.log('AddressInputForm rendered'); // Debugging: Confirm component renders
+    
     const [formData, setFormData] = useState({
         customerPhone: initialData?.customerPhone || initialData?.customer_phone || '',
         addressLine1: initialData?.addressLine1 || initialData?.address_line1 || '',
@@ -47,7 +47,7 @@ const AddressInputForm = ({ initialData, onSave, onCancel }) => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        console.log('AddressInputForm: handleChange received:', { name, value }); // Added log
+        
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
@@ -69,10 +69,10 @@ const AddressInputForm = ({ initialData, onSave, onCancel }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('handleSubmit triggered'); // Debugging: Confirm handleSubmit is called
+        
         // Validate map selection
         if (formData.latitude === null || formData.longitude === null) {
-            console.log('AddressInputForm: Validation failed: latitude/longitude missing'); // Added log
+            
             setLocationError(true);
             toast.error("Please select a location on the map.");
             return;
@@ -81,31 +81,31 @@ const AddressInputForm = ({ initialData, onSave, onCancel }) => {
 
         // Validate other required address fields populated by map (even if hidden)
         if (!formData.addressLine1) {
-            console.log('AddressInputForm: Validation failed: addressLine1 missing'); // Added log
+            
             toast.error("Street Address is missing from map selection.");
             return;
         }
         if (!formData.city) {
-            console.log('AddressInputForm: Validation failed: city missing'); // Added log
+            
             toast.error("City is missing from map selection.");
             return;
         }
 
         if (!formData.country) {
-            console.log('AddressInputForm: Validation failed: country missing'); // Added log
+            
             toast.error("Country is missing from map selection.");
             return;
         }
 
         // Validate phone number (it's the only visible required field)
         if (!formData.customerPhone) {
-            console.log('AddressInputForm: Validation failed: customerPhone missing'); // Added log
+            
             toast.error("Phone Number is required.");
             return;
         }
 
-        console.log('AddressInputForm: Submitting formData:', formData);
-        console.log('AddressInputForm: Calling onSave with formData:', formData); // NEW LOG
+        
+        
         onSave(formData);
     };
 

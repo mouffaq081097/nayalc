@@ -18,22 +18,10 @@ export async function GET(request, context) {
     const userId = params.userId;
 
     try {
-        const sql = `
-            SELECT 
-                p.id as "productId",
-                uc.quantity,
-                p.name,
-                p.price,
-                p.description,
-                p.vendor as "brand",
-                (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as "imageUrl"
-            FROM user_carts uc
-            JOIN products p ON uc.product_id = p.id
-            WHERE uc.user_id = $1;
-        `;
+        const sql = "SELECT p.id as \"productId\", uc.quantity, p.name, p.price, p.description, p.vendor as \"brand\", p.stock_quantity as \"stock_quantity\", (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as \"imageUrl\" FROM user_carts uc JOIN products p ON uc.product_id = p.id WHERE uc.user_id = $1;";
 
         const { rows } = await db.query(sql, [userId]);
-        console.log(`Fetched cart for user ${userId}:`, rows);
+        
         return NextResponse.json({ cart: rows });
 
     } catch (error) {
@@ -85,7 +73,7 @@ export async function PUT(request, context) {
         await client.query('BEGIN');
 
         const deleteResult = await client.query('DELETE FROM user_carts WHERE user_id = $1', [userIdInt]);
-        console.log(`Deleted ${deleteResult.rowCount} cart items for user ${userId}.`);
+        
 
         if (cart.length > 0) {
             for (const item of cart) {

@@ -89,12 +89,12 @@ function BrandPage() {
                 transition={{ duration: 0.5 }}
                 className="mb-6"
               >
-                <Image 
-                  src={currentBrand.imageUrl} 
-                  alt={currentBrand.name} 
-                  width={150} 
-                  height={150} 
-                  objectFit="contain" 
+                <Image
+                  src={currentBrand.imageUrl}
+                  alt={currentBrand.name}
+                  width={150}
+                  height={150}
+                  objectFit="contain"
                   className="mx-auto rounded-full shadow-lg"
                 />
               </motion.div>
@@ -148,7 +148,8 @@ function BrandPage() {
                   price={product.price}
                   image={product.imageUrl}
                   brandName={product.brandName}
-                  // Add other product properties as needed by ProductCard
+                  stock_quantity={product.stock_quantity}
+                // Add other product properties as needed by ProductCard
                 />
               ))}
             </div>

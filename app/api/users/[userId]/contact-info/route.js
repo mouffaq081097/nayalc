@@ -6,12 +6,29 @@ export async function GET(request, { params }) {
     const { userId } = await params;
     try {
         const { rows } = await db.query(
-            'SELECT customer_phone FROM user_addresses WHERE user_id = $1 ORDER BY is_default DESC, id DESC LIMIT 1',
+            `SELECT 
+                u.first_name,
+                u.last_name,
+                u.email,
+                ua.customer_phone
+            FROM users u
+            LEFT JOIN user_addresses ua ON u.id = ua.user_id
+            WHERE u.id = $1
+            ORDER BY ua.is_default DESC, ua.id DESC
+            LIMIT 1`,
             [userId]
         );
 
         if (rows.length === 0) {
-            return NextResponse.json({ message: 'Contact info not found' }, { status: 404 });
+            // It's possible a user exists but has no address/phone, so we return what we have for the user
+            const userResult = await db.query(
+                `SELECT first_name, last_name, email FROM users WHERE id = $1`,
+                [userId]
+            );
+            if (userResult.rows.length === 0) {
+                return NextResponse.json({ message: 'User not found' }, { status: 404 });
+            }
+            return NextResponse.json({ ...userResult.rows[0], customer_phone: null });
         }
 
         return NextResponse.json(rows[0]);

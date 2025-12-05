@@ -1,16 +1,19 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppContext } from '../../../context/AppContext';
 import { Badge } from '../../../components/ui/badge';
 import { ChevronLeft } from 'lucide-react'; // Import ChevronLeft icon
+import { Button } from '@/app/components/ui/button'; // Import Button component
 
 const DeliveredOrdersPage = () => {
     const { deliveredOrders, fetchDeliveredOrders } = useAppContext();
+    const [currentPage, setCurrentPage] = useState(1);
+    const [ordersPerPage, setOrdersPerPage] = useState(10); // Match API default
 
     useEffect(() => {
-        fetchDeliveredOrders();
-    }, [fetchDeliveredOrders]);
+        fetchDeliveredOrders(currentPage, ordersPerPage);
+    }, [fetchDeliveredOrders, currentPage, ordersPerPage]);
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -35,7 +38,7 @@ const DeliveredOrdersPage = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {Array.isArray(deliveredOrders) && deliveredOrders.map((order) => (
+                            {deliveredOrders.orders.map((order) => (
                                 <tr key={order.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         <Link href={`/admin/orders/${order.id}`} className="text-indigo-600 hover:text-indigo-900">
@@ -66,6 +69,27 @@ const DeliveredOrdersPage = () => {
                             ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex justify-between items-center mt-6">
+                    <Button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        variant="outline"
+                    >
+                        Previous
+                    </Button>
+                    <span>
+                        Page {currentPage} of {Math.ceil(deliveredOrders.totalCount / ordersPerPage)}
+                    </span>
+                    <Button
+                        onClick={() => setCurrentPage(prev => Math.min(Math.ceil(deliveredOrders.totalCount / ordersPerPage), prev + 1))}
+                        disabled={currentPage === Math.ceil(deliveredOrders.totalCount / ordersPerPage)}
+                        variant="outline"
+                    >
+                        Next
+                    </Button>
                 </div>
             </div>
         </div>

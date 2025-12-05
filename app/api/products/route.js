@@ -20,15 +20,16 @@ export async function GET(request) {
         SELECT
           p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
           b.name as "brandName",
-          pi.image_url as "imageUrl"
+          pi.image_url as "imageUrl",
+          p.stock_quantity as "stock_quantity"
         FROM
           products p
         LEFT JOIN
           brands b ON p.brand_id = b.id
         LEFT JOIN
           product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
-        WHERE pi.created_at >= NOW() - INTERVAL '7 days'
-        ORDER BY pi.created_at DESC
+        WHERE p.id IS NOT NULL 
+        ORDER BY p.id DESC
       `;
     } else {
       sql = `
@@ -36,7 +37,9 @@ export async function GET(request) {
           p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
           b.name as "brandName",
           pi.image_url as "imageUrl",
-          STRING_AGG(c.name, ', ') as "categoryNames"
+          p.stock_quantity as "stock_quantity",
+          STRING_AGG(c.name, ', ') as "categoryNames",
+          ARRAY_AGG(cp.category_id) as "category_ids"
         FROM
           products p
         LEFT JOIN

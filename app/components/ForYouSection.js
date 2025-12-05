@@ -4,8 +4,6 @@ import { useAppContext } from '../context/AppContext';
 import ProductCard from './ProductCard';
 import { Container } from './ui/Container';
 
-
-
 export const ForYouSection = () => {
   const { products } = useAppContext();
 
@@ -32,6 +30,7 @@ export const ForYouSection = () => {
               price={product.price}
               image={product.imageUrl}
               brandName={product.brandName}
+              stock_quantity={product.stock_quantity}
             />
           ))}
         </div>

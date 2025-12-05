@@ -84,11 +84,11 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
           streetAddress = parts[0] || '';
         }
         
-        console.log("MapPicker - Raw address_components:", addressComponents);
-        console.log("MapPicker - Extracted streetAddress:", streetAddress);
-        console.log("MapPicker - Extracted city:", city);
-        console.log("MapPicker - Extracted country:", country);
-        console.log("MapPicker - Formatted address:", place.formatted_address);
+        
+        
+        
+        
+        
 
         onPlaceSelect({
           lat,

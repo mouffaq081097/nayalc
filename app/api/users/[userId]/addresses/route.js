@@ -48,7 +48,7 @@ export async function POST(request, { params }) {
         customer_phone
     } = await request.json();
 
-    console.log('API POST received:', { address_line1, city, zip_code, country, customer_phone });
+    
 
     if (!address_line1 || !city || !zip_code || !country || !customer_phone) {
         return NextResponse.json({ message: 'Missing required address fields' }, { status: 400 });

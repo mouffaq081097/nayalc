@@ -6,7 +6,8 @@ import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
-const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCount, isNew, isBestseller, category, brandName }) => {
+const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity }) => {
+
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -26,12 +27,12 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
     }
 
     // Reconstruct product object for CartContext, as it expects a product object
-    const productForCart = { id, name, price, imageUrl: image, categoryName: category, brand: brandName };
+    const productForCart = { id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity: stock_quantity };
     addToCart(productForCart, 1);
     // showToast(`Added ${name} to cart!`); // Removed toast
   };
 
-  
+
 
   return (
     <div
@@ -76,16 +77,24 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
         </button>
 
         {/* Quick Add Button */}
-        <div className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${
-          isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
-        }`}>
-          <button
-            onClick={handleAddToCart}
-            className="w-full bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200 py-2 px-4 rounded-md flex items-center justify-center text-sm font-medium" style={{ color: '#111827' }}
-          >
-            <ShoppingBag className="h-4 w-4 mr-2" />
-            Add to cart
-          </button>
+        <div className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+          }`}>
+          {!stock_quantity || stock_quantity <= 0 ? (
+            <button
+              disabled
+              className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md flex items-center justify-center text-sm font-medium cursor-not-allowed"
+            >
+              Out of Stock
+            </button>
+          ) : (
+            <button
+              onClick={handleAddToCart}
+              className="w-full bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200 py-2 px-4 rounded-md flex items-center justify-center text-sm font-medium" style={{ color: '#111827' }}
+            >
+              <ShoppingBag className="h-4 w-4 mr-2" />
+              Add to cart
+            </button>
+          )}
         </div>
       </Link>
 

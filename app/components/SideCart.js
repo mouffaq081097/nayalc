@@ -48,7 +48,7 @@ export default function SideCart() {
             <ul className="divide-y divide-gray-200">
               {cartItems.map((item) => (
                 <li key={item.id} className="py-4 flex">
-                  <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+                  <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 flex items-center justify-center">
                     <ImageWithFallback
                       src={item.image}
                       alt={item.name}

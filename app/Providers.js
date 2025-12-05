@@ -1,23 +1,21 @@
-import React from 'react';
-import { AppProvider } from './context/AppContext';
+'use client';
+
 import { AuthProvider } from './context/AuthContext';
+import { AppProvider } from './context/AppContext';
+import { CartProvider } from './context/CartContext';
 import { UserProvider } from './context/UserContext';
-import { CartProvider } from './context/CartContext'; // Import CartProvider
-import { enableApiMocking } from './lib/api';
 
-// Enable the mock API before the app renders to intercept API calls
-enableApiMocking();
 
-export function Providers({ children }) {
+export default function Providers({ children }) {
   return (
-      <AuthProvider>
+    <AuthProvider>
+      <UserProvider>
         <AppProvider>
-          <UserProvider>
-            <CartProvider> {/* Wrap with CartProvider */}
-              {children}
-            </CartProvider>
-          </UserProvider>
+          <CartProvider>
+            {children}
+          </CartProvider>
         </AppProvider>
-      </AuthProvider>
+      </UserProvider>
+    </AuthProvider>
   );
 }

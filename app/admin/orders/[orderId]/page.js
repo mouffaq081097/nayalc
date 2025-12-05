@@ -1,234 +1,339 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAppContext } from '../../../context/AppContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../components/ui/table';
-import { Badge } from '../../../components/ui/badge';
-import { Separator } from '../../../components/ui/separator';
-import { Button } from '../../../components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
+import { Loader2, ArrowLeft, Package, Truck, XCircle, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/app/components/ui/select';
+import { Input } from '@/app/components/ui/input';
+import { Label } from '@/app/components/ui/label';
+import { Textarea } from '@/app/components/ui/textarea';
+
 
 const OrderDetailsPage = () => {
     const { orderId } = useParams();
-    const router = useRouter();
-    const { fetchOrderById, updateOrderStatus } = useAppContext();
     const [order, setOrder] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [trackingNumber, setTrackingNumber] = useState(''); // New state for tracking number
-    const [courierName, setCourierName] = useState(''); // New state for courier name
-    const [courierWebsite, setCourierWebsite] = useState(''); // New state for courier website
 
-    // Define OrderStatus as a JavaScript object
-    const OrderStatus = {
-        Pending: 'Pending',
-        Processing: 'Processing',
-        Shipped: 'Shipped',
-        Delivered: 'Delivered',
-        Cancelled: 'Cancelled',
-    };
+    const [newStatus, setNewStatus] = useState('');
+    const [cancellationReason, setCancellationReason] = useState('');
+    const [trackingNumber, setTrackingNumber] = useState('');
+    const [shippingCompany, setShippingCompany] = useState('');
+    const [shippingLink, setShippingLink] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [updateError, setUpdateError] = useState(null);
 
-    useEffect(() => {
-        if (order) {
-            setTrackingNumber(order.trackingNumber || ''); // Update tracking number state when order changes
-            setCourierName(order.courierName || ''); // Update courier name state when order changes
-            setCourierWebsite(order.courierWebsite || ''); // Update courier website state when order changes
-        }
-    }, [order]);
 
-    useEffect(() => {
-        if (orderId) {
-            const getOrderDetails = async () => {
-                try {
-                    setLoading(true);
-                    const orderData = await fetchOrderById(orderId);
-                    setOrder(orderData);
-                    setError(null);
-                } catch (err) {
-                    setError('Failed to fetch order details.');
-                    setOrder(null);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            getOrderDetails();
-        }
-    }, [orderId, fetchOrderById]);
-
-    const handleStatusChange = async (e) => {
-        const newStatus = e.target.value;
-        let finalTrackingNumber = trackingNumber;
-        let finalCourierName = courierName;
-        let finalCourierWebsite = courierWebsite;
-
-        // If status is changed to Shipped, require tracking number, courier name, and courier website
-        if (newStatus === OrderStatus.Shipped) {
-            if (!finalTrackingNumber) {
-                alert('Please enter a tracking number for shipped orders.');
-                return;
-            }
-            if (!finalCourierName) {
-                alert('Please enter a courier name for shipped orders.');
-                return;
-            }
-            if (!finalCourierWebsite) {
-                alert('Please enter a courier website for shipped orders.');
-                return;
-            }
-        }
-        
-        // If status is changed from Shipped to something else, clear tracking number, courier name, and courier website
-        if (order.status === OrderStatus.Shipped && newStatus !== OrderStatus.Shipped) {
-            finalTrackingNumber = '';
-            finalCourierName = '';
-            finalCourierWebsite = '';
-        }
-
+    const fetchOrderDetails = useCallback(async () => {
+        if (!orderId) return;
+        setIsLoading(true);
         try {
-            await updateOrderStatus(order.id, newStatus, finalTrackingNumber, finalCourierName, finalCourierWebsite);
-            setOrder(prevOrder => ({ ...prevOrder, status: newStatus, trackingNumber: finalTrackingNumber, courierName: finalCourierName, courierWebsite: finalCourierWebsite }));
-            // Optionally, show a toast notification for success
-        } catch (error) {
-            console.error('Error updating order status:', error);
-            // Optionally, show a toast notification for error
+            const response = await fetch(`/api/orders/${orderId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch order details');
+            }
+            const data = await response.json();
+            setOrder(data);
+            setNewStatus(data.status); // Initialize newStatus with current status
+            setTrackingNumber(data.trackingNumber || '');
+            setShippingCompany(data.shippingCompany || '');
+            setShippingLink(data.shippingLink || '');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [orderId]);
+
+    useEffect(() => {
+        fetchOrderDetails();
+    }, [fetchOrderDetails]);
+
+    const router = useRouter();
+    // ... other states ...
+
+    const handleUpdateStatus = async () => {
+        setIsSubmitting(true);
+        setUpdateError(null);
+        try {
+            const response = await fetch(`/api/orders/${orderId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: newStatus,
+                    cancellationReason: newStatus === 'Cancelled' ? cancellationReason : null,
+                    trackingNumber: ['Shipped', 'Delivered'].includes(newStatus) ? trackingNumber : null,
+                    shippingCompany: ['Shipped', 'Delivered'].includes(newStatus) ? shippingCompany : null,
+                    shippingLink: ['Shipped', 'Delivered'].includes(newStatus) ? shippingLink : null,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update order status');
+            }
+            
+            const responseData = await response.json();
+            if (responseData.moved) {
+                router.push('/admin/orders');
+            } else {
+                // Re-fetch order details to get the latest state after update
+                await fetchOrderDetails();
+                setUpdateError(null); // Clear any previous update errors
+            }
+        } catch (err) {
+            setUpdateError(err.message);
+            console.error('Error updating order status:', err);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    if (loading) {
-        return <div className="flex justify-center items-center h-screen"><p className="text-lg">Loading order details...</p></div>;
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Loader2 className="h-32 w-32 animate-spin text-indigo-500" />
+            </div>
+        );
     }
 
     if (error) {
-        return <div className="flex justify-center items-center h-screen"><p className="text-red-500 text-lg">{error}</p></div>;
+        return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
+    }
+    
+    if (!order) {
+        return <div className="text-center mt-10 text-gray-500">Order not found.</div>;
     }
 
-    if (!order) {
-        return <div className="flex justify-center items-center h-screen"><p className="text-lg">No order found.</p></div>;
-    }
+    const getStatusVariant = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'pending': return 'pending';
+            case 'processing': return 'processing';
+            case 'shipped': return 'shipped';
+            case 'delivered': return 'delivered';
+            case 'cancelled': return 'cancelled';
+            default: return 'default';
+        }
+    };
+
+    const isTrackingInfoVisible = ['Shipped', 'Delivered'].includes(newStatus);
+    const isCancellationReasonVisible = newStatus === 'Cancelled';
+
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <div className="mb-4">
-                <Button variant="ghost" onClick={() => router.push('/admin/orders')}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Orders
-                </Button>
+        <div className="bg-gray-50 min-h-screen px-8 py-8">
+            <div className="mb-8">
+                <Link href="/admin/orders">
+                    <Button variant="outline">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Orders
+                    </Button>
+                </Link>
             </div>
-            <Card className="max-w-4xl mx-auto">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-2xl font-bold">Order Details</CardTitle>
-                    <div className="flex flex-col items-end space-y-2"> {/* Use flex-col and items-end for better alignment */}
-                        <div className="flex items-center space-x-2">
-                            <Badge variant={order.status === OrderStatus.Delivered ? 'success' : 'secondary'}>{order.status}</Badge>
-                            <select
-                                value={order.status}
-                                onChange={handleStatusChange}
-                                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                                disabled={order.status === OrderStatus.Cancelled || order.status === OrderStatus.Delivered}
-                            >
-                                {Object.values(OrderStatus).map(status => (
-                                    <option key={status} value={status}>{status}</option>
-                                ))}
-                            </select>
-                        </div>
-                        {(order.status === OrderStatus.Shipped || (order.status !== OrderStatus.Cancelled && order.status !== OrderStatus.Delivered)) && ( // Show input if shipped or if status can still be changed to shipped
-                            <>
-                                <input
-                                    type="text"
-                                    placeholder="Tracking Number"
-                                    value={trackingNumber}
-                                    onChange={(e) => setTrackingNumber(e.target.value)}
-                                    className="mt-2 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                                    disabled={order.status === OrderStatus.Cancelled || order.status === OrderStatus.Delivered}
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Courier Name"
-                                    value={courierName}
-                                    onChange={(e) => setCourierName(e.target.value)}
-                                    className="mt-2 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                                    disabled={order.status === OrderStatus.Cancelled || order.status === OrderStatus.Delivered}
-                                />
-                                <input
-                                    type="url" // Use type="url" for website input
-                                    placeholder="Courier Website URL (e.g., https://example.com)"
-                                    value={courierWebsite}
-                                    onChange={(e) => setCourierWebsite(e.target.value)}
-                                    className="mt-2 block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                                    disabled={order.status === OrderStatus.Cancelled || order.status === OrderStatus.Delivered}
-                                />
-                            </>
-                        )}
+
+            <div className="bg-white rounded-xl shadow-lg p-8">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6 border-b pb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Order #{order.id}</h1>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Placed on {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 className="font-semibold text-lg mb-2">Customer & Order Info</h3>
-                            <p><strong>Order ID:</strong> {order.id}</p>
-                            <p><strong>Customer Name:</strong> {order.customerName}</p>
-                            <p><strong>Order Date:</strong> {new Date(order.createdAt).toLocaleDateString()}</p>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg mb-2">Shipping Address</h3>
-                            <p>{order.shippingAddress.addressLine1}</p>
-                            {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
-                            <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}</p>
-                            <p>{order.shippingAddress.country}</p>
-                        </div>
+                    <div className="mt-4 md:mt-0">
+                         <Badge variant={getStatusVariant(order.status)} className="text-lg px-4 py-2">{order.status}</Badge>
                     </div>
-                    <Separator className="my-6" />
-                    <h3 className="font-semibold text-lg mb-4">Products Ordered</h3>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Product</TableHead>
-                                <TableHead className="text-right">Quantity</TableHead>
-                                <TableHead className="text-right">Price</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {order.items.map(item => (
-                                <TableRow key={item.id}>
-                                    <TableCell>
-                                        <div className="flex items-center">
-                                            <img src={item.imageUrl} alt={item.name} className="mr-4 w-12 h-12 object-contain rounded-md flex-none" />
-                                            <span>{item.name}</span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Order Items */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Items</h2>
+                                                            <div className="space-y-4">
+                                                            {order.items.map(item => (
+                                                                <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                                                                    <div className="flex-shrink-0">
+                                                                        <img 
+                                                                            src={item.product?.imageUrl || 'https://via.placeholder.com/150'} 
+                                                                            alt={item.product?.name || 'Product Image'} 
+                                                                            className="h-16 w-16 rounded-md object-contain"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex-grow">
+                                                                        <p className="font-semibold text-gray-800">{item.product?.name || 'Product not available'}</p>
+                                                                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                        <p className="font-semibold text-gray-800">AED {parseFloat(item.price).toFixed(2)}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>                        </div>
+                        
+                        {/* Status Update Form */}
+                        <div className="bg-white p-8 mt-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Update Order Status</h2>
+                            {updateError && <div className="text-red-500 text-sm mb-4">{updateError}</div>}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="status">Order Status</Label>
+                                    <Select value={newStatus} onValueChange={setNewStatus}>
+                                        <SelectTrigger id="status">
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Pending">Pending</SelectItem>
+                                            <SelectItem value="Processing">Processing</SelectItem>
+                                            <SelectItem value="Shipped">Shipped</SelectItem>
+                                            <SelectItem value="Delivered">Delivered</SelectItem>
+                                            <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {isCancellationReasonVisible && (
+                                    <div>
+                                        <Label htmlFor="cancellationReason">Reason for Cancellation</Label>
+                                        <Textarea
+                                            id="cancellationReason"
+                                            value={cancellationReason}
+                                            onChange={(e) => setCancellationReason(e.target.value)}
+                                            placeholder="Enter reason for cancellation"
+                                            rows={3}
+                                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                    </div>
+                                )}
+                                {isTrackingInfoVisible && (
+                                    <>
+                                        <div>
+                                            <Label htmlFor="trackingNumber">Tracking Number</Label>
+                                            <Input
+                                                id="trackingNumber"
+                                                value={trackingNumber}
+                                                onChange={(e) => setTrackingNumber(e.target.value)}
+                                                placeholder="Enter tracking number"
+                                            />
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">{item.quantity}</TableCell>
-                                    <TableCell className="text-right">AED {item.price.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right">AED {(item.price * item.quantity).toFixed(2)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                    <Separator className="my-6" />
-                    <div className="flex justify-end">
-                        <div className="text-right">
-                            {order.couponCode && (
-                                <p className="text-md">
-                                    <strong>Coupon Applied:</strong> {order.couponCode}
-                                </p>
-                            )}
-                             <p className="text-md">
-                                <strong>Subtotal:</strong> AED {order.subtotal.toFixed(2)}
-                            </p>
-                             <p className="text-md">
-                                <strong>Discount:</strong> - AED {order.discountAmount.toFixed(2)}
-                            </p>
-                             <p className="text-md">
-                                <strong>Tax:</strong> AED {order.taxAmount.toFixed(2)}
-                            </p>
-                            <p className="text-xl font-bold mt-2">
-                                <strong>Total Paid:</strong> AED {order.totalAmount.toFixed(2)}
-                            </p>
+                                        <div>
+                                            <Label htmlFor="shippingCompany">Shipping Company</Label>
+                                            <Input
+                                                id="shippingCompany"
+                                                value={shippingCompany}
+                                                onChange={(e) => setShippingCompany(e.target.value)}
+                                                placeholder="e.g., FedEx, DHL"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <Label htmlFor="shippingLink">Shipping Link</Label>
+                                            <Input
+                                                id="shippingLink"
+                                                value={shippingLink}
+                                                onChange={(e) => setShippingLink(e.target.value)}
+                                                placeholder="e.g., https://www.fedex.com/track/..."
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                            <Button onClick={handleUpdateStatus} disabled={isSubmitting} className="mt-4">
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Updating...
+                                    </>
+                                ) : (
+                                    'Update Status'
+                                )}
+                            </Button>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+
+                    <div className="space-y-8">
+                        {/* Customer Details */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Customer Details</h2>
+                            <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
+                                <p><span className="font-semibold">Name:</span> {order.customerName}</p>
+                                <p><span className="font-semibold">Email:</span> {order.customerEmail}</p>
+                                <p><span className="font-semibold">Phone:</span> {order.customerPhone}</p>
+                            </div>
+                        </div>
+
+                        {/* Shipping Address */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Shipping Address</h2>
+                            <div className="p-4 bg-gray-50 rounded-lg space-y-1 text-sm">
+                                <p>{order.shippingAddress}</p>
+                                <p>{order.city}, {order.zipCode}</p>
+                            </div>
+                        </div>
+
+                        {/* Cancellation Reason */}
+                        {order.status === 'Cancelled' && order.cancellationReason && (
+                            <div>
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">Cancellation Reason</h2>
+                                <div className="p-4 bg-gray-50 rounded-lg space-y-1 text-sm">
+                                    <p>{order.cancellationReason}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tracking Information */}
+                        {order.trackingNumber && (
+                            <div>
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">Tracking Information</h2>
+                                <div className="p-4 bg-gray-50 rounded-lg space-y-1 text-sm">
+                                    <p><span className="font-semibold">Tracking No:</span> {order.trackingNumber}</p>
+                                    <p><span className="font-semibold">Company:</span> {order.shippingCompany}</p>
+                                    <p><span className="font-semibold">Link:</span> <a href={order.shippingLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{order.shippingLink}</a></p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Order Summary */}
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
+                            <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span>AED {order.items.reduce((acc, item) => acc + item.price * item.quantity, 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Discount</span>
+                                    <span>- AED {order.discountAmount ? order.discountAmount.toFixed(2) : '0.00'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Shipping</span>
+                                    <span>AED {order.shippingCost ? order.shippingCost.toFixed(2) : '0.00'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Tax</span>
+                                    <span>AED {order.taxAmount ? order.taxAmount.toFixed(2) : '0.00'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Gift Wrap</span>
+                                    <span>AED {order.giftWrapCost ? order.giftWrapCost.toFixed(2) : '0.00'}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-lg text-gray-900 pt-2 border-t mt-2">
+                                    <span>Total</span>
+                                    <span>AED {order.totalAmount.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

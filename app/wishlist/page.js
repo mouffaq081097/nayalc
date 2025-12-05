@@ -155,7 +155,7 @@ export default function WishlistPage() {
         throw new Error('Failed to add item to cart');
       }
       // Optionally, update cart context here if useCart provides a way to refetch or update
-      console.log('Item added to cart:', item.id);
+      
     } catch (error) {
       console.error('Error adding item to cart:', error);
     }

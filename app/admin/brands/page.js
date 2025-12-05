@@ -1,14 +1,17 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Loader2, Heart, MoreHorizontal } from 'lucide-react';
 import Modal from '../../components/Modal';
+import { Button } from '@/app/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 
 const ManageBrands = () => {
     const { brands, addBrand, updateBrand, deleteBrand, loading: isDataLoading } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingBrand, setEditingBrand] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
     
     const initialFormData = useMemo(() => ({ name: '', logoUrl: '' }), []);
     const [formData, setFormData] = useState(initialFormData);
@@ -69,48 +72,82 @@ const ManageBrands = () => {
         }
     };
 
+    const filteredBrands = brands.filter(brand =>
+        brand.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     if (isDataLoading) {
-        return <div>Loading...</div>
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
+            </div>
+        );
     }
     
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Manage Brands</h1>
-                <button onClick={handleOpenAddModal} className="bg-brand-button-bg text-white px-4 py-2 rounded-md hover:opacity-90 flex items-center space-x-2">
-                    <Plus name="plus" className="w-5 h-5" />
-                    <span>Add Brand</span>
-                </button>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {brands.map(brand => (
-                                <tr key={brand.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{brand.id}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{brand.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <div className="flex justify-center space-x-3">
-                                            <button onClick={() => handleOpenEditModal(brand)} className="text-blue-600 hover:text-blue-900"><Edit className="w-5 h-5" /></button>
-                                            <button onClick={() => handleDelete(brand.id)} className="text-red-600 hover:text-red-900"><Trash2 className="w-5 h-5" /></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+                <div className="relative w-full md:w-auto">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Search by brand name..."
+                        className="pl-10 pr-4 py-2 border rounded-full w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
+                <Button onClick={handleOpenAddModal} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <Plus className="mr-2 h-4 w-4" /> Add New Brand
+                </Button>
             </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {filteredBrands.map(brand => (
+                    <div key={brand.id} className="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                        <div className="p-6">
+                            <div className="flex justify-between items-start">
+                                <div className="flex items-center space-x-4">
+                                    <div className="bg-indigo-100 p-3 rounded-full">
+                                        <Heart className="h-6 w-6 text-indigo-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-900">{brand.name}</p>
+                                    </div>
+                                </div>
+                                <div className="flex space-x-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                            <DropdownMenuItem onClick={() => handleOpenEditModal(brand)}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDelete(brand.id)}>
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {filteredBrands.length === 0 && (
+                <div className="text-center mt-10">
+                    <p className="text-xl text-gray-500">No brands found.</p>
+                </div>
+            )}
+
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingBrand ? 'Edit Brand' : 'Add Brand'}>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">Brand Name</label>
                         <input
@@ -119,7 +156,7 @@ const ManageBrands = () => {
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-pink focus:border-brand-pink"
+                            className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             required
                             disabled={isSubmitting}
                         />
@@ -132,15 +169,15 @@ const ManageBrands = () => {
                             name="logoUrl"
                             value={formData.logoUrl}
                             onChange={handleChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand-pink focus:border-brand-pink"
+                            className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                             disabled={isSubmitting}
                         />
                     </div>
-                    <div className="pt-4 flex justify-end space-x-2">
-                        <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue" disabled={isSubmitting}>Cancel</button>
-                        <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-brand-button-bg border border-transparent rounded-md shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue disabled:opacity-50" disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving...' : 'Save'}
-                        </button>
+                    <div className="pt-4 flex justify-end space-x-4">
+                        <Button type="button" variant="outline" onClick={handleCloseModal} disabled={isSubmitting} className="px-6 py-3">Cancel</Button>
+                        <Button type="submit" disabled={isSubmitting} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white">
+                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Save'}
+                        </Button>
                     </div>
                 </form>
             </Modal>

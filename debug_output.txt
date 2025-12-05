@@ -1,0 +1,19 @@
+Products stock check:
+--------------------------------------------------
+ID: 22   | Name: Gernetic Internation   | Stock: 1      (Type: number) | Status: active
+ID: 20   | Name: Sitala Lifting Moist   | Stock: 1      (Type: number) | Status: active
+ID: 19   | Name: Pure Hyaluronic Acid   | Stock: 0      (Type: number) | Status: active
+ID: 18   | Name: Zorah Sublime Night    | Stock: 1      (Type: number) | Status: active
+ID: 17   | Name: Nyxe Moisturizing an   | Stock: 1      (Type: number) | Status: active
+ID: 16   | Name: Timashki – Jasmine o   | Stock: 1      (Type: number) | Status: active
+ID: 15   | Name: Gentle Makeup Remove   | Stock: 1      (Type: number) | Status: null
+ID: 14   | Name: GLYCO by Gernetic: N   | Stock: 1      (Type: number) | Status: null
+ID: 13   | Name: Immuno                 | Stock: 1      (Type: number) | Status: null
+ID: 12   | Name: LIFT Crème by Gernet   | Stock: 1      (Type: number) | Status: null
+ID: 11   | Name: Melano 50+             | Stock: 1      (Type: number) | Status: null
+ID: 10   | Name: Sebo Ger               | Stock: 0      (Type: number) | Status: null
+ID: 9    | Name: Sensi Boost natural    | Stock: 1      (Type: number) | Status: null
+ID: 8    | Name: GER LIFT by Gernetic   | Stock: 1      (Type: number) | Status: null
+ID: 7    | Name: Eye Mask               | Stock: 1      (Type: number) | Status: null
+ID: 6    | Name: Synchro Face Care      | Stock: 1      (Type: number) | Status: null
+--------------------------------------------------

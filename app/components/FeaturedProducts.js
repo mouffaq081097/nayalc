@@ -3,10 +3,11 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Container } from './ui/Container';
 import ProductCard from './ProductCard';
 import Link from 'next/link';
+import { useAppContext } from '../context/AppContext';
 
-export function FeaturedProducts({ products }) { // Accept products prop
-  // Use products prop to select featured products
-  const displayedProducts = products;
+export function FeaturedProducts() {
+  const { featuredProducts } = useAppContext();
+  const displayedProducts = featuredProducts;
 
   return (
     <section className="py-8 bg-white">
@@ -38,17 +39,16 @@ export function FeaturedProducts({ products }) { // Accept products prop
             {displayedProducts.map((product) => (
               <CarouselItem key={product.id} className="basis-1/2 md:basis-1/2 lg:basis-1/4">
                 <ProductCard
+                  key={product.id}
                   id={product.id}
                   name={product.name}
                   price={product.price}
-                  // originalPrice={product.originalPrice} // Not available in current product data
                   image={product.imageUrl}
                   rating={4.5} // Hardcoded for now
                   reviewCount={120} // Hardcoded for now
-                  // isNew={product.isNew} // Not available in current product data
-                  // isBestseller={product.isBestseller} // Not available in current product data
                   category={product.categoryName || product.category}
                   brandName={product.brandName} // Add brandName
+                  stock_quantity={product.stock_quantity} // Pass stock_quantity
                 />
               </CarouselItem>
             ))}

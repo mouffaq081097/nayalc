@@ -82,7 +82,7 @@ export default function SkincarePage() {
       const products = await fetchProductsByCategory([1, 3, 5, 6, 7, 8]);
       setSkincareProducts(products);
       setFilteredProducts(products); // Initialize filtered products
-      console.log(products)
+      
     };
     getProducts();
   }, [fetchProductsByCategory]);

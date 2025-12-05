@@ -36,7 +36,7 @@ const PhoneNumberInput = ({ value, onChange, disabled, required }) => {
 
   const emitChange = (newCountryCode, newLocalNum) => {
     const fullPhoneNumber = newCountryCode + newLocalNum;
-    console.log('PhoneNumberInput: Emitting change with full phone number:', fullPhoneNumber); // Added log
+    
     if (onChange) {
       onChange({ target: { name: 'customerPhone', value: fullPhoneNumber } });
     }

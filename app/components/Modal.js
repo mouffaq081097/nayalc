@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 
-const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false }) => {
+const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false, size = 'max-w-md' }) => {
   useEffect(() => {
     const handleEsc = (event) => {
       if (event.keyCode === 27) {
@@ -25,7 +25,7 @@ const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false }) => {
       onClick={onClose}
     >
             <div
-              className="relative w-full max-w-md mx-auto my-6 transition-transform duration-300 ease-in-out transform scale-95 opacity-0 animate-modal-scale-in"        onClick={(e) => e.stopPropagation()}
+              className={`relative w-full ${size} mx-auto my-6 transition-transform duration-300 ease-in-out transform scale-95 opacity-0 animate-modal-scale-in`}        onClick={(e) => e.stopPropagation()}
       >
         {/*content*/}
         <div className="relative flex flex-col w-full bg-white border-0 rounded-lg shadow-lg outline-none focus:outline-none z-50">

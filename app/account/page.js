@@ -88,7 +88,7 @@ const AccountPageContent = () => {
           const response = await fetch(`/api/orders?userId=${user.id}`);
           if (response.ok) {
             const data = await response.json();
-            setOrders(data);
+            setOrders(data.orders);
           }
         } catch (error) {
           console.error('Failed to fetch orders:', error);
@@ -103,11 +103,11 @@ const AccountPageContent = () => {
     if (user && activeTab === 'wishlist') {
       const fetchWishlist = async () => {
         try {
-          console.log('Fetching wishlist for user:', user.id);
+          
           const response = await fetch(`/api/wishlist?userId=${user.id}`);
           if (response.ok) {
             const data = await response.json();
-            console.log('Wishlist data received:', data);
+            
             setWishlistItems(data);
           } else {
             console.error('Failed to fetch wishlist with status:', response.status);

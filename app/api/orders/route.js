@@ -43,12 +43,16 @@ const fetchOrderItems = async (orderId, client) => {
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10); // Default limit to 10
+    const offset = (page - 1) * limit;
+
     const client = await db.connect();
     try {
-        let sql = `
+        let baseSql = `
             SELECT
-                            o.id,
-                            ua.customer_email as "customerEmail",                ua.customer_phone as "customerPhone",
+                o.id,
+                ua.customer_email as "customerEmail",                ua.customer_phone as "customerPhone",
                 ua.shipping_address as "shippingAddress",
                 ua.city,
                 ua.zip_code as "zipCode",
@@ -65,22 +69,38 @@ export async function GET(request) {
             FROM orders o
             JOIN user_addresses ua ON o.user_address_id = ua.id
         `;
+        
+        let countSql = `SELECT COUNT(*) FROM orders o JOIN user_addresses ua ON o.user_address_id = ua.id`;
+        let whereClause = '';
         const params = [];
+        let countParams = [];
 
         if (userId) {
-            sql += ` WHERE o.user_id = $1`;
+            whereClause = ` WHERE o.user_id = $1`;
             params.push(userId);
+            countParams.push(userId);
         }
-        sql += ` ORDER BY o.created_at DESC;`;
 
-        const { rows: orders } = await client.query(sql, params);
+        const totalCountResult = await client.query(countSql + whereClause, countParams);
+        const totalCount = parseInt(totalCountResult.rows[0].count, 10);
+
+        let paginatedSql = baseSql + whereClause + ` ORDER BY o.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2};`;
+        params.push(limit);
+        params.push(offset);
+
+        const { rows: orders } = await client.query(paginatedSql, params);
 
         const ordersWithItems = await Promise.all(orders.map(async (order) => {
             const items = await fetchOrderItems(order.id, client);
             return { ...order, items };
         }));
 
-        return NextResponse.json(ordersWithItems);
+        return NextResponse.json({
+            orders: ordersWithItems,
+            totalCount,
+            page,
+            limit
+        });
     } catch (error) {
         console.error('Error fetching orders:', error);
         return NextResponse.json({ message: 'Error fetching orders from database', error: error.message }, { status: 500 });
@@ -104,22 +124,40 @@ export async function GET(request) {
  *         description: Server error.
  */
 export async function POST(request) {
-    console.log('--- NEW ORDER REQUEST ---');
+    
     const client = await db.connect();
     try {
-        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items, taxAmount, applied_coupon_id, discount_amount } = await request.json();
+        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items, taxAmount, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap = false, gift_wrap_cost = 0 } = await request.json();
 
-        if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0 || taxAmount === undefined) {
+        if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0 || taxAmount === undefined || subtotal === undefined || shipping_cost === undefined) {
             return NextResponse.json({ message: 'Missing required order information or items.' }, { status: 400 });
         }
 
         await client.query('BEGIN');
 
-        const insertOrderSql = `
-            INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount)
-            VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9) RETURNING id;
-        `;
-        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount];
+        // --- Stock Validation ---
+        for (const item of items) {
+            const { rows: productRows } = await client.query(
+                "SELECT stock_quantity FROM products WHERE id = $1",
+                [item.productId]
+            );
+
+            if (productRows.length === 0) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: `Product with ID ${item.productId} not found.` }, { status: 400 });
+            }
+
+            const availableStock = productRows[0].stock_quantity;
+
+            if (availableStock < item.quantity) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: `Insufficient stock for product ${item.name}. Available: ${availableStock}, Requested: ${item.quantity}.` }, { status: 400 });
+            }
+        }
+        // --- End Stock Validation ---
+
+        const insertOrderSql = "INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, $11, $12, $13) RETURNING id;";
+        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
 
@@ -130,15 +168,23 @@ export async function POST(request) {
         const { rows: userRows } = await client.query('SELECT email, first_name FROM users WHERE id = $1', [user_id]);
         const userEmail = userRows.length > 0 ? userRows[0].email : null;
         const firstName = userRows.length > 0 ? userRows[0].first_name : 'Customer';
-        console.log('User Email:', userEmail);
+        
 
         const itemValues = items.map(item => `(${orderId}, ${item.productId}, ${item.quantity}, ${item.price})`).join(',');
-        const insertItemsSql = `INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ${itemValues};`;
+        const insertItemsSql = "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES " + itemValues + ";";
         await client.query(insertItemsSql);
+
+        // Deduct inventory for each item
+        for (const item of items) {
+            await client.query(
+                "UPDATE products SET stock_quantity = stock_quantity - $1 WHERE id = $2",
+                [item.quantity, item.productId]
+            );
+        }
 
         // Fetch shipping address details
         const { rows: addressRows } = await client.query(
-            `SELECT shipping_address, city, zip_code, country FROM user_addresses WHERE id = $1`,
+            "SELECT shipping_address, city, zip_code, country FROM user_addresses WHERE id = $1",
             [user_address_id]
         );
         const shippingAddress = addressRows.length > 0 ? {
@@ -167,7 +213,7 @@ export async function POST(request) {
             });
 
             // Send order confirmation email to customer using Nodemailer
-            await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, itemsWithDetails, shippingAddress);
+            await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, subtotal, shipping_cost, itemsWithDetails, shippingAddress, gift_wrap_cost);
 
             // Execute Python script for sending email to administrator
             const adminEmail = process.env.ADMIN_EMAIL;
@@ -175,7 +221,7 @@ export async function POST(request) {
                 await sendAdminNotificationEmail(adminEmail, orderId, userEmail, total_amount, shippingAddress);
             }
         } else {
-            console.log('No user email found. Skipping email confirmation.');
+            
         }
 
         return NextResponse.json({ message: 'Order created successfully', orderId }, { status: 201 });

@@ -22,9 +22,14 @@ const fetchDeliveredOrderItems = async (orderId, client) => {
 };
 
 export async function GET(request) {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10); // Default limit to 10
+    const offset = (page - 1) * limit;
+
     const client = await db.connect();
     try {
-        const sql = `
+        let baseSql = `
             SELECT
                 o.id,
                 ua.customer_email as "customerEmail",
@@ -45,17 +50,32 @@ export async function GET(request) {
                 o.delivered_at as "deliveredAt"
             FROM delivered_orders o
             JOIN user_addresses ua ON o.user_address_id = ua.id
-            ORDER BY o.delivered_at DESC;
         `;
         
-        const { rows: orders } = await client.query(sql);
+        let countSql = `SELECT COUNT(*) FROM delivered_orders o JOIN user_addresses ua ON o.user_address_id = ua.id`;
+        const params = [];
+        const countParams = [];
+
+        const totalCountResult = await client.query(countSql, countParams);
+        const totalCount = parseInt(totalCountResult.rows[0].count, 10);
+
+        let paginatedSql = baseSql + ` ORDER BY o.delivered_at DESC LIMIT $1 OFFSET $2;`;
+        params.push(limit);
+        params.push(offset);
+
+        const { rows: orders } = await client.query(paginatedSql, params);
 
         const ordersWithItems = await Promise.all(orders.map(async (order) => {
             const items = await fetchDeliveredOrderItems(order.id, client);
             return { ...order, items };
         }));
 
-        return NextResponse.json(ordersWithItems);
+        return NextResponse.json({
+            orders: ordersWithItems,
+            totalCount,
+            page,
+            limit
+        });
     } catch (error) {
         console.error('Error fetching delivered orders:', error);
         return NextResponse.json({ message: 'Error fetching delivered orders from database', error: error.message }, { status: 500 });

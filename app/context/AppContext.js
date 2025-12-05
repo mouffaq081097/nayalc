@@ -9,9 +9,9 @@ export const AppProvider = ({ children }) => {
   const [appState, setAppState] = useState({}); 
   const [cart, setCart] = useState([]); 
   const [orders, setOrders] = useState([]);
-  const [allOrders, setAllOrders] = useState([]);
-  const [deliveredOrders, setDeliveredOrders] = useState([]);
-  const [cancelledOrders, setCancelledOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState({ orders: [], totalCount: 0, page: 1, limit: 10 });
+
+  const [cancelledOrders, setCancelledOrders] = useState({ orders: [], totalCount: 0, page: 1, limit: 10 });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]); 
   const [brands, setBrands] = useState([]); // New state for brands
@@ -24,17 +24,17 @@ export const AppProvider = ({ children }) => {
       return;
     }
     try {
-      const response = await fetch(`/api/orders?userId=${user.id}`);
+      const response = await fetch(`/api/orders?userId=${user.id}`); 
       if (!response.ok) {
         throw new Error('Failed to fetch orders');
       }
-      const data = await response.json();
+      const { orders: fetchedOrders } = await response.json(); // Destructure to get the orders array
       // Parse the 'items' JSON string back into an array of objects
-              const parsedOrders = data.map(order => ({
+              const parsedOrders = fetchedOrders.map(order => ({ // Use fetchedOrders here
                   ...order,
                   totalAmount: parseFloat(order.totalAmount), // Ensure totalAmount is a number
                   items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
-                  orderDate: new Date(order.orderDate), // Convert date string to Date object
+                  orderDate: new Date(order.createdAt), // Changed from orderDate to createdAt based on API response
               }));      setOrders(parsedOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -42,63 +42,65 @@ export const AppProvider = ({ children }) => {
     }
   }, [isAuthenticated, user]);
 
-  const fetchAllOrders = useCallback(async () => {
+  const fetchAllOrders = useCallback(async (page = 1, limit = 10) => {
     try {
-      const response = await fetch(`/api/orders`);
+      const response = await fetch(`/api/orders?page=${page}&limit=${limit}`);
       if (!response.ok) {
         throw new Error('Failed to fetch all orders');
       }
-      const data = await response.json();
-      const parsedOrders = data.map(order => ({
+      const { orders, totalCount, page: currentPage, limit: currentLimit } = await response.json();
+      const parsedOrders = orders.map(order => ({
           ...order,
           totalAmount: parseFloat(order.totalAmount),
           items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
           orderDate: new Date(order.createdAt),
       }));
-      setAllOrders(parsedOrders);
+      setAllOrders({ orders: parsedOrders, totalCount, page: currentPage, limit: currentLimit });
     } catch (error) {
       console.error('Error fetching all orders:', error);
-      setAllOrders([]);
+      setAllOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
     }
   }, []);
 
-  const fetchDeliveredOrders = useCallback(async () => {
+  const [deliveredOrders, setDeliveredOrders] = useState({ orders: [], totalCount: 0, page: 1, limit: 10 });
+
+  const fetchDeliveredOrders = useCallback(async (page = 1, limit = 10) => {
     try {
-      const response = await fetch(`/api/orders/delivered`);
+      const response = await fetch(`/api/orders/delivered?page=${page}&limit=${limit}`);
       if (!response.ok) {
         throw new Error('Failed to fetch delivered orders');
       }
-      const data = await response.json();
-      const parsedOrders = data.map(order => ({
+      const { orders, totalCount, page: currentPage, limit: currentLimit } = await response.json();
+      const parsedOrders = orders.map(order => ({
           ...order,
           totalAmount: parseFloat(order.totalAmount),
           items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
           deliveredAt: new Date(order.deliveredAt),
       }));
-      setDeliveredOrders(parsedOrders);
+      setDeliveredOrders({ orders: parsedOrders, totalCount, page: currentPage, limit: currentLimit });
     } catch (error) {
       console.error('Error fetching delivered orders:', error);
-      setDeliveredOrders([]);
+      setDeliveredOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
     }
   }, []);
 
-  const fetchCancelledOrders = useCallback(async () => {
+  const fetchCancelledOrders = useCallback(async (page = 1, limit = 10) => {
     try {
-      const response = await fetch(`/api/orders/cancelled`);
+      const response = await fetch(`/api/orders/cancelled?page=${page}&limit=${limit}`);
       if (!response.ok) {
         throw new Error('Failed to fetch cancelled orders');
       }
-      const data = await response.json();
-      const parsedOrders = data.map(order => ({
+      const { orders, totalCount, page: currentPage, limit: currentLimit } = await response.json();
+      const parsedOrders = orders.map(order => ({
           ...order,
           totalAmount: parseFloat(order.totalAmount),
           items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
           cancelledAt: new Date(order.cancelledAt),
       }));
-      setCancelledOrders(parsedOrders);
+      setCancelledOrders({ orders: parsedOrders, totalCount, page: currentPage, limit: currentLimit });
     } catch (error) {
       console.error('Error fetching cancelled orders:', error);
-      setCancelledOrders([]);
+      setCancelledOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
     }
   }, []);
 
@@ -116,6 +118,7 @@ export const AppProvider = ({ children }) => {
         imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Ensure imageUrls always has at least one value
         image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
         brand: product.brandName, // Map brandName from backend to 'brand' property
+        stock_quantity: product.stock_quantity, // Add stock_quantity
       }));
       setProducts(processedProducts);
     } catch (error) {
@@ -138,6 +141,7 @@ export const AppProvider = ({ children }) => {
         imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Ensure imageUrls always has at least one value
         image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
         brand: product.brandName, // Map brandName from backend to 'brand' property
+        stock_quantity: product.stock_quantity, // Add stock_quantity
       }));
       return processedProducts;
     } catch (error) {
@@ -159,6 +163,7 @@ export const AppProvider = ({ children }) => {
         price: parseFloat(product.price), // Ensure price is a number
         imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Convert imageUrl string to imageUrls array
         image: product.imageUrl || '/placeholder-image.jpg',
+        stock_quantity: product.stock_quantity, // Add stock_quantity
       }));
       setFeaturedProducts(processedProducts);
     } catch (error) {
@@ -168,7 +173,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // Function to fetch categories from the backend
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch(`/api/categories`);
       if (!response.ok) {
@@ -184,7 +189,7 @@ export const AppProvider = ({ children }) => {
       console.error('Error fetching categories:', error);
       setCategories([]);
     }
-  };
+  }, []); // Empty dependency array as it has no external dependencies
 
   // Function to fetch brands from the backend
   const fetchBrands = async () => {
@@ -419,7 +424,7 @@ export const AppProvider = ({ children }) => {
     if (isAuthenticated && user?.id) {
       fetchOrders(); // Fetch orders only if authenticated
     }
-  }, [isAuthenticated, user, fetchOrders]); // Re-fetch when auth status or user changes
+  }, [isAuthenticated, user, fetchOrders, fetchCategories]); // Re-fetch when auth status or user changes
 
   // Function to fetch a single order by ID from the backend
   const fetchOrderById = useCallback(async (orderId) => {

@@ -12,7 +12,7 @@ import PairItWithSection from '../components/PairItWithSection'; // Import PairI
 import RecommendationsSection from '../components/RecommendationsSection'; // Import RecommendationsSection
 
 export default function CartPage() {
-  const { cartItems, removeFromCart, updateQuantity, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, couponError } = useCart();
   const { user, isAuthenticated } = useAuth(); // Get user from useAuth
   const [couponCode, setCouponCode] = useState('');
   const [buyAgainProducts, setBuyAgainProducts] = useState([]); // New state for buy again products
@@ -55,9 +55,10 @@ export default function CartPage() {
   const handleApplyCoupon = () => {
     if (couponCode.trim()) {
       applyCoupon(couponCode.trim());
-      setCouponCode('');
     }
   };
+
+  const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity); // Define hasStockIssues here
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -97,10 +98,10 @@ export default function CartPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left Column for desktop, top section for mobile: Cart Items & Promo Code */}
-              <div className="lg:col-span-2 space-y-4 order-1">
-                {/* Cart Items */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left Column: Shopping Cart, Pair It With, Buy Again, and Recommendations */}
+              <div className="lg:col-span-8 space-y-4 order-2 lg:order-1">
+                {/* Shopping Cart */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   <div className="p-6 border-b border-gray-100">
                     <h2 className="text-xl font-medium">Shopping Cart</h2>
@@ -131,6 +132,12 @@ export default function CartPage() {
                                   {item.shade && `Shade: ${item.shade}`}
                                 </p>
                               )}
+                              {item.stock_quantity === 0 && ( // Display Out of Stock
+                                <p className="text-sm font-semibold text-red-500 mt-1">Out of Stock</p>
+                              )}
+                              {item.stock_quantity > 0 && item.quantity > item.stock_quantity && ( // Display warning if quantity exceeds stock
+                                <p className="text-sm font-semibold text-orange-500 mt-1">Only {item.stock_quantity} in stock!</p>
+                              )}
                             </div>
                             <Button
                               variant="ghost"
@@ -157,6 +164,7 @@ export default function CartPage() {
                                 size="sm"
                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                 className="h-8 w-8 p-0"
+                                disabled={item.quantity <= 1 || item.stock_quantity === 0} // Disable Minus if qty is 1 or out of stock
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
@@ -166,6 +174,7 @@ export default function CartPage() {
                                 size="sm"
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                 className="h-8 w-8 p-0"
+                                disabled={item.quantity >= item.stock_quantity || item.stock_quantity === 0} // Disable Plus if qty reaches max stock or out of stock
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -177,36 +186,15 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Promo Code */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                  <h3 className="font-medium mb-4">Promo Code</h3>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter promo code"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      className="flex-1"
-                      disabled={!!appliedCoupon}
-                    />
-                    <Button 
-                      onClick={handleApplyCoupon}
-                      variant="outline"
-                      disabled={!!appliedCoupon}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                  {appliedCoupon && (
-                    <div className="mt-3 text-sm text-green-600 flex justify-between items-center">
-                      <span>✓ Promo code "{appliedCoupon.code}" applied!</span>
-                      <Button variant="ghost" size="sm" onClick={removeCoupon}>Remove</Button>
-                    </div>
-                  )}
-                </div>
+                {/* Pair It With, Buy Again, and Recommendations */}
+                {/* These components are now directly inside the left column wrapper */}
+                <PairItWithSection currentCartItems={cartItems} />
+                <BuyAgainSection products={buyAgainProducts} />
+                <RecommendationsSection />
               </div>
 
-              {/* Order Summary - This will be second on mobile, and in the right column on desktop */}
-              <div className="lg:col-span-1 order-2 lg:order-2">
+              {/* Order Summary */}
+              <div className="lg:col-span-4 order-1 lg:order-2">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-24">
                   <h3 className="text-xl font-medium mb-6">Order Summary</h3>
                   
@@ -220,13 +208,6 @@ export default function CartPage() {
                       <div className="flex justify-between text-sm text-green-600">
                         <span>You Save</span>
                         <span>-AED {savings.toFixed(2)}</span>
-                      </div>
-                    )}
-
-                    {discountAmount > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>Promo Discount</span>
-                        <span>-AED {discountAmount.toFixed(2)}</span>
                       </div>
                     )}
                     
@@ -258,6 +239,42 @@ export default function CartPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Promo Code Section moved here */}
+                  <div className="bg-white p-0 pb-6"> {/* Removed shadow-sm and border as it's now inside another card */}
+                    <h3 className="font-medium mb-4">Promo Code</h3>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter promo code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        className="flex-1"
+                        disabled={!!appliedCoupon}
+                      />
+                      <Button 
+                        onClick={handleApplyCoupon}
+                        variant="outline"
+                        disabled={!!appliedCoupon}
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                    {couponError && (
+                      <p className="mt-3 text-sm text-red-500">{couponError}</p>
+                    )}
+                    {appliedCoupon && (
+                      <div className="mt-3 text-sm text-green-600 flex justify-between items-center">
+                        <span>✓ Promo code "{appliedCoupon.code}" applied!</span>
+                        <Button variant="ghost" size="sm" onClick={removeCoupon}>Remove</Button>
+                      </div>
+                    )}
+                     {discountAmount > 0 && (
+                      <div className="flex justify-between text-sm text-green-600 mt-3">
+                        <span>Promo Discount</span>
+                        <span>-AED {discountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="border-t border-gray-100 pt-4 mb-6">
                     <div className="flex justify-between font-medium text-lg">
@@ -271,6 +288,7 @@ export default function CartPage() {
                       className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity"
                       size="lg"
                       onClick={() => router.push('/checkout')} // Changed onClick
+                      disabled={hasStockIssues} // Disable if stock issues
                     >
                       Proceed to Checkout
                     </Button>
@@ -299,14 +317,7 @@ export default function CartPage() {
                       <span>Secure checkout</span>
                     </div>
                   </div>
-                  <RecommendationsSection />
                 </div>
-              </div>
-              
-              {/* Bottom sections for desktop, third section for mobile: PairItWithSection & BuyAgainSection */}
-              <div className="lg:col-span-2 space-y-4 order-3">
-                <PairItWithSection currentCartItems={cartItems} />
-                <BuyAgainSection products={buyAgainProducts} />
               </div>
             </div>
           </>

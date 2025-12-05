@@ -26,7 +26,7 @@ export const UserProvider = ({ children }) => {
         throw new Error('Failed to fetch contact info.');
       }
       const data = await response.json();
-      console.log('Data received by fetchContactInfo:', data);
+      
       setContactInfo({
         name: data.customer_name || '',
         email: user.email, // Email always from AuthContext user
