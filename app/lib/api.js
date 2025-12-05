@@ -1,3 +1,26 @@
+
+export const fetchWithAuth = async (url, options = {}) => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { ...options, headers });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Request failed with status: ${response.status}, Body: ${errorBody}`);
+  }
+
+  return response.json();
+};
+
+
 // This function fetches all products from the API
 export async function getProducts(options = {}) {
   const { random, limit, categoryIds, isNew, brandId } = options;
@@ -115,11 +138,8 @@ export async function getOrderById(id) {
     return null;
   }
   try {
-    const response = await fetch(`/api/orders/${id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch order');
-    }
-    return await response.json();
+    // Note the use of fetchWithAuth here
+    return await fetchWithAuth(`/api/orders/${id}`);
   } catch (error) {
     console.error("Error in getOrderById:", error);
     return null;

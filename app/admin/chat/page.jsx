@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Loader2, MessageSquare, CheckCircle, XCircle, ChevronRight, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Loader2, MessageSquare, MoreHorizontal, Trash2 } from 'lucide-react';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { User, ShoppingBag, MapPin, Heart, Package, LogOut, Menu, X, LayoutDashboard, Tags, Ticket, Users, MessageSquare } from 'lucide-react';
+import { ShoppingBag, Heart, Package, LogOut, Menu, X, LayoutDashboard, Tags, Ticket, Users, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AdminLayout = ({ children }) => {
@@ -80,11 +80,10 @@ const AdminLayout = ({ children }) => {
                     <Link
                         key={item.to}
                         href={item.to}
-                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                            pathname === item.to || (item.to !== '/admin' && pathname.startsWith(item.to))
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${pathname === item.to || (item.to !== '/admin' && pathname.startsWith(item.to))
                                 ? 'bg-indigo-600 text-white shadow-md'
                                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                        }`}
+                            }`}
                         onClick={() => isSidebarOpen && setIsSidebarOpen(false)}
                     >
                         {React.createElement(IconMap[item.icon], { className: "w-5 h-5" })}
@@ -99,11 +98,11 @@ const AdminLayout = ({ children }) => {
             </nav>
             <div className="p-4 border-t border-gray-200 space-y-2">
                 <Link href="/" className="flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg">
-                    {React.createElement(IconMap['logout'], { className: "w-5 h-5 -scale-x-100"})}
+                    {React.createElement(IconMap['logout'], { className: "w-5 h-5 -scale-x-100" })}
                     <span>Back to Store</span>
                 </Link>
                 <button onClick={handleLogout} className="w-full flex items-center space-x-3 px-4 py-3 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg">
-                    {React.createElement(IconMap['logout'], { className: "w-5 h-5"})}
+                    {React.createElement(IconMap['logout'], { className: "w-5 h-5" })}
                     <span>Logout</span>
                 </button>
             </div>

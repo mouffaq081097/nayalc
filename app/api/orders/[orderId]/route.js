@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { sendOrderStatusUpdateEmail } from '@/lib/mail';
+import db from '../../../../lib/db';
+import { sendOrderStatusUpdateEmail } from '../../../../lib/mail';
 
 export async function GET(request, context) {
     const { orderId } = await context.params;

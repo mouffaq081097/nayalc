@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/context/AuthContext';
 import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
+
 import { Textarea } from '@/app/components/ui/textarea';
 import { Send, ArrowLeft, MessageSquare, Loader2, Trash, User, Clock } from 'lucide-react';
 import Link from 'next/link';
@@ -37,7 +37,7 @@ const AdminConversationPage = () => {
     // Pagination states
     const displayLimit = 10; // Number of messages to load at once
     const [offset, setOffset] = useState(0);
-    const [totalMessages, setTotalMessages] = useState(0);
+
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -88,7 +88,7 @@ const AdminConversationPage = () => {
                 }
                 // Append new messages to ensure they appear at the bottom
                 const newMsgs = [...prevMessages, message];
-                setTotalMessages(prev => prev + 1); // Increment total messages count
+
                 return newMsgs;
             });
             scrollToBottom(); // Scroll to bottom on new message
@@ -99,20 +99,20 @@ const AdminConversationPage = () => {
         });
     }, [conversationId]);
 
-            const fetchConversationDetails = useCallback(async () => {
-                setIsLoading(true);
-                try {
-                    const res = await fetch(`/api/chat/conversation/${conversationId}`);
-                    if (!res.ok) throw new Error('Failed to fetch conversation');
-                    const data = await res.json();
-                    setConversation(data);
-                    setNewStatus(data.status);
-                } catch (err) {
-                    setError(err.message);
-                } finally {
-                    // setIsLoading(false); // Set false after messages are fetched
-                }
-            }, [conversationId]);
+    const fetchConversationDetails = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch(`/api/chat/conversation/${conversationId}`);
+            if (!res.ok) throw new Error('Failed to fetch conversation');
+            const data = await res.json();
+            setConversation(data);
+            setNewStatus(data.status);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            // setIsLoading(false); // Set false after messages are fetched
+        }
+    }, [conversationId]);
     const fetchMessages = useCallback(async (isLoadMore = false) => {
         if (!conversationId) return;
 
@@ -126,7 +126,7 @@ const AdminConversationPage = () => {
             const res = await fetch(`/api/chat/conversation/${conversationId}/messages?limit=${displayLimit}&offset=${offset}`);
             if (!res.ok) throw new Error('Failed to fetch messages');
             const data = await res.json();
-            
+
             setMessages((prevMessages) => {
                 const uniqueNewMessages = data.messages.filter(
                     (newMessage) => !prevMessages.some((existingMessage) => existingMessage.id === newMessage.id)
@@ -134,7 +134,7 @@ const AdminConversationPage = () => {
                 // Append new messages because they are fetched in DESC order and we want newest at bottom
                 return [...prevMessages, ...uniqueNewMessages];
             });
-            setTotalMessages(data.totalMessages);
+
             setHasMoreMessages(data.totalMessages > (offset + data.messages.length));
             setOffset(prevOffset => prevOffset + data.messages.length); // Update offset for next load
 
@@ -311,7 +311,7 @@ const AdminConversationPage = () => {
                     <div className="pb-2 border-b border-gray-200 mb-4">
                         <h2 className="text-xl font-semibold text-gray-800">Details</h2>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                         <User className="h-5 w-5 text-gray-500" />
                         <p className="text-gray-800 font-medium">Customer: {conversation.customerName} (<span className="text-sm text-gray-600">{conversation.customerEmail}</span>)</p>
@@ -320,7 +320,7 @@ const AdminConversationPage = () => {
                         <Clock className="h-5 w-5 text-gray-500" />
                         <p className="text-gray-800 font-medium">Started: <span className="text-sm text-gray-600">{new Date(conversation.createdAt).toLocaleString()}</span></p>
                     </div>
-                    
+
                     <div className="pt-4 border-t border-gray-200">
                         <h3 className="font-semibold text-gray-800 mb-2">Status</h3>
                         <Badge variant={getStatusBadgeVariant(conversation.status)} className="ml-2 py-2 px-3 text-base">
@@ -357,11 +357,11 @@ const AdminConversationPage = () => {
                             </div>
                         )}
                         {messages.length === 0 && !isLoading && <div className="text-center text-gray-500 mt-10">
-                                <MessageSquare className="h-10 w-10 mx-auto mb-3" />
-                                <p>No messages in this conversation yet.</p>
-                            </div>
+                            <MessageSquare className="h-10 w-10 mx-auto mb-3" />
+                            <p>No messages in this conversation yet.</p>
+                        </div>
                         }
-                        {messages.map((msg, index) => (
+                        {messages.map((msg) => (
                             // Console log removed from here to avoid syntax error, will add it inside the JSX if needed
                             <div
                                 key={msg.id}
@@ -369,11 +369,10 @@ const AdminConversationPage = () => {
                             >
                                 {console.log('Rendering message in admin:', msg.id, msg.messageText, msg)} {/* Moved console.log here */}
                                 <div
-                                    className={`max-w-[75%] p-3 ${
-                                        msg.senderType === 'admin'
-                                            ? 'bg-indigo-600 text-white rounded-xl rounded-br-none'
-                                            : 'bg-gray-100 text-gray-800 rounded-xl rounded-bl-none'
-                                    }`}
+                                    className={`max-w-[75%] p-3 ${msg.senderType === 'admin'
+                                        ? 'bg-indigo-600 text-white rounded-xl rounded-br-none'
+                                        : 'bg-gray-100 text-gray-800 rounded-xl rounded-bl-none'
+                                        }`}
                                 >
                                     <p className="text-sm font-semibold">{msg.senderType === 'admin' ? 'You' : conversation.customerName || 'Customer'}</p>
                                     <p className="text-base">{msg.messageText}</p>

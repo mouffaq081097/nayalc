@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, Edit, Trash2, Search, Loader2, Tag, MoreHorizontal } from 'lucide-react';
+import { Plus, Trash2, Search, Loader2, Tag, MoreHorizontal } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { Button } from '@/app/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
@@ -22,7 +22,7 @@ const ManageCategories = () => {
             setImageFile(null);
         }
     }, [isModalOpen, editingCategory]);
-    
+
     const handleOpenAddModal = () => {
         setEditingCategory(null);
         setIsModalOpen(true);
@@ -53,7 +53,7 @@ const ManageCategories = () => {
     };
 
     const handleDelete = (categoryId) => {
-        if(window.confirm('Are you sure you want to delete this category? This might affect existing products.')) {
+        if (window.confirm('Are you sure you want to delete this category? This might affect existing products.')) {
             deleteCategory(categoryId);
         }
     }
@@ -86,7 +86,7 @@ const ManageCategories = () => {
             }
 
             handleCloseModal();
-        } catch(error) {
+        } catch (error) {
             console.error("Failed to save category", error);
         } finally {
             setIsSubmitting(false);
@@ -122,7 +122,7 @@ const ManageCategories = () => {
                     <Plus className="mr-2 h-4 w-4" /> Add New Category
                 </Button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"> {/* Changed gap-8 to gap-4 */}
                 {filteredCategories.map(category => (
                     <div key={category.id} className="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
@@ -208,7 +208,7 @@ const ManageCategories = () => {
                     <div className="pt-6 flex justify-end space-x-4">
                         <Button type="button" variant="outline" onClick={handleCloseModal} disabled={isSubmitting} className="px-6 py-3">Cancel</Button>
                         <Button type="submit" disabled={isSubmitting} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white">
-                             {isSubmitting ? <Loader2 className="animate-spin" /> : 'Save'}
+                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Save'}
                         </Button>
                     </div>
                 </form>

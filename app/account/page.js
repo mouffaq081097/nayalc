@@ -10,10 +10,8 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { fetchWithAuth } from '../lib/api';
 
-
-import PhoneNumberInput from '../components/PhoneNumberInput';
-import MapPicker from '../components/MapPicker'; // New import
 import Modal from '../components/Modal';
 import AddressInputForm from '../components/AddressInputForm'; // New import for the reusable form
 
@@ -57,7 +55,8 @@ const AccountPageContent = () => {
 
   useEffect(() => {
     if (user) {
-      setProfileData(prev => ({...prev,
+      setProfileData(prev => ({
+        ...prev,
         firstName: user.first_name || '',
         lastName: user.last_name || '',
         username: user.username || '',
@@ -67,14 +66,11 @@ const AccountPageContent = () => {
 
       const fetchAddresses = async () => {
         try {
-          const response = await fetch(`/api/users/${user.id}/addresses`);
-          if (response.ok) {
-            const fetchedAddresses = await response.json();
-            setAddresses(fetchedAddresses);
-            if (fetchedAddresses.length > 0) {
-              const defaultAddress = fetchedAddresses.find(addr => addr.isDefault) || fetchedAddresses[0];
-              setProfileData(prev => ({...prev, phone: defaultAddress.customerPhone}));
-            }
+          const fetchedAddresses = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+          setAddresses(fetchedAddresses);
+          if (fetchedAddresses.length > 0) {
+            const defaultAddress = fetchedAddresses.find(addr => addr.isDefault) || fetchedAddresses[0];
+            setProfileData(prev => ({ ...prev, phone: defaultAddress.customerPhone }));
           }
         } catch (error) {
           console.error('Failed to fetch addresses:', error);
@@ -85,11 +81,8 @@ const AccountPageContent = () => {
 
       const fetchOrders = async () => {
         try {
-          const response = await fetch(`/api/orders?userId=${user.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            setOrders(data.orders);
-          }
+          const data = await fetchWithAuth(`/api/orders?userId=${user.id}`);
+          setOrders(data.orders);
         } catch (error) {
           console.error('Failed to fetch orders:', error);
         }
@@ -103,15 +96,8 @@ const AccountPageContent = () => {
     if (user && activeTab === 'wishlist') {
       const fetchWishlist = async () => {
         try {
-          
-          const response = await fetch(`/api/wishlist?userId=${user.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            
-            setWishlistItems(data);
-          } else {
-            console.error('Failed to fetch wishlist with status:', response.status);
-          }
+          const data = await fetchWithAuth(`/api/wishlist?userId=${user.id}`);
+          setWishlistItems(data);
         } catch (error) {
           console.error('Failed to fetch wishlist:', error);
         }
@@ -152,21 +138,13 @@ const AccountPageContent = () => {
     if (!user) return;
 
     try {
-      const response = await fetch(`/api/users/${user.id}/profile`, {
+      await fetchWithAuth(`/api/users/${user.id}/profile`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(profileData),
       });
 
-      if (response.ok) {
-        alert('Profile updated successfully!');
-        setIsEditMode(false);
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to update profile: ${errorData.message}`);
-      }
+      alert('Profile updated successfully!');
+      setIsEditMode(false);
     } catch (error) {
       console.error('Failed to update profile:', error);
       alert('An error occurred while updating your profile.');
@@ -174,7 +152,8 @@ const AccountPageContent = () => {
   };
 
   const handleCancelEdit = () => {
-    setProfileData(prev => ({...prev,
+    setProfileData(prev => ({
+      ...prev,
       firstName: user.first_name || '',
       lastName: user.last_name || '',
       username: user.username || '',
@@ -192,16 +171,11 @@ const AccountPageContent = () => {
   const handleRemoveFromWishlist = async (productId) => {
     if (!user) return;
     try {
-      const response = await fetch(`/api/wishlist/${user.id}/${productId}`, {
+      await fetchWithAuth(`/api/wishlist/${user.id}/${productId}`, {
         method: 'DELETE',
       });
-      if (response.ok) {
-        setWishlistItems(prev => prev.filter(item => item.productId !== productId));
-        alert('Product removed from wishlist!');
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to remove product from wishlist: ${errorData.message}`);
-      }
+      setWishlistItems(prev => prev.filter(item => item.productId !== productId));
+      alert('Product removed from wishlist!');
     } catch (error) {
       console.error('Error removing from wishlist:', error);
       alert('An error occurred while removing product from wishlist.');
@@ -254,27 +228,16 @@ const AccountPageContent = () => {
         }
       });
 
-      const response = await fetch(endpoint, {
+      await fetchWithAuth(endpoint, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload), // Send the transformed payload
       });
 
-      if (response.ok) {
-        closeAddressModal();
-        // Refresh addresses
-        const res = await fetch(`/api/users/${user.id}/addresses`);
-        if (res.ok) {
-          const fetchedAddresses = await res.json();
-          setAddresses(fetchedAddresses);
-        }
-        alert(`Address ${editingAddress ? 'updated' : 'saved'} successfully!`);
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to save address: ${errorData.message}`);
-      }
+      closeAddressModal();
+      // Refresh addresses
+      const fetchedAddresses = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+      setAddresses(fetchedAddresses);
+      alert(`Address ${editingAddress ? 'updated' : 'saved'} successfully!`);
     } catch (error) {
       console.error('Failed to save address:', error);
       alert('An error occurred while saving the address.');
@@ -286,22 +249,14 @@ const AccountPageContent = () => {
 
     if (confirm('Are you sure you want to remove this address?')) {
       try {
-        const response = await fetch(`/api/users/${user.id}/addresses/${addressId}`, {
+        await fetchWithAuth(`/api/users/${user.id}/addresses/${addressId}`, {
           method: 'DELETE',
         });
 
-        if (response.ok) {
-          // Refresh addresses
-          const res = await fetch(`/api/users/${user.id}/addresses`);
-          if (res.ok) {
-            const fetchedAddresses = await res.json();
-            setAddresses(fetchedAddresses);
-          }
-          alert('Address removed successfully!');
-        } else {
-          const errorData = await response.json();
-          alert(`Failed to remove address: ${errorData.message}`);
-        }
+        // Refresh addresses
+        const fetchedAddresses = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+        setAddresses(fetchedAddresses);
+        alert('Address removed successfully!');
       } catch (error) {
         console.error('Failed to remove address:', error);
         alert('An error occurred while removing the address.');
@@ -344,11 +299,10 @@ const AccountPageContent = () => {
                       setActiveTab(item.id);
                       setShowSidebarOnMobile(false);
                     })}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                      activeTab === item.id
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === item.id
                         ? 'bg-gradient-to-r from-[var(--brand-blue)]/10 to-[var(--brand-pink)]/10 text-[var(--brand-pink)]'
                         : 'text-gray-600 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <item.icon className="h-5 w-5" />
                     {item.label}
@@ -365,14 +319,14 @@ const AccountPageContent = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-                                className="bg-white rounded-2xl p-8"
-                              >
-                                {/* Back button for mobile */}
-                                <div className="lg:hidden mb-4">
-                                  <Button variant="ghost" onClick={() => setShowSidebarOnMobile(true)}>
-                                    <ArrowLeft className="h-5 w-5 mr-2" /> Back to Menu
-                                  </Button>
-                                </div>              {/* Profile Tab */}
+              className="bg-white rounded-2xl p-8"
+            >
+              {/* Back button for mobile */}
+              <div className="lg:hidden mb-4">
+                <Button variant="ghost" onClick={() => setShowSidebarOnMobile(true)}>
+                  <ArrowLeft className="h-5 w-5 mr-2" /> Back to Menu
+                </Button>
+              </div>              {/* Profile Tab */}
               {activeTab === 'profile' && (
                 <div>
                   {isEditMode ? (
@@ -561,54 +515,54 @@ const AccountPageContent = () => {
                         }
                       })
                       .map((order) => (
-                      <div key={order.id} className="bg-gray-50 rounded-2xl p-6">
-                        <div className="flex justify-between items-center mb-4">
-                          <div>
-                            <h3 className="text-lg font-bold">Order #{order.id}</h3>
-                            <p className="text-sm text-gray-500">Placed on {formatOrderDate(order.createdAt)}</p>
-                          </div>
-                          <div className="text-right">
-                            <Badge className={`${getStatusColor(order.orderStatus)} text-sm font-semibold`}>
-                              {getStatusText(order.orderStatus)}
-                            </Badge>
-                            <p className="text-xl font-bold mt-1">AED {order.totalAmount}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 gap-6 my-6">
-                          {order.items.map((item, index) => (
-                            <div key={index} className="flex items-center gap-4">
-                              <ImageWithFallback
-                                src={item.imageUrl}
-                                alt={item.name}
-                                className="w-20 h-20 object-contain rounded-lg bg-white"
-                              />
-                              <div className="flex-1">
-                                <h4 className="font-semibold">{item.name}</h4>
-                                <p className="text-sm text-gray-500">{item.brandName}</p>
-                                <p className="text-sm font-semibold">Qty: {item.quantity} • AED {item.price}</p>
-                              </div>
+                        <div key={order.id} className="bg-gray-50 rounded-2xl p-6">
+                          <div className="flex justify-between items-center mb-4">
+                            <div>
+                              <h3 className="text-lg font-bold">Order #{order.id}</h3>
+                              <p className="text-sm text-gray-500">Placed on {formatOrderDate(order.createdAt)}</p>
                             </div>
-                          ))}
-                        </div>
-                        
-                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-4 border-t border-gray-200">
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
-                          </Button>
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Truck className="h-4 w-4 mr-2" />
-                            Track Order
-                          </Button>
-                          {order.orderStatus === 'delivered' && (
+                            <div className="text-right">
+                              <Badge className={`${getStatusColor(order.orderStatus)} text-sm font-semibold`}>
+                                {getStatusText(order.orderStatus)}
+                              </Badge>
+                              <p className="text-xl font-bold mt-1">AED {order.totalAmount}</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-6 my-6">
+                            {order.items.map((item, index) => (
+                              <div key={index} className="flex items-center gap-4">
+                                <ImageWithFallback
+                                  src={item.imageUrl}
+                                  alt={item.name}
+                                  className="w-20 h-20 object-contain rounded-lg bg-white"
+                                />
+                                <div className="flex-1">
+                                  <h4 className="font-semibold">{item.name}</h4>
+                                  <p className="text-sm text-gray-500">{item.brandName}</p>
+                                  <p className="text-sm font-semibold">Qty: {item.quantity} • AED {item.price}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-4 border-t border-gray-200">
                             <Button variant="outline" size="sm" className="flex-1">
-                              Reorder
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
                             </Button>
-                          )}
+                            <Button variant="outline" size="sm" className="flex-1">
+                              <Truck className="h-4 w-4 mr-2" />
+                              Track Order
+                            </Button>
+                            {order.orderStatus === 'delivered' && (
+                              <Button variant="outline" size="sm" className="flex-1">
+                                Reorder
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               )}
@@ -637,15 +591,15 @@ const AccountPageContent = () => {
                           )}
                         </div>
                         <div className="flex gap-2">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             className="flex-1 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
                             onClick={() => handleAddToCartFromWishlist(item)}
                           >
                             Add to Cart
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleRemoveFromWishlist(item.productId)}
                           >
@@ -715,12 +669,12 @@ const AccountPageContent = () => {
           </div>
         </div>
 
-          </div>
-          <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit Address' : 'Add New Address'}>        <AddressInputForm
-          initialData={editingAddress}
-          onSave={handleAddressSave}
-          onCancel={closeAddressModal}
-        />
+      </div>
+      <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit Address' : 'Add New Address'}>        <AddressInputForm
+        initialData={editingAddress}
+        onSave={handleAddressSave}
+        onCancel={closeAddressModal}
+      />
       </Modal>
     </div>
   );

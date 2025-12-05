@@ -16,13 +16,12 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '../lib/api';
+import dynamic from 'next/dynamic';
 
+const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
 
-import PhoneNumberInput from '../components/PhoneNumberInput'; // Used by AddressInputForm
-import MapPicker from '../components/MapPicker'; // Used by AddressInputForm
-import Modal from '../components/Modal'; // New import for modal component
-import AddressInputForm from '../components/AddressInputForm'; // New import for reusable address form
-import { User } from 'lucide-react'; // Used by AddressInputForm
+const AddressInputForm = dynamic(() => import('../components/AddressInputForm'), { ssr: false });
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
@@ -52,11 +51,7 @@ export default function CheckoutPage() {
   const fetchShippingAddresses = useCallback(async () => {
     if (!user || !user.id) return;
     try {
-      const response = await fetch(`/api/users/${user.id}/addresses`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await fetchWithAuth(`/api/users/${user.id}/addresses`);
       setShippingAddresses(data);
       if (data.length > 0 && !selectedShippingAddressId) { // Only set if no address pre-selected from cart
         const defaultAddress = data.find(addr => addr.isDefault);
@@ -125,23 +120,14 @@ export default function CheckoutPage() {
       const payload = toSnakeCase(transformedAddressData);
 
 
-      const response = await fetch(endpoint, {
+      await fetchWithAuth(endpoint, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload), // Send the transformed payload
       });
 
-      if (response.ok) {
-        closeAddressModal();
-        fetchShippingAddresses(); // Refresh addresses
-        toast.success(`Address ${editingAddress ? 'updated' : 'saved'} successfully!`);
-      } else {
-        const errorData = await response.json();
-        console.error('Frontend: API error response:', errorData); // Log the full error response
-        toast.error(`Failed to save address: ${errorData.message || response.statusText}`);
-      }
+      closeAddressModal();
+      fetchShippingAddresses(); // Refresh addresses
+      toast.success(`Address ${editingAddress ? 'updated' : 'saved'} successfully!`);
     } catch (error) {
       console.error('Frontend: Network or unexpected error:', error); // Log unexpected errors
       toast.error('An error occurred while saving the address: ' + error.message);
@@ -158,20 +144,14 @@ export default function CheckoutPage() {
     }
 
     try {
-      const response = await fetch(`/api/users/${user.id}/addresses/${addressId}`, {
+      const data = await fetchWithAuth(`/api/users/${user.id}/addresses/${addressId}`, {
         method: 'DELETE',
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.message || 'Address deleted successfully!');
-        fetchShippingAddresses(); // Refresh the list of addresses
-        if (selectedAddressId === addressId) {
-          setSelectedAddressId(null); // Clear selection if deleted address was selected
-        }
-      } else {
-        throw new Error(data.message || 'Failed to delete address.');
+      toast.success(data.message || 'Address deleted successfully!');
+      fetchShippingAddresses(); // Refresh the list of addresses
+      if (selectedAddressId === addressId) {
+        setSelectedAddressId(null); // Clear selection if deleted address was selected
       }
     } catch (error) {
       console.error('Error deleting address:', error);
@@ -257,20 +237,10 @@ export default function CheckoutPage() {
     };
 
     try {
-      const response = await fetch('/api/orders', {
+      const result = await fetchWithAuth('/api/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(orderData),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to place order');
-      }
-
-      const result = await response.json();
 
       toast.success('Order Placed Successfully! Order ID: ' + result.orderId);
       clearCart();

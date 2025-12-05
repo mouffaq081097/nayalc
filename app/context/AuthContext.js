@@ -6,26 +6,23 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
     const loadUserFromLocalStorage = () => {
-      
       try {
         const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          
-        } else {
-          
+        const storedToken = localStorage.getItem('token');
+        if (storedUser && storedToken) {
+          setUser(JSON.parse(storedUser));
+          setToken(storedToken);
         }
       } catch (error) {
         console.error('AuthContext: Failed to load user from local storage:', error);
       } finally {
         setLoading(false);
-        
       }
     };
     loadUserFromLocalStorage();
@@ -42,16 +39,16 @@ export const AuthProvider = ({ children }) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
+      throw new Error(errorData.error || 'Login failed');
     }
 
     const data = await response.json();
     setUser(data.user);
+    setToken(data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('token', data.token);
     
     router.push('/'); // Redirect after successful login
-    // Assuming the backend sends a token, you might store it here as well
-    // localStorage.setItem('token', data.token);
   };
 
   const register = async (username, email, password, firstName, lastName) => {
@@ -65,27 +62,23 @@ export const AuthProvider = ({ children }) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Registration failed');
+      throw new Error(errorData.error || 'Registration failed');
     }
 
-    const data = await response.json();
-    setUser(data.user);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    
-    // Assuming the backend sends a token, you might store it here as well
-    // localStorage.setItem('token', data.token);
+    // After successful registration, log the user in
+    await login(email, password);
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('user');
-    
+    localStorage.removeItem('token');
     window.location.reload();
-    // localStorage.removeItem('token');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, loading, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, token, login, logout, register, loading, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );
