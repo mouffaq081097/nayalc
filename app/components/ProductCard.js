@@ -6,7 +6,7 @@ import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
-const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity }) => {
+const ProductCard = ({ id, name, price, originalPrice, image, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity }) => {
 
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -20,16 +20,8 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
     e.preventDefault();
     e.stopPropagation();
 
-    if (!isAuthenticated) {
-      // showToast('Please log in to add items to your cart.'); // Removed toast
-      router.push('/auth'); // Redirect to login/signup page
-      return;
-    }
-
-    // Reconstruct product object for CartContext, as it expects a product object
     const productForCart = { id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity: stock_quantity };
     addToCart(productForCart, 1);
-    // showToast(`Added ${name} to cart!`); // Removed toast
   };
 
 
@@ -45,9 +37,9 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
         <Image
           src={image || '/placeholder-image.jpg'} // Use a placeholder if image is null or empty
           alt={name || 'Product Image'} // Use product name for alt text
-          layout="fill"
-          objectFit="contain"
-          className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
         />
 
         {/* Badges */}
@@ -119,7 +111,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, rating, reviewCoun
                   className={`h-3 w-3`} // Removed fill-current class
                   style={{
                     color: '#D1D5DB', // Default stroke color for all stars
-                    fill: i < Math.floor(rating) ? '#FB923C' : 'transparent' // Fill with orange or transparent
+                    fill: i < Math.floor(averageRating) ? '#FB923C' : 'transparent' // Fill with orange or transparent
                   }}
                 />
               ))}

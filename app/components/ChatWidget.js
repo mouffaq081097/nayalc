@@ -3,20 +3,23 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/context/AuthContext'; // Assuming AuthContext provides user info
+import { useAppContext } from '@/app/context/AppContext';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import { Send, MessageSquare, X } from 'lucide-react';
+import { Send, MessageSquare, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 let socket; // Global socket instance is replaced by useRef
 
 const ChatWidget = () => {
-    const { user } = useAuth(); // Get authenticated user from context
+    const { user, logout } = useAuth(); // Get authenticated user from context
+    const { fetchWithAuth } = useAppContext(); // Get memoized fetchWithAuth from AppContext
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [conversationId, setConversationId] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isSending, setIsSending] = useState(false); // New state for send button loading
 
     const [unreadMessageCount, setUnreadMessageCount] = useState(0);
     const messagesEndRef = useRef(null);
@@ -28,25 +31,27 @@ const ChatWidget = () => {
     };
 
     const createOrFetchConversation = useCallback(async () => {
-        if (!user?.id) return null; // No user, no conversation
+        if (!user?.id) {
+            return null; // No user, no conversation
+        }
         try {
-            const response = await fetch('/api/chat-global/conversations', {
+            const response = await fetchWithAuth('/api/chat-global/conversations', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user.id }),
             });
-            const data = await response.json();
-            if (response.ok) {
-                const newConvId = data.conversationId || data.conversation.id;
-                setConversationId(newConvId);
-                console.log('createOrFetchConversation: setConversationId to:', newConvId);
-                return newConvId;
-            } else {
-                console.error('Failed to fetch or create conversation:', data.message);
-                return null;
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'No error message available.' }));
+                console.error('Failed to fetch or create conversation. Status:', response.status, 'Error Data:', errorData);
+                throw new Error('Failed to fetch or create conversation.');
             }
+
+            const data = await response.json();
+            const newConvId = data.conversationId || data.conversation?.id;
+            setConversationId(newConvId);
+            return newConvId;
         } catch (error) {
-            console.error('Error fetching/creating conversation:', error);
+            console.error('Failed to fetch or create conversation:', error);
             return null;
         }
     }, [user?.id]); // Only depends on user.id
@@ -62,15 +67,12 @@ const ChatWidget = () => {
     useEffect(() => {
         if (!user?.id) return; // Only proceed if user is authenticated
 
-        console.log('User useEffect: Initializing Socket.io connection...');
         const initSocket = async () => {
             await fetch('/api/socket'); // Ensure Socket.io server is initialized
-            const newSocket = io({ path: '/api/socket_io' });
+            const newSocket = io('/', { path: '/api/socket_io' });
             socketRef.current = newSocket; // Store socket instance in ref
-            console.log('Socket.io client initialized:', socketRef.current);
 
             newSocket.on('connect', () => {
-                console.log('User client connected to Socket.io server with ID:', newSocket.id);
                 setIsConnected(true);
             });
 
@@ -79,21 +81,15 @@ const ChatWidget = () => {
                     ...message,
                     messageText: message.message_text || message.messageText,
                     senderType: message.sender_type || message.senderType,
-                    createdAt: message.created_at || message.createdAt,
+                    createdAt: message.created_at || message.createdAt || new Date().toISOString(), // Fallback for createdAt
                 };
                 setMessages((prevMessages) => {
-                    console.log('receive_message: current prevMessages:', prevMessages);
-                    console.log('receive_message: transformedMessage:', transformedMessage);
                     if (prevMessages.some(msg => msg.id === transformedMessage.id)) {
-                        console.log('receive_message: Duplicate message ID detected, skipping.');
                         return prevMessages;
                     }
                     const newMessages = [...prevMessages, transformedMessage];
-                    console.log('receive_message: newMessages after adding:', newMessages);
                     return newMessages;
                 });
-                console.log('Received and transformed message:', transformedMessage);
-                console.log('Notification check - isOpen:', isOpen, 'senderType:', transformedMessage.senderType, 'Condition:', (!isOpen && transformedMessage.senderType !== 'customer'));
 
                 if (transformedMessage.senderType !== 'customer') {
                     setUnreadMessageCount(prevCount => prevCount + 1);
@@ -101,7 +97,6 @@ const ChatWidget = () => {
             });
 
             newSocket.on('disconnect', () => {
-                console.log('User client disconnected from Socket.io server');
                 setIsConnected(false);
             });
         };
@@ -110,7 +105,6 @@ const ChatWidget = () => {
 
         return () => {
             if (socketRef.current) {
-                console.log('User useEffect cleanup: Disconnecting socketRef.');
                 socketRef.current.disconnect();
                 socketRef.current = null;
             }
@@ -119,12 +113,8 @@ const ChatWidget = () => {
     // Original useEffect for widget open/close state management
     useEffect(() => {
         if (user?.id && isOpen) {
-            console.log('User useEffect: Widget opened, resetting notification and setting loading.');
             setUnreadMessageCount(0);
-            // fetchOrCreateConversation is now handled by a separate useEffect
-            // socketInitializer is also handled by a separate useEffect
         } else if (user?.id && !isOpen) {
-            console.log('User useEffect: user.id present but widget is closed.');
         }
 
         // Cleanup function for this specific useEffect if needed
@@ -134,47 +124,40 @@ const ChatWidget = () => {
     }, [user?.id, isOpen]); // Dependencies for this useEffect
 
     useEffect(() => {
-        console.log('User useEffect for fetching messages triggered.');
-        console.log('Dependencies:', { conversationId, userId: user?.id });
         if (conversationId && user?.id) {
-            console.log('Conditions met, calling fetchMessages for conversationId:', conversationId);
             const fetchMessages = async () => {
                 setIsLoading(true);
                 try {
-                    const response = await fetch(`/api/chat/conversation/${conversationId}/messages`);
-                    console.log('fetchMessages: API response.ok:', response.ok);
-                    const data = await response.json();
-                    console.log('fetchMessages: API response data:', data);
-                    if (response.ok) {
-                        setMessages((prevMessages) => {
-                            console.log('fetchMessages: Previous messages in state:', prevMessages);
-                            const uniqueNewMessages = data.messages.filter(
-                                (newMessage) => !prevMessages.some((existingMessage) => existingMessage.id === newMessage.id)
-                            );
-                            console.log('fetchMessages: Unique new messages from data:', uniqueNewMessages);
-                            return [...prevMessages, ...uniqueNewMessages];
-                        });
-                        console.log('fetchMessages: Fetched and updated messages in state.');
-                    } else {
-                        console.error('Failed to fetch messages:', data.message);
+                    const url = `/api/chat/conversation/${conversationId}/messages`;
+                    const response = await fetchWithAuth(url);
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ message: 'No error message available.' }));
+                        console.error('Failed to fetch messages. Status:', response.status, 'Error Data:', errorData);
+                        throw new Error('Failed to fetch messages.');
                     }
+                    
+                    const data = await response.json();
+                    setMessages((prevMessages) => {
+                        const uniqueNewMessages = data.messages.filter(
+                            (newMessage) => !prevMessages.some((existingMessage) => existingMessage.id === newMessage.id)
+                        );
+                        return [...prevMessages, ...uniqueNewMessages];
+                    });
+
                 } catch (error) {
                     console.error('Error fetching messages:', error);
                 } finally {
                     setIsLoading(false);
-                    console.log('fetchMessages: isLoading set to false.');
                 }
             };
             fetchMessages();
         }
-    }, [conversationId, user?.id]); // User ID is a dependency
+    }, [conversationId, user?.id, fetchWithAuth]); // User ID and fetchWithAuth are dependencies
 
     // This useEffect handles joining the room when socket is connected and conversationId is available
     useEffect(() => {
-        console.log('User useEffect for joining room triggered.');
-        console.log('Join room dependencies:', { socketExists: !!socketRef.current, socketConnected: isConnected, userId: user?.id, conversationId });
         if (socketRef.current && isConnected && user?.id && conversationId) {
-            console.log('Conditions met, emitting join_room (User side):', `conversation-${conversationId}`);
             socketRef.current.emit('join_room', `conversation-${conversationId}`);
         }
     }, [socketRef.current, isConnected, user?.id, conversationId]);
@@ -184,7 +167,9 @@ const ChatWidget = () => {
     }, [messages]);
 
     const handleSendMessage = async () => {
-        if (!newMessage.trim() || !user?.id) return;
+        if (!newMessage.trim() || !user?.id || isSending) return; // Prevent double-send
+
+        setIsSending(true); // Start sending process
 
         let currentConversationId = conversationId;
 
@@ -195,6 +180,7 @@ const ChatWidget = () => {
             setIsLoading(false); // Stop loading regardless of success
             if (!currentConversationId) {
                 console.error('Failed to get a conversation ID.');
+                setIsSending(false); // Ensure sending state is reset
                 return; // Cannot send message without a conversation ID
             }
         }
@@ -206,29 +192,48 @@ const ChatWidget = () => {
             conversationId: currentConversationId,
         };
 
+        // Optimistic UI Update: Add message to state immediately
+        const tempId = Date.now().toString() + Math.random().toString(36).substring(2, 9); // Client-generated temporary ID
+        const tempMessage = {
+            id: tempId,
+            conversation_id: currentConversationId,
+            sender_id: user.id,
+            messageText: newMessage,
+            createdAt: new Date().toISOString(), // Use current time as fallback
+            senderType: 'customer',
+            status: 'sending' // Custom status for optimistic message
+        };
+
+        setMessages((prevMessages) => [...prevMessages, tempMessage]);
+        setNewMessage(''); // Clear input immediately
+        scrollToBottom();
+
         try {
-            const response = await fetch(`/api/chat/conversation/${currentConversationId}/messages`, {
+            const data = await fetchWithAuth(`/api/chat/conversation/${currentConversationId}/messages`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(messagePayload),
             });
-            const data = await response.json();
-            if (response.ok) {
-                setMessages((prevMessages) => {
-                    // Prevent adding duplicate messages
-                    if (prevMessages.some(msg => msg.id === data.id)) {
-                        return prevMessages;
-                    }
-                    return [...prevMessages, data];
-                });
-                setNewMessage('');
-            } else {
-                console.error('Failed to send message:', data.message);
-            }
+
+            setMessages((prevMessages) => {
+                // Find and update the optimistic message, or add if not found (e.g., if API was very fast)
+                const updatedMessages = prevMessages.map(msg =>
+                    msg.id === tempId ? { ...data, status: 'sent' } : msg
+                );
+                // If the message wasn't found (e.g., due to race condition or component unmount), add it
+                if (!updatedMessages.some(msg => msg.id === data.id)) {
+                    return [...prevMessages, { ...data, status: 'sent' }];
+                }
+                return updatedMessages;
+            });
+
         } catch (error) {
             console.error('Error sending message:', error);
+            // Revert optimistic update on error
+            setMessages((prevMessages) => prevMessages.filter(msg => msg.id !== tempId));
+            // Optionally show an error message to the user
+        } finally {
+            setIsSending(false); // End sending process
+            scrollToBottom();
         }
     };
 
@@ -280,10 +285,9 @@ const ChatWidget = () => {
                             <div className="flex-1 p-3 overflow-y-auto space-y-2">
                                 {messages.length === 0 && <p className="text-gray-500 text-sm text-center">No messages yet. Start a conversation!</p>}
                                 {messages.map((msg, index) => {
-                                    console.log('Rendering message:', msg);
                                     return (
                                         <motion.div
-                                            key={msg.id}
+                                            key={msg.id || index}
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.2, delay: index * 0.05 }}
@@ -291,13 +295,13 @@ const ChatWidget = () => {
                                         >
                                             <div
                                                 className={`max-w-[70%] p-2 rounded-lg ${msg.senderType === 'customer'
-                                                        ? 'bg-[var(--brand-blue)] text-white'
-                                                        : 'bg-gray-200 text-gray-800'
+                                                    ? 'bg-[var(--brand-blue)] text-white'
+                                                    : 'bg-gray-200 text-gray-800'
                                                     }`}
                                             >
                                                 <p className="text-sm">{msg.messageText}</p>
                                                 <span className="text-xs text-black-400 block text-right mt-1">
-                                                    {new Date(msg.createdAt).toLocaleTimeString()}
+                                                    {msg.createdAt && !isNaN(new Date(msg.createdAt)) ? new Date(msg.createdAt).toLocaleTimeString() : 'N/A'}
                                                 </span>
                                             </div>
                                         </motion.div>
@@ -318,8 +322,8 @@ const ChatWidget = () => {
                                 placeholder="Type your message..."
                                 className="flex-1 mr-2"
                             />
-                            <Button onClick={handleSendMessage} size="icon" className="bg-[var(--brand-blue)] text-white hover:bg-[var(--brand-pink)]">
-                                <Send className="w-5 h-5" />
+                            <Button onClick={handleSendMessage} size="icon" className="bg-[var(--brand-blue)] text-white hover:bg-[var(--brand-pink)]" disabled={isSending}>
+                                {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                             </Button>
                         </div>
                     </motion.div>

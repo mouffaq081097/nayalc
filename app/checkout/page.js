@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -16,7 +16,7 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { fetchWithAuth } from '../lib/api';
+import { createFetchWithAuth } from '../lib/api'; // Changed import
 import dynamic from 'next/dynamic';
 
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
@@ -25,7 +25,8 @@ const AddressInputForm = dynamic(() => import('../components/AddressInputForm'),
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
-  const { user } = useAuth();
+  const { user, logout } = useAuth(); // Get authenticated user and logout from context
+  const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]); // Initialize fetchWithAuth using useMemo
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [shippingAddresses, setShippingAddresses] = useState([]);
@@ -51,7 +52,8 @@ export default function CheckoutPage() {
   const fetchShippingAddresses = useCallback(async () => {
     if (!user || !user.id) return;
     try {
-      const data = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+      const response = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+      const data = await response.json();
       setShippingAddresses(data);
       if (data.length > 0 && !selectedShippingAddressId) { // Only set if no address pre-selected from cart
         const defaultAddress = data.find(addr => addr.isDefault);
@@ -61,7 +63,7 @@ export default function CheckoutPage() {
       console.error("Error fetching shipping addresses:", error);
       toast.error("Error fetching shipping addresses.");
     }
-  }, [user, selectedShippingAddressId]); // Add selectedShippingAddressId to dependencies
+  }, [user, selectedShippingAddressId, fetchWithAuth]); // Add selectedShippingAddressId and fetchWithAuth to dependencies
 
   useEffect(() => {
     if (user) {
@@ -144,9 +146,10 @@ export default function CheckoutPage() {
     }
 
     try {
-      const data = await fetchWithAuth(`/api/users/${user.id}/addresses/${addressId}`, {
+      const response = await fetchWithAuth(`/api/users/${user.id}/addresses/${addressId}`, {
         method: 'DELETE',
       });
+      const data = await response.json();
 
       toast.success(data.message || 'Address deleted successfully!');
       fetchShippingAddresses(); // Refresh the list of addresses
@@ -237,10 +240,11 @@ export default function CheckoutPage() {
     };
 
     try {
-      const result = await fetchWithAuth('/api/orders', {
+      const response = await fetchWithAuth('/api/orders', {
         method: 'POST',
         body: JSON.stringify(orderData),
       });
+      const result = await response.json();
 
       toast.success('Order Placed Successfully! Order ID: ' + result.orderId);
       clearCart();

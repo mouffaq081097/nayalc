@@ -175,33 +175,29 @@ const Header = forwardRef(() => {
 
                     {/* Returns & Orders */}
                     {user && (
-                        <button onClick={() => router.push('/orders')} className="flex flex-col items-start justify-center p-1 rounded-md hover:bg-gray-100/50">
+                        <button onClick={() => router.push('/account?tab=orders')} className="flex flex-col items-start justify-center p-1 rounded-md hover:bg-gray-100/50">
                             <span className="text-xs text-gray-500">Returns</span>
                             <span className="text-sm font-bold">& Orders</span>
                         </button>
                     )}
 
-                    {user && (
-                      <button onClick={() => router.push('/account?tab=wishlist')} className="relative flex flex-col items-center justify-center p-1 rounded-md hover:bg-gray-100/50">
-                        <Heart className="h-5 w-5" />
-                        <span className="text-xs">Favorites</span>
-                        <Badge className="absolute -top-1 -right-1 bg-[var(--brand-pink)] text-white text-xs h-4 w-4 p-0 flex items-center justify-center">
-                            2
-                        </Badge>
-                      </button>
-                    )}
+                    <button onClick={() => user ? router.push('/account?tab=wishlist') : router.push('/auth')} className="relative flex flex-col items-center justify-center p-1 rounded-md hover:bg-gray-100/50">
+                      <Heart className="h-5 w-5" />
+                      <span className="text-xs">Favorites</span>
+                      <Badge className="absolute -top-1 -right-1 bg-[var(--brand-pink)] text-white text-xs h-4 w-4 p-0 flex items-center justify-center">
+                          2
+                      </Badge>
+                    </button>
 
-                    {user && (
-                      <button onClick={() => router.push('/cart')} className="relative flex flex-col items-center justify-center p-1 rounded-md hover:bg-gray-100/50">
-                        <ShoppingBag className="h-5 w-5" />
-                        <span className="text-xs">Cart</span>
-                        {cartCount > 0 && (
-                          <Badge className="absolute -top-1 -right-1 bg-[var(--brand-pink)] text-white text-xs h-5 w-5 p-0 flex items-center justify-center">
-                            {cartCount}
-                          </Badge>
-                        )}
-                      </button>
-                    )}
+                    <button onClick={() => router.push('/cart')} className="relative flex flex-col items-center justify-center p-1 rounded-md hover:bg-gray-100/50">
+                      <ShoppingBag className="h-5 w-5" />
+                      <span className="text-xs">Cart</span>
+                      {cartCount > 0 && (
+                        <Badge className="absolute -top-1 -right-1 bg-[var(--brand-pink)] text-white text-xs h-5 w-5 p-0 flex items-center justify-center">
+                          {cartCount}
+                        </Badge>
+                      )}
+                    </button>
                   </div>
                 </div>
 

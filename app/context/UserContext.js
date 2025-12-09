@@ -1,12 +1,14 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext.js'; // Import useAuth
+import { createFetchWithAuth } from '../lib/api';
 
 const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth(); // Get user and isAuthenticated from AuthContext
-  const [userData, setUserData] = useState(null); 
+  const { user, isAuthenticated, logout } = useAuth(); // Get user and isAuthenticated from AuthContext
+  const fetchWithAuth = createFetchWithAuth(logout);
+  const [userData, setUserData] = useState(null);
   const [contactInfo, setContactInfo] = useState({
     name: '',
     email: '',
@@ -21,12 +23,8 @@ export const UserProvider = ({ children }) => {
       return;
     }
     try {
-      const response = await fetch(`/api/users/${user.id}/contact-info`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch contact info.');
-      }
-      const data = await response.json();
-      
+      const data = await fetchWithAuth(`/api/users/${user.id}/contact-info`);
+
       setContactInfo({
         name: data.customer_name || '',
         email: user.email, // Email always from AuthContext user
@@ -40,22 +38,16 @@ export const UserProvider = ({ children }) => {
 
   // Function to fetch shipping addresses from the backend
   const fetchShippingAddresses = useCallback(async () => {
-    
+
     if (!isAuthenticated || !user?.id) {
-      
+
       setShippingAddresses([]);
       return;
     }
-    
+
     try {
-      const response = await fetch(`/api/users/${user.id}/addresses`); 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to fetch shipping addresses, response not OK:', response.status, errorText);
-        throw new Error('Failed to fetch shipping addresses');
-      }
-      const data = await response.json();
-      
+      const data = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+
       setShippingAddresses(data);
     } catch (error) {
       console.error('Error fetching shipping addresses:', error);
@@ -71,25 +63,25 @@ export const UserProvider = ({ children }) => {
 
   // Function to update contact info from shipping addresses
   const updateContactInfoFromAddresses = useCallback(() => {
-    
+
     if (!isAuthenticated || !user?.id) {
-      
+
       setContactInfo({ name: '', email: '', phone: '' });
       return;
     }
 
     if (shippingAddresses.length > 0) {
       const firstAddress = shippingAddresses[0];
-      
+
       setContactInfo({
         name: firstAddress.customer_name || '', // No fallback to user.username
         email: user.email, // Email always from AuthContext user
         phone: firstAddress.customer_phone || '',
       });
-      
+
     } else {
       setContactInfo({ name: '', email: user.email, phone: '' }); // No fallback to user.username
-      
+
     }
   }, [isAuthenticated, user, shippingAddresses]);
 
@@ -107,20 +99,14 @@ export const UserProvider = ({ children }) => {
   const updateContactInfo = async (newContactInfo) => {
     if (!isAuthenticated || !user?.id) return;
     try {
-      const response = await fetch(`/api/users/${user.id}/contact-info`, {
+      await fetchWithAuth(`/api/users/${user.id}/contact-info`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newContactInfo.name, phone: newContactInfo.phone }),
       });
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to update contact info, backend response:', response.status, errorText);
-        throw new Error('Failed to update contact info');
-      }
       // If update is successful, update client-side state and re-fetch addresses to ensure consistency
       setContactInfo(newContactInfo);
       fetchShippingAddresses(); // Re-fetch addresses to update customer_name/phone if they were updated
-      
+
     } catch (error) {
       console.error('Error updating contact info:', error);
     }
@@ -142,16 +128,10 @@ export const UserProvider = ({ children }) => {
         customer_email: newAddress.customer_email || user.email || '',
         customer_phone: newAddress.customer_phone || '',
       };
-      const response = await fetch(`/api/users/${user.id}/addresses`, { 
+      await fetchWithAuth(`/api/users/${user.id}/addresses`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(transformedAddress),
       });
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to add shipping address, backend response:', response.status, errorText);
-        throw new Error('Failed to add shipping address');
-      }
       // Re-fetch addresses to get the latest list from the backend
       fetchShippingAddresses();
     } catch (error) {
@@ -175,13 +155,10 @@ export const UserProvider = ({ children }) => {
         customer_email: updatedAddress.customer_email || user.email || '',
         customer_phone: updatedAddress.customer_phone || '',
       };
-            const response = await fetch(`/api/users/${user.id}/addresses/${updatedAddress.id}`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(transformedAddress),      });
-      if (!response.ok) {
-        throw new Error('Failed to update shipping address');
-      }
+      await fetchWithAuth(`/api/users/${user.id}/addresses/${updatedAddress.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(transformedAddress),
+      });
       fetchShippingAddresses();
     } catch (error) {
       console.error('Error updating shipping address:', error);
@@ -191,12 +168,9 @@ export const UserProvider = ({ children }) => {
   const deleteShippingAddress = async (addressId) => {
     if (!isAuthenticated || !user?.id) return;
     try {
-      const response = await fetch(`/api/users/${user.id}/addresses/${addressId}`, {
+      await fetchWithAuth(`/api/users/${user.id}/addresses/${addressId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) {
-        throw new Error('Failed to delete shipping address');
-      }
       fetchShippingAddresses();
     } catch (error) {
       console.error('Error deleting shipping address:', error);

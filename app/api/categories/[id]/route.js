@@ -27,22 +27,25 @@ export async function GET(request, { params }) {
     }
     const category = categoryRows[0];
 
-    const productsSql = `
-      SELECT 
-        p.id, 
-        p.name, 
-        p.description, 
-        p.price, 
-        b.name as "brandName",
-        pi.image_url as "imageUrl"
-      FROM products p
-      JOIN category_products cp ON p.id = cp.product_id
-      JOIN brands b ON p.brand_id = b.id
-      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
-      WHERE cp.category_id = $1
-    `;
-    const { rows: productRows } = await db.query(productsSql, [id]);
-    
+        const productsSql = `
+          SELECT
+            p.id,
+            p.name,
+            p.description,
+            p.price,
+            b.name as "brandName",
+            pi.image_url as "imageUrl",
+            COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
+            COUNT(r.id) as "reviewCount"
+          FROM products p
+          JOIN category_products cp ON p.id = cp.product_id
+          JOIN brands b ON p.brand_id = b.id
+          LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
+          LEFT JOIN reviews r ON p.id = r.product_id
+          WHERE cp.category_id = $1
+          GROUP BY p.id, p.name, p.description, p.price, b.name, pi.image_url
+        `;
+        const { rows: productRows } = await db.query(productsSql, [id]);    
     category.products = productRows;
 
     return NextResponse.json(category);

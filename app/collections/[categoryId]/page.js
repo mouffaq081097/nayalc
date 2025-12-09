@@ -90,11 +90,10 @@ export default function CollectionDetailsPage() {
                   name={product.name}
                   price={product.price}
                   image={product.imageUrl}
-                  rating={4.5} // Hardcoded dummy rating
-                  reviewCount={120} // Hardcoded dummy review count
+                  averageRating={product.averageRating}
+                  reviewCount={product.reviewCount}
                   brandName={product.brandName}
                   stock_quantity={product.stock_quantity}
-                // Add other product properties as needed by ProductCard
                 />
               ))}
             </div>

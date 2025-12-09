@@ -19,6 +19,7 @@ export async function GET(request, { params }) {
                 address_label as "addressLabel",
                 customer_email as "customerEmail",
                 customer_phone as "customerPhone",
+                shipping_address as "shippingAddress",
                 (SELECT COUNT(*) FROM orders o WHERE o.user_address_id = user_addresses.id) = 0 as "isDeletable"
              FROM user_addresses
              WHERE user_id = $1

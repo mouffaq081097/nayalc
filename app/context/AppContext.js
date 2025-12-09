@@ -1,19 +1,22 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext.js';
+import { createFetchWithAuth } from '../lib/api';
 
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
-  const [appState, setAppState] = useState({}); 
-  const [cart, setCart] = useState([]); 
+  const { user, isAuthenticated, logout } = useAuth();
+  // Initialize fetchWithAuth with the logout function and memoize it
+  const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
+  const [appState, setAppState] = useState({});
+  const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState({ orders: [], totalCount: 0, page: 1, limit: 10 });
 
   const [cancelledOrders, setCancelledOrders] = useState({ orders: [], totalCount: 0, page: 1, limit: 10 });
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]); 
+  const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]); // New state for brands
   const [featuredProducts, setFeaturedProducts] = useState([]); // New state for featured products
 
@@ -24,18 +27,23 @@ export const AppProvider = ({ children }) => {
       return;
     }
     try {
-      const response = await fetch(`/api/orders?userId=${user.id}`); 
+      const response = await fetchWithAuth(`/api/orders?userId=${user.id}`);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        const errorData = await response.json().catch(() => ({ message: 'No error message available.' }));
+        console.error('Failed to fetch orders. Status:', response.status, response.statusText, 'Error Data:', errorData);
+        throw new Error('Failed to fetch orders.');
       }
-      const { orders: fetchedOrders } = await response.json(); // Destructure to get the orders array
+
+      const data = await response.json();
+      const fetchedOrders = data.orders;
       // Parse the 'items' JSON string back into an array of objects
-              const parsedOrders = fetchedOrders.map(order => ({ // Use fetchedOrders here
-                  ...order,
-                  totalAmount: parseFloat(order.totalAmount), // Ensure totalAmount is a number
-                  items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
-                  orderDate: new Date(order.createdAt), // Changed from orderDate to createdAt based on API response
-              }));      setOrders(parsedOrders);
+      const parsedOrders = Array.isArray(fetchedOrders) ? fetchedOrders.map(order => ({ // Use fetchedOrders here
+        ...order,
+        totalAmount: parseFloat(order.totalAmount), // Ensure totalAmount is a number
+        items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+        orderDate: new Date(order.createdAt), // Changed from orderDate to createdAt based on API response
+      })) : []; setOrders(parsedOrders);
     } catch (error) {
       console.error('Error fetching orders:', error);
       setOrders([]);
@@ -43,41 +51,59 @@ export const AppProvider = ({ children }) => {
   }, [isAuthenticated, user]);
 
   const fetchAllOrders = useCallback(async (page = 1, limit = 10) => {
+    if (!isAuthenticated) {
+      setAllOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
+      return;
+    }
     try {
-      const response = await fetch(`/api/orders?page=${page}&limit=${limit}`);
+      const url = `/api/orders?statusFilter=all&page=${page}&limit=${limit}`;
+      const response = await fetchWithAuth(url);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch all orders');
+        const errorData = await response.json().catch(() => ({ message: 'No error message available.' }));
+        console.error('Failed to fetch all orders. Status:', response.status, response.statusText, 'Error Data:', errorData);
+        throw new Error('Failed to fetch all orders.');
       }
+
       const { orders, totalCount, page: currentPage, limit: currentLimit } = await response.json();
-      const parsedOrders = orders.map(order => ({
-          ...order,
-          totalAmount: parseFloat(order.totalAmount),
-          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
-          orderDate: new Date(order.createdAt),
-      }));
-      setAllOrders({ orders: parsedOrders, totalCount, page: currentPage, limit: currentLimit });
+      const parsedOrders = Array.isArray(orders) ? orders.map(order => ({
+        ...order,
+        totalAmount: parseFloat(order.totalAmount),
+        items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+        orderDate: new Date(order.createdAt),
+      })) : [];
+      setAllOrders({ orders: parsedOrders, totalCount: Number(totalCount || 0), page: currentPage, limit: currentLimit });
     } catch (error) {
       console.error('Error fetching all orders:', error);
       setAllOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
     }
-  }, []);
+  }, [isAuthenticated, fetchWithAuth]); // Added fetchWithAuth to dependencies
 
   const [deliveredOrders, setDeliveredOrders] = useState({ orders: [], totalCount: 0, page: 1, limit: 10 });
 
   const fetchDeliveredOrders = useCallback(async (page = 1, limit = 10) => {
+    if (!isAuthenticated) {
+      setDeliveredOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
+      return;
+    }
     try {
-      const response = await fetch(`/api/orders/delivered?page=${page}&limit=${limit}`);
+      const url = `/api/orders/delivered?page=${page}&limit=${limit}`;
+      const response = await fetchWithAuth(url);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch delivered orders');
+        const errorData = await response.json().catch(() => ({ message: 'No error message available.' }));
+        console.error('Failed to fetch delivered orders. Status:', response.status, response.statusText, 'Error Data:', errorData);
+        throw new Error('Failed to fetch delivered orders.');
       }
+
       const { orders, totalCount, page: currentPage, limit: currentLimit } = await response.json();
-      const parsedOrders = orders.map(order => ({
-          ...order,
-          totalAmount: parseFloat(order.totalAmount),
-          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
-          deliveredAt: new Date(order.deliveredAt),
-      }));
-      setDeliveredOrders({ orders: parsedOrders, totalCount, page: currentPage, limit: currentLimit });
+      const parsedOrders = Array.isArray(orders) ? orders.map(order => ({
+        ...order,
+        totalAmount: parseFloat(order.totalAmount),
+        items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+        deliveredAt: new Date(order.deliveredAt),
+      })) : [];
+      setDeliveredOrders({ orders: parsedOrders, totalCount: Number(totalCount || 0), page: currentPage, limit: currentLimit });
     } catch (error) {
       console.error('Error fetching delivered orders:', error);
       setDeliveredOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
@@ -85,19 +111,28 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   const fetchCancelledOrders = useCallback(async (page = 1, limit = 10) => {
+    if (!isAuthenticated) {
+      setCancelledOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
+      return;
+    }
     try {
-      const response = await fetch(`/api/orders/cancelled?page=${page}&limit=${limit}`);
+      const url = `/api/orders/cancelled?page=${page}&limit=${limit}`;
+      const response = await fetchWithAuth(url);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch cancelled orders');
+        const errorData = await response.json().catch(() => ({ message: 'No error message available.' }));
+        console.error('Failed to fetch cancelled orders. Status:', response.status, response.statusText, 'Error Data:', errorData);
+        throw new Error('Failed to fetch cancelled orders.');
       }
+
       const { orders, totalCount, page: currentPage, limit: currentLimit } = await response.json();
-      const parsedOrders = orders.map(order => ({
-          ...order,
-          totalAmount: parseFloat(order.totalAmount),
-          items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
-          cancelledAt: new Date(order.cancelledAt),
-      }));
-      setCancelledOrders({ orders: parsedOrders, totalCount, page: currentPage, limit: currentLimit });
+      const parsedOrders = Array.isArray(orders) ? orders.map(order => ({
+        ...order,
+        totalAmount: parseFloat(order.totalAmount),
+        items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+        cancelledAt: new Date(order.cancelledAt),
+      })) : [];
+      setCancelledOrders({ orders: parsedOrders, totalCount: Number(totalCount || 0), page: currentPage, limit: currentLimit });
     } catch (error) {
       console.error('Error fetching cancelled orders:', error);
       setCancelledOrders({ orders: [], totalCount: 0, page: 1, limit: 10 });
@@ -220,13 +255,10 @@ export const AppProvider = ({ children }) => {
   // Function to add a new brand
   const addBrand = async (brandFormData) => {
     try {
-      const response = await fetch(`/api/brands`, {
+      await fetchWithAuth(`/api/brands`, {
         method: 'POST',
         body: brandFormData,
       });
-      if (!response.ok) {
-        throw new Error('Failed to add brand');
-      }
       // Re-fetch brands to update the state
       fetchBrands();
     } catch (error) {
@@ -238,13 +270,10 @@ export const AppProvider = ({ children }) => {
   // Function to update an existing brand
   const updateBrand = async (brandId, brandFormData) => {
     try {
-      const response = await fetch(`/api/brands/${brandId}`, {
+      await fetchWithAuth(`/api/brands/${brandId}`, {
         method: 'PUT',
         body: brandFormData,
       });
-      if (!response.ok) {
-        throw new Error('Failed to update brand');
-      }
       // Re-fetch brands to update the state
       fetchBrands();
     } catch (error) {
@@ -256,12 +285,9 @@ export const AppProvider = ({ children }) => {
   // Function to delete a brand
   const deleteBrand = async (brandId) => {
     try {
-      const response = await fetch(`/api/brands/${brandId}`, {
+      await fetchWithAuth(`/api/brands/${brandId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) {
-        throw new Error('Failed to delete brand');
-      }
       // Re-fetch brands to update the state
       fetchBrands();
     } catch (error) {
@@ -273,16 +299,11 @@ export const AppProvider = ({ children }) => {
   // Function to add a new category
   const addCategory = async (categoryData) => { // categoryData will now be FormData
     try {
-      const response = await fetch(`/api/categories`, {
+      const data = await fetchWithAuth(`/api/categories`, {
         method: 'POST',
         // No 'Content-Type' header when sending FormData, browser sets it
         body: categoryData, // Send FormData directly
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add category');
-      }
-      const data = await response.json(); // Backend returns { categoryId, imageUrl }
       fetchCategories(); // Re-fetch categories to update the state
       return data; // Return the response data (including categoryId)
     } catch (error) {
@@ -294,16 +315,11 @@ export const AppProvider = ({ children }) => {
   // Function to update an existing category
   const updateCategory = async (categoryId, categoryData) => { // categoryData will now be FormData
     try {
-      const response = await fetch(`/api/categories/${categoryId}`, {
+      const data = await fetchWithAuth(`/api/categories/${categoryId}`, {
         method: 'PUT',
         // No 'Content-Type' header when sending FormData, browser sets it
         body: categoryData, // Send FormData directly
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update category');
-      }
-      const data = await response.json();
       // Re-fetch categories to update the state
       fetchCategories();
       return data; // Return the response data
@@ -316,12 +332,9 @@ export const AppProvider = ({ children }) => {
   // Function to delete a category
   const deleteCategory = async (categoryId) => {
     try {
-      const response = await fetch(`/api/categories/${categoryId}`, {
+      await fetchWithAuth(`/api/categories/${categoryId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) {
-        throw new Error('Failed to delete category');
-      }
       // Re-fetch categories to update the state
       fetchCategories();
     } catch (error) {
@@ -343,16 +356,10 @@ export const AppProvider = ({ children }) => {
       if (courierWebsite !== undefined) { // Only add courierWebsite if explicitly provided
         body.courierWebsite = courierWebsite;
       }
-      const response = await fetch(`/api/orders/${orderId}`, {
+      await fetchWithAuth(`/api/orders/${orderId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(body),
       });
-      if (!response.ok) {
-        throw new Error('Failed to update order status');
-      }
       // Re-fetch orders to update the state
       fetchAllOrders();
     } catch (error) {
@@ -364,11 +371,10 @@ export const AppProvider = ({ children }) => {
   // Function to add a new product
   const addProduct = async (productFormData) => {
     try {
-      const response = await fetch(`/api/products`, {
+      const data = await fetchWithAuth(`/api/products`, {
         method: 'POST',
         body: productFormData,
       });
-      const data = await response.json();
       // Re-fetch products to update the state
       fetchProducts();
       return data;
@@ -381,14 +387,10 @@ export const AppProvider = ({ children }) => {
   // Function to update an existing product
   const updateProduct = async (productId, productFormData) => {
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      const data = await fetchWithAuth(`/api/products/${productId}`, {
         method: 'PUT',
         body: productFormData,
       });
-      if (!response.ok) {
-        throw new Error('Failed to update product');
-      }
-      const data = await response.json();
       // Re-fetch products to update the state
       fetchProducts();
       return data;
@@ -401,12 +403,9 @@ export const AppProvider = ({ children }) => {
   // Function to delete a product
   const deleteProduct = async (productId) => {
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      await fetchWithAuth(`/api/products/${productId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) {
-        throw new Error('Failed to delete product');
-      }
       // Re-fetch products to update the state
       fetchProducts();
     } catch (error) {
@@ -426,50 +425,30 @@ export const AppProvider = ({ children }) => {
     }
   }, [isAuthenticated, user, fetchOrders, fetchCategories]); // Re-fetch when auth status or user changes
 
-  // Function to fetch a single order by ID from the backend
-  const fetchOrderById = useCallback(async (orderId) => {
-    try {
-      const response = await fetch(`/api/orders/${orderId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch order details.');
-      }
-      const data = await response.json();
-      // Parse items and totalAmount similar to fetchOrders
-              const parsedOrder = {
-                ...data,
-                totalAmount: parseFloat(data.totalAmount),
-                subtotal: parseFloat(data.subtotal),
-                discountAmount: parseFloat(data.discountAmount),
-                taxAmount: parseFloat(data.taxAmount), // Add taxAmount parsing
-                items: data.items.map(item => ({ ...item, price: parseFloat(item.price) })),
-                createdAt: new Date(data.createdAt),
-              };      return parsedOrder;
-    } catch (error) {
-      console.error(`Error fetching order ${orderId}:`, error);
-      throw error;
-    }
-  }, []);
+
 
   return (
-    <AppContext.Provider value={{ 
-        appState, setAppState, 
-        cart, setCart, 
-        orders, setOrders, 
-        allOrders, fetchAllOrders,
-        deliveredOrders, fetchDeliveredOrders,
-        cancelledOrders, fetchCancelledOrders,
-        products, setProducts, 
-        categories, setCategories, 
-        brands, setBrands, 
-        featuredProducts, setFeaturedProducts, 
-        addBrand, updateBrand, deleteBrand, 
-        addCategory, updateCategory, deleteCategory, 
-        updateOrderStatus, 
-        addProduct, updateProduct, deleteProduct, 
-        fetchProductsByCategory, fetchOrderById, fetchProducts 
-    }}>
-      {children}
-    </AppContext.Provider>
+    <AppContext.Provider value={{
+      appState, setAppState,
+      cart, setCart,
+      orders, setOrders,
+      allOrders, fetchAllOrders,
+      deliveredOrders, fetchDeliveredOrders,
+      cancelledOrders, fetchCancelledOrders,
+      products, setProducts,
+      categories, setCategories,
+      brands, setBrands,
+      featuredProducts, setFeaturedProducts,
+      addBrand, updateBrand, deleteBrand,
+      addCategory, updateCategory, deleteCategory,
+      updateOrderStatus,
+      addProduct, updateProduct, deleteProduct,
+      fetchProductsByCategory,
+      fetchProducts,
+      fetchWithAuth
+        }}>
+          {children}
+        </AppContext.Provider>
   );
 };
 

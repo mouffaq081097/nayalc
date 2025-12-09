@@ -18,6 +18,11 @@ import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
 
 
+import { useAppContext } from '@/app/context/AppContext';
+import { useAuth } from '@/app/context/AuthContext';
+import { useMemo } from 'react';
+
+
 const OrderDetailsPage = () => {
     const { orderId } = useParams();
     const [order, setOrder] = useState(null);
@@ -32,12 +37,15 @@ const OrderDetailsPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [updateError, setUpdateError] = useState(null);
 
+    const { logout } = useAuth();
+    const { fetchWithAuth } = useAppContext();
+
 
     const fetchOrderDetails = useCallback(async () => {
         if (!orderId) return;
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/orders/${orderId}`);
+            const response = await fetchWithAuth(`/api/orders/${orderId}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch order details');
             }
@@ -52,7 +60,7 @@ const OrderDetailsPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [orderId]);
+    }, [orderId, fetchWithAuth]);
 
     useEffect(() => {
         fetchOrderDetails();
@@ -65,7 +73,7 @@ const OrderDetailsPage = () => {
         setIsSubmitting(true);
         setUpdateError(null);
         try {
-            const response = await fetch(`/api/orders/${orderId}`, {
+            const response = await fetchWithAuth(`/api/orders/${orderId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

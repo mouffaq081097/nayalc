@@ -29,7 +29,19 @@ export async function GET(request, context) {
     const { id } = params;
     const client = await db.connect();
     try {
-        const productSql = "SELECT id, name, description, price, vendor as \"brand\", stock_quantity, long_description, benefits, how_to_use, ingredients FROM products WHERE id = $1;";
+        const productSql = `
+            SELECT
+                p.id, p.name, p.description, p.price, b.name as "brand", p.stock_quantity,
+                p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice,
+                COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
+                COUNT(r.id) as "reviewCount"
+            FROM products p
+            LEFT JOIN reviews r ON p.id = r.product_id
+            LEFT JOIN brands b ON p.brand_id = b.id
+            WHERE p.id = $1
+            GROUP BY p.id, p.name, p.description, p.price, p.vendor, p.stock_quantity,
+                     p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice, b.name;
+        `;
         const { rows: productRows } = await client.query(productSql, [id]);
 
         if (productRows.length === 0) {
@@ -39,6 +51,7 @@ export async function GET(request, context) {
         const product = productRows[0];
         product.stock_quantity = parseInt(product.stock_quantity, 10);
         product.price = parseFloat(product.price);
+        product.comparedprice = parseFloat(product.comparedprice);
 
         const imagesSql = `
             SELECT image_url
@@ -59,8 +72,9 @@ export async function GET(request, context) {
         client.release();
     }
 }
-export async function PUT(request, { params }) {
-    const { id } = params;
+export async function PUT(request, context) {
+    const resolvedParams = await context.params;
+    const { id } = resolvedParams;
     const client = await db.connect();
 
     try {
@@ -69,11 +83,18 @@ export async function PUT(request, { params }) {
         const formData = await request.formData();
         const name = formData.get('name');
         const description = formData.get('description');
-        const price = parseFloat(formData.get('price'));
-        const stock_quantity = parseInt(formData.get('stock_quantity'), 10);
-        const categoryIds = formData.getAll('categoryIds').map(Number); // Assuming categoryIds are sent as multiple entries
-        const brand_id = parseInt(formData.get('brand_id'), 10);
-        const comparedprice = parseFloat(formData.get('comparedprice'));
+        const price = parseFloat(formData.get('price')) || 0;
+        const stock_quantity = parseInt(formData.get('stock_quantity'), 10) || 0;
+        const categoryIds = formData.getAll('categoryIds')
+            .map(Number)
+            .filter(id => !isNaN(id)); // Filter out invalid category IDs
+
+        const brand_idRaw = parseInt(formData.get('brand_id'), 10);
+        const brand_id = isNaN(brand_idRaw) ? null : brand_idRaw;
+
+        const comparedpriceRaw = parseFloat(formData.get('comparedprice'));
+        const comparedprice = isNaN(comparedpriceRaw) ? null : comparedpriceRaw;
+
         const ingredients = formData.get('ingredients');
         const long_description = formData.get('long_description');
         const benefits = formData.get('benefits');
@@ -134,32 +155,32 @@ export async function PUT(request, { params }) {
     }
 }
 export async function DELETE(request, { params }) {
-  const { id } = params;
-  const client = await db.connect();
-  try {
-    await client.query('BEGIN');
+    const { id } = params;
+    const client = await db.connect();
+    try {
+        await client.query('BEGIN');
 
-    // Delete from product_images
-    await client.query('DELETE FROM product_images WHERE product_id = $1', [id]);
+        // Delete from product_images
+        await client.query('DELETE FROM product_images WHERE product_id = $1', [id]);
 
-    // Delete from category_products
-    await client.query('DELETE FROM category_products WHERE product_id = $1', [id]);
+        // Delete from category_products
+        await client.query('DELETE FROM category_products WHERE product_id = $1', [id]);
 
-    // Delete from products
-    const deleteProductResult = await client.query('DELETE FROM products WHERE id = $1', [id]);
+        // Delete from products
+        const deleteProductResult = await client.query('DELETE FROM products WHERE id = $1', [id]);
 
-    if (deleteProductResult.rowCount === 0) {
-      await client.query('ROLLBACK');
-      return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+        if (deleteProductResult.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+        }
+
+        await client.query('COMMIT');
+        return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error(`Error deleting product ${id}:`, error);
+        return NextResponse.json({ message: 'Error deleting product', error: error.message }, { status: 500 });
+    } finally {
+        client.release();
     }
-
-    await client.query('COMMIT');
-    return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error(`Error deleting product ${id}:`, error);
-    return NextResponse.json({ message: 'Error deleting product', error: error.message }, { status: 500 });
-  } finally {
-    client.release();
-  }
 }

@@ -8,20 +8,15 @@ import { Badge } from '../components/ui/badge';
 import { User, Package, Heart, Settings, MapPin, CreditCard, Bell, LogOut, Eye, HandCoins, Mail, Phone, Cake, Lock, Truck, Plus, ArrowLeft } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 import { useCart } from '../context/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { fetchWithAuth } from '../lib/api';
-
 import Modal from '../components/Modal';
 import AddressInputForm from '../components/AddressInputForm'; // New import for the reusable form
 
-
-// InputField and AddressForm components have been moved into AddressInputForm.js for reusability.
-
-
-
 const AccountPageContent = () => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth(); // Get authenticated user and logout from context
+  const { fetchWithAuth } = useAppContext(); // Get fetchWithAuth from AppContext
   const { addToCart } = useCart();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,6 +41,7 @@ const AccountPageContent = () => {
     phone: '',
     birthday: ''
   });
+  const [showAllProducts, setShowAllProducts] = useState({});
 
   useEffect(() => {
     if (!user) {
@@ -66,9 +62,10 @@ const AccountPageContent = () => {
 
       const fetchAddresses = async () => {
         try {
-          const fetchedAddresses = await fetchWithAuth(`/api/users/${user.id}/addresses`);
-          setAddresses(fetchedAddresses);
-          if (fetchedAddresses.length > 0) {
+          const response = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+          const fetchedAddresses = await response.json();
+          setAddresses(Array.isArray(fetchedAddresses) ? fetchedAddresses : []);
+          if (Array.isArray(fetchedAddresses) && fetchedAddresses.length > 0) {
             const defaultAddress = fetchedAddresses.find(addr => addr.isDefault) || fetchedAddresses[0];
             setProfileData(prev => ({ ...prev, phone: defaultAddress.customerPhone }));
           }
@@ -81,31 +78,35 @@ const AccountPageContent = () => {
 
       const fetchOrders = async () => {
         try {
-          const data = await fetchWithAuth(`/api/orders?userId=${user.id}`);
-          setOrders(data.orders);
+          const response = await fetchWithAuth(`/api/orders?userId=${user.id}`);
+          const data = await response.json();
+          setOrders(data.orders || []);
         } catch (error) {
           console.error('Failed to fetch orders:', error);
+          setOrders([]);
         }
       };
 
       fetchOrders();
     }
-  }, [user]);
+  }, [user, fetchWithAuth]);
 
   useEffect(() => {
     if (user && activeTab === 'wishlist') {
       const fetchWishlist = async () => {
         try {
-          const data = await fetchWithAuth(`/api/wishlist?userId=${user.id}`);
-          setWishlistItems(data);
+          const response = await fetchWithAuth(`/api/wishlist?userId=${user.id}`);
+          const data = await response.json();
+          setWishlistItems(data || []);
         } catch (error) {
           console.error('Failed to fetch wishlist:', error);
+          setWishlistItems([]);
         }
       };
 
       fetchWishlist();
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, fetchWithAuth]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -235,8 +236,9 @@ const AccountPageContent = () => {
 
       closeAddressModal();
       // Refresh addresses
-      const fetchedAddresses = await fetchWithAuth(`/api/users/${user.id}/addresses`);
-      setAddresses(fetchedAddresses);
+      const response = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+      const fetchedAddresses = await response.json();
+      setAddresses(Array.isArray(fetchedAddresses) ? fetchedAddresses : []);
       alert(`Address ${editingAddress ? 'updated' : 'saved'} successfully!`);
     } catch (error) {
       console.error('Failed to save address:', error);
@@ -254,8 +256,9 @@ const AccountPageContent = () => {
         });
 
         // Refresh addresses
-        const fetchedAddresses = await fetchWithAuth(`/api/users/${user.id}/addresses`);
-        setAddresses(fetchedAddresses);
+        const response = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+        const fetchedAddresses = await response.json();
+        setAddresses(Array.isArray(fetchedAddresses) ? fetchedAddresses : []);
         alert('Address removed successfully!');
       } catch (error) {
         console.error('Failed to remove address:', error);
@@ -514,55 +517,93 @@ const AccountPageContent = () => {
                             return new Date(b.createdAt) - new Date(a.createdAt);
                         }
                       })
-                      .map((order) => (
-                        <div key={order.id} className="bg-gray-50 rounded-2xl p-6">
-                          <div className="flex justify-between items-center mb-4">
-                            <div>
-                              <h3 className="text-lg font-bold">Order #{order.id}</h3>
-                              <p className="text-sm text-gray-500">Placed on {formatOrderDate(order.createdAt)}</p>
-                            </div>
-                            <div className="text-right">
-                              <Badge className={`${getStatusColor(order.orderStatus)} text-sm font-semibold`}>
-                                {getStatusText(order.orderStatus)}
-                              </Badge>
-                              <p className="text-xl font-bold mt-1">AED {order.totalAmount}</p>
-                            </div>
-                          </div>
+                      .map((order) => {
+                        const isShowingAll = showAllProducts[order.id];
+                        const itemsToShow = isShowingAll ? order.items : order.items.slice(0, 2); // Show first 2 items initially
 
-                          <div className="grid grid-cols-1 gap-6 my-6">
-                            {order.items.map((item, index) => (
-                              <div key={index} className="flex items-center gap-4">
-                                <ImageWithFallback
-                                  src={item.imageUrl}
-                                  alt={item.name}
-                                  className="w-20 h-20 object-contain rounded-lg bg-white"
-                                />
-                                <div className="flex-1">
-                                  <h4 className="font-semibold">{item.name}</h4>
-                                  <p className="text-sm text-gray-500">{item.brandName}</p>
-                                  <p className="text-sm font-semibold">Qty: {item.quantity} • AED {item.price}</p>
-                                </div>
+                        return (
+                          <div key={order.id} className="bg-gray-50 rounded-2xl p-6 flex flex-col min-h-[300px]">
+                            <div className="flex justify-between items-center mb-4">
+                              <div>
+                                <h3 className="text-lg font-bold">Order #{order.id}</h3>
+                                <p className="text-sm text-gray-500">Placed on {formatOrderDate(order.createdAt)}</p>
                               </div>
-                            ))}
-                          </div>
+                              <div className="text-right">
+                                <Badge className={`${getStatusColor(order.orderStatus)} text-sm font-semibold`}>
+                                  {getStatusText(order.orderStatus)}
+                                </Badge>
+                                <p className="text-xl font-bold mt-1">AED {order.totalAmount}</p>
+                              </div>
+                            </div>
 
-                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-4 border-t border-gray-200">
-                            <Button variant="outline" size="sm" className="flex-1">
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </Button>
-                            <Button variant="outline" size="sm" className="flex-1">
-                              <Truck className="h-4 w-4 mr-2" />
-                              Track Order
-                            </Button>
-                            {order.orderStatus === 'delivered' && (
-                              <Button variant="outline" size="sm" className="flex-1">
-                                Reorder
-                              </Button>
+                            <div className="grid grid-cols-1 gap-6 my-6 flex-grow">
+                              {itemsToShow.map((item, index) => (
+                                <div key={index} className="flex items-center gap-4">
+                                  <ImageWithFallback
+                                    src={item.imageUrl}
+                                    alt={item.name}
+                                    className="w-20 h-20 object-contain rounded-lg bg-white"
+                                  />
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold">{item.name}</h4>
+                                    <p className="text-sm text-gray-500">{item.brandName}</p>
+                                    <p className="text-sm font-semibold">Qty: {item.quantity} • AED {item.price}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {order.items.length > 2 && (
+                                <Button 
+                                    variant="ghost" 
+                                    className="w-full mt-2" 
+                                    onClick={() => setShowAllProducts(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
+                                >
+                                    {isShowingAll ? 'Show Less' : `Show All ${order.items.length} Products`}
+                                </Button>
                             )}
+
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 pt-4 border-t border-gray-200 mt-auto">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => router.push(`/orders/${order.id}`)} // Navigate to order details
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => {
+                                  if (order.courierWebsite && order.trackingNumber) {
+                                    // Assuming a simple concatenation for tracking URL
+                                    // A more robust solution might involve specific courier URLs
+                                    window.open(`${order.courierWebsite}${order.trackingNumber}`, '_blank');
+                                  } else if (order.courierWebsite) {
+                                    window.open(order.courierWebsite, '_blank');
+                                  }
+                                  else {
+                                    alert('Tracking information is not available yet.');
+                                  }
+                                }}
+                                disabled={!order.trackingNumber && !order.courierWebsite}
+                              >
+                                <Truck className="h-4 w-4 mr-2" />
+                                Track Order
+                              </Button>
+                              {order.orderStatus === 'delivered' && (
+                                <Button variant="outline" size="sm" className="flex-1">
+                                  Reorder
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })
+                    }
                   </div>
                 </div>
               )}
@@ -639,9 +680,10 @@ const AccountPageContent = () => {
                         </div>
                         <ul className="list-none space-y-1 text-gray-600">
                           {address.customerName && <li><span className="font-bold">{address.customerName}</span></li>}
-                          {address.shippingAddress && <li><span>{address.shippingAddress}</span></li>}
-                          {address.apartment && <li><span>{address.apartment}</span></li>}
-                          {(address.city || address.country) && <li><span>{address.city}{address.city && address.country && ', '}{address.country}</span></li>}
+                          {address.addressLine1 && <li><span>{address.addressLine1}</span></li>}
+                          {address.addressLine2 && <li><span>{address.addressLine2}</span></li>}
+                          {(address.city || address.state || address.zipCode) && <li><span>{address.city}{address.city && address.state && ', '}{address.state}{address.zipCode && ` ${address.zipCode}`}</span></li>}
+                          {address.country && <li><span>{address.country}</span></li>}
                           {address.customerPhone && <li><span>Phone number: {address.customerPhone}</span></li>}
                         </ul>
                       </div>

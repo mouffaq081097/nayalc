@@ -55,7 +55,7 @@ export async function POST(req) {
         );
 
         return NextResponse.json(
-            { message: 'Conversation created successfully', conversation: result.rows[0] },
+            { message: 'Conversation created successfully', conversationId: result.rows[0].id },
             { status: 201 }
         );
     } catch (error) {

@@ -31,6 +31,8 @@ export const ForYouSection = () => {
               image={product.imageUrl}
               brandName={product.brandName}
               stock_quantity={product.stock_quantity}
+              averageRating={product.averageRating}
+              reviewCount={product.reviewCount}
             />
           ))}
         </div>

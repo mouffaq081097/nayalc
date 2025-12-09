@@ -95,6 +95,10 @@ export async function POST(req, context) {
         );
 
         const newMessageData = result.rows[0];
+        // Ensure createdAt is always present, even if not returned by the DB for some reason
+        if (!newMessageData.createdAt) {
+            newMessageData.createdAt = new Date().toISOString();
+        }
 
         // If the message is from a customer, update the conversation status to 'pending_admin_response' and send email notification
         if (newMessageData.senderType === 'customer') {

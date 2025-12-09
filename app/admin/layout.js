@@ -5,10 +5,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ShoppingBag, Heart, Package, LogOut, Menu, X, LayoutDashboard, Tags, Ticket, Users, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+import { createFetchWithAuth } from '../lib/api';
+
 const AdminLayout = ({ children }) => {
-    const { logout } = useAuth();
+    const { logout, isAuthenticated } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const fetchWithAuth = createFetchWithAuth(logout);
 
     const handleLogout = () => {
         logout();
@@ -45,8 +48,12 @@ const AdminLayout = ({ children }) => {
 
     useEffect(() => {
         const fetchUnreadCount = async () => {
+            if (!isAuthenticated) {
+                setUnreadAdminChatCount(0);
+                return;
+            }
             try {
-                const response = await fetch('/api/admin/chat/unread');
+                const response = await fetchWithAuth('/api/admin/chat/unread');
                 if (response.ok) {
                     const data = await response.json();
                     setUnreadAdminChatCount(data.unreadCount);

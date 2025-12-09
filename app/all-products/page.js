@@ -52,8 +52,7 @@ export default function AllProductsPage() {
       case 'price-high':
         return filtered.sort((a, b) => b.price - a.price);
       case 'rating':
-        // Assuming products have a rating property, if not, this will need adjustment
-        return filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        return filtered.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
       case 'newest':
         // Assuming products have a created_at property for sorting by newest
         return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -269,7 +268,7 @@ export default function AllProductsPage() {
                   price={product.price}
                   originalPrice={product.originalPrice}
                   image={product.imageUrl}
-                  rating={product.rating}
+                  averageRating={product.averageRating}
                   reviewCount={product.reviewCount}
                   isNew={product.isNew}
                   isBestseller={product.isBestseller}

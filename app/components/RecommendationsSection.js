@@ -37,10 +37,6 @@ export default function RecommendationsSection() {
   }
 
   const handleAddToCart = (product) => {
-    if (!isAuthenticated) {
-      router.push('/auth');
-      return;
-    }
     addToCart(product, 1);
   };
 

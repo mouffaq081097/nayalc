@@ -1,8 +1,10 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useAppContext } from '../../context/AppContext';
 import { Mail, Phone, Home, User, Search, ChevronDown } from 'lucide-react';
 
 const AllUsersPage = () => {
+    const { fetchWithAuth } = useAppContext();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -12,7 +14,7 @@ const AllUsersPage = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch('/api/users');
+                const response = await fetchWithAuth('/api/users');
                 if (!response.ok) {
                     throw new Error('Failed to fetch users');
                 }
@@ -26,7 +28,7 @@ const AllUsersPage = () => {
         };
 
         fetchUsers();
-    }, []);
+    }, [fetchWithAuth]);
 
     const toggleUserAddresses = (userId) => {
         setExpandedUsers(prev => ({ ...prev, [userId]: !prev[userId] }));

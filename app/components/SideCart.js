@@ -52,7 +52,7 @@ export default function SideCart() {
                     <ImageWithFallback
                       src={item.image}
                       alt={item.name}
-                      className="h-full w-full object-cover object-center"
+                      className="h-full w-full object-contain object-center"
                     />
                   </div>
                   <div className="ml-4 flex flex-1 flex-col">

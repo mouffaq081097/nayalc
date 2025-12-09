@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    window.location.reload();
+    router.push('/auth'); // Redirect to login page instead of hard reload
   };
 
   return (

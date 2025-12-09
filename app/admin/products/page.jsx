@@ -170,7 +170,7 @@ const ManageProducts = () => {
                     {filteredProducts.map(product => (
                         <div key={product.id} className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
                             <div className="relative h-48 w-full p-1 bg-white border border-gray-200" onClick={() => handleOpenEditModal(product)}>
-                                <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="contain" />
+                                <Image src={product.imageUrl} alt={product.name} fill className="object-contain" sizes="100vw" />
                             </div>
                             <div className="p-6">
                                 <h3 className="text-lg font-bold text-gray-800">{truncateText(product.name, 40)}</h3>
@@ -272,7 +272,7 @@ const ManageProducts = () => {
                                 <label className="block text-sm font-medium text-gray-700">Current Image</label>
                                 <div className="mt-1 w-full h-48 relative rounded-lg overflow-hidden border border-gray-300">
                                     {editingProduct?.imageUrl ? (
-                                        <Image src={editingProduct.imageUrl} alt="Current product image" layout="fill" objectFit="contain" />
+                                        <Image src={editingProduct.imageUrl} alt="Current product image" fill className="object-contain" sizes="100vw" />
                                     ) : (
                                         <div className="flex items-center justify-center h-full bg-gray-100">
                                             <p className="text-gray-500">No Image</p>
@@ -285,7 +285,7 @@ const ManageProducts = () => {
                                 <input type="file" name="image" id="image" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100" disabled={isSubmitting} />
                                 {imageFile && (
                                     <div className="mt-4 w-full h-48 relative rounded-lg overflow-hidden border border-gray-300">
-                                        <Image src={URL.createObjectURL(imageFile)} alt="New image preview" layout="fill" objectFit="contain" />
+                                        <Image src={URL.createObjectURL(imageFile)} alt="New image preview" fill className="object-contain" sizes="100vw" />
                                     </div>
                                 )}
                             </div>

@@ -44,8 +44,8 @@ export function FeaturedProducts() {
                   name={product.name}
                   price={product.price}
                   image={product.imageUrl}
-                  rating={4.5} // Hardcoded for now
-                  reviewCount={120} // Hardcoded for now
+                  averageRating={product.averageRating}
+                  reviewCount={product.reviewCount}
                   category={product.categoryName || product.category}
                   brandName={product.brandName} // Add brandName
                   stock_quantity={product.stock_quantity} // Pass stock_quantity

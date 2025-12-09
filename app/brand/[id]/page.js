@@ -149,9 +149,9 @@ function BrandPage() {
                   image={product.imageUrl}
                   brandName={product.brandName}
                   stock_quantity={product.stock_quantity}
-                // Add other product properties as needed by ProductCard
-                />
-              ))}
+                  averageRating={product.averageRating}
+                  reviewCount={product.reviewCount}
+              />))}
             </div>
           ) : (
             <p className="text-center text-gray-600">No products found for {currentBrand.name}.</p>

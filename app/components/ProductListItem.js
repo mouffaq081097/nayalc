@@ -10,7 +10,7 @@ const ProductListItem = ({ product, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex items-center p-4 space-x-4 relative">
       <div className="relative h-24 w-24 flex-shrink-0" onClick={() => onEdit(product)}>
-        <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="contain" />
+        <Image src={product.imageUrl} alt={product.name} fill className="object-contain" sizes="96px" />
       </div>
       <div className="flex-grow" onClick={() => onEdit(product)}>
         <div>

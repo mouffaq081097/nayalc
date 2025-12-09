@@ -13,16 +13,20 @@ import RecommendationsSection from '../components/RecommendationsSection'; // Im
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, couponError } = useCart();
-  const { user, isAuthenticated } = useAuth(); // Get user from useAuth
+  const { user, isAuthenticated, token } = useAuth(); // Get user and token from useAuth
   const [couponCode, setCouponCode] = useState('');
   const [buyAgainProducts, setBuyAgainProducts] = useState([]); // New state for buy again products
   const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
     const fetchBuyAgainProducts = async () => {
-      if (isAuthenticated && user?.id) {
+      if (isAuthenticated && user?.id && token) {
         try {
-          const response = await fetch(`/api/users/${user.id}/buy-again`);
+          const response = await fetch(`/api/users/${user.id}/buy-again`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
@@ -42,7 +46,7 @@ export default function CartPage() {
     };
 
     fetchBuyAgainProducts();
-  }, [isAuthenticated, user, cartItems]); // Add cartItems to dependency array
+  }, [isAuthenticated, user, token, cartItems]); // Add cartItems and token to dependency array
 
   const savings = cartItems.reduce((sum, item) => 
     sum + ((item.originalPrice || item.price) - item.price) * item.quantity, 0

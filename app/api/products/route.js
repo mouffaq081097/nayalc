@@ -16,30 +16,34 @@ export async function GET(request) {
     const params = [];
 
     if (isNew === 'true') {
+            sql = `
+              SELECT
+                p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
+                b.name as "brandName",
+                pi.image_url as "imageUrl",
+                COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
+                COUNT(r.id) as "reviewCount"
+              FROM
+                products p
+              LEFT JOIN
+                brands b ON p.brand_id = b.id
+              LEFT JOIN
+                product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
+              LEFT JOIN
+                reviews r ON p.id = r.product_id
+              WHERE p.id IS NOT NULL
+              GROUP BY p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id, b.name, pi.image_url
+              ORDER BY p.id DESC
+            `;    } else {
       sql = `
         SELECT
           p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
           b.name as "brandName",
           pi.image_url as "imageUrl",
-          p.stock_quantity as "stock_quantity"
-        FROM
-          products p
-        LEFT JOIN
-          brands b ON p.brand_id = b.id
-        LEFT JOIN
-          product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
-        WHERE p.id IS NOT NULL 
-        ORDER BY p.id DESC
-      `;
-    } else {
-      sql = `
-        SELECT
-          p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
-          b.name as "brandName",
-          pi.image_url as "imageUrl",
-          p.stock_quantity as "stock_quantity",
-          STRING_AGG(c.name, ', ') as "categoryNames",
-          ARRAY_AGG(cp.category_id) as "category_ids"
+          COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
+          COUNT(r.id) as "reviewCount",
+          STRING_AGG(DISTINCT c.name, ', ') as "categoryNames",
+          ARRAY_AGG(DISTINCT cp.category_id) as "category_ids"
         FROM
           products p
         LEFT JOIN
@@ -50,6 +54,8 @@ export async function GET(request) {
           category_products cp ON p.id = cp.product_id
         LEFT JOIN
           categories c ON cp.category_id = c.id
+        LEFT JOIN
+          reviews r ON p.id = r.product_id
       `;
       let whereClauses = [];
 
@@ -75,7 +81,7 @@ export async function GET(request) {
         sql += ` WHERE ${whereClauses.join(' AND ')}`;
       }
 
-      sql += ` GROUP BY p.id, b.name, pi.image_url`;
+      sql += ` GROUP BY p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id, b.name, pi.image_url`;
     }
 
     if (random === 'true') {

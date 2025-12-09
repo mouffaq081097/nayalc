@@ -42,10 +42,6 @@ export default function PairItWithSection({ currentCartItems }) {
   }
 
   const handleAddToCart = (product) => {
-    if (!isAuthenticated) {
-      router.push('/auth');
-      return;
-    }
     addToCart(product, 1);
   };
 

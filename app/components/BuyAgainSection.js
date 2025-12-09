@@ -18,10 +18,6 @@ export default function BuyAgainSection({ products }) {
   }
 
   const handleAddToCart = (product) => {
-    if (!isAuthenticated) {
-      router.push('/auth');
-      return;
-    }
     addToCart(product, 1);
   };
 

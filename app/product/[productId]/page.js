@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -17,7 +17,7 @@ import Reviews from '../../components/Reviews';
 
 
 export default function ProductDetailPage({ params }) {
-  const { productId } = params;
+  const { productId } = use(params);
   const { addToCart } = useCart();
   const { user } = useAuth();
   const router = useRouter();
@@ -43,7 +43,7 @@ export default function ProductDetailPage({ params }) {
         setProduct(data);
 
 
-        if (user) {
+        if (user && user.id) {
           const wishlistResponse = await fetch(`/api/wishlist?userId=${user.id}`);
           if (wishlistResponse.ok) {
             const wishlistData = await wishlistResponse.json();
@@ -117,8 +117,8 @@ export default function ProductDetailPage({ params }) {
     }
   };
 
-  const savings = product.originalPrice - product.price;
-  const savingsPercentage = Math.round((savings / product.originalPrice) * 100);
+  const savings = product.comparedprice - product.price;
+  const savingsPercentage = Math.round((savings / product.comparedprice) * 100);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -165,6 +165,7 @@ export default function ProductDetailPage({ params }) {
               <Badge className="mb-3 bg-[var(--brand-blue)] text-white">
                 {product.brand}
               </Badge>
+              {product.brandDescription && <p className="text-gray-600 text-sm mb-2">{product.brandDescription}</p>}
               <h1 className="text-3xl md:text-4xl mb-4">{product.name}</h1>
 
               {/* Rating */}
@@ -173,12 +174,12 @@ export default function ProductDetailPage({ params }) {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                      className={`h-4 w-4 ${i < Math.floor(product.averageRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
                     />
                   ))}
                 </div>
                 <span className="text-sm text-gray-600">
-                  {product.rating} ({product.reviewCount} reviews)
+                  {product.averageRating} ({product.reviewCount} reviews)
                 </span>
               </div>
             </div>
@@ -186,10 +187,10 @@ export default function ProductDetailPage({ params }) {
             {/* Price */}
             <div className="flex items-center gap-4">
               <span className="text-3xl">AED {product.price}</span>
-              {product.originalPrice && (
+              {product.comparedprice && product.comparedprice > product.price && ( // Check if comparedprice exists and is greater
                 <>
-                  <span className="text-xl text-gray-500 line-through">AED {product.originalPrice}</span>
-                  <Badge variant="destructive">Save AED {savings} ({savingsPercentage}%)</Badge>
+                  <span className="text-xl text-gray-500 line-through">AED {product.comparedprice}</span>
+                  <Badge variant="destructive">Save AED {savings.toFixed(2)} ({savingsPercentage}%)</Badge>
                 </>
               )}
             </div>

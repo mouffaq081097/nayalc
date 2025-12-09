@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/context/AuthContext';
+import { useAppContext } from '@/app/context/AppContext'; // Import useAppContext
 import { Button } from '@/app/components/ui/button';
 
 import { Textarea } from '@/app/components/ui/textarea';
@@ -23,6 +24,7 @@ let socket; // Global socket instance
 const AdminConversationPage = () => {
     const { conversationId } = useParams();
     const { user } = useAuth(); // Assuming admin user is also available via AuthContext
+    const { fetchWithAuth } = useAppContext(); // Get fetchWithAuth from AppContext
     const router = useRouter();
 
     const [conversation, setConversation] = useState(null);
@@ -52,7 +54,7 @@ const AdminConversationPage = () => {
 
         if (window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
             try {
-                const res = await fetch(`/api/chat/conversation/${conversationId}`, {
+                const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}`, {
                     method: 'DELETE',
                 });
                 if (res.ok) {
@@ -71,7 +73,7 @@ const AdminConversationPage = () => {
 
     const socketInitializer = useCallback(async () => {
         await fetch('/api/socket');
-        socket = io({ path: '/api/socket_io' });
+        socket = io('/', { path: '/api/socket_io' });
 
         socket.on('connect', () => {
             console.log('Admin connected to Socket.io server');
@@ -102,7 +104,7 @@ const AdminConversationPage = () => {
     const fetchConversationDetails = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`/api/chat/conversation/${conversationId}`);
+            const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}`);
             if (!res.ok) throw new Error('Failed to fetch conversation');
             const data = await res.json();
             setConversation(data);
@@ -112,7 +114,7 @@ const AdminConversationPage = () => {
         } finally {
             // setIsLoading(false); // Set false after messages are fetched
         }
-    }, [conversationId]);
+    }, [conversationId, fetchWithAuth]);
     const fetchMessages = useCallback(async (isLoadMore = false) => {
         if (!conversationId) return;
 
@@ -123,7 +125,7 @@ const AdminConversationPage = () => {
         }
 
         try {
-            const res = await fetch(`/api/chat/conversation/${conversationId}/messages?limit=${displayLimit}&offset=${offset}`);
+            const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/messages?limit=${displayLimit}&offset=${offset}`);
             if (!res.ok) throw new Error('Failed to fetch messages');
             const data = await res.json();
 
@@ -149,7 +151,7 @@ const AdminConversationPage = () => {
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [conversationId, displayLimit, offset]);
+    }, [conversationId, displayLimit, offset, fetchWithAuth]);
 
     useEffect(() => {
         if (conversationId && user?.id) {
@@ -206,7 +208,7 @@ const AdminConversationPage = () => {
         };
 
         try {
-            const res = await fetch(`/api/chat/conversation/${conversationId}/messages`, {
+            const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/messages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -239,7 +241,7 @@ const AdminConversationPage = () => {
         if (!newStatus || !conversationId) return;
 
         try {
-            const res = await fetch(`/api/chat/conversation/${conversationId}/status`, {
+            const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/status`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -318,7 +320,7 @@ const AdminConversationPage = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                         <Clock className="h-5 w-5 text-gray-500" />
-                        <p className="text-gray-800 font-medium">Started: <span className="text-sm text-gray-600">{new Date(conversation.createdAt).toLocaleString()}</span></p>
+                        <p className="text-gray-800 font-medium">Started: <span className="text-sm text-gray-600">{conversation.createdAt && !isNaN(new Date(conversation.createdAt)) ? new Date(conversation.createdAt).toLocaleString() : 'N/A'}</span></p>
                     </div>
 
                     <div className="pt-4 border-t border-gray-200">
@@ -376,10 +378,9 @@ const AdminConversationPage = () => {
                                 >
                                     <p className="text-sm font-semibold">{msg.senderType === 'admin' ? 'You' : conversation.customerName || 'Customer'}</p>
                                     <p className="text-base">{msg.messageText}</p>
-                                    <span className="text-xs text-gray-400 block text-right mt-1">
-                                        {new Date(msg.createdAt).toLocaleString()}
-                                    </span>
-                                </div>
+                                                                    <span className="text-xs text-gray-400 block text-right mt-1">
+                                                                        {msg.createdAt && !isNaN(new Date(msg.createdAt)) ? new Date(msg.createdAt).toLocaleString() : 'N/A'}
+                                                                    </span>                                </div>
                             </div>
                         ))}
                         <div ref={messagesEndRef} />

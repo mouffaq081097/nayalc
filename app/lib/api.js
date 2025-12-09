@@ -1,24 +1,51 @@
 
-export const fetchWithAuth = async (url, options = {}) => {
-  const token = localStorage.getItem('token');
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
+export const createFetchWithAuth = (logout) => {
+  return async (url, options = {}) => {
+    const token = localStorage.getItem('token');
+    
+    // Create a mutable copy of headers
+    const headers = { ...options.headers };
+    let body = options.body;
+
+    // If a FormData object is passed, the browser will set the Content-Type header
+    // automatically (e.g., multipart/form-data with boundary).
+    // Manually setting it to 'application/json' for FormData bodies is wrong.
+    if (body instanceof FormData) {
+      // Ensure Content-Type is not explicitly set for FormData
+      delete headers['Content-Type'];
+    } else if (body && typeof body !== 'string' && !(body instanceof URLSearchParams)) { // Check if body is an object that needs JSON stringification
+      // If body is an object, stringify it and set Content-Type to JSON
+      body = JSON.stringify(body);
+      if (!headers['Content-Type']) { // Only set if not already set by options.headers
+        headers['Content-Type'] = 'application/json';
+      }
+    } else if (body && typeof body === 'string' && !headers['Content-Type']) {
+        // If body is already a string and no custom Content-Type, assume JSON
+        headers['Content-Type'] = 'application/json';
+    }
+    // If body is already a string and headers['Content-Type'] is set, do nothing.
+    // If body is undefined/null, do nothing.
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, { ...options, headers, body });
+
+    if (response.status === 401) {
+      console.error('Unauthorized request, logging out...');
+      logout(); // Trigger logout on 401
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Request failed with status: ${response.status}, Body: ${errorBody}`);
+    }
+
+    return response;
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(url, { ...options, headers });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Request failed with status: ${response.status}, Body: ${errorBody}`);
-  }
-
-  return response.json();
 };
+
 
 
 // This function fetches all products from the API
@@ -131,20 +158,7 @@ export async function getBrand(id) {
   }
 }
 
-// This function fetches a single order by its ID
-export async function getOrderById(id) {
-  if (!id) {
-    console.error("getOrderById requires an ID.");
-    return null;
-  }
-  try {
-    // Note the use of fetchWithAuth here
-    return await fetchWithAuth(`/api/orders/${id}`);
-  } catch (error) {
-    console.error("Error in getOrderById:", error);
-    return null;
-  }
-}
+
 
 // Placeholder for API mocking. User needs to provide actual implementation if required.
 export function enableApiMocking() {

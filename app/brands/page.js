@@ -1,8 +1,11 @@
-import React from "react";
+'use client';
+import React, { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from '../components/ui/button';
 import { Container } from '../components/ui/Container';
+import { useAppContext } from '../context/AppContext'; // Import useAppContext
+import { Leaf, Sparkles } from 'lucide-react'; // Import icons needed
 
 const BrandsPage = () => {
   return (

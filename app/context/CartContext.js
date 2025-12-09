@@ -1,10 +1,13 @@
-import React, { createContext, useContext, useEffect, useCallback, useState } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useState, useMemo } from 'react';
 import { useAuth } from './AuthContext';
+import { createFetchWithAuth } from '../lib/api';
 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, logout } = useAuth();
+    // Memoize fetchWithAuth
+    const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
     const [cart, setCart] = useState([]); // Manage cart state locally
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [discountAmount, setDiscountAmount] = useState(0);
@@ -16,6 +19,45 @@ export const CartProvider = ({ children }) => {
     const closeCart = () => setIsCartOpen(false); // New function
     const toggleCart = () => setIsCartOpen(prev => !prev); // New function
 
+    const fetchUserCart = useCallback(async () => {
+        if (isAuthenticated && user?.id) {
+            try {
+                const response = await fetchWithAuth(`/api/users/${user.id}/cart`);
+                const data = await response.json().catch(() => {
+                    // If response is not JSON or already consumed, return an empty object for error handling
+                    return {};
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user cart.');
+                }
+                const parsedCart = (data.cart || []).map(item => ({
+                    id: item.productId, // Map productId to id
+                    name: item.name,
+                    brand: item.brand, // Assuming brand is directly available in API response
+                    price: parseFloat(item.price),
+                    originalPrice: parseFloat(item.originalPrice) || parseFloat(item.price), // Handle optional originalPrice
+                    quantity: item.quantity,
+                    image: item.imageUrl, // Map imageUrl to image
+                    size: item.size || undefined, // Handle optional size
+                    shade: item.shade || undefined, // Handle optional shade
+                    stock_quantity: item.stock_quantity, // Add stock_quantity
+                }));
+                setCart(parsedCart);
+            } catch (error) {
+                console.error('Error fetching user cart:', error);
+                setCart([]); // Clear cart on error
+            }
+        } else {
+            setCart([]); // Clear cart if user logs out
+        }
+    }, [isAuthenticated, user, fetchWithAuth]);
+
+    // Fetch user's cart from backend on login
+    useEffect(() => {
+        fetchUserCart();
+    }, [fetchUserCart]);
+
     // Helper function to save cart to backend
     const saveCartToBackend = useCallback(async (currentCart) => {
         if (!isAuthenticated || !user?.id) {
@@ -23,72 +65,17 @@ export const CartProvider = ({ children }) => {
         }
 
         try {
-            const response = await fetch(`/api/users/${user.id}/cart`, {
+            console.log('Attempting to save cart to backend for user:', user.id, 'Cart:', currentCart);
+            await fetchWithAuth(`/api/users/${user.id}/cart`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({ cart: currentCart }),
             });
-
-            if (!response.ok) {
-                let errorData = {};
-                try {
-                    errorData = await response.json();
-                } catch (e) {
-                    console.error('Failed to parse error response as JSON:', e);
-                }
-                console.error('Failed to save cart to backend:', response.status, response.statusText, errorData);
-                throw new Error(`Failed to save cart: ${response.status} ${response.statusText} - ${errorData.message || JSON.stringify(errorData) || 'No additional error information.'}`);
-            }
-
         } catch (error) {
             console.error('Error saving cart to backend:', error);
-            // setTimeout(() => addToast('Failed to save cart changes.', 'error'), 0); // Removed toast
         }
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, user, fetchWithAuth]);
 
-    // Fetch user's cart from backend on login
-    useEffect(() => {
-        const fetchUserCart = async () => {
-            if (isAuthenticated && user?.id) {
-                try {
-                    const response = await fetch(`/api/users/${user.id}/cart`, {
-                        headers: {
-                            // 'Authorization': `Bearer ${user.token}`,
-                        },
-                    });
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch user cart.');
-                    }
-                    const data = await response.json();
-                    const parsedCart = (data.cart || []).map(item => ({
-                        id: item.productId, // Map productId to id
-                        name: item.name,
-                        brand: item.brand, // Assuming brand is directly available in API response
-                        price: parseFloat(item.price),
-                        originalPrice: parseFloat(item.originalPrice) || parseFloat(item.price), // Handle optional originalPrice
-                        quantity: item.quantity,
-                        image: item.imageUrl, // Map imageUrl to image
-                        size: item.size || undefined, // Handle optional size
-                        shade: item.shade || undefined, // Handle optional shade
-                        stock_quantity: item.stock_quantity, // Add stock_quantity
-                    }));
-                    setCart(parsedCart);
-                } catch (error) {
-                    console.error('Error fetching user cart:', error);
-                    // setTimeout(() => addToast('Failed to load your cart.', 'error'), 0); // Removed toast
-                    setCart([]); // Clear cart on error
-                }
-            } else {
-                setCart([]); // Clear cart if user logs out
-            }
-        };
-
-        fetchUserCart();
-    }, [isAuthenticated, user]);
-
-    // Effect to save cart to backend whenever cart changes (debounced or immediate)
+    // Effect to save cart to backend whenever cart changes
     useEffect(() => {
         saveCartToBackend(cart);
     }, [cart, saveCartToBackend]);
@@ -98,7 +85,6 @@ export const CartProvider = ({ children }) => {
         // Prevent adding if stock is 0 or invalid
         if (!product.stock_quantity || product.stock_quantity <= 0) {
             // Optionally, show a toast message here
-            console.warn(`Attempted to add out-of-stock item to cart: ${product.name}`);
             return;
         }
 
@@ -137,6 +123,7 @@ export const CartProvider = ({ children }) => {
                     stock_quantity: product.stock_quantity,
                 }];
             }
+            saveCartToBackend(updatedItems);
             return updatedItems;
         });
         openCart(); // Open cart when item is added
@@ -145,41 +132,42 @@ export const CartProvider = ({ children }) => {
     const removeFromCart = (productId) => {
         setCart((prevItems) => {
             const updatedItems = prevItems.filter(item => item.id !== productId);
-            // addToast("Item removed from cart!"); // Removed toast
             // If cart becomes empty, close the side cart
             if (updatedItems.length === 0) {
                 closeCart();
             }
+            saveCartToBackend(updatedItems);
             return updatedItems;
         });
     };
 
     const updateQuantity = (productId, newQuantity) => {
         setCart((prevItems) => {
+            let updatedItems;
             if (newQuantity < 1) {
-                // addToast("Item removed from cart!"); // Removed toast
-                const updatedItems = prevItems.filter(item => item.id !== productId);
+                updatedItems = prevItems.filter(item => item.id !== productId);
                 // If cart becomes empty, close the side cart
                 if (updatedItems.length === 0) {
                     closeCart();
                 }
-                return updatedItems;
+            } else {
+                updatedItems = prevItems.map(item => {
+                    if (item.id === productId) {
+                        // Prevent adding more than available stock
+                        const validatedQuantity = Math.min(newQuantity, item.stock_quantity);
+                        return { ...item, quantity: validatedQuantity };
+                    }
+                    return item;
+                });
             }
-            const updatedItems = prevItems.map(item => {
-                if (item.id === productId) {
-                    // Prevent adding more than available stock
-                    const validatedQuantity = Math.min(newQuantity, item.stock_quantity);
-                    return { ...item, quantity: validatedQuantity };
-                }
-                return item;
-            });
+            saveCartToBackend(updatedItems);
             return updatedItems;
         });
     };
 
     const clearCart = () => {
         setCart([]);
-        // addToast("Cart cleared!"); // Removed toast
+        saveCartToBackend([]);
         closeCart(); // Close cart when cleared
     };
 

@@ -18,8 +18,7 @@ import { Separator } from '@/app/components/ui/separator'; // Import Separator
 /**
  * @param {OrderConfirmationPageProps} props
  */
-export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount }) {
-  const { contactInfo } = useUser();
+export function OrderDetailsPage({ order, onContinueShopping, onViewAccount }) {
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState(null);
@@ -81,36 +80,23 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
-          {/* Success Header */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6"
-            >
-              <CheckCircle className="h-10 w-10 text-white" />
-            </motion.div>
-            
             <h1 className="text-4xl md:text-5xl mb-4">
-              <span className="text-gray-900">Order </span>
+              <span className="text-gray-900">Your </span>
               <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-                Confirmed!
+                Order Details
               </span>
             </h1>
-            
+
             <p className="text-xl text-gray-600 mb-4">
-              Thank you for your order! We're excited to get your beautiful products to you.
+              Here are the details for your order.
             </p>
-            <p className="text-lg text-gray-700 mb-6">
-              Expected delivery: <span className="font-semibold">2-3 business days</span>
-            </p>
-            
+
             <Badge className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent text-lg px-4 py-2">
               Order {order.id}
             </Badge>
@@ -339,7 +325,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
             <Mail className="h-8 w-8 text-blue-600 mx-auto mb-3" />
             <h3 className="text-lg mb-2">Confirmation Email Sent</h3>
             <p className="text-gray-600">
-              We&apos;ve sent a detailed order confirmation to <strong>your email address ({contactInfo.email})</strong>. 
+              We&apos;ve sent a detailed order confirmation to <strong>your email address ({order.customerEmail})</strong>. 
               You&apos;ll also receive updates as your order progresses.
             </p>
             <div className="mt-4">
