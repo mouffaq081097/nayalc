@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { createFetchWithAuth } from '@/app/lib/api'; // Changed import
 import { useAuth } from '@/app/context/AuthContext'; // Added import for useAuth
 
-import { OrderDetailsPage } from '@/app/components/OrderDetailsPage';
+import { OrderConfirmationPage } from '@/app/components/OrderConfirmationPage';
 
 export default function OrderPage() {
   const params = useParams();
@@ -55,7 +55,7 @@ export default function OrderPage() {
   }
 
   return (
-    <OrderDetailsPage
+    <OrderConfirmationPage
       order={orderData}
       onContinueShopping={() => router.push('/')}
       onViewAccount={() => router.push('/account')}

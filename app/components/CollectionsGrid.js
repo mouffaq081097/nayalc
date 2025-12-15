@@ -39,7 +39,7 @@ export default function CollectionsGrid({ collections }) {
                 </div>
 
                 <div className="flex gap-2">
-                  <Link href={`/collections/${collection._id}`} passHref>
+                  <Link href={`/all-products?category=${collection.name}`} passHref>
                     <Button 
                       className="flex-1 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
                       size="sm"

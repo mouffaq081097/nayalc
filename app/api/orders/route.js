@@ -220,7 +220,7 @@ export async function POST(request) {
     
     const client = await db.connect();
     try {
-        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items, taxAmount, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap = false, gift_wrap_cost = 0 } = await request.json();
+        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items, taxAmount, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap = false, gift_wrap_cost = 0, stripe_payment_intent_id = null } = await request.json();
 
         if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0 || taxAmount === undefined || subtotal === undefined || shipping_cost === undefined) {
             return NextResponse.json({ message: 'Missing required order information or items.' }, { status: 400 });
@@ -249,8 +249,8 @@ export async function POST(request) {
         }
         // --- End Stock Validation ---
 
-        const insertOrderSql = "INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, $11, $12, $13) RETURNING id;";
-        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost];
+        const insertOrderSql = "INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id;";
+        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
 

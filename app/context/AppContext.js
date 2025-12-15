@@ -140,7 +140,7 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   // Function to fetch all products from the backend
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const response = await fetch(`/api/products`);
       if (!response.ok) {
@@ -160,7 +160,7 @@ export const AppProvider = ({ children }) => {
       console.error('Error fetching products:', error);
       setProducts([]);
     }
-  };
+  }, []);
 
   // Function to fetch products by category from the backend
   const fetchProductsByCategory = async (categoryIds) => {

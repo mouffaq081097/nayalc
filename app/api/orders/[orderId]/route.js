@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import db from '../../../../lib/db';
 import { sendOrderStatusUpdateEmail } from '../../../../lib/mail';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function GET(request, context) {
     const { orderId } = await context.params;
@@ -20,6 +23,7 @@ export async function GET(request, context) {
                 o.discount_amount as "discountAmount",
                 o.shipping_cost as "shippingCost",
                 o.gift_wrap_cost as "giftWrapCost",
+                o.stripe_payment_intent_id as "stripePaymentIntentId",
                 u.first_name || ' ' || u.last_name as "customerName",
                 u.email as "customerEmail",
                 ua.customer_phone as "customerPhone",
@@ -55,7 +59,9 @@ export async function GET(request, context) {
                     o.tax_amount as "taxAmount",
                     o.discount_amount as "discountAmount",
                     o.shipping_cost as "shippingCost",
+                    o.shipping_cost as "shippingCost",
                     o.gift_wrap_cost as "giftWrapCost",
+                    o.stripe_payment_intent_id as "stripePaymentIntentId",
                     u.first_name || ' ' || u.last_name as "customerName",
                     u.email as "customerEmail",
                     ua.customer_phone as "customerPhone",
@@ -92,7 +98,9 @@ export async function GET(request, context) {
                         o.tax_amount as "taxAmount",
                         o.discount_amount as "discountAmount",
                         o.shipping_cost as "shippingCost",
+                        o.shipping_cost as "shippingCost",
                         o.gift_wrap_cost as "giftWrapCost",
+                        o.stripe_payment_intent_id as "stripePaymentIntentId",
                         u.first_name || ' ' || u.last_name as "customerName",
                         u.email as "customerEmail",
                         ua.customer_phone as "customerPhone",
@@ -132,6 +140,31 @@ export async function GET(request, context) {
         order.discountAmount = parseFloat(order.discountAmount);
         order.shippingCost = parseFloat(order.shippingCost);
         order.giftWrapCost = parseFloat(order.giftWrapCost);
+        order.subtotal = parseFloat(order.subtotal); // Ensure subtotal is parsed
+
+        // If payment method is card, fetch Stripe details for display
+        if (order.paymentMethod === 'card' && order.stripePaymentIntentId) {
+            try {
+                const charges = await stripe.charges.list({
+                    payment_intent: order.stripePaymentIntentId,
+                    limit: 1, // Assuming only one charge per payment intent for simplicity
+                });
+
+                if (charges.data.length > 0) {
+                    const charge = charges.data[0];
+                    order.cardDetails = {
+                        brand: charge.payment_method_details?.card?.brand,
+                        last4: charge.payment_method_details?.card?.last4,
+                        funding: charge.payment_method_details?.card?.funding,
+                        network: charge.payment_method_details?.card?.network,
+                        status: charge.status,
+                    };
+                }
+            } catch (stripeError) {
+                console.error('Error fetching Stripe PaymentIntent for user view:', stripeError);
+                // Continue without card details if Stripe fetch fails
+            }
+        }
 
         // Structure the address details as expected across the app
         order.shippingAddressDetails = {
@@ -182,7 +215,7 @@ export async function PUT(request, context) {
                 o.id, o.user_address_id, o.payment_method, o.total_amount, o.tax_amount, o.discount_amount,
                 o.order_status, o.shipping_scheduled_date, o.payment_confirmed, o.user_id, o.applied_coupon_id,
                 o.tracking_number, o.shipping_company, o.shipping_link, o.created_at, o.updated_at,
-                o.subtotal, o.shipping_cost,
+                o.subtotal, o.shipping_cost, o.stripe_payment_intent_id, o.gift_wrap, o.gift_wrap_cost,
                 ua.customer_email, ua.customer_phone, ua.shipping_address, ua.city, ua.zip_code, ua.country,
                 u.first_name
             FROM orders o
@@ -233,8 +266,8 @@ export async function PUT(request, context) {
                 "    id, user_address_id, payment_method, total_amount, tax_amount, discount_amount,\n" +
                 "    order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id,\n" +
                 "    tracking_number, courier_name, courier_website, created_at, updated_at, delivered_at,\n" +
-                "    subtotal, shipping_cost\n" +
-                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18)";
+                "    subtotal, shipping_cost, stripe_payment_intent_id, gift_wrap, gift_wrap_cost\n" +
+                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20, $21)";
 
             const deliveredOrderValues = [
                 currentOrder.id,
@@ -254,7 +287,10 @@ export async function PUT(request, context) {
                 currentOrder.created_at,
                 currentOrder.updated_at,
                 currentOrder.subtotal,
-                currentOrder.shippingCost
+                currentOrder.shippingCost,
+                currentOrder.stripe_payment_intent_id,
+                currentOrder.gift_wrap,
+                currentOrder.gift_wrap_cost
             ];
             await client.query(deliveredOrderSql, deliveredOrderValues);
 
@@ -278,8 +314,8 @@ export async function PUT(request, context) {
             const cancelledOrderSql = "INSERT INTO cancelled_orders (\n" +
                 "    id, user_address_id, payment_method, total_amount, tax_amount, discount_amount,\n" +
                 "    order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id,\n" +
-                "    tracking_number, courier_name, courier_website, created_at, updated_at, cancelled_at, cancellation_reason\n" +
-                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17);";
+                "    tracking_number, courier_name, courier_website, created_at, updated_at, cancelled_at, cancellation_reason, stripe_payment_intent_id, gift_wrap, gift_wrap_cost\n" +
+                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20);";
             const cancelledOrderValues = [
                 currentOrder.id,
                 currentOrder.user_address_id,
@@ -298,6 +334,9 @@ export async function PUT(request, context) {
                 currentOrder.created_at,
                 currentOrder.updated_at,
                 cancellationReason,
+                currentOrder.stripe_payment_intent_id,
+                currentOrder.gift_wrap,
+                currentOrder.gift_wrap_cost,
             ];
             await client.query(cancelledOrderSql, cancelledOrderValues);
 

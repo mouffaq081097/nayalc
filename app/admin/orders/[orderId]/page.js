@@ -28,6 +28,7 @@ const OrderDetailsPage = () => {
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [stripePaymentDetails, setStripePaymentDetails] = useState(null);
 
     const [newStatus, setNewStatus] = useState('');
     const [cancellationReason, setCancellationReason] = useState('');
@@ -65,6 +66,24 @@ const OrderDetailsPage = () => {
     useEffect(() => {
         fetchOrderDetails();
     }, [fetchOrderDetails]);
+
+    useEffect(() => {
+        const fetchStripeDetails = async () => {
+            if (order && order.stripePaymentIntentId) {
+                try {
+                    const response = await fetchWithAuth(`/api/admin/stripe/payment_intent/${order.stripePaymentIntentId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setStripePaymentDetails(data);
+                    }
+                } catch (err) {
+                    console.error("Error fetching Stripe payment details:", err);
+                }
+            }
+        };
+
+        fetchStripeDetails();
+    }, [order, fetchWithAuth]);
 
     const router = useRouter();
     // ... other states ...
@@ -339,6 +358,30 @@ const OrderDetailsPage = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {stripePaymentDetails && (
+                            <div>
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4">Stripe Payment Details</h2>
+                                <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span>Stripe Transaction ID</span>
+                                        <span className="font-mono">{stripePaymentDetails.id}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Amount Captured (Stripe)</span>
+                                        <span>AED {(stripePaymentDetails.amount_captured / 100).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Website Total</span>
+                                        <span>AED {order.totalAmount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Stripe Status</span>
+                                        <Badge variant={getStatusVariant(stripePaymentDetails.status)}>{stripePaymentDetails.status}</Badge>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

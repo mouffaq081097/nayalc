@@ -18,7 +18,7 @@ import { Separator } from '@/app/components/ui/separator'; // Import Separator
 /**
  * @param {OrderConfirmationPageProps} props
  */
-export function OrderDetailsPage({ order, onContinueShopping, onViewAccount }) {
+export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount }) {
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resendError, setResendError] = useState(null);
@@ -89,17 +89,96 @@ export function OrderDetailsPage({ order, onContinueShopping, onViewAccount }) {
             <h1 className="text-4xl md:text-5xl mb-4">
               <span className="text-gray-900">Your </span>
               <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-                Order Details
+                Order is Confirmed
               </span>
             </h1>
 
             <p className="text-xl text-gray-600 mb-4">
-              Here are the details for your order.
+              Thank you for your purchase! We've received your order and will begin processing it shortly.
             </p>
 
             <Badge className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent text-lg px-4 py-2">
               Order {order.id}
             </Badge>
+          </motion.div>
+
+          {/* Checkmark Animation */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+            className="flex justify-center mb-8"
+          >
+            <motion.svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              className="w-24 h-24"
+            >
+              <defs>
+                <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="var(--brand-blue)" />
+                  <stop offset="100%" stopColor="var(--brand-pink)" />
+                </linearGradient>
+              </defs>
+              <motion.circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="rgba(0, 0, 0, 0.1)"
+                strokeWidth="1.5"
+                fill="transparent"
+              />
+              <motion.circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="url(#brandGradient)"
+                strokeWidth="1.5"
+                fill="transparent"
+                initial={{ strokeDashoffset: 1, pathLength: 0 }}
+                animate={{ strokeDashoffset: 0, pathLength: 1 }}
+                transition={{
+                  duration: 1,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              />
+              <motion.path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12.75L11.25 15 15 9.75"
+                stroke="url(#brandGradient)"
+                initial={{ pathLength: 0, opacity: 0, scale: 0.8 }}
+                animate={{ pathLength: 1, opacity: 1, scale: 1 }}
+                transition={{
+                  delay: 1,
+                  duration: 0.5,
+                  ease: "easeOut",
+                  type: "spring", // Add a spring effect for a "pop"
+                  stiffness: 260,
+                  damping: 20
+                }}
+              />
+            </motion.svg>
+          </motion.div>
+
+          {/* Expected Delivery Timeline */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.9 }}
+            className="mt-6 text-center p-6 bg-green-50 rounded-2xl mb-12"
+          >
+            <Truck className="h-8 w-8 text-green-600 mx-auto mb-3" />
+            <h3 className="text-lg mb-2">Expected Delivery</h3>
+            <p className="text-gray-700">
+              Your order is estimated to arrive within <strong>2-3 business days</strong>.
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              You will receive a shipping confirmation email with tracking details once your order has been dispatched.
+            </p>
           </motion.div>
 
           <div className="grid lg:grid-cols-3 gap-8">
@@ -272,7 +351,18 @@ export function OrderDetailsPage({ order, onContinueShopping, onViewAccount }) {
                   Payment Method
                 </h3>
                 <div className="text-sm text-gray-600">
-                  <p>Payment on Delivery</p>
+                  {order?.payment_method === 'card' ? (
+                    order?.cardDetails ? (
+                      <div className="space-y-1">
+                        <p className="font-medium">{order.cardDetails.brand.charAt(0).toUpperCase() + order.cardDetails.brand.slice(1)} **** {order.cardDetails.last4}</p>
+                        <p>Status: <Badge className="ml-1" variant={order.cardDetails.status === 'succeeded' ? 'default' : 'destructive'}>{order.cardDetails.status}</Badge></p>
+                      </div>
+                    ) : (
+                      <p>Card Payment</p> // Fallback to just "Card Payment" if details are not available
+                    )
+                  ) : (
+                    <p>{order.payment_method ? order.payment_method.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase()) : 'N/A'}</p>
+                  )}
                 </div>
               </motion.div>
 

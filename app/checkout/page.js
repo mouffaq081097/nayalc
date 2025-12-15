@@ -18,10 +18,13 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { createFetchWithAuth } from '../lib/api'; // Changed import
 import dynamic from 'next/dynamic';
+import CheckoutForm from './CheckoutForm';
+
 
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
 
 const AddressInputForm = dynamic(() => import('../components/AddressInputForm'), { ssr: false });
+
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
@@ -36,6 +39,8 @@ export default function CheckoutPage() {
   const [editingAddress, setEditingAddress] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [showAllAddresses, setShowAllAddresses] = useState(false); // New state for address visibility
+  const [clientSecret, setClientSecret] = useState(null);
+
 
   const [formData, setFormData] = useState({
     // Payment Info
@@ -183,6 +188,31 @@ export default function CheckoutPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  useEffect(() => {
+    if (formData.paymentMethod === 'card' && total > 0) {
+      const createPaymentIntent = async () => {
+        try {
+          const response = await fetchWithAuth('/api/create-payment-intent', {
+            method: 'POST',
+            body: JSON.stringify({ amount: Math.round(total * 100), currency: 'aed' }),
+          });
+          const data = await response.json();
+          if (data.clientSecret) {
+            console.log('Client secret received:', data.clientSecret);
+            setClientSecret(data.clientSecret);
+          } else {
+            console.error('Error creating payment intent:', data.error);
+            toast.error('Error initializing payment.');
+          }
+        } catch (error) {
+          console.error('Error creating payment intent:', error);
+          toast.error('Error initializing payment.');
+        }
+      };
+      createPaymentIntent();
+    }
+  }, [formData.paymentMethod, total, fetchWithAuth]);
+
   const handleNextStep = () => {
     // Basic validation before moving to next step
     if (currentStep === 1 && !selectedAddressId) {
@@ -202,7 +232,7 @@ export default function CheckoutPage() {
 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (paymentIntentId = null) => {
     if (!user) {
       toast.error('Please login to place an order.');
       router.push('/auth'); // Redirect to login page
@@ -237,6 +267,7 @@ export default function CheckoutPage() {
       discount_amount: discountAmount,
       gift_wrap: formData.giftWrap,
       gift_wrap_cost: giftWrapFee,
+      stripe_payment_intent_id: paymentIntentId,
     };
 
     try {
@@ -440,10 +471,24 @@ export default function CheckoutPage() {
                 <div className="space-y-6">
                   <h2 className="text-3xl font-serif mb-6 text-gray-900">Payment Information</h2>
 
-                  <div className="p-4 bg-gray-50 rounded-xl flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-gray-600" />
-                    <span className="font-semibold text-gray-800">Cash on Delivery</span>
+                  <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+                    <div
+                      className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'cashOnDelivery' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
+                      onClick={() => handleInputChange('paymentMethod', 'cashOnDelivery')}
+                    >
+                      <CreditCard className="h-5 w-5 text-gray-600" />
+                      <span className="font-semibold text-gray-800">Cash on Delivery</span>
+                    </div>
+                    <div
+                      className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'card' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
+                      onClick={() => handleInputChange('paymentMethod', 'card')}
+                    >
+                      <CreditCard className="h-5 w-5 text-gray-600" />
+                      <span className="font-semibold text-gray-800">Credit/Debit Card</span>
+                    </div>
                   </div>
+
+
 
                   <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
@@ -513,8 +558,15 @@ export default function CheckoutPage() {
                       Payment Method
                     </h3>
                     <p className="text-sm text-gray-700"> {/* Added text-sm text-gray-700 */}
-                      Cash on Delivery
+                      {formData.paymentMethod === 'card' ? 'Credit/Debit Card' : 'Cash on Delivery'}
                     </p>
+                    {formData.paymentMethod === 'card' && clientSecret && (
+                      <div className="mt-4">
+                        <CheckoutForm clientSecret={clientSecret} onSuccessfulPayment={(paymentIntentId) => {
+                          handlePlaceOrder(paymentIntentId);
+                        }} total={total} />
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
@@ -547,13 +599,18 @@ export default function CheckoutPage() {
                     Continue
                   </Button>
                 ) : (
-                  <Button
-                    onClick={handlePlaceOrder}
-                    className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
-                    disabled={!selectedAddressId || hasStockIssues || isPlacingOrder}
-                  >
-                    {isPlacingOrder ? 'Processing...' : 'Place Order'}
-                  </Button>)}
+                  <>
+                    {formData.paymentMethod === 'cashOnDelivery' && (
+                      <Button
+                        onClick={() => handlePlaceOrder()}
+                        className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
+                        disabled={!selectedAddressId || hasStockIssues || isPlacingOrder}
+                      >
+                        {isPlacingOrder ? 'Processing...' : 'Place Order'}
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
             </motion.div>
           </div>

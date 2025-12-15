@@ -28,7 +28,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
 
   return (
     <div
-      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col mb-4"
+      className="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col mb-4 h-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -71,6 +71,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
         {/* Quick Add Button */}
         <div className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           }`}>
+
           {!stock_quantity || stock_quantity <= 0 ? (
             <button
               disabled
@@ -102,22 +103,26 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
           >
             {name}
           </Link>
-          {/* Customer Review Stars and Count */}
-          <div className="flex items-center gap-2 mt-1"> {/* Added mt-1 for spacing */}
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3 w-3`} // Removed fill-current class
-                  style={{
-                    color: '#D1D5DB', // Default stroke color for all stars
-                    fill: i < Math.floor(averageRating) ? '#FB923C' : 'transparent' // Fill with orange or transparent
-                  }}
-                />
-              ))}
+          {stock_quantity === 1 && (
+            <p className="text-sm font-medium text-red-500 mt-1">Only 1 left in stock!</p>
+          )}
+          {reviewCount > 0 && (
+            <div className="flex items-center gap-2 mt-1"> {/* Added mt-1 for spacing */}
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-3 w-3`} // Removed fill-current class
+                    style={{
+                      color: '#D1D5DB', // Default stroke color for all stars
+                      fill: i < Math.floor(averageRating) ? '#FB923C' : 'transparent' // Fill with orange or transparent
+                    }}
+                  />
+                ))}
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>({reviewCount})</span>
             </div>
-            <span style={{ fontSize: '0.75rem', color: '#6B7280' }}>({reviewCount})</span>
-          </div>
+          )}
         </div>
 
         {/* Price */}

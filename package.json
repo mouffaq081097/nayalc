@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0 --experimental-https --experimental-https-key ./certs/privkey.pem --experimental-https-cert ./certs/cert.pem",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -23,6 +23,8 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@react-google-maps/api": "^2.20.7",
     "@sendgrid/mail": "^8.1.6",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.5.3",
     "@vercel/analytics": "^1.5.0",
     "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.3",
@@ -35,6 +37,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.487.0",
     "next": "15.5.7",
+    "next-auth": "^4.24.13",
     "nodemailer": "^7.0.10",
     "pg-god": "^1.0.12",
     "react": "19.1.0",
@@ -46,6 +49,7 @@
     "slick-carousel": "^1.8.1",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "stripe": "^20.0.0",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
