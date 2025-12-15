@@ -26,9 +26,12 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [cardElementReady, setCardElementReady] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(''); // New state for debug info
 
   useEffect(() => {
     if (stripe && total > 0) {
+      const currentDebug = `Stripe: ${!!stripe}, Total: ${total}`;
+      setDebugInfo(currentDebug + "\nInitializing paymentRequest...");
       const pr = stripe.paymentRequest({
         country: 'AE',
         currency: 'aed',
@@ -42,10 +45,21 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total }) => {
 
       // Check the availability of the Payment Request API.
       pr.canMakePayment().then(result => {
+        const canMakePaymentResult = `pr.canMakePayment() result: ${JSON.stringify(result)}`;
+        setDebugInfo(prev => prev + "\n" + canMakePaymentResult);
         if (result) {
           setPaymentRequest(pr);
+          setDebugInfo(prev => prev + "\nPaymentRequest set successfully.");
+        } else {
+          setDebugInfo(prev => prev + "\npr.canMakePayment() returned false. Apple Pay might not be available.");
         }
+      }).catch(error => {
+        const errorMessage = `Error checking canMakePayment(): ${error.message}`;
+        setDebugInfo(prev => prev + "\n" + errorMessage);
+        console.error("Error checking canMakePayment():", error);
       });
+    } else {
+      setDebugInfo(`Stripe: ${!!stripe}, Total: ${total} - Stripe or total not available.`);
     }
   }, [stripe, total]);
 
@@ -142,6 +156,21 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total }) => {
           {isProcessing ? 'Processing...' : 'Pay now'}
         </Button>
       </form>
+      {/* Debug Info Display */}
+      {debugInfo && (
+        <div style={{
+          marginTop: '20px',
+          padding: '10px',
+          border: '1px solid #ccc',
+          borderRadius: '5px',
+          backgroundColor: '#f9f9f9',
+          whiteSpace: 'pre-wrap',
+          fontSize: '12px',
+          color: '#333'
+        }}>
+          <strong>Debug Info:</strong><br/>{debugInfo}
+        </div>
+      )}
     </>
   );
 };
