@@ -28,7 +28,7 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total }) => {
   const [paymentRequest, setPaymentRequest] = useState(null);
 
   useEffect(() => {
-    if (stripe && clientSecret) {
+    if (stripe) {
       const pr = stripe.paymentRequest({
         country: 'AE',
         currency: 'aed',
@@ -38,6 +38,7 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total }) => {
         },
         requestPayerName: true,
         requestPayerEmail: true,
+        requestShipping: true, // Ask for shipping address
       });
 
       pr.canMakePayment().then(result => {
@@ -45,27 +46,34 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total }) => {
           setPaymentRequest(pr);
         }
       });
+    }
+  }, [stripe, total]);
 
-      pr.on('paymentmethod', async (ev) => {
-        const { error, paymentIntent } = await stripe.confirmCardPayment(
-          clientSecret,
-          { payment_method: ev.paymentMethod.id },
-          { handleActions: false }
-        );
+  useEffect(() => {
+    if (paymentRequest) {
+      paymentRequest.on('paymentmethod', async (ev) => {
+        if (clientSecret) {
+          const { error, paymentIntent } = await stripe.confirmCardPayment(
+            clientSecret,
+            { payment_method: ev.paymentMethod.id },
+            { handleActions: false }
+          );
 
-        if (error) {
-          ev.complete('fail');
-          toast.error(error.message);
-        } else if (paymentIntent.status === 'succeeded') {
-          ev.complete('success');
-          onSuccessfulPayment(paymentIntent.id);
-        } else {
-          ev.complete('fail');
-          toast.error('Payment failed.');
+          if (error) {
+            ev.complete('fail');
+            toast.error(error.message);
+          } else if (paymentIntent.status === 'succeeded') {
+            ev.complete('success');
+            onSuccessfulPayment(paymentIntent.id);
+          } else {
+            ev.complete('fail');
+            toast.error('Payment failed.');
+          }
         }
       });
     }
-  }, [stripe, clientSecret, total, onSuccessfulPayment]);
+  }, [paymentRequest, clientSecret, stripe, onSuccessfulPayment]);
+
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -94,42 +102,56 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total }) => {
     }
   };
 
+  const paymentRequestOptions = {
+    paymentRequest,
+  };
+
   if (paymentRequest) {
-    return <PaymentRequestButtonElement options={{ paymentRequest }} />;
+    // For debugging, force the button to appear
+    const expressCheckoutOptions = {
+      paymentMethods: {
+        applePay: 'always'
+      }
+    };
+    return <PaymentRequestButtonElement options={{...paymentRequestOptions, ...expressCheckoutOptions}} />;
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="card-element" className="mb-2 block text-gray-700">Credit or debit card</Label>
-        <div style={{
-          border: '1px solid #E5E7EB',
-          padding: '12px',
-          borderRadius: '0.5rem',
-          backgroundColor: '#F9FAFB',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-          minHeight: '40px',
-        }}>
-          <CardElement
-            id="card-element"
-            options={cardElementOptions}
-            onReady={() => setCardElementReady(true)}
-            onChange={(event) => {
-              if (event.error) {
-                toast.error(event.error.message);
-              }
-            }}
-          />
-        </div>
-      </div>
-      <Button
-        type="submit"
-        disabled={!stripe || isProcessing || !cardElementReady}
-        className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white hover:opacity-90"
-      >
-        {isProcessing ? 'Processing...' : 'Pay now'}
-      </Button>
-    </form>
+    <>
+      {!paymentRequest && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="card-element" className="mb-2 block text-gray-700">Credit or debit card</Label>
+            <div style={{
+              border: '1px solid #E5E7EB',
+              padding: '12px',
+              borderRadius: '0.5rem',
+              backgroundColor: '#F9FAFB',
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+              minHeight: '40px',
+            }}>
+              <CardElement
+                id="card-element"
+                options={cardElementOptions}
+                onReady={() => setCardElementReady(true)}
+                onChange={(event) => {
+                  if (event.error) {
+                    toast.error(event.error.message);
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <Button
+            type="submit"
+            disabled={!stripe || isProcessing || !cardElementReady}
+            className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white hover:opacity-90"
+          >
+            {isProcessing ? 'Processing...' : 'Pay now'}
+          </Button>
+        </form>
+      )}
+    </>
   );
 };
 
