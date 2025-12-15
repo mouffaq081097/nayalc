@@ -20,11 +20,34 @@ const cardElementOptions = {
   },
 };
 
-const CheckoutForm = ({ clientSecret, onSuccessfulPayment }) => {
+const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [cardElementReady, setCardElementReady] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState(null);
+
+  useEffect(() => {
+    if (stripe && total > 0) {
+      const pr = stripe.paymentRequest({
+        country: 'AE',
+        currency: 'aed',
+        total: {
+          label: 'iHealthCare.ae', // Use your website name
+          amount: Math.round(total * 100), // Amount in cents
+        },
+        requestPayerName: true,
+        requestPayerEmail: true,
+      });
+
+      // Check the availability of the Payment Request API.
+      pr.canMakePayment().then(result => {
+        if (result) {
+          setPaymentRequest(pr);
+        }
+      });
+    }
+  }, [stripe, total]);
 
   const onConfirm = async (event) => {
     if (!stripe || !elements) {
@@ -75,12 +98,12 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment }) => {
     buttonType: {
       applePay: 'buy',
     },
+    paymentRequest: paymentRequest, // Pass the created paymentRequest object
   };
-
 
   return (
     <>
-      {clientSecret && (
+      {clientSecret && paymentRequest && ( // Conditionally render only if paymentRequest is available
         <ExpressCheckoutElement
           clientSecret={clientSecret}
           options={expressCheckoutOptions}
