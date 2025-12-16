@@ -18,6 +18,8 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { createFetchWithAuth } from '../lib/api'; // Changed import
 import dynamic from 'next/dynamic';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from './CheckoutForm';
 
 
@@ -40,6 +42,12 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('');
   const [showAllAddresses, setShowAllAddresses] = useState(false); // New state for address visibility
   const [clientSecret, setClientSecret] = useState(null);
+
+  const stripePromise = useMemo(() => {
+    return process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY
+      ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)
+      : null;
+  }, []);
 
 
 
@@ -487,24 +495,14 @@ export default function CheckoutPage() {
                       <CreditCard className="h-5 w-5 text-gray-600" />
                       <span className="font-semibold text-gray-800">Credit/Debit Card</span>
                     </div>
-                    <div
-                      className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'applePay' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
-                      onClick={() => handleInputChange('paymentMethod', 'applePay')}
-                    >
-                      <CreditCard className="h-5 w-5 text-gray-600" /> {/* Using CreditCard icon for now, ideally an Apple Pay icon */}
-                      <span className="font-semibold text-gray-800">Apple Pay</span>
-                    </div>
+
                   </div>
 
-                  {formData.paymentMethod === 'card' && clientSecret && (
+                  {formData.paymentMethod === 'card' && clientSecret && stripePromise && (
                     <div className="mt-4">
-                      <CheckoutForm
-                        clientSecret={clientSecret}
-                        onSuccessfulPayment={handlePlaceOrder}
-                        total={total}
-                        selectedPaymentMethod={formData.paymentMethod}
-                        showPayButton={false} // Hide the button in Step 2
-                      />
+                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <CheckoutForm onSuccessfulPayment={handlePlaceOrder} />
+                      </Elements>
                     </div>
                   )}
 
@@ -582,19 +580,7 @@ export default function CheckoutPage() {
                         ? 'Apple Pay'
                         : 'Cash on Delivery'}
                     </p>
-                    {(formData.paymentMethod === 'card' || formData.paymentMethod === 'applePay') && clientSecret && (
-                      <div className="mt-4">
-                        <CheckoutForm
-                          clientSecret={clientSecret}
-                          onSuccessfulPayment={(paymentIntentId) => {
-                            handlePlaceOrder(paymentIntentId);
-                          }}
-                          total={total}
-                          selectedPaymentMethod={formData.paymentMethod}
-                          showPayButton={formData.paymentMethod === 'card'} // Only show the Pay button for card payments
-                        />
-                      </div>
-                    )}
+
                   </div>
 
                   <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
