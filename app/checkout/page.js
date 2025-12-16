@@ -40,11 +40,7 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('');
   const [showAllAddresses, setShowAllAddresses] = useState(false); // New state for address visibility
   const [clientSecret, setClientSecret] = useState(null);
-  const [canMakeApplePay, setCanMakeApplePay] = useState(false); // Add this line
 
-  const handleCanMakePaymentResult = useCallback((result) => { // Add this block
-    setCanMakeApplePay(result);
-  }, []);
 
 
   const [formData, setFormData] = useState({
@@ -491,15 +487,13 @@ export default function CheckoutPage() {
                       <CreditCard className="h-5 w-5 text-gray-600" />
                       <span className="font-semibold text-gray-800">Credit/Debit Card</span>
                     </div>
-                    {canMakeApplePay && (
-                      <div
-                        className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'applePay' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
-                        onClick={() => handleInputChange('paymentMethod', 'applePay')}
-                      >
-                        <CreditCard className="h-5 w-5 text-gray-600" /> {/* Using CreditCard icon for now, ideally an Apple Pay icon */}
-                        <span className="font-semibold text-gray-800">Apple Pay</span>
-                      </div>
-                    )}
+                    <div
+                      className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'applePay' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
+                      onClick={() => handleInputChange('paymentMethod', 'applePay')}
+                    >
+                      <CreditCard className="h-5 w-5 text-gray-600" /> {/* Using CreditCard icon for now, ideally an Apple Pay icon */}
+                      <span className="font-semibold text-gray-800">Apple Pay</span>
+                    </div>
                   </div>
 
                   {formData.paymentMethod === 'card' && clientSecret && (
@@ -510,7 +504,6 @@ export default function CheckoutPage() {
                         total={total}
                         selectedPaymentMethod={formData.paymentMethod}
                         showPayButton={false} // Hide the button in Step 2
-                        onCanMakePaymentResult={handleCanMakePaymentResult}
                       />
                     </div>
                   )}
@@ -595,7 +588,6 @@ export default function CheckoutPage() {
                           total={total}
                           selectedPaymentMethod={formData.paymentMethod}
                           showPayButton={formData.paymentMethod === 'card'} // Only show the Pay button for card payments
-                          onCanMakePaymentResult={handleCanMakePaymentResult}
                         />
                       </div>
                     )}

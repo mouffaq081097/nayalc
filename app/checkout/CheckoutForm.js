@@ -20,7 +20,7 @@ const cardElementOptions = {
   },
 };
 
-const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total, selectedPaymentMethod, onCanMakePaymentResult, showPayButton = true }) => {
+const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total, selectedPaymentMethod, showPayButton = true }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -39,30 +39,12 @@ const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total, selectedPaymen
         requestPayerName: true,
         requestPayerEmail: true,
       });
-
-      pr.canMakePayment().then(result => {
-        if (result.applePay) { // Check specifically for Apple Pay availability
-          setPaymentRequest(pr);
-          onCanMakePaymentResult(true);
-        } else {
-          onCanMakePaymentResult(false);
-          console.log("pr.canMakePayment() returned false for Apple Pay. Apple Pay might not be available.");
-        }
-      }).catch(error => {
-        onCanMakePaymentResult(false);
-        console.error("Error checking canMakePayment():", error);
-      });
+      // Set the payment request directly. ExpressCheckoutElement will handle device capability.
+      setPaymentRequest(pr);
     } else {
       setPaymentRequest(null);
-      // If not applePay, or stripe/total not available, assume Apple Pay is not an option from this component's perspective
-      // or it's handled by other means. To ensure the UI updates correctly,
-      // we might want to reset the state in parent component if selectedPaymentMethod changes away from applePay
-      // Or simply, this callback is only relevant when selectedPaymentMethod is applePay.
-      if (selectedPaymentMethod === 'applePay') {
-        onCanMakePaymentResult(false);
-      }
     }
-  }, [stripe, total, selectedPaymentMethod, onCanMakePaymentResult]);
+  }, [stripe, total, selectedPaymentMethod]);
 
   const onConfirm = async (event) => {
     if (!stripe || !elements) {
