@@ -502,6 +502,7 @@ export default function CheckoutPage() {
 
                   {formData.paymentMethod === 'card' && clientSecret && stripePromise && (
                     <div className="mt-4">
+                      {console.log('DEBUG: Rendering Elements with:', { clientSecret, stripePromise: !!stripePromise })}
                       <Elements stripe={stripePromise} options={{ clientSecret }}>
                         <CheckoutForm onSuccessfulPayment={handlePlaceOrder} />
                       </Elements>

@@ -1,155 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import { useStripe, useElements, ExpressCheckoutElement, CardElement } from '@stripe/react-stripe-js';
+import React, { useState } from 'react';
+import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { Button } from '../components/ui/button';
 import { toast } from 'react-toastify';
-import { Label } from '../components/ui/label';
 
-const cardElementOptions = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#424770',
-      '::placeholder': {
-        color: '#aab7c4',
-      },
-      padding: '10px 12px',
-    },
-    invalid: {
-      color: '#9e2146',
-    },
-  },
-};
-
-const CheckoutForm = ({ clientSecret, onSuccessfulPayment, total, selectedPaymentMethod, showPayButton = true }) => {
+const CheckoutForm = ({ onSuccessfulPayment }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [cardElementReady, setCardElementReady] = useState(false);
-  const [paymentRequest, setPaymentRequest] = useState(null);
-
-  useEffect(() => {
-    if (stripe && total > 0 && selectedPaymentMethod === 'applePay') {
-      const pr = stripe.paymentRequest({
-        country: 'AE',
-        currency: 'aed',
-        total: {
-          label: 'iHealthCare.ae',
-          amount: Math.round(total * 100),
-        },
-        requestPayerName: true,
-        requestPayerEmail: true,
-      });
-      // Set the payment request directly. ExpressCheckoutElement will handle device capability.
-      setPaymentRequest(pr);
-    } else {
-      setPaymentRequest(null);
-    }
-  }, [stripe, total, selectedPaymentMethod]);
-
-  const onConfirm = async (event) => {
-    if (!stripe || !elements) {
-      return;
-    }
-
-    const { error } = await stripe.confirmPayment({
-      elements,
-      clientSecret,
-      confirmParams: {
-        return_url: `${window.location.origin}/order-confirmation`,
-      },
-    });
-
-    if (error) {
-      toast.error(error.message);
-    }
-  };
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!stripe || !elements) {
-      return;
-    }
 
-    if (!cardElementReady) {
+    if (!stripe || !elements) {
+      // Stripe.js has not yet loaded.
+      // Make sure to disable form submission until Stripe.js has loaded.
       return;
     }
 
     setIsProcessing(true);
 
-    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: elements.getElement(CardElement),
-      },
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: 'if_required', // Use this to prevent automatic redirection
     });
 
     if (error) {
+      // This will catch any error that occurs during the payment confirmation.
+      // Show error to your customer (e.g., incomplete payment details, card declined).
       toast.error(error.message);
+      setErrorMessage(error.message);
       setIsProcessing(false);
-    } else if (paymentIntent.status === 'succeeded') {
-      onSuccessfulPayment(paymentIntent.id);
-      setIsProcessing(false);
+    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      // The payment has been processed!
+      // Show a success message to your customer
+      toast.success('Payment successful!');
+      onSuccessfulPayment(paymentIntent.id); // Callback to parent component to place the order
+    } else {
+      // Handle other payment statuses if needed
     }
-  };
 
-  const expressCheckoutOptions = {
-    buttonType: {
-      applePay: 'buy',
-    },
-    paymentRequest: paymentRequest, // Pass the created paymentRequest object
-    paymentMethods: { // Add this new property
-      applePay: 'always', // Force Apple Pay display if supported
-    }
+    setIsProcessing(false);
   };
 
   return (
-    <>
-      {selectedPaymentMethod === 'applePay' && clientSecret && paymentRequest && (
-        <ExpressCheckoutElement
-          clientSecret={clientSecret}
-          options={expressCheckoutOptions}
-          onConfirm={onConfirm}
-        />
-      )}
-
-      {selectedPaymentMethod === 'card' && (
-        <>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="card-element" className="mb-2 block text-gray-700">Credit or debit card</Label>
-              <div style={{
-                border: '1px solid #E5E7EB',
-                padding: '12px',
-                borderRadius: '0.5rem',
-                backgroundColor: '#F9FAFB',
-                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                minHeight: '40px',
-              }}>
-                <CardElement
-                  id="card-element"
-                  options={cardElementOptions}
-                  onReady={() => setCardElementReady(true)}
-                  onChange={(event) => {
-                    if (event.error) {
-                      toast.error(event.error.message);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            {showPayButton && (
-              <Button
-                type="submit"
-                disabled={!stripe || isProcessing || !cardElementReady}
-                className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white hover:opacity-90"
-              >
-                {isProcessing ? 'Processing...' : 'Pay now'}
-              </Button>
-            )}
-          </form>
-        </>
-      )}
-    </>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement 
+        options={{
+          layout: "tabs", // or 'accordion', 'spaced'
+        }}
+      />
+      <Button
+        type="submit"
+        disabled={!stripe || isProcessing}
+        className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white hover:opacity-90"
+      >
+        {isProcessing ? 'Processing...' : 'Pay now'}
+      </Button>
+      {errorMessage && <div className="text-red-500 text-sm mt-2">{errorMessage}</div>}
+    </form>
   );
 };
 
