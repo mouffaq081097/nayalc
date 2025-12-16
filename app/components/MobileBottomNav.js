@@ -19,12 +19,12 @@ function MobileBottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const currentPage = pathname.substring(1);
-  const { cartItems, openCart } = useCart();
+  const { cartItems } = useCart();
   const { user, isAuthenticated } = useAuth();
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const handleItemClick = (itemId) => {
     if (itemId === 'cart') {
-      openCart();
+      router.push('/cart');
       return;
     }
     const routeMap = {

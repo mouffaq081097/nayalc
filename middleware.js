@@ -36,5 +36,6 @@ export const config = {
     '/api/chat-global/:path*',
     '/api/chat-user/:path*',
     '/api/admin/:path*',
+    '/api/payment-methods/:path*',
   ],
 };

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useCallback, useState, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { createFetchWithAuth } from '../lib/api';
+import { toast } from 'react-toastify';
 
 export const CartContext = createContext();
 
@@ -84,10 +85,11 @@ export const CartProvider = ({ children }) => {
     const addToCart = (product, quantity) => {
         // Prevent adding if stock is 0 or invalid
         if (!product.stock_quantity || product.stock_quantity <= 0) {
-            // Optionally, show a toast message here
-            return;
+            toast.error(`"${product.name}" is out of stock.`);
+            return false;
         }
 
+        let addedSuccessfully = false;
         setCart((prevItems) => {
             const existingItemIndex = prevItems.findIndex(item => item.id === product.id);
 
@@ -98,18 +100,29 @@ export const CartProvider = ({ children }) => {
 
                 // Prevent increasing quantity if already at stock limit
                 if (currentItem.quantity >= currentItem.stock_quantity) {
-                    console.warn(`Cannot add more of ${product.name}, stock limit reached.`);
+                    toast.error(`Cannot add more of "${product.name}", stock limit reached (${currentItem.stock_quantity}).`);
                     return prevItems; // Return original items without change
                 }
 
                 // Cap quantity at available stock
-                currentItem.quantity = Math.min(
+                const newQuantity = Math.min(
                     currentItem.quantity + quantity,
                     currentItem.stock_quantity
                 );
+                if (newQuantity === currentItem.quantity) {
+                    // No change in quantity because it was already at stock limit
+                    toast.error(`Cannot add more of "${product.name}", stock limit reached (${currentItem.stock_quantity}).`);
+                    return prevItems;
+                }
+                currentItem.quantity = newQuantity;
+                addedSuccessfully = true;
             } else {
                 // Cap initial quantity at available stock
                 const validatedQuantity = Math.min(quantity, product.stock_quantity);
+                if (validatedQuantity <= 0) {
+                    toast.error(`Invalid quantity for "${product.name}".`);
+                    return prevItems;
+                }
                 updatedItems = [...prevItems, {
                     id: product.id,
                     name: product.name,
@@ -122,11 +135,18 @@ export const CartProvider = ({ children }) => {
                     shade: product.shade,
                     stock_quantity: product.stock_quantity,
                 }];
+                addedSuccessfully = true;
             }
             saveCartToBackend(updatedItems);
+            if (addedSuccessfully) {
+                toast.success(`"${product.name}" added to cart!`);
+            }
             return updatedItems;
         });
-        openCart(); // Open cart when item is added
+        if (addedSuccessfully) {
+            openCart(); // Re-enabled as per user's instruction
+        }
+        return addedSuccessfully;
     };
 
     const removeFromCart = (productId) => {

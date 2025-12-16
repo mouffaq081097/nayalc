@@ -40,6 +40,11 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState('');
   const [showAllAddresses, setShowAllAddresses] = useState(false); // New state for address visibility
   const [clientSecret, setClientSecret] = useState(null);
+  const [canMakeApplePay, setCanMakeApplePay] = useState(false); // Add this line
+
+  const handleCanMakePaymentResult = useCallback((result) => { // Add this block
+    setCanMakeApplePay(result);
+  }, []);
 
 
   const [formData, setFormData] = useState({
@@ -486,9 +491,29 @@ export default function CheckoutPage() {
                       <CreditCard className="h-5 w-5 text-gray-600" />
                       <span className="font-semibold text-gray-800">Credit/Debit Card</span>
                     </div>
+                    {canMakeApplePay && (
+                      <div
+                        className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'applePay' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
+                        onClick={() => handleInputChange('paymentMethod', 'applePay')}
+                      >
+                        <CreditCard className="h-5 w-5 text-gray-600" /> {/* Using CreditCard icon for now, ideally an Apple Pay icon */}
+                        <span className="font-semibold text-gray-800">Apple Pay</span>
+                      </div>
+                    )}
                   </div>
 
-
+                  {formData.paymentMethod === 'card' && clientSecret && (
+                    <div className="mt-4">
+                      <CheckoutForm
+                        clientSecret={clientSecret}
+                        onSuccessfulPayment={handlePlaceOrder}
+                        total={total}
+                        selectedPaymentMethod={formData.paymentMethod}
+                        showPayButton={false} // Hide the button in Step 2
+                        onCanMakePaymentResult={handleCanMakePaymentResult}
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
@@ -560,11 +585,18 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-700"> {/* Added text-sm text-gray-700 */}
                       {formData.paymentMethod === 'card' ? 'Credit/Debit Card' : 'Cash on Delivery'}
                     </p>
-                    {formData.paymentMethod === 'card' && clientSecret && (
+                    {(formData.paymentMethod === 'card' || formData.paymentMethod === 'applePay') && clientSecret && (
                       <div className="mt-4">
-                        <CheckoutForm clientSecret={clientSecret} onSuccessfulPayment={(paymentIntentId) => {
-                          handlePlaceOrder(paymentIntentId);
-                        }} total={total} />
+                        <CheckoutForm
+                          clientSecret={clientSecret}
+                          onSuccessfulPayment={(paymentIntentId) => {
+                            handlePlaceOrder(paymentIntentId);
+                          }}
+                          total={total}
+                          selectedPaymentMethod={formData.paymentMethod}
+                          showPayButton={formData.paymentMethod === 'card'} // Only show the Pay button for card payments
+                          onCanMakePaymentResult={handleCanMakePaymentResult}
+                        />
                       </div>
                     )}
                   </div>

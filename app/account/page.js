@@ -13,6 +13,7 @@ import { useCart } from '../context/CartContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Modal from '../components/Modal';
 import AddressInputForm from '../components/AddressInputForm'; // New import for the reusable form
+import AddPaymentMethodForm from '../components/AddPaymentMethodForm'; // New import for the payment form
 
 const AccountPageContent = () => {
   const { user, logout } = useAuth(); // Get authenticated user and logout from context
@@ -31,6 +32,7 @@ const AccountPageContent = () => {
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
   const [wishlistItems, setWishlistItems] = useState([]);
   const [addresses, setAddresses] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [profileData, setProfileData] = useState({
@@ -97,7 +99,7 @@ const AccountPageContent = () => {
         try {
           const response = await fetchWithAuth(`/api/wishlist?userId=${user.id}`);
           const data = await response.json();
-          setWishlistItems(data || []);
+          setWishlistItems(data.wishlist || []);
         } catch (error) {
           console.error('Failed to fetch wishlist:', error);
           setWishlistItems([]);
@@ -105,6 +107,23 @@ const AccountPageContent = () => {
       };
 
       fetchWishlist();
+    }
+  }, [user, activeTab, fetchWithAuth]);
+
+  useEffect(() => {
+    if (user && activeTab === 'payment') {
+      const fetchPaymentMethods = async () => {
+        try {
+          const response = await fetchWithAuth(`/api/payment-methods`);
+          const data = await response.json();
+          setPaymentMethods(data || []);
+        } catch (error) {
+          console.error('Failed to fetch payment methods:', error);
+          setPaymentMethods([]);
+        }
+      };
+
+      fetchPaymentMethods();
     }
   }, [user, activeTab, fetchWithAuth]);
 
@@ -263,6 +282,25 @@ const AccountPageContent = () => {
       } catch (error) {
         console.error('Failed to remove address:', error);
         alert('An error occurred while removing the address.');
+      }
+    }
+  };
+
+  const handleRemovePaymentMethod = async (paymentMethodId) => {
+    if (!user) return;
+
+    if (confirm('Are you sure you want to remove this payment method?')) {
+      try {
+        await fetchWithAuth(`/api/payment-methods`, {
+          method: 'DELETE',
+          body: JSON.stringify({ paymentMethodId }),
+        });
+
+        setPaymentMethods(prev => prev.filter(method => method.id !== paymentMethodId));
+        alert('Payment method removed successfully!');
+      } catch (error) {
+        console.error('Failed to remove payment method:', error);
+        alert('An error occurred while removing the payment method.');
       }
     }
   };
@@ -694,10 +732,34 @@ const AccountPageContent = () => {
 
               {/* Other tabs would be implemented similarly */}
               {activeTab === 'payment' && (
-                <div className="text-center">
-                  <HandCoins className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <div>
                   <h2 className="text-2xl mb-6">Payment Methods</h2>
-                  <p className="text-gray-600">We currently support Cash on Delivery for now only.</p>
+                  <div className="space-y-4">
+                    {paymentMethods.map((method) => (
+                      <div key={method.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                        <div>
+                          <p className="font-semibold">{method.card.brand.charAt(0).toUpperCase() + method.card.brand.slice(1)} **** {method.card.last4}</p>
+                          <p className="text-sm text-gray-500">Expires {method.card.exp_month}/{method.card.exp_year}</p>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handleRemovePaymentMethod(method.id)}>Remove</Button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-6">
+                    <AddPaymentMethodForm onSuccess={() => {
+                      const fetchPaymentMethods = async () => {
+                        try {
+                          const response = await fetchWithAuth(`/api/payment-methods`);
+                          const data = await response.json();
+                          setPaymentMethods(data || []);
+                        } catch (error) {
+                          console.error('Failed to fetch payment methods:', error);
+                          setPaymentMethods([]);
+                        }
+                      };
+                      fetchPaymentMethods();
+                    }} />
+                  </div>
                 </div>
               )}
 
