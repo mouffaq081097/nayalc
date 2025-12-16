@@ -507,6 +507,12 @@ export default function CheckoutPage() {
                       </Elements>
                     </div>
                   )}
+                  {formData.paymentMethod === 'card' && !clientSecret && (
+                    <div className="mt-4 text-red-500">
+                      <p>Payment processing is not available. Please ensure your Stripe keys are configured and the payment intent API is working.</p>
+                      {console.error("DEBUG: clientSecret is null when payment method is 'card'. Check Vercel function logs for /api/create-payment-intent and ensure STRIPE_SECRET_KEY is set.")}
+                    </div>
+                  )}
 
                   <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
