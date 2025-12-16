@@ -18,9 +18,6 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { createFetchWithAuth } from '../lib/api'; // Changed import
 import dynamic from 'next/dynamic';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements } from '@stripe/react-stripe-js';
-import CheckoutForm from './CheckoutForm';
 
 
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
@@ -41,17 +38,6 @@ export default function CheckoutPage() {
   const [editingAddress, setEditingAddress] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [showAllAddresses, setShowAllAddresses] = useState(false); // New state for address visibility
-  const [clientSecret, setClientSecret] = useState(null);
-
-  const stripePromise = useMemo(() => {
-    if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) {
-      return loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
-    }
-    console.error("NEXT_PUBLIC_STRIPE_PUBLIC_KEY is not set. Stripe Elements will not load.");
-    return null;
-  }, []);
-
-
 
   const [formData, setFormData] = useState({
     // Payment Info
@@ -198,31 +184,6 @@ export default function CheckoutPage() {
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
-
-  useEffect(() => {
-    if ((formData.paymentMethod === 'card' || formData.paymentMethod === 'applePay') && total > 0) {
-      const createPaymentIntent = async () => {
-        try {
-          const response = await fetchWithAuth('/api/create-payment-intent', {
-            method: 'POST',
-            body: JSON.stringify({ amount: Math.round(total * 100), currency: 'aed' }),
-          });
-          const data = await response.json();
-          if (data.clientSecret) {
-            console.log('Client secret received:', data.clientSecret);
-            setClientSecret(data.clientSecret);
-          } else {
-            console.error('Error creating payment intent:', data.error);
-            toast.error('Error initializing payment.');
-          }
-        } catch (error) {
-          console.error('Error creating payment intent:', error);
-          toast.error('Error initializing payment.');
-        }
-      };
-      createPaymentIntent();
-    }
-  }, [formData.paymentMethod, total, fetchWithAuth]);
 
   const handleNextStep = () => {
     // Basic validation before moving to next step
@@ -490,30 +451,7 @@ export default function CheckoutPage() {
                       <CreditCard className="h-5 w-5 text-gray-600" />
                       <span className="font-semibold text-gray-800">Cash on Delivery</span>
                     </div>
-                    <div
-                      className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'card' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
-                      onClick={() => handleInputChange('paymentMethod', 'card')}
-                    >
-                      <CreditCard className="h-5 w-5 text-gray-600" />
-                      <span className="font-semibold text-gray-800">Credit/Debit Card</span>
-                    </div>
-
                   </div>
-
-                  {formData.paymentMethod === 'card' && clientSecret && stripePromise && (
-                    <div className="mt-4">
-                      {console.log('DEBUG: Rendering Elements with:', { clientSecret, stripePromise: !!stripePromise })}
-                      <Elements stripe={stripePromise} options={{ clientSecret }}>
-                        <CheckoutForm onSuccessfulPayment={handlePlaceOrder} />
-                      </Elements>
-                    </div>
-                  )}
-                  {formData.paymentMethod === 'card' && !clientSecret && (
-                    <div className="mt-4 text-red-500">
-                      <p>Payment processing is not available. Please ensure your Stripe keys are configured and the payment intent API is working.</p>
-                      {console.error("DEBUG: clientSecret is null when payment method is 'card'. Check Vercel function logs for /api/create-payment-intent and ensure STRIPE_SECRET_KEY is set.")}
-                    </div>
-                  )}
 
                   <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
