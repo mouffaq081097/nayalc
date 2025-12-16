@@ -8,10 +8,11 @@ export async function POST(req) {
   try {
     const { amount, currency } = await req.json();
 
+    const allowedPaymentMethodTypes = ['card', 'apple_pay', 'link'];
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
-      payment_method_types: ['card', 'apple_pay', 'link'], // Enable Apple Pay, card, and Link
+      payment_method_types: [...allowedPaymentMethodTypes], // Ensure it's a new array
     });
 
     return NextResponse.json({ clientSecret: paymentIntent.client_secret });
