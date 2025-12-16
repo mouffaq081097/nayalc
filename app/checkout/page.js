@@ -575,8 +575,12 @@ export default function CheckoutPage() {
                       <CreditCard className="h-5 w-5 text-[var(--brand-pink)]" /> {/* Increased icon size, added brand color */}
                       Payment Method
                     </h3>
-                    <p className="text-sm text-gray-700"> {/* Added text-sm text-gray-700 */}
-                      {formData.paymentMethod === 'card' ? 'Credit/Debit Card' : 'Cash on Delivery'}
+                    <p className="text-sm text-gray-700">
+                      {formData.paymentMethod === 'card'
+                        ? 'Credit/Debit Card'
+                        : formData.paymentMethod === 'applePay'
+                        ? 'Apple Pay'
+                        : 'Cash on Delivery'}
                     </p>
                     {(formData.paymentMethod === 'card' || formData.paymentMethod === 'applePay') && clientSecret && (
                       <div className="mt-4">
