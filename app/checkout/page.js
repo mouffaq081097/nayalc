@@ -190,7 +190,7 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (formData.paymentMethod === 'card' && total > 0) {
+    if ((formData.paymentMethod === 'card' || formData.paymentMethod === 'applePay') && total > 0) {
       const createPaymentIntent = async () => {
         try {
           const response = await fetchWithAuth('/api/create-payment-intent', {
