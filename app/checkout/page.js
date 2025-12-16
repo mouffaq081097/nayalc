@@ -44,9 +44,11 @@ export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState(null);
 
   const stripePromise = useMemo(() => {
-    return process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY
-      ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)
-      : null;
+    if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY) {
+      return loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
+    }
+    console.error("NEXT_PUBLIC_STRIPE_PUBLIC_KEY is not set. Stripe Elements will not load.");
+    return null;
   }, []);
 
 
