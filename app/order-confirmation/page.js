@@ -9,7 +9,8 @@ import Link from 'next/link';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
 
-export default function Page() {
+// This is the component that uses useSearchParams
+function OrderConfirmationWrapper() {
   const searchParams = useSearchParams();
   const paymentIntentClientSecret = searchParams.get('payment_intent_client_secret');
 
@@ -18,9 +19,7 @@ export default function Page() {
     return { clientSecret: paymentIntentClientSecret };
   }, [paymentIntentClientSecret]);
 
-
   if (!paymentIntentClientSecret || !options) {
-    // Render a fallback or redirect if no client secret is found
     return (
       <div className="container mx-auto p-4 text-center">
         <h1 className="text-3xl font-bold mb-4">Error</h1>
@@ -33,10 +32,16 @@ export default function Page() {
   }
 
   return (
+    <Elements stripe={stripePromise} options={options}>
+      <OrderConfirmation />
+    </Elements>
+  );
+}
+
+export default function Page() {
+  return (
     <Suspense fallback={<div>Loading...</div>}>
-      <Elements stripe={stripePromise} options={options}>
-        <OrderConfirmation />
-      </Elements>
+      <OrderConfirmationWrapper />
     </Suspense>
   );
 }
