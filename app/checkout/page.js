@@ -18,6 +18,9 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { createFetchWithAuth } from '../lib/api'; // Changed import
 import dynamic from 'next/dynamic';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import CheckoutForm from './CheckoutForm'; // Import the CheckoutForm
 
 
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
@@ -38,6 +41,8 @@ export default function CheckoutPage() {
   const [editingAddress, setEditingAddress] = useState(null);
   const [couponCode, setCouponCode] = useState('');
   const [showAllAddresses, setShowAllAddresses] = useState(false); // New state for address visibility
+  const [stripePromise, setStripePromise] = useState(null);
+  const [clientSecret, setClientSecret] = useState('');
 
   const [formData, setFormData] = useState({
     // Payment Info
@@ -50,6 +55,11 @@ export default function CheckoutPage() {
   });
 
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity); // Define hasStockIssues here
+
+  const shipping = subtotal > 200 ? 0 : 30; // Free shipping if subtotal > 200 AED, otherwise 30 AED
+  const tax = subtotal * 0.05; // 5% tax on AED subtotal
+  const giftWrapFee = formData.giftWrap ? 100 : 0; // Assuming 100 AED for gift wrap
+  const total = finalTotal + shipping + tax + giftWrapFee;
 
   const fetchShippingAddresses = useCallback(async () => {
     if (!user || !user.id) return;
@@ -75,6 +85,43 @@ export default function CheckoutPage() {
       setSelectedAddressId(null);
     }
   }, [user, fetchShippingAddresses]);
+
+  useEffect(() => {
+    setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY));
+  }, []);
+
+  useEffect(() => {
+    if (formData.paymentMethod === 'card' && total > 0) {
+      console.log('DEBUG: Payment method is "card", attempting to create payment intent.');
+      fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Math.round(total * 100), currency: 'aed' }),
+      })
+      .then((res) => {
+        if (!res.ok) {
+          console.error('DEBUG: Failed to fetch payment intent. Status:', res.status);
+          return res.json().then(errorData => {
+            console.error('DEBUG: Server error response:', errorData);
+            throw new Error('Failed to create payment intent.');
+          });
+        }
+        return res.json();
+      })
+      .then((data) => {
+        const { clientSecret } = data;
+        console.log('DEBUG: Client secret received:', clientSecret);
+        if (!clientSecret) {
+          console.error("DEBUG: clientSecret is null or undefined in the response. Full response:", data);
+        }
+        setClientSecret(clientSecret);
+      })
+      .catch(error => {
+        console.error('DEBUG: Catch block error:', error);
+        toast.error('Could not initialize card payment. Please try again.');
+      });
+    }
+  }, [formData.paymentMethod, total]);
 
   // Update CartContext whenever local selectedAddressId changes
   useEffect(() => {
@@ -163,11 +210,6 @@ export default function CheckoutPage() {
       toast.error('Error deleting address: ' + error.message);
     }
   };
-
-  const shipping = subtotal > 200 ? 0 : 30; // Free shipping if subtotal > 200 AED, otherwise 30 AED
-  const tax = subtotal * 0.05; // 5% tax on AED subtotal
-  const giftWrapFee = formData.giftWrap ? 100 : 0; // Assuming 100 AED for gift wrap
-  const total = finalTotal + shipping + tax + giftWrapFee;
 
   const truncateDescription = (description, maxLength = 100) => {
     if (!description) return '';
@@ -445,6 +487,13 @@ export default function CheckoutPage() {
 
                   <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
                     <div
+                      className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'card' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
+                      onClick={() => handleInputChange('paymentMethod', 'card')}
+                    >
+                      <CreditCard className="h-5 w-5 text-gray-600" />
+                      <span className="font-semibold text-gray-800">Credit/Debit Card</span>
+                    </div>
+                    <div
                       className={`p-4 bg-gray-50 rounded-xl flex-1 flex items-center gap-3 cursor-pointer ${formData.paymentMethod === 'cashOnDelivery' ? 'border-2 border-[var(--brand-pink)]' : ''}`}
                       onClick={() => handleInputChange('paymentMethod', 'cashOnDelivery')}
                     >
@@ -452,6 +501,12 @@ export default function CheckoutPage() {
                       <span className="font-semibold text-gray-800">Cash on Delivery</span>
                     </div>
                   </div>
+
+                  {formData.paymentMethod === 'card' && clientSecret && stripePromise && (
+                    <Elements stripe={stripePromise} options={{ clientSecret }}>
+                      <CheckoutForm onSuccessfulPayment={handlePlaceOrder} />
+                    </Elements>
+                  )}
 
                   <div className="space-y-4 p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-2"> {/* Changed space-x-2 to gap-2 */}
@@ -570,6 +625,7 @@ export default function CheckoutPage() {
                         {isPlacingOrder ? 'Processing...' : 'Place Order'}
                       </Button>
                     )}
+                    {/* For card payments, the button is inside CheckoutForm, so we render nothing here */}
                   </>
                 )}
               </div>
