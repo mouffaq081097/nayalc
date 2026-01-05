@@ -1,9 +1,11 @@
 'use client';
-import { Home, ShoppingBag, Star, User, Heart } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Home, ShoppingBag, Star, User, Heart, MessageSquare } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 
 
 
@@ -11,22 +13,49 @@ const navItems = [
   { id: 'home', icon: Home, label: 'Home' },                                                     
   { id: 'wishlist', icon: Heart, label: 'Wishlist' },                                             
   { id: 'loyalty', icon: Star, label: 'Rewards' },                                                
-  { id: 'cart', icon: ShoppingBag, label: 'Cart' },                                               
+  { id: 'chat', icon: MessageSquare, label: 'Chat' },                                               
   { id: 'account', icon: User, label: 'Account' }
 ];
 
 function MobileBottomNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const currentPage = pathname.substring(1);
   const { cartItems } = useCart();
   const { user, isAuthenticated } = useAuth();
+  const { isChatOpen, setIsChatOpen } = useAppContext();
+  
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const controlNavbar = () => {
+      if (typeof window !== 'undefined') {
+        // Only trigger hide/show after scrolling more than 10px to avoid jitter
+        if (Math.abs(window.scrollY - lastScrollY) > 10) {
+          if (window.scrollY > lastScrollY && window.scrollY > 50) { // scrolling down
+            setIsVisible(false);
+          } else { // scrolling up
+            setIsVisible(true);
+          }
+          setLastScrollY(window.scrollY);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', controlNavbar);
+    return () => {
+      window.removeEventListener('scroll', controlNavbar);
+    };
+  }, [lastScrollY]);
+
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
   const handleItemClick = (itemId) => {
-    if (itemId === 'cart') {
-      router.push('/cart');
+    if (itemId === 'chat') {
+      setIsChatOpen(!isChatOpen);
       return;
     }
+
     const routeMap = {
       home: '/',
       account: '/account',
@@ -34,118 +63,94 @@ function MobileBottomNav() {
       wishlist: '/wishlist',
     };
 
-    const authenticatedRoutes = ['account', 'loyalty', 'wishlist'];
-
-    if (authenticatedRoutes.includes(itemId) && !isAuthenticated) {
+    if (['account', 'loyalty', 'wishlist'].includes(itemId) && !isAuthenticated) {
       router.push('/auth');
       return;
     }
 
-    const route = routeMap[itemId] || `/${itemId}`;
-    router.push(route);
+    router.push(routeMap[itemId] || `/${itemId}`);
   };
 
-  const isActive = (itemId) => {
-    const activeMap = {
-      home: '',
-      cart: 'cart',
-      account: 'account',
-      loyalty: 'loyalty',
-      wishlist: 'wishlist',
-    };
-    return itemId in activeMap && activeMap[itemId] === currentPage;
+  const getActiveTab = () => {
+    if (isChatOpen) return 'chat';
+    if (pathname === '/') return 'home';
+    if (pathname.includes('wishlist')) return 'wishlist';
+    if (pathname.includes('loyalty')) return 'loyalty';
+    if (pathname.includes('account')) return 'account';
+    return 'home';
   };
+
+  const activeTab = getActiveTab();
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
-      {/* Background with blur effect */}
-      <div className="absolute inset-0 bg-white/95 backdrop-blur-lg border-t border-gray-100"></div>
-      
-      {/* Navigation Items */}
-      <nav className="relative flex items-center justify-around px-2 py-2 safe-area-bottom">
-        {navItems.map((item) => {
-          const isItemActive = isActive(item.id);
-          
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleItemClick(item.id)}
-              className="relative flex flex-col items-center justify-center p-3 min-w-[60px] group"
-            >
-              {/* Active indicator */}
-              {isItemActive && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute inset-0 bg-gradient-to-r from-[var(--brand-blue)]/10 to-[var(--brand-pink)]/10 rounded-2xl"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-              
-              {/* Icon Container */}
-              <div className="relative">
-                {item.id === 'account' && user ? (
-                  // Display user image or initial if available
-                  // For now, just display a placeholder or initial
-                  <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                    {user.first_name ? user.first_name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
-                  </div>
-                ) : (
-                  <item.icon 
-                    className={`h-6 w-6 transition-colors duration-200 ${
-                      isItemActive 
-                        ? 'text-[var(--brand-pink)]' 
-                        : 'text-gray-400 group-hover:text-gray-600'
-                    }`}
-                  />
-                )}
-                
-                {/* Cart Badge */}
-                {item.id === 'cart' && cartCount > 0 && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-2 -right-2 bg-[var(--brand-pink)] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                  >
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </motion.div>
-                )}
-
-                {/* Loyalty Points Badge */}
-                {item.id === 'loyalty' && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white text-xs rounded-full h-4 w-4 flex items-center justify-center"
-                  >
-                    <Star className="h-2 w-2 fill-current" />
-                  </motion.div>
-                )}
-              </div>
-              
-              {/* Label */}
-              <span 
-                className={`text-xs mt-1 transition-colors duration-200 ${
-                  isItemActive 
-                    ? 'text-[var(--brand-pink)]' 
-                    : 'text-gray-400 group-hover:text-gray-600'
-                }`}
+    <motion.div 
+      initial={{ y: 0 }}
+      animate={{ y: isVisible ? 0 : 100 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="md:hidden fixed bottom-8 left-0 right-0 z-[70] px-6 pointer-events-none"
+    >
+      <nav className="max-w-md mx-auto bg-white/90 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[3rem] p-2 pointer-events-auto flex items-center justify-between relative">
+        <AnimatePresence mode="popLayout">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleItemClick(item.id)}
+                className="relative flex items-center justify-center transition-all duration-500"
               >
-                {item.id === 'account' && user ? (user.first_name || user.username) : item.label}
-              </span>
-              
-              {/* Active dot indicator */}
-              {isItemActive && (
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -bottom-1 w-1 h-1 bg-[var(--brand-pink)] rounded-full"
-                />
-              )}
-            </button>
-          );
-        })}
+                  layout
+                  initial={false}
+                  animate={{
+                    width: isActive ? 'auto' : '48px',
+                    backgroundColor: isActive ? '#111827' : 'transparent',
+                  }}
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  className={`flex items-center gap-2 h-12 px-3 rounded-full ${
+                    isActive ? 'text-white shadow-lg shadow-black/10' : 'text-gray-400'
+                  }`}
+                >
+                  <div className="relative">
+                    {item.id === 'account' && user ? (
+                      <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${
+                        isActive ? 'bg-white text-gray-900' : 'bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-pink)] text-white'
+                      }`}>
+                        {(user.name || user.first_name || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    ) : (
+                      <item.icon 
+                        className="h-5 w-5" 
+                        strokeWidth={isActive ? 2.5 : 2}
+                      />
+                    )}
+
+                    {/* Badge for Cart - removed as cart was replaced by chat */}
+                  </div>
+
+                  {isActive && (
+                    <motion.span
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      className="text-xs font-bold whitespace-nowrap pr-1"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </motion.div>
+
+                {/* Rewards Pulse Dot */}
+                {item.id === 'loyalty' && !isActive && (
+                  <span className="absolute top-3 right-3 w-2 h-2 bg-amber-400 rounded-full animate-ping opacity-75" />
+                )}
+              </button>
+            );
+          })}
+        </AnimatePresence>
       </nav>
-    </div>
+    </motion.div>
   );
 }
 

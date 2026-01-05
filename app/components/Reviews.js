@@ -23,8 +23,8 @@ export default function Reviews({ productId }) {
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { user, token } = useAuth(); // Access user and token from AuthContext
-  const isAdmin = user && user.id === 2; // Check if the user is userId 2 for delete privileges
+  const { user } = useAuth(); // Access user from AuthContext
+  const isAdmin = user?.role === 'admin'; // Check if the user is an admin
 
   const fetchReviews = async () => {
     try {
@@ -91,17 +91,15 @@ export default function Reviews({ productId }) {
     if (!confirm('Are you sure you want to delete this review?')) {
       return;
     }
-    if (!token) {
-      setError('Authentication token is missing. Please log in as an administrator.');
+    if (!isAdmin) {
+      setError('You are not authorized to delete reviews.');
       return;
     }
 
     try {
+      // The browser will automatically send the session cookie for authentication
       const response = await fetch(`/api/reviews?id=${reviewId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
 
       if (!response.ok) {

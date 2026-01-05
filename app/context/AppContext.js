@@ -19,6 +19,7 @@ export const AppProvider = ({ children }) => {
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]); // New state for brands
   const [featuredProducts, setFeaturedProducts] = useState([]); // New state for featured products
+  const [isChatOpen, setIsChatOpen] = useState(false); // Global chat widget state
 
   // Function to fetch orders from the backend
   const fetchOrders = useCallback(async () => {
@@ -445,7 +446,8 @@ export const AppProvider = ({ children }) => {
       addProduct, updateProduct, deleteProduct,
       fetchProductsByCategory,
       fetchProducts,
-      fetchWithAuth
+      fetchWithAuth,
+      isChatOpen, setIsChatOpen
         }}>
           {children}
         </AppContext.Provider>

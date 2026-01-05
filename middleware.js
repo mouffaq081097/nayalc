@@ -1,32 +1,18 @@
 
-import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose'; // Import jwtVerify from jose
+import { withAuth } from 'next-auth/middleware';
 
-export async function middleware(request) {
-  const token = request.headers.get('authorization')?.split(' ')[1];
-
-  if (!token) {
-    return NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 });
-  }
-
-  // Ensure JWT_SECRET is defined and convert it to a Uint8Array
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error('JWT_SECRET is not defined in environment variables.');
-    return NextResponse.json({ error: 'Internal Server Error: JWT_SECRET not configured' }, { status: 500 });
-  }
-  const secretKey = new TextEncoder().encode(secret);
-
-  try {
-    // Use jose's jwtVerify
-    await jwtVerify(token, secretKey);
-    return NextResponse.next();
-  } catch (error) {
-    console.error('JWT Verification Error:', error.message);
-    return NextResponse.json({ error: 'Unauthorized: Invalid token', details: error.message }, { status: 401 });
-  }
-}
-
+export default withAuth({
+  callbacks: {
+    authorized: ({ req, token }) => {
+      // Example: Only allow admin to access '/api/admin' routes
+      if (req.nextUrl.pathname.startsWith('/api/admin')) {
+        return token?.role === 'admin';
+      }
+      // Allow authenticated users to access all other matched routes
+      return !!token;
+    },
+  },
+});
 
 export const config = {
   matcher: [

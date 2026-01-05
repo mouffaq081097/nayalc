@@ -9,7 +9,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Separator } from '../components/ui/separator';
 import { Badge } from '../components/ui/badge'; // New import for Badge
 import { Card, CardTitle } from '../components/ui/card';
-import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, Tag, Info, Trash2, Pencil } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, Tag, Info, Trash2, Pencil, Star } from 'lucide-react';
 import { FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
@@ -43,6 +43,8 @@ export default function CheckoutPage() {
   const [showAllAddresses, setShowAllAddresses] = useState(false); // New state for address visibility
   const [stripePromise, setStripePromise] = useState(null);
   const [clientSecret, setClientSecret] = useState('');
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [usePoints, setUsePoints] = useState(false);
 
   const [formData, setFormData] = useState({
     // Payment Info
@@ -59,7 +61,9 @@ export default function CheckoutPage() {
   const shipping = subtotal > 200 ? 0 : 30; // Free shipping if subtotal > 200 AED, otherwise 30 AED
   const tax = subtotal * 0.05; // 5% tax on AED subtotal
   const giftWrapFee = formData.giftWrap ? 100 : 0; // Assuming 100 AED for gift wrap
-  const total = finalTotal + shipping + tax + giftWrapFee;
+  
+  const pointsDiscount = usePoints ? Math.floor(loyaltyPoints / 100) * 5 : 0;
+  const total = Math.max(0, finalTotal + shipping + tax + giftWrapFee - pointsDiscount);
 
   const fetchShippingAddresses = useCallback(async () => {
     if (!user || !user.id) return;
@@ -80,6 +84,11 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (user) {
       fetchShippingAddresses();
+      // Fetch loyalty points
+      fetchWithAuth(`/api/users/${user.id}/loyalty`)
+        .then(res => res.json())
+        .then(data => setLoyaltyPoints(data.stats?.points || 0))
+        .catch(err => console.error('Failed to fetch points:', err));
     } else {
       setShippingAddresses([]);
       setSelectedAddressId(null);
@@ -279,6 +288,8 @@ export default function CheckoutPage() {
       taxAmount: tax,
       applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
       discount_amount: discountAmount,
+      redeemed_points: usePoints ? Math.floor(loyaltyPoints / 100) * 100 : 0,
+      points_discount: pointsDiscount,
       gift_wrap: formData.giftWrap,
       gift_wrap_cost: giftWrapFee,
       stripe_payment_intent_id: paymentIntentId,
@@ -665,6 +676,31 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* Loyalty Points Redemption */}
+              {loyaltyPoints >= 100 && (
+                <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-amber-600 fill-current" />
+                      <span className="text-sm font-bold text-amber-900">Lumière Prestige</span>
+                    </div>
+                    <Badge className="bg-amber-200 text-amber-800 border-none text-[10px]">
+                      {loyaltyPoints} PTS
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Checkbox 
+                      id="redeemPoints" 
+                      checked={usePoints}
+                      onCheckedChange={setUsePoints}
+                    />
+                    <Label htmlFor="redeemPoints" className="text-xs text-amber-800 leading-tight">
+                      Redeem {Math.floor(loyaltyPoints / 100) * 100} points for <strong>AED {Math.floor(loyaltyPoints / 100) * 5}</strong> off?
+                    </Label>
+                  </div>
+                </div>
+              )}
+
               <Separator className="my-4" />
 
               {/* Coupon Code */}
@@ -698,6 +734,12 @@ export default function CheckoutPage() {
                     <span>Discount ({appliedCoupon.code})</span>
                     <span>- AED {discountAmount.toFixed(2)}</span>
                     <Button variant="ghost" size="sm" onClick={removeCoupon}>Remove</Button>
+                  </div>
+                )}
+                {usePoints && (
+                  <div className="flex justify-between text-amber-600 font-medium">
+                    <span>Points Discount</span>
+                    <span>- AED {pointsDiscount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">

@@ -220,13 +220,38 @@ export async function POST(request) {
     
     const client = await db.connect();
     try {
-        const { user_address_id, payment_method, total_amount, shipping_scheduled_date, user_id, items, taxAmount, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap = false, gift_wrap_cost = 0, stripe_payment_intent_id = null } = await request.json();
+        const { 
+            user_address_id, payment_method, total_amount, shipping_scheduled_date, 
+            user_id, items, taxAmount, applied_coupon_id, discount_amount, subtotal, 
+            shipping_cost, gift_wrap = false, gift_wrap_cost = 0, 
+            stripe_payment_intent_id = null,
+            redeemed_points = 0, points_discount = 0
+        } = await request.json();
 
         if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0 || taxAmount === undefined || subtotal === undefined || shipping_cost === undefined) {
             return NextResponse.json({ message: 'Missing required order information or items.' }, { status: 400 });
         }
 
         await client.query('BEGIN');
+
+        // --- Loyalty Redemption Logic ---
+        if (redeemed_points > 0) {
+            const userRes = await client.query('SELECT loyalty_points FROM users WHERE id = $1', [user_id]);
+            if (userRes.rows[0].loyalty_points < redeemed_points) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: 'Insufficient loyalty points' }, { status: 400 });
+            }
+            
+            // Deduct points
+            await client.query('UPDATE users SET loyalty_points = loyalty_points - $1 WHERE id = $2', [redeemed_points, user_id]);
+            
+            // Record transaction
+            await client.query(
+                'INSERT INTO loyalty_transactions (user_id, type, points, description) VALUES ($1, $2, $3, $4)',
+                [user_id, 'redeem', -redeemed_points, 'Redeemed during Checkout']
+            );
+        }
+        // --- End Loyalty Redemption ---
 
         // --- Stock Validation ---
         for (const item of items) {

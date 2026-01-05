@@ -29,6 +29,7 @@ export async function GET(request) {
                 p.price, 
                 p.description, 
                 p.vendor as "brand", 
+                p.vendor as "brandName", 
                 p.stock_quantity as "stockQuantity",
                 (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as "imageUrl" 
             FROM user_wishlists uw 

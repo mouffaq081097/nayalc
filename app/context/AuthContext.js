@@ -1,54 +1,36 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import React, { createContext, useContext } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession, signIn, signOut } from 'next-auth/react';
+import { toast } from 'react-hot-toast';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter(); // Initialize useRouter
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  useEffect(() => {
-    const loadUserFromLocalStorage = () => {
-      try {
-        const storedUser = localStorage.getItem('user');
-        const storedToken = localStorage.getItem('token');
-        if (storedUser && storedToken) {
-          setUser(JSON.parse(storedUser));
-          setToken(storedToken);
-        }
-      } catch (error) {
-        console.error('AuthContext: Failed to load user from local storage:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadUserFromLocalStorage();
-  }, []);
+  const user = session?.user || null;
+  const loading = status === 'loading';
+  const isAuthenticated = status === 'authenticated';
 
   const login = async (email, password) => {
-    const response = await fetch(`/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
+    const result = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Login failed');
+    if (result?.error) {
+      const errorMessage = 'Invalid email or password.';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     }
 
-    const data = await response.json();
-    setUser(data.user);
-    setToken(data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
-    localStorage.setItem('token', data.token);
-    
-    router.push('/'); // Redirect after successful login
+    if (result?.ok) {
+      toast.success('Logged in successfully!');
+      router.push('/'); // Redirect after successful login
+    }
   };
 
   const register = async (username, email, password, firstName, lastName) => {
@@ -62,6 +44,7 @@ export const AuthProvider = ({ children }) => {
 
     if (!response.ok) {
       const errorData = await response.json();
+      toast.error(errorData.error || 'Registration failed');
       throw new Error(errorData.error || 'Registration failed');
     }
 
@@ -70,15 +53,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    router.push('/auth'); // Redirect to login page instead of hard reload
+    signOut({ callbackUrl: '/auth' });
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, register, loading, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, login, logout, register, loading, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

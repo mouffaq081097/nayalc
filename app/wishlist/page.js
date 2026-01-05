@@ -57,7 +57,8 @@ export default function WishlistPage() {
           throw new Error('Failed to fetch wishlist');
         }
         const data = await response.json();
-        const processedWishlistItems = data.map(item => ({
+        const items = data.wishlist || [];
+        const processedWishlistItems = items.map(item => ({
           ...item,
           image: item.imageUrl || null, // Add 'image' property for ImageWithFallback
           inStock: item.stockQuantity > 0, // Derive inStock from stockQuantity
@@ -128,7 +129,13 @@ export default function WishlistPage() {
       // Re-fetch wishlist items to update the UI
       const updatedWishlist = await fetch(`/api/wishlist?userId=${user.id}`);
       const data = await updatedWishlist.json();
-      setWishlistItems(data);
+      const items = data.wishlist || [];
+      const processedItems = items.map(item => ({
+        ...item,
+        image: item.imageUrl || null,
+        inStock: item.stockQuantity > 0,
+      }));
+      setWishlistItems(processedItems);
     } catch (error) {
       console.error('Error removing item from wishlist:', error);
     }

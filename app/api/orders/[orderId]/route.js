@@ -310,6 +310,47 @@ export async function PUT(request, context) {
 
             await client.query('DELETE FROM order_items WHERE order_id = $1', [orderId]);
             await client.query('DELETE FROM orders WHERE id = $1', [orderId]);
+
+            // --- LOYALTY SYSTEM: Earn Points ---
+            try {
+                // 1. Get user's current loyalty status
+                const userLoyaltyRes = await client.query(
+                    'SELECT loyalty_points, lifetime_spend, loyalty_tier FROM users WHERE id = $1',
+                    [currentOrder.user_id]
+                );
+                
+                if (userLoyaltyRes.rows.length > 0) {
+                    const userLoyalty = userLoyaltyRes.rows[0];
+                    const tierMultiplier = userLoyalty.loyalty_tier === 'Platinum' ? 2 : (userLoyalty.loyalty_tier === 'Gold' ? 1.5 : 1);
+                    const pointsEarned = Math.floor(currentOrder.total_amount * tierMultiplier);
+                    
+                    // 2. Record transaction
+                    await client.query(
+                        'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
+                        [currentOrder.user_id, 'earn', pointsEarned, `Earned from Order #${orderId}`, orderId]
+                    );
+
+                    // 3. Update User: Add points and lifetime spend
+                    const newLifetimeSpend = parseFloat(userLoyalty.lifetime_spend) + currentOrder.total_amount;
+                    
+                    // 4. Calculate New Tier
+                    let newTier = 'Silver';
+                    if (newLifetimeSpend >= 5000) newTier = 'Platinum';
+                    else if (newLifetimeSpend >= 2000) newTier = 'Gold';
+
+                    await client.query(
+                        'UPDATE users SET loyalty_points = loyalty_points + $1, lifetime_spend = $2, loyalty_tier = $3 WHERE id = $4',
+                        [pointsEarned, newLifetimeSpend, newTier, currentOrder.user_id]
+                    );
+                    
+                    console.log(`Loyalty: User ${currentOrder.user_id} earned ${pointsEarned} points. New Tier: ${newTier}`);
+                }
+            } catch (loyaltyError) {
+                console.error('Failed to process loyalty points:', loyaltyError);
+                // We don't rollback the whole order update if loyalty fails, just log it.
+            }
+            // --- END LOYALTY SYSTEM ---
+
         } else if (status === 'Cancelled') {
             const cancelledOrderSql = "INSERT INTO cancelled_orders (\n" +
                 "    id, user_address_id, payment_method, total_amount, tax_amount, discount_amount,\n" +

@@ -27,7 +27,7 @@ export default function LayoutContent({ children }) {
         <Header />
       )}
       <SideCart /> {/* Add SideCart component here */}
-      <main>
+      <main className="min-h-screen pb-32 md:pb-0">
         {children}
       </main>
       {!isAuthPage && !isAdminPage && !isCartPage && !isCheckoutPage && <Newsletter />}

@@ -9,7 +9,7 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ message: 'User ID and Product ID are required.' }, { status: 400 });
         }
 
-        const sql = 'DELETE FROM wishlists WHERE user_id = $1 AND product_id = $2 RETURNING user_id, product_id';
+        const sql = 'DELETE FROM user_wishlists WHERE user_id = $1 AND product_id = $2 RETURNING user_id, product_id';
         const { rows } = await db.query(sql, [userId, productId]);
 
         if (rows.length === 0) {

@@ -11,10 +11,35 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      router.push('/auth');
+      return;
+    }
+
+    try {
+      const method = isWishlisted ? 'DELETE' : 'POST';
+      const response = await fetch('/api/wishlist', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, productId: id })
+      });
+
+      if (response.ok) {
+        setIsWishlisted(!isWishlisted);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+    }
+  };
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -59,11 +84,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
         <button
           className={`absolute top-3 right-3 h-8 w-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all flex items-center justify-center`}
           style={{ color: isWishlisted ? 'var(--brand-pink)' : '#4B5563' }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation(); // Prevent link click
-            setIsWishlisted(!isWishlisted);
-          }}
+          onClick={handleWishlistToggle}
         >
           <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
         </button>
