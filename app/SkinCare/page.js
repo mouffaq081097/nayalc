@@ -1,352 +1,250 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import StoreHeader from '../components/StoreHeader';
+import StoreCategoryNav from '../components/StoreCategoryNav';
 import ProductCard from '../components/ProductCard';
+import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Badge } from '../components/ui/badge';
-import { Droplets, Leaf, Award, Sparkles, Filter, ArrowDownUp, X } from 'lucide-react';
-import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Droplets, Leaf, Award, Sparkles, Filter, ArrowRight, X, Search, Hash } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const skincareBenefits = [
   {
     icon: Droplets,
     title: 'Deep Hydration',
-    description: 'Advanced formulas that penetrate deep for lasting moisture'
+    description: 'Advanced formulas that penetrate deep for lasting moisture.',
+    color: 'text-blue-400'
   },
   {
     icon: Leaf,
-    title: 'Natural Ingredients',
-    description: 'Sustainably sourced botanicals and organic extracts'
+    title: 'Natural Integrity',
+    description: 'Sustainably sourced botanicals and organic extracts.',
+    color: 'text-green-400'
   },
   {
     icon: Award,
     title: 'Clinically Proven',
-    description: 'Dermatologist-tested and scientifically validated results'
+    description: 'Dermatologist-tested and scientifically validated results.',
+    color: 'text-amber-400'
   },
   {
     icon: Sparkles,
-    title: 'Visible Results',
-    description: 'Noticeable improvements in texture, tone, and radiance'
+    title: 'Visible Radiance',
+    description: 'Noticeable improvements in texture, tone, and luminosity.',
+    color: 'text-brand-pink'
   }
 ];
 
 export default function SkincarePage() {
-  const { fetchProductsByCategory } = useAppContext();
+  const { fetchProductsByCategory, products: allProducts } = useAppContext();
   const [skincareProducts, setSkincareProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]); // New state for filtered products
-  const [isFilterOpen, setIsFilterOpen] = useState(false); // New state for filter modal
-  const [isSortOpen, setIsSortOpen] = useState(false); // New state for sort modal
-  const [selectedFilters, setSelectedFilters] = useState({}); // New state for selected filters
-  const [selectedSort, setSelectedSort] = useState('default'); // New state for selected sort
+  const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('featured');
+  const [gridCols, setGridCols] = useState(4);
   const router = useRouter();
-
-  // Placeholder functions
-  const handleFilterClick = () => setIsFilterOpen(!isFilterOpen);
-  const handleSortClick = () => setIsSortOpen(!isSortOpen);
-
-  // Function to apply filters and sort (placeholder for now)
-  const applyFiltersAndSort = useCallback(() => {
-    let products = [...skincareProducts]; // Start with all products
-
-    // Apply filters
-    if (selectedFilters.brand) {
-      products = products.filter(product =>
-        product.brand && product.brand.toLowerCase().includes(selectedFilters.brand.toLowerCase())
-      );
-    }
-
-    if (selectedFilters.maxPrice !== undefined) {
-      products = products.filter(product =>
-        product.price <= selectedFilters.maxPrice
-      );
-    }
-    // ... more filter logic here ...
-
-    // Apply sorting
-    if (selectedSort === 'price_asc') {
-      products.sort((a, b) => a.price - b.price);
-    } else if (selectedSort === 'price_desc') {
-      products.sort((a, b) => b.price - a.price);
-    }
-    // ... more sort logic here ...
-
-    setFilteredProducts(products);
-  }, [skincareProducts, selectedFilters, selectedSort]);
 
   useEffect(() => {
     const getProducts = async () => {
-      const products = await fetchProductsByCategory([1, 3, 5, 6, 7, 8]);
-      setSkincareProducts(products);
-      setFilteredProducts(products); // Initialize filtered products
-      
+      try {
+        setIsLoading(true);
+        // Assuming categories [1, 3, 5, 6, 7, 8] are skincare related
+        const products = await fetchProductsByCategory([1, 3, 5, 6, 7, 8]);
+        setSkincareProducts(products);
+      } finally {
+        setIsLoading(false);
+      }
     };
     getProducts();
   }, [fetchProductsByCategory]);
 
-  // Apply filters and sort whenever skincareProducts, selectedFilters, or selectedSort changes
-  useEffect(() => {
-    applyFiltersAndSort();
-  }, [skincareProducts, selectedFilters, selectedSort, applyFiltersAndSort]);
+  const sortedProducts = useMemo(() => {
+    let products = [...skincareProducts];
+    switch (sortBy) {
+      case 'price-low': products.sort((a, b) => a.price - b.price); break;
+      case 'price-high': products.sort((a, b) => b.price - a.price); break;
+      case 'rating': products.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0)); break;
+      default: products.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+    }
+    return products;
+  }, [skincareProducts, sortBy]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[var(--brand-rose)] via-white to-[var(--brand-cream)] py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <Badge className="mb-6 bg-[var(--brand-blue)] text-white">Premium Skincare</Badge>
-              <h1 className="text-4xl md:text-5xl mb-6">
-                <span className="text-gray-900">Radiant </span>
-                <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-                  Skincare
-                </span>
-              </h1>
-              <p className="text-xl text-gray-600 mb-8">
-                Transform your skin with our scientifically advanced skincare collection. 
-                From gentle cleansers to powerful serums, each product is crafted for visible results.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg"
-                  className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
-                  onClick={() => {
-                    document.getElementById('skincare-products-grid').scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  Shop Skincare
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="border-[var(--brand-blue)] text-[var(--brand-blue)]"
-                  onClick={() => router.push('/skin-quiz')}
-                >
-                  Take Skin Quiz
-                </Button>
-              </div>
-            </div>
-            <div className="relative">
-              <ImageWithFallback
-                src="https://img.freepik.com/free-photo/woman-applying-face-cream_1303-14311.jpg?t=st=1759309544~exp=1759313144~hmac=a2e8b7d959e127279f97ee6b0485d0b1dc4aeec7d4cff75bd90947fa5426d2a5&w=1480"
-                alt="Luxury skincare products"
-                className="w-full h-[400px] object-cover rounded-2xl shadow-2xl"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+      {/* Background Aura */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-pink/[0.03] rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-blue/[0.02] rounded-full blur-[120px]"></div>
+      </div>
 
-      {/* Benefits Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl mb-4">Why Choose Our Skincare</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Each product is formulated with the finest ingredients and cutting-edge technology 
-              to deliver exceptional results for all skin types.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* Tactile Paper Grain Overlay */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+
+      <StoreHeader title="Skincare." />
+      <StoreCategoryNav />
+
+      {/* Skincare Benefits - Dense Boutique Cards */}
+      <section className="py-24 px-6 relative z-20 -mt-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {skincareBenefits.map((benefit, index) => (
-              <div key={index} className="flex items-start gap-4">
-                <div className="flex-shrink-0 inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[var(--brand-blue)]/10 to-[var(--brand-pink)]/10 rounded-2xl">
-                  <benefit.icon className="h-8 w-8 text-[var(--brand-blue)]" />
+              <motion.div 
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-gray-100 shadow-xl group hover:shadow-2xl transition-all duration-700 flex flex-col items-center text-center space-y-5"
+              >
+                <div className="w-16 h-16 rounded-[1.5rem] bg-gray-50 border border-gray-100 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:bg-white group-hover:shadow-lg">
+                  <benefit.icon className={`${benefit.color}`} size={28} strokeWidth={1.5} />
                 </div>
-                <div>
-                  <h3 className="text-lg mb-1 font-semibold">{benefit.title}</h3>
-                  <p className="text-gray-600 text-sm">{benefit.description}</p>
+                <div className="space-y-2">
+                  <h3 className="text-[16px] font-bold tracking-tight text-gray-900 uppercase">{benefit.title}</h3>
+                  <p className="text-[13px] text-gray-400 font-medium tracking-tight leading-relaxed italic">{benefit.description}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Products Section */}
-      <section id="skincare-products-grid" className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl">All Skincare Products</h2>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={handleFilterClick}>
-                <Filter className="h-4 w-4" />
-                Filter
-              </Button>
-              <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={handleSortClick}>
-                <ArrowDownUp className="h-4 w-4" />
-                Sort
-              </Button>
+      {/* Skincare Vault Section */}
+      <section id="skincare-vault" className="py-16 px-6">
+        <div className="container mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-12 border-b border-gray-100 pb-10">
+            <div className="space-y-3 items-start flex flex-col text-left">
+                <div className="flex items-center gap-3">
+                    <span className="w-10 h-px bg-brand-pink"></span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-pink">The Collection</span>
+                </div>
+                <h2 className="text-4xl font-serif italic text-gray-900 leading-none">Skincare Inventory</h2>
+            </div>
+            
+            {/* Command Strip */}
+            <div className="flex items-center gap-4 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2 px-4 border-r border-gray-100 mr-2">
+                    <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Sort</span>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="border-none bg-transparent h-8 text-[10px] font-bold uppercase tracking-widest text-gray-900 focus:ring-0 w-[120px] p-0">
+                            <SelectValue placeholder="Featured" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-200 shadow-2xl">
+                            <SelectItem value="featured" className="text-[10px] uppercase font-bold">Featured</SelectItem>
+                            <SelectItem value="price-low" className="text-[10px] uppercase font-bold">Price: low</SelectItem>
+                            <SelectItem value="price-high" className="text-[10px] uppercase font-bold">Price: high</SelectItem>
+                            <SelectItem value="rating" className="text-[10px] uppercase font-bold">Rating</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                
+                <div className="flex items-center bg-gray-50 p-1 rounded-xl">
+                    {[3, 4].map((num) => (
+                        <button 
+                            key={num}
+                            onClick={() => setGridCols(num)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${gridCols === num ? 'bg-white shadow-sm text-brand-pink' : 'text-gray-300'}`}
+                        >
+                            <Hash size={14} />
+                        </button>
+                    ))}
+                </div>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts && filteredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
+          <div className={`grid grid-cols-2 lg:grid-cols-${gridCols} gap-x-4 lg:gap-x-6 gap-y-8 lg:gap-y-16`}>
+            {isLoading ? (
+                Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)
+            ) : sortedProducts.length === 0 ? (
+                <div className="col-span-full py-40 text-center bg-white rounded-[3rem] border border-dashed border-gray-200">
+                    <p className="text-gray-400 font-serif italic text-2xl">Inventory Synchronization In Progress...</p>
+                </div>
+            ) : (
+                sortedProducts.map((product, index) => (
+                    <motion.div 
+                        key={product.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: (index % 4) * 0.1, duration: 0.8 }}
+                    >
+                        <ProductCard {...product} image={product.imageUrl} />
+                    </motion.div>
+                ))
+            )}
           </div>
         </div>
       </section>
 
-      {/* Routine Guide */}
-      <section className="py-16 bg-gradient-to-br from-[var(--brand-blue)]/5 to-[var(--brand-pink)]/5">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl mb-4">
-              <span className="text-gray-900">Perfect Your </span>
-              <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-                Skincare Routine
-              </span>
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Get personalized recommendations and expert tips to create the ideal skincare routine for your unique needs.
+      {/* Routine Guide - Apple-style Feature Cards */}
+      <section className="py-32 bg-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.3]"></div>
+        <div className="container mx-auto px-6 relative z-10 text-left">
+          <div className="flex flex-col md:flex-row items-center justify-between mb-24 gap-8">
+            <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <span className="h-px w-10 bg-brand-pink/30"></span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-brand-pink">Rituals</span>
+                </div>
+                <h2 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">Master Your <br/> Skincare Protocol</h2>
+            </div>
+            <p className="text-gray-400 text-[15px] font-medium tracking-tight max-w-md italic leading-relaxed">
+              "Biological beauty is achieved through precise synchronization of daily rituals. Our experts curate the sequence for your skin's unique frequency."
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div className="bg-white rounded-2xl p-8 shadow-sm">
-              <div className="text-4xl mb-4">🌅</div>
-              <h3 className="text-xl mb-3">Morning Routine</h3>
-              <p className="text-gray-600 mb-4">Start your day with gentle cleansing, vitamin C serum, and SPF protection.</p>
-              <Button variant="outline" size="sm">Learn More</Button>
-            </div>
-            
-            <div className="bg-white rounded-2xl p-8 shadow-sm">
-              <div className="text-4xl mb-4">🌙</div>
-              <h3 className="text-xl mb-3">Evening Routine</h3>
-              <p className="text-gray-600 mb-4">Repair and rejuvenate with deep cleansing, treatments, and rich moisturizers.</p>
-              <Button variant="outline" size="sm">Learn More</Button>
-            </div>
-            
-            <div className="bg-white rounded-2xl p-8 shadow-sm">
-              <div className="text-4xl mb-4">✨</div>
-              <h3 className="text-xl mb-3">Weekly Treatments</h3>
-              <p className="text-gray-600 mb-4">Enhance your routine with masks, exfoliants, and intensive treatments.</p>
-              <Button variant="outline" size="sm">Learn More</Button>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+                { time: "01", title: "Morning Awakening", desc: "Gentle cleansing followed by vitamin-rich serums and biological protection against environmental stressors.", icon: "🌅" },
+                { time: "02", title: "Evening Restoration", desc: "Deep purification and targeted treatments that synchronize with your skin's nocturnal repair cycle.", icon: "🌙" },
+                { time: "03", title: "Weekly Resurfacing", desc: "Intensive masks and professional-grade exfoliants to accelerate cellular turnover and reveal new light.", icon: "✨" }
+            ].map((routine, i) => (
+                <div key={i} className="bg-gray-50/50 p-10 rounded-[3rem] border border-gray-100 flex flex-col justify-between min-h-[320px] hover:bg-white hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-700 group border-b-[4px] border-b-transparent hover:border-b-brand-pink/20">
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-brand-pink/40 group-hover:text-brand-pink transition-colors">{routine.time}</span>
+                            <span className="text-3xl grayscale group-hover:grayscale-0 transition-all">{routine.icon}</span>
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-serif italic text-gray-900">{routine.title}</h3>
+                            <p className="text-sm text-gray-500 font-medium tracking-tight leading-relaxed italic">{routine.desc}</p>
+                        </div>
+                    </div>
+                    <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-900 mt-10 group-hover:text-brand-pink transition-colors">
+                        Learn Protocol <ArrowRight size={14} />
+                    </button>
+                </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Filter Modal/Panel */}
-      {isFilterOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2 lg:w-1/3 relative">
-            <button
-              onClick={() => setIsFilterOpen(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+      {/* Skincare CTA */}
+      <section className="py-32 relative">
+        <div className="container mx-auto px-6 text-center space-y-12 relative z-10">
+          <div className="space-y-4">
+            <h3 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">
+                Unlock your skin's <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-pink to-brand-blue not-italic font-black uppercase tracking-tighter">Perfect Frequency</span>
+            </h3>
+            <p className="text-gray-400 text-[15px] font-medium tracking-tight max-w-xl mx-auto leading-relaxed italic">
+                Our AI-powered Skin Quiz analyzes your unique biological markers to curate a bespoke selection of masterpieces.
+            </p>
+          </div>
+          <div className="max-w-md mx-auto relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-brand-pink/20 to-brand-blue/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+            <button 
+                onClick={() => router.push('/skin-quiz')}
+                className="relative w-full bg-gray-900 text-white py-6 rounded-full text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl hover:bg-brand-pink transition-all active:scale-[0.98]"
             >
-              <X className="h-5 w-5" />
+                Start Diagnostic Journey
             </button>
-            <h3 className="text-xl font-semibold mb-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">Filter Products</h3>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="brand-filter" className="mb-2 block">Brand</Label>
-                <Input
-                  id="brand-filter"
-                  placeholder="e.g., The Ordinary"
-                  value={selectedFilters.brand || ''}
-                  onChange={(e) => setSelectedFilters({ ...selectedFilters, brand: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label className="mb-2 block">Max Price (AED)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={selectedFilters.maxPrice || 200} // Assuming a max price for now
-                    onChange={(e) => setSelectedFilters({ ...selectedFilters, maxPrice: Number(e.target.value) })}
-                    className="w-full"
-                    min="0"
-                  />
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="200" // Max price should be dynamic based on available products
-                  value={selectedFilters.maxPrice || 200}
-                  onChange={(e) => setSelectedFilters({ ...selectedFilters, maxPrice: Number(e.target.value) })}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mt-2"
-                  style={{
-                    '--range-thumb-color': 'var(--brand-blue)',
-                    '--range-track-color': '#E5E7EB', // light gray
-                    '--webkit-slider-thumb-background': 'var(--range-thumb-color)',
-                    '--moz-range-thumb-background': 'var(--range-thumb-color)',
-                    '--webkit-slider-runnable-track-background': 'var(--range-track-color)',
-                    '--moz-range-track-background': 'var(--range-track-color)',
-                  }}
-                />
-              </div>
-            </div>
-            <div className="flex justify-between mt-6">
-              <Button
-                variant="outline"
-                className="border-[var(--brand-blue)] text-[var(--brand-blue)]"
-                onClick={() => {
-                  setSelectedFilters({});
-                  applyFiltersAndSort();
-                }}
-              >
-                Clear Filters
-              </Button>
-              <Button
-                className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
-                onClick={() => {
-                  applyFiltersAndSort();
-                  setIsFilterOpen(false);
-                }}
-              >
-                Apply Filters
-              </Button>
-            </div>
           </div>
         </div>
-      )}
-
-      {/* Sort Modal/Panel */}
-      {isSortOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 md:w-1/2 lg:w-1/3 relative">
-            <button
-              onClick={() => setIsSortOpen(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <h3 className="text-xl font-semibold mb-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">Sort Products</h3>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="sort-by" className="mb-2 block">Sort By</Label>
-                <Select value={selectedSort} onValueChange={setSelectedSort}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a sort option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                    <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex justify-end mt-6">
-              <Button
-                className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90"
-                onClick={() => {
-                  applyFiltersAndSort();
-                  setIsSortOpen(false);
-                }}
-              >
-                Apply Sort
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      </section>
     </div>
   );
 }

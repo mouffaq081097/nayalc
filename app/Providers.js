@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { CartProvider } from './context/CartContext';
 import { UserProvider } from './context/UserContext';
+import { HeaderProvider } from './context/HeaderContext';
 
 export default function Providers({ children }) {
   return (
@@ -13,7 +14,9 @@ export default function Providers({ children }) {
         <UserProvider>
           <AppProvider>
             <CartProvider>
-              {children}
+              <HeaderProvider>
+                {children}
+              </HeaderProvider>
             </CartProvider>
           </AppProvider>
         </UserProvider>

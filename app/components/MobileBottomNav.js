@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Home, ShoppingBag, Star, User, Heart, MessageSquare } from 'lucide-react';
+import { Home, ShoppingBag, Star, User, Heart, MessageSquare, Search } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -12,7 +12,7 @@ import { useAppContext } from '../context/AppContext';
 const navItems = [
   { id: 'home', icon: Home, label: 'Home' },                                                     
   { id: 'wishlist', icon: Heart, label: 'Wishlist' },                                             
-  { id: 'loyalty', icon: Star, label: 'Rewards' },                                                
+  { id: 'search', icon: Search, label: 'Search' },                                                
   { id: 'chat', icon: MessageSquare, label: 'Chat' },                                               
   { id: 'account', icon: User, label: 'Account' }
 ];
@@ -59,11 +59,11 @@ function MobileBottomNav() {
     const routeMap = {
       home: '/',
       account: '/account',
-      loyalty: '/loyalty',
+      search: '/search',
       wishlist: '/wishlist',
     };
 
-    if (['account', 'loyalty', 'wishlist'].includes(itemId) && !isAuthenticated) {
+    if (['account', 'wishlist'].includes(itemId) && !isAuthenticated) {
       router.push('/auth');
       return;
     }
@@ -75,7 +75,7 @@ function MobileBottomNav() {
     if (isChatOpen) return 'chat';
     if (pathname === '/') return 'home';
     if (pathname.includes('wishlist')) return 'wishlist';
-    if (pathname.includes('loyalty')) return 'loyalty';
+    if (pathname.includes('search')) return 'search';
     if (pathname.includes('account')) return 'account';
     return 'home';
   };
@@ -125,8 +125,6 @@ function MobileBottomNav() {
                         strokeWidth={isActive ? 2.5 : 2}
                       />
                     )}
-
-                    {/* Badge for Cart - removed as cart was replaced by chat */}
                   </div>
 
                   {isActive && (
@@ -140,11 +138,6 @@ function MobileBottomNav() {
                     </motion.span>
                   )}
                 </motion.div>
-
-                {/* Rewards Pulse Dot */}
-                {item.id === 'loyalty' && !isActive && (
-                  <span className="absolute top-3 right-3 w-2 h-2 bg-amber-400 rounded-full animate-ping opacity-75" />
-                )}
               </button>
             );
           })}
