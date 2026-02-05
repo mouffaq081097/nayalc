@@ -10,12 +10,13 @@ import Link from 'next/link';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Separator } from '../../components/ui/separator';
-import { Heart, Star, Plus, Minus, ShoppingBag, Check, ChevronRight, Share2, Info, ArrowRight, Gift, Sparkles, Zap, MessageCircle, Maximize2, Send, Loader2, Clock, ShieldCheck, Lock, RotateCcw, Quote, Box, Truck, FlaskConical, Droplets, Leaf, Microscope, Waves, Fingerprint } from 'lucide-react';
+import { Heart, Star, Plus, Minus, ShoppingBag, Check, ChevronRight, Share2, Info, ArrowRight, Gift, Sparkles, Zap, MessageCircle, Maximize2, Send, Loader2, Clock, ShieldCheck, Lock, RotateCcw, Quote, Box, Truck, FlaskConical, Droplets, Leaf, Microscope, Waves, Fingerprint, X } from 'lucide-react';
 import { ImageWithFallback } from '../../components/figma/ImageWithFallback';
 import Reviews from '../../components/Reviews';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
 import ProductCard from '../../components/ProductCard';
+import AiConsultant from '../../components/AiConsultant';
 
 export default function ProductDetailPage({ params }) {
   const { productId } = use(params);
@@ -37,20 +38,17 @@ export default function ProductDetailPage({ params }) {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
-  const [showStickyBar, setShowStickyBar] = useState(false);
+  const [activeTab, setActiveTab] = useState('details');
+  const [isZoomed, setIsZoomed] = useState(false);
   
   const buyButtonRef = useRef(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (buyButtonRef.current) {
-        const rect = buyButtonRef.current.getBoundingClientRect();
-        setShowStickyBar(rect.bottom < 0);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const ingredients = useMemo(() => {
+    if (!product?.description) return [];
+    // Extract potential key ingredients from description or use defaults
+    const commonIngredients = ['Hyaluronic Acid', 'Vitamin C', 'Retinol', 'Peptides', 'Niacinamide', 'Ceramides'];
+    return commonIngredients.filter(ing => product.description.toLowerCase().includes(ing.toLowerCase())).slice(0, 3);
+  }, [product]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -128,143 +126,172 @@ export default function ProductDetailPage({ params }) {
   return (
     <div className="bg-white min-h-screen font-sans text-[#1d1d1f] antialiased selection:bg-brand-pink/10">
       
-      <AnimatePresence>
-        {showStickyBar && (
-          <motion.div 
-            initial={{ y: -100 }}
-            animate={{ y: 0 }}
-            exit={{ y: -100 }}
-            className="fixed top-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-2xl border-b border-gray-200 px-6 py-3"
-          >
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <h4 className="text-[17px] font-semibold text-gray-900 truncate">{product.name}</h4>
-              <div className="flex items-center gap-6">
-                <span className="text-[17px] font-medium">AED {product.price.toFixed(2)}</span>
-                <button onClick={handleAddToCart} className={`h-9 px-6 rounded-full text-[13px] font-medium transition-all duration-300 ${isAdded ? 'bg-green-600 text-white' : 'bg-[#0071e3] text-white hover:bg-[#0077ed]'}`}>
-                    {isAdded ? 'Added' : 'Buy'}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className="max-w-[1440px] mx-auto">
-        <div className="grid lg:grid-cols-12 gap-0 pt-12 lg:pt-24 pb-12">
+        <div className="grid lg:grid-cols-12 gap-0 lg:pt-24 pb-12">
           
-          <div className="lg:col-span-7 px-6 lg:px-20">
-            <div className="lg:sticky lg:top-32 space-y-12">
-                <motion.div style={{ scale }} className="w-full aspect-[4/5] rounded-[3rem] overflow-hidden bg-[#f5f5f7] relative group shadow-2xl">
+          {/* Left Column: Image Gallery */}
+          <div className="lg:col-span-7 px-0 lg:px-16">
+            <div className="lg:sticky lg:top-32 space-y-10">
+                {/* Mobile: Full Bleed Gallery | Desktop: Rounded Card */}
+                <motion.div 
+                    style={{ scale: typeof window !== 'undefined' && window.innerWidth > 1024 ? scale : 1 }} 
+                    className="w-full aspect-square md:aspect-[4/5] lg:rounded-[2rem] overflow-hidden bg-[#f5f5f7] relative group lg:shadow-xl cursor-zoom-in"
+                    onClick={() => setIsZoomed(true)}
+                >
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.8)_0%,transparent_100%)] z-0"></div>
-                    <motion.div key={selectedImage} initial={{ opacity: 0, scale: 1.1 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2 }} className="w-full h-full relative z-10 flex items-center justify-center">
-                        <Image src={product.images ? product.images[selectedImage] : product.imageUrl} alt={product.name} width={800} height={1000} className="w-full h-full object-contain p-12 lg:p-20 transition-transform duration-1000 ease-out group-hover:scale-105" />
+                    <motion.div 
+                        key={selectedImage} 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        transition={{ duration: 0.8 }} 
+                        className="w-full h-full relative z-10 flex items-center justify-center"
+                    >
+                        <Image 
+                            src={product.images ? product.images[selectedImage] : product.imageUrl} 
+                            alt={product.name} 
+                            width={800} 
+                            height={1000} 
+                            priority
+                            className="w-full h-full object-contain p-6 md:p-12 lg:p-14 transition-transform duration-1000 ease-out group-hover:scale-105" 
+                        />
                     </motion.div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-white/40 to-transparent pointer-events-none z-20"></div>
-                    <div className="absolute bottom-10 left-10 text-gray-900 z-30">
-                        <p className="text-sm font-bold uppercase tracking-[0.2em] opacity-40">Original Selection</p>
-                        <h4 className="text-2xl font-serif italic leading-tight">{product.name}</h4>
-                    </div>
-                    <div className="absolute top-10 left-10 flex flex-col gap-3 z-30">
-                        {product.isNew && <Badge className="bg-white/80 backdrop-blur-md text-gray-900 border-none px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl">New Selection</Badge>}
-                        {product.isBestseller && <Badge className="bg-brand-pink text-white border-none px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl">Bestseller</Badge>}
-                    </div>
+                    
+                    {/* Mobile Gallery Indicators */}
+                    {product.images && product.images.length > 1 && (
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-30 lg:hidden">
+                            {product.images.map((_, i) => (
+                                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${selectedImage === i ? 'w-4 bg-gray-900' : 'w-1.5 bg-gray-300'}`} />
+                            ))}
+                        </div>
+                    )}
+
+                    <button className="hidden lg:flex absolute top-8 right-8 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md items-center justify-center text-gray-900 opacity-0 group-hover:opacity-100 transition-all shadow-lg z-30">
+                        <Maximize2 size={18} />
+                    </button>
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent pointer-events-none z-20"></div>
                 </motion.div>
 
+                {/* Desktop Thumbnails */}
                 {product.images && product.images.length > 1 && (
-                    <div className="flex justify-center gap-6">
+                    <div className="hidden lg:flex justify-center gap-4">
                         {product.images.map((img, index) => (
-                            <button key={index} onClick={() => setSelectedImage(index)} className={`relative w-16 h-16 rounded-full overflow-hidden border-2 transition-all p-1 bg-[#f5f5f7] ${selectedImage === index ? 'border-gray-900 scale-110 shadow-lg' : 'border-transparent opacity-40 hover:opacity-100'}`}>
-                                <Image src={img} alt="" width={64} height={64} className="w-full h-full object-contain mix-blend-multiply" />
+                            <button key={index} onClick={() => setSelectedImage(index)} className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all p-1 bg-[#f5f5f7] ${selectedImage === index ? 'border-gray-900 scale-105 shadow-md' : 'border-transparent opacity-40 hover:opacity-100'}`}>
+                                <Image src={img} alt="" width={48} height={48} className="w-full h-full object-contain mix-blend-multiply" />
                             </button>
                         ))}
                     </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-16 pt-16 border-t border-gray-100">
-                    <div className="space-y-4">
-                        <div className="w-10 h-10 rounded-2xl bg-brand-pink/5 flex items-center justify-center text-brand-pink"><FlaskConical size={20} strokeWidth={1.5} /></div>
-                        <h3 className="text-xl font-semibold leading-tight text-gray-900 text-left">Clinical Precision.</h3>
-                        <p className="text-gray-500 text-[15px] leading-relaxed text-left">Engineered in our Paris laboratory, this formula utilizes active biological markers for visible transformation.</p>
+                <div className="hidden lg:grid grid-cols-2 gap-10 pt-12 border-t border-gray-100">
+                    <div className="space-y-3">
+                        <div className="w-8 h-8 rounded-xl bg-brand-pink/5 flex items-center justify-center text-brand-pink"><FlaskConical size={18} strokeWidth={1.5} /></div>
+                        <h3 className="text-lg font-semibold leading-tight text-gray-900 text-left">Clinical Precision.</h3>
+                        <p className="text-gray-500 text-[13px] leading-relaxed text-left">Engineered in our Paris laboratory, this formula utilizes active biological markers for visible transformation.</p>
                     </div>
-                    <div className="space-y-4">
-                        <div className="w-10 h-10 rounded-2xl bg-brand-blue/5 flex items-center justify-center text-brand-blue"><Droplets size={20} strokeWidth={1.5} /></div>
-                        <h3 className="text-xl font-semibold leading-tight text-gray-900 text-left">Pure Integrity.</h3>
-                        <p className="text-gray-500 text-[15px] leading-relaxed text-left">Sustainably harvested botanicals synchronized with high-performance dermatological science.</p>
+                    <div className="space-y-3">
+                        <div className="w-8 h-8 rounded-xl bg-brand-blue/5 flex items-center justify-center text-brand-blue"><Droplets size={18} strokeWidth={1.5} /></div>
+                        <h3 className="text-lg font-semibold leading-tight text-gray-900 text-left">Pure Integrity.</h3>
+                        <p className="text-gray-500 text-[13px] leading-relaxed text-left">Sustainably harvested botanicals synchronized with high-performance dermatological science.</p>
                     </div>
                 </div>
             </div>
           </div>
 
-          <div className="lg:col-span-5 px-6 lg:pr-20 lg:pl-0 mt-16 lg:mt-0 text-left">
-            <div className="space-y-12 lg:sticky lg:top-32">
-                <div className="space-y-4 text-left">
-                    <div className="flex items-center gap-3">
-                        <span className="h-[1px] w-8 bg-brand-pink/30"></span>
-                        <p className="text-[12px] font-bold text-brand-pink uppercase tracking-[0.3em]">{product.brand || 'Naya Lumière Signature'}</p>
+          {/* Right Column: Content */}
+          <div className="lg:col-span-5 px-6 lg:pr-16 lg:pl-0 mt-8 lg:mt-0 text-left">
+            <div className="space-y-8 lg:space-y-10 lg:sticky lg:top-32">
+                <div className="space-y-2 lg:space-y-3 text-left">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="h-[1px] w-6 bg-brand-pink/30 hidden lg:block"></span>
+                            <p className="text-[10px] lg:text-[11px] font-bold text-brand-pink uppercase tracking-[0.3em]">{product.brand || 'Naya Lumière Signature'}</p>
+                        </div>
+                        {product.isNew && <Badge className="bg-gray-100 text-gray-900 border-none px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest lg:hidden">New</Badge>}
                     </div>
-                    <h1 className="text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.05] text-gray-900">{product.name}</h1>
-                    <div className="flex items-baseline gap-2 pt-2">
-                        <span className="text-3xl font-medium">AED {product.price.toFixed(2)}</span>
-                        {product.comparedprice > product.price && <span className="text-lg text-gray-400 line-through">AED {product.comparedprice.toFixed(2)}</span>}
+                    <h1 className="text-3xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-gray-900">{product.name}</h1>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-xl lg:text-2xl font-semibold">AED {product.price.toFixed(2)}</span>
+                        {product.comparedprice > product.price && <span className="text-sm lg:text-base text-gray-400 line-through">AED {product.comparedprice.toFixed(2)}</span>}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-8 py-6 border-y border-gray-100">
-                    <div className="flex flex-col gap-1 text-left">
+                {/* Mobile Quick Actions Bar */}
+                <div className="flex items-center gap-3 lg:hidden">
+                    <button onClick={handleAddToCart} className={`flex-grow h-12 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-500 ${isAdded ? 'bg-green-600 text-white' : 'bg-gray-900 text-white active:scale-[0.98]'}`}>
+                        {isAdded ? 'Selection Secured' : 'Add to Bag'}
+                    </button>
+                    <button onClick={handleWishlistToggle} className={`w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center transition-all ${isWishlisted ? 'bg-brand-pink/5 text-brand-pink border-brand-pink/20' : 'bg-white text-gray-900'}`}>
+                        <Heart size={18} className={isWishlisted ? 'fill-current' : ''} />
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-6 py-4 lg:py-5 border-y border-gray-100">
+                    <div className="flex flex-col gap-0.5 text-left">
                         <div className="flex items-center gap-1">
-                            <span className="text-lg font-bold">4.9</span>
-                            <div className="flex text-brand-pink">{[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}</div>
+                            <span className="text-base font-bold">4.9</span>
+                            <div className="flex text-brand-pink">{[...Array(5)].map((_, i) => <Star key={i} size={11} fill="currentColor" />)}</div>
                         </div>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Satisfaction</span>
+                        <span className="text-[8px] lg:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Satisfaction</span>
                     </div>
-                    <Separator orientation="vertical" className="h-10" />
-                    <div className="flex flex-col gap-1 text-left">
-                        <span className="text-lg font-bold">100%</span>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Originality</span>
+                    <Separator orientation="vertical" className="h-6 lg:h-8" />
+                    <div className="flex flex-col gap-0.5 text-left">
+                        <span className="text-base font-bold">100%</span>
+                        <span className="text-[8px] lg:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Originality</span>
                     </div>
                 </div>
 
-                <div className="space-y-10 text-left">
-                    <div className="space-y-4">
-                        <h3 className="text-[13px] font-bold uppercase tracking-widest text-gray-400">The Selection</h3>
-                        <p className="text-[17px] text-gray-600 leading-relaxed font-normal">{product.description}</p>
+                <div className="space-y-6 lg:space-y-8 text-left">
+                    {ingredients.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                            {ingredients.map((ing, i) => (
+                                <div key={i} className="px-3 py-1.5 lg:px-4 lg:py-2 bg-gray-50 rounded-full border border-gray-100 flex items-center gap-1.5">
+                                    <Sparkles size={10} className="text-brand-pink opacity-50" />
+                                    <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-gray-900">{ing}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="space-y-2 lg:space-y-3">
+                        <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-widest text-gray-400">The Selection</h3>
+                        <p className="text-[14px] lg:text-[15px] text-gray-600 leading-relaxed font-normal">{product.description}</p>
                     </div>
 
-                    <div className="space-y-8 pt-4">
-                        <div className="flex items-center justify-between p-6 bg-[#f5f5f7] rounded-3xl border border-gray-100">
-                            <div className="space-y-1 text-left">
-                                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Quantity</span>
-                                <p className="text-[15px] font-semibold">Reserve {quantity} units</p>
+                    <div className="space-y-4 lg:space-y-6 pt-2 hidden lg:block">
+                        <div className="flex items-center justify-between p-4 bg-[#f5f5f7] rounded-2xl border border-gray-100">
+                            <div className="space-y-0.5 text-left">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Quantity</span>
+                                <p className="text-[13px] font-semibold">Reserve {quantity} units</p>
                             </div>
-                            <div className="flex items-center bg-white rounded-full p-1 shadow-sm gap-2">
-                                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50"><Minus size={16} /></button>
-                                <span className="text-lg font-bold w-8 text-center tabular-nums">{quantity}</span>
-                                <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50"><Plus size={16} /></button>
+                            <div className="flex items-center bg-white rounded-full p-1 shadow-sm gap-1">
+                                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50"><Minus size={14} /></button>
+                                <span className="text-base font-bold w-6 text-center tabular-nums">{quantity}</span>
+                                <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50"><Plus size={14} /></button>
                             </div>
                         </div>
 
-                        <div className="space-y-4" ref={buyButtonRef}>
-                            <button onClick={handleAddToCart} className={`w-full h-16 rounded-2xl text-[15px] font-bold uppercase tracking-[0.2em] transition-all duration-500 shadow-2xl ${isAdded ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-brand-pink'}`}>
-                                {isAdded ? <div className="flex items-center justify-center gap-3"><Check size={20} /> Selection Secured</div> : 'Reserve for Acquisition'}
+                        <div className="space-y-3" ref={buyButtonRef}>
+                            <button onClick={handleAddToCart} className={`w-full h-14 rounded-xl text-[13px] font-bold uppercase tracking-[0.2em] transition-all duration-500 shadow-xl ${isAdded ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-brand-pink'}`}>
+                                {isAdded ? <div className="flex items-center justify-center gap-2"><Check size={18} /> Selection Secured</div> : 'Reserve for Acquisition'}
                             </button>
-                            <button onClick={handleWishlistToggle} className={`w-full h-14 rounded-2xl border border-gray-200 text-[13px] font-bold uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-3 ${isWishlisted ? 'bg-brand-pink/5 text-brand-pink border-brand-pink/20' : 'bg-white text-gray-900 hover:bg-[#f5f5f7]'}`}>
-                                <Heart size={18} className={isWishlisted ? 'fill-current' : ''} /> {isWishlisted ? 'Saved to Vault' : 'Save for Later'}
+                            <button onClick={handleWishlistToggle} className={`w-full h-12 rounded-xl border border-gray-200 text-[11px] font-bold uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 ${isWishlisted ? 'bg-brand-pink/5 text-brand-pink border-brand-pink/20' : 'bg-white text-gray-900 hover:bg-[#f5f5f7]'}`}>
+                                <Heart size={16} className={isWishlisted ? 'fill-current' : ''} /> {isWishlisted ? 'Saved to Vault' : 'Save for Later'}
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 pt-10 border-t border-gray-100 text-left">
+                <div className="grid grid-cols-1 gap-4 lg:gap-5 pt-8 border-t border-gray-100 text-left">
                     {[ 
                         { icon: Truck, title: "Priority Emirates Shipping", desc: "Complimentary on acquisitions over 200 AED." },
                         { icon: ShieldCheck, title: "Authenticity Certified", desc: "100% original masterpieces from official ateliers." },
                         { icon: RotateCcw, title: "Boutique Return Standard", desc: "30-day elite protection on all selections." }
                     ].map((feat, i) => (
-                        <div key={i} className="flex gap-5 group cursor-default">
-                            <div className="w-12 h-12 rounded-2xl bg-[#f5f5f7] flex items-center justify-center text-gray-900 group-hover:bg-brand-pink/10 group-hover:text-brand-pink transition-colors"><feat.icon size={22} strokeWidth={1.5} /></div>
-                            <div className="space-y-1 text-left">
-                                <h4 className="text-[14px] font-bold uppercase tracking-tight">{feat.title}</h4>
-                                <p className="text-[13px] text-gray-500 leading-snug">{feat.desc}</p>
+                        <div key={i} className="flex gap-4 group cursor-default">
+                            <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-[#f5f5f7] flex items-center justify-center text-gray-900 group-hover:bg-brand-pink/10 group-hover:text-brand-pink transition-colors"><feat.icon size={18} strokeWidth={1.5} /></div>
+                            <div className="space-y-0.5 text-left">
+                                <h4 className="text-[11px] lg:text-[12px] font-bold uppercase tracking-tight">{feat.title}</h4>
+                                <p className="text-[11px] lg:text-[12px] text-gray-500 leading-snug">{feat.desc}</p>
                             </div>
                         </div>
                     ))}

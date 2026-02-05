@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import StoreCategoryNav from './StoreCategoryNav';
 import { useHeader } from '../context/HeaderContext';
+import { NayaLumiereLogo } from './Icons';
 
 const HeroUnit = ({ 
   title, 
@@ -28,7 +29,8 @@ const HeroUnit = ({
   aura = false,
   decorativeImage = null,
   headlineFontClass,
-  imageOffset = 0
+  imageOffset = 0,
+  animateDecorative = true
 }) => {
   const [bubbleList, setBubbleList] = React.useState([]);
   const [particleList, setParticleList] = React.useState([]);
@@ -167,14 +169,14 @@ const HeroUnit = ({
             {!fullWidthImage && !decorativeImage && (
                 <>
                     <motion.div 
-                        animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }}
+                        animate={animateDecorative ? { y: [0, -10, 0], rotate: [0, 5, 0] } : {}}
                         transition={{ duration: 5, repeat: Infinity }}
                         className="absolute left-[10%] md:left-[15%] top-[20%] text-brand-pink/20 pointer-events-none hidden md:block"
                     >
                         <Heart size={80} fill="currentColor" stroke="none" />
                     </motion.div>
                     <motion.div 
-                        animate={{ y: [0, 15, 0], scale: [1, 1.1, 1] }}
+                        animate={animateDecorative ? { y: [0, 15, 0], scale: [1, 1.1, 1] } : {}}
                         transition={{ duration: 7, repeat: Infinity }}
                         className="absolute right-[10%] md:right-[15%] top-[25%] text-brand-pink/20 pointer-events-none hidden md:block"
                     >
@@ -186,8 +188,16 @@ const HeroUnit = ({
             {/* Elements for Advanced Protocol (Full Width Mode) */}
             {fullWidthImage && !decorativeImage && (
                 <>
+                    {/* Left Decorative Shapes (Always Static) */}
+                    <div className="absolute left-[8%] md:left-[12%] top-[20%] text-brand-blue/20 pointer-events-none hidden md:block">
+                        <Sparkles size={90} />
+                    </div>
+                    <div className="absolute left-[15%] md:left-[18%] top-[35%] text-brand-pink/10 pointer-events-none hidden md:block">
+                        <Heart size={60} fill="currentColor" stroke="none" />
+                    </div>
+
                     <motion.div 
-                        animate={{ y: [0, 15, 0], rotate: [0, -10, 0] }}
+                        animate={animateDecorative ? { y: [0, 15, 0], rotate: [0, -10, 0] } : {}}
                         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                         className="absolute right-[8%] md:right-[12%] top-[20%] text-brand-blue/20 pointer-events-none hidden md:block"
                     >
@@ -403,8 +413,9 @@ export default function AppleStyleHome() {
         fullWidthImage={true}
         headlineColor="text-[#1d1d1f]"
         bgClass="bg-gradient-to-b from-[#f5faff] to-white"
-        bubbles={true}
+        bubbles={false}
         aura={true}
+        animateDecorative={false}
       />
 
       {/* HERO 3: Fragrance */}
@@ -462,10 +473,8 @@ export default function AppleStyleHome() {
 
       {/* TEXT CAROUSEL / BRANDING */}
       <section className="py-24 bg-white text-center px-6">
-        <div className="max-w-3xl mx-auto space-y-6">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1d1d1f]">
-                Naya Lumière.
-            </h2>
+        <div className="max-w-3xl mx-auto space-y-8 flex flex-col items-center">
+            <NayaLumiereLogo className="h-12 md:h-16 w-auto" />
             <p className="text-xl md:text-2xl font-medium text-gray-500 leading-relaxed">
                 We believe in the intelligence of nature and the precision of science. 
                 Our collections are designed to synchronize with your biology, 

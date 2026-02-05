@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { Filter } from 'lucide-react';
 
-export default function StoreCategoryNav() {
+export default function StoreCategoryNav({ onFilterClick }) {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -88,39 +89,41 @@ export default function StoreCategoryNav() {
   );
 
   return (
-    <div className="w-full overflow-x-auto no-scrollbar scroll-smooth">
-      <div className="max-w-[1400px] mx-auto flex items-center justify-center min-w-max px-6 py-6 md:py-8 gap-8 md:gap-14">
-        {categories.map((cat, index) => (
-          <motion.div
-            key={cat.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05, duration: 0.5 }}
-          >
-            <Link 
-              href={cat.href} 
-              className="flex flex-col items-center gap-3 group transition-all"
+    <div className="w-full">
+      <div className="w-full overflow-x-auto no-scrollbar scroll-smooth">
+        <div className="max-w-[1400px] mx-auto flex items-center justify-center min-w-max px-6 py-4 md:py-6 gap-8 md:gap-14">
+          {categories.map((cat, index) => (
+            <motion.div
+              key={cat.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05, duration: 0.5 }}
             >
-              <div className="relative w-16 h-12 md:w-24 md:h-16 flex items-center justify-center transition-all duration-500 group-hover:scale-110">
-                  {cat.image ? (
-                    <Image 
-                        src={cat.image} 
-                        alt={cat.name}
-                        fill
-                        className="object-contain object-center mix-blend-multiply" // Ensures clean look if image is on white/transparent
-                    />
-                  ) : (
-                    <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center text-[10px] text-gray-300 uppercase font-black">
-                        N/A
-                    </div>
-                  )}
-              </div>
-              <span className="text-[11px] md:text-[12px] font-medium text-[#1d1d1f] group-hover:text-brand-pink transition-colors tracking-tight text-center">
-                {cat.name}
-              </span>
-            </Link>
-          </motion.div>
-        ))}
+              <Link 
+                href={cat.href} 
+                className="flex flex-col items-center gap-3 group transition-all"
+              >
+                <div className="relative w-16 h-12 md:w-24 md:h-16 flex items-center justify-center transition-all duration-500 group-hover:scale-110">
+                    {cat.image ? (
+                      <Image 
+                          src={cat.image} 
+                          alt={cat.name}
+                          fill
+                          className="object-contain object-center mix-blend-multiply drop-shadow-sm group-hover:drop-shadow-xl transition-all" 
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center text-[10px] text-gray-300 uppercase font-black">
+                          N/A
+                      </div>
+                    )}
+                </div>
+                <span className="text-[10px] md:text-[11px] font-bold text-[#1d1d1f]/60 group-hover:text-brand-pink group-hover:font-black transition-all tracking-[0.1em] uppercase text-center leading-tight">
+                  {cat.name}
+                </span>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </div>
   );

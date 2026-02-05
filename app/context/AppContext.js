@@ -20,6 +20,23 @@ export const AppProvider = ({ children }) => {
   const [brands, setBrands] = useState([]); // New state for brands
   const [featuredProducts, setFeaturedProducts] = useState([]); // New state for featured products
   const [isChatOpen, setIsChatOpen] = useState(false); // Global chat widget state
+  const [loyaltyData, setLoyaltyData] = useState({ stats: { points: 0, tier: 'Member', nextTierPoints: 2000 }, transactions: [] });
+
+  const fetchLoyalty = useCallback(async () => {
+    if (!isAuthenticated || !user?.id) {
+      setLoyaltyData({ stats: { points: 0, tier: 'Member', nextTierPoints: 2000 }, transactions: [] });
+      return;
+    }
+    try {
+      const response = await fetchWithAuth(`/api/users/${user.id}/loyalty`);
+      if (response.ok) {
+        const data = await response.json();
+        setLoyaltyData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching loyalty data:', error);
+    }
+  }, [isAuthenticated, user, fetchWithAuth]);
 
   // Function to fetch orders from the backend
   const fetchOrders = useCallback(async () => {
@@ -423,8 +440,9 @@ export const AppProvider = ({ children }) => {
     fetchBrands(); // Fetch brands
     if (isAuthenticated && user?.id) {
       fetchOrders(); // Fetch orders only if authenticated
+      fetchLoyalty(); // Fetch loyalty data only if authenticated
     }
-  }, [isAuthenticated, user, fetchOrders, fetchCategories]); // Re-fetch when auth status or user changes
+  }, [isAuthenticated, user, fetchOrders, fetchLoyalty, fetchCategories]); // Re-fetch when auth status or user changes
 
 
 
@@ -447,7 +465,8 @@ export const AppProvider = ({ children }) => {
       fetchProductsByCategory,
       fetchProducts,
       fetchWithAuth,
-      isChatOpen, setIsChatOpen
+      isChatOpen, setIsChatOpen,
+      loyaltyData, fetchLoyalty
         }}>
           {children}
         </AppContext.Provider>

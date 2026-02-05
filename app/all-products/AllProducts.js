@@ -344,77 +344,16 @@ export default function AllProductsPage() {
       <StoreHeader title="Store." />
       <StoreCategoryNav />
 
-      {/* Sticky Command Strip - Docks under Nav */}
-      <div className={`sticky top-[72px] md:top-[88px] z-[45] transition-all duration-500 ${isScrolled ? 'px-0' : 'px-4 md:px-10 mt-4'}`}>
-        <div className={`bg-white/90 backdrop-blur-2xl border-gray-200 shadow-sm transition-all duration-500 flex flex-col md:flex-row items-center gap-4 py-3 ${isScrolled ? 'border-b px-6 md:px-10' : 'border rounded-[1.5rem] px-6'}`}>
-            
-            {/* Left: Refine */}
-            <div className="flex items-center gap-4 w-full md:w-auto border-b md:border-b-0 md:border-r border-gray-100 pb-3 md:pb-0 md:pr-6">
-                <button 
-                    onClick={() => setIsFilterOpen(true)}
-                    className="flex items-center gap-3 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-pink transition-all active:scale-95 shadow-lg group"
-                >
-                    <Filter size={14} className="group-hover:rotate-12 transition-transform" />
-                    <span>Refine</span>
-                    {activeFiltersCount > 0 && (
-                        <span className="bg-white text-gray-900 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black">{activeFiltersCount}</span>
-                    )}
-                </button>
-            </div>
-
-            {/* Center: Search */}
-            <div className="relative group flex-grow w-full md:w-auto">
-                <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${isSearchFocused ? 'text-brand-pink' : 'text-gray-300'}`} size={16} />
-                <input 
-                    placeholder="Search the vault..."
-                    value={searchTerm}
-                    onFocus={() => setIsSearchFocused(true)}
-                    onBlur={() => setIsSearchFocused(false)}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 pl-11 pr-10 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:ring-4 focus:ring-brand-pink/5 focus:border-brand-pink/20 transition-all"
-                />
-                {searchTerm && (
-                    <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 transition-colors">
-                        <X size={12} strokeWidth={3} />
-                    </button>
-                )}
-            </div>
-
-            {/* Right: Sort & Grid */}
-            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-6">
-                <div className="flex items-center gap-2">
-                    <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest hidden lg:block">Sort</span>
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="border border-gray-100 bg-gray-50 rounded-xl px-4 py-2 h-10 text-[10px] font-bold uppercase tracking-widest text-gray-900 focus:ring-0 w-[140px]">
-                            <SelectValue placeholder="Featured" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-2xl p-1">
-                            <SelectItem value="featured" className="text-[10px] uppercase font-bold py-3 rounded-lg focus:bg-gray-50">Featured Selection</SelectItem>
-                            <SelectItem value="price-low" className="text-[10px] uppercase font-bold py-3 rounded-lg focus:bg-gray-50">Price: Ascending</SelectItem>
-                            <SelectItem value="price-high" className="text-[10px] uppercase font-bold py-3 rounded-lg focus:bg-gray-50">Price: Descending</SelectItem>
-                            <SelectItem value="rating" className="text-[10px] uppercase font-bold py-3 rounded-lg focus:bg-gray-50">Client Rating</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="h-6 w-px bg-gray-100 hidden md:block"></div>
-
-                <div className="flex items-center bg-gray-50 p-1 rounded-xl border border-gray-100">
-                    {[3, 4, 5].map((num) => (
-                        <button 
-                            key={num}
-                            onClick={() => setGridCols(num)}
-                            className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${gridCols === num ? 'bg-white shadow-sm border border-gray-200 text-brand-pink' : 'text-gray-300 hover:text-gray-600'}`}
-                        >
-                            <Hash size={14} />
-                        </button>
-                    ))}
-                </div>
-            </div>
+      <div className="container mx-auto px-4 md:px-10 relative z-30 pt-4">
+        <div className="flex justify-end mb-6">
+            <button 
+                onClick={() => setIsFilterOpen(true)}
+                className="flex items-center gap-2 px-6 py-2 bg-transparent text-[#1d1d1f] rounded-full text-[12px] font-medium border border-gray-200 hover:border-brand-pink hover:text-brand-pink transition-all duration-300 active:scale-95 group"
+            >
+                <span>Refine</span>
+                <Filter size={14} className="group-hover:rotate-12 transition-transform text-gray-400 group-hover:text-brand-pink" />
+            </button>
         </div>
-      </div>
-
-      <div className="container mx-auto px-4 md:px-10 relative z-30 pt-8">
         <main className="w-full">
             {isLoading ? (
               <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-4 md:gap-6`}>

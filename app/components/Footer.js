@@ -33,7 +33,7 @@ export default function Footer() {
       { text: 'Personal Consultation', href: '#' },
       { text: 'Gift Wrapping', href: '#' },
       { text: 'Naya Care+', href: '#' },
-      { text: 'Order Status', href: '#' },
+      { text: 'Order Status', href: '/orders' },
     ],
     account: [
       { text: 'Manage Your ID', href: '/account' },
