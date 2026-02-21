@@ -51,7 +51,7 @@ export function FeaturedProducts() {
         >
           <CarouselContent className="-ml-4">
             {displayedProducts.map((product) => (
-              <CarouselItem key={product.id} className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
+              <CarouselItem key={product.id} className="pl-4 basis-[85%] md:basis-1/3 lg:basis-1/4">
                 <div className="h-full p-1"> {/* Padding for hover effects */}
                     <ProductCard
                     key={product.id}

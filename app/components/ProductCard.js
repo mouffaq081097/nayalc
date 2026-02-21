@@ -130,7 +130,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
             isDark 
             ? 'bg-[#0a0a0a] text-white border-white/5' 
             : 'bg-white text-gray-900 border-gray-100'
-        } border-b lg:border lg:rounded-[2.5rem]`}
+        } border rounded-[2.5rem]`}
       >
         {/* Instagram Header Style - Soft & Minimal */}
         <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-md">

@@ -72,7 +72,7 @@ export function Categories() {
         >
           <CarouselContent className="-ml-4">
             {categories.map((category) => (
-              <CarouselItem key={category.id} className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
+              <CarouselItem key={category.id} className="pl-4 basis-[85%] md:basis-1/3 lg:basis-1/4">
                 <Link href={category.id === 4 ? '/fragrance' : `/collections/${String(category.id)}`} className="block h-full group">
                   <div className="relative h-[400px] w-full rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20">
                     

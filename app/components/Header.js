@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, forwardRef } from 'react';
-import { ShoppingBag, Search, Menu, X, User, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, User, ChevronRight, Star } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -71,7 +71,6 @@ const Header = forwardRef((props, ref) => {
                     { name: 'Skincare', href: '/SkinCare' },
                     { name: 'Fragrance', href: '/fragrance' },
                     { name: 'Collections', href: '/collections' },
-                    { name: 'Ritual Points', href: '/loyalty' },
                     ].map(link => (
                     <Link 
                         key={link.name} 
@@ -86,7 +85,7 @@ const Header = forwardRef((props, ref) => {
 
             {/* Center: Logo */}
             <Link href="/" className="flex items-center shrink-0 transition-all active:scale-95 group">
-                <NayaLumiereLogo className={`transition-all duration-700 ${isScrolled ? 'h-5 md:h-7' : 'h-7 md:h-9'} w-auto`} />
+                <NayaLumiereLogo className="h-7 md:h-9 w-auto transition-all duration-700" />
             </Link>
 
             {/* Right: Actions */}
@@ -98,24 +97,32 @@ const Header = forwardRef((props, ref) => {
                     <Search size={18} strokeWidth={2} />
                 </button>
 
-                <button 
-                onClick={handleAccountClick} 
-                className="hidden md:flex group items-center gap-3 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-all"
-                >
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-brand-pink group-hover:text-white transition-all">
-                    <User size={16} strokeWidth={2} />
-                </div>
-                {user && (
-                    <div className="hidden lg:flex flex-col items-start -space-y-0.5">
-                        <span className="text-[11px] font-black tracking-widest uppercase text-gray-900 leading-tight">
-                            {user.first_name}
-                        </span>
-                        <span className="text-[9px] font-bold text-brand-pink tracking-tight">
-                            {loyaltyData?.stats?.points?.toLocaleString() || 0} Points
-                        </span>
+                <div className="flex items-center gap-2">
+                    {user && (
+                        <Link href="/loyalty" className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-brand-pink/5 border border-brand-pink/10 rounded-full hover:bg-brand-pink/10 transition-colors">
+                            <Star size={12} className="text-brand-pink fill-brand-pink" />
+                            <span className="text-[10px] font-black tracking-widest text-brand-pink">
+                                {loyaltyData?.stats?.points?.toLocaleString() || 0}
+                            </span>
+                        </Link>
+                    )}
+                    
+                    <button 
+                    onClick={handleAccountClick} 
+                    className="group flex items-center gap-3 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-all"
+                    >
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-brand-pink group-hover:text-white transition-all">
+                        <User size={16} strokeWidth={2} />
                     </div>
-                )}
-                </button>
+                    {user && (
+                        <div className="hidden lg:flex flex-col items-start -space-y-0.5">
+                            <span className="text-[11px] font-black tracking-widest uppercase text-gray-900 leading-tight">
+                                {user.first_name}
+                            </span>
+                        </div>
+                    )}
+                    </button>
+                </div>
 
                 <button 
                 onClick={() => router.push('/cart')} 
@@ -205,7 +212,6 @@ const Header = forwardRef((props, ref) => {
                             { label: 'Fragrance', path: '/fragrance' },
                             { label: 'Collections', path: '/collections' },
                             { label: 'Saved Art', path: '/wishlist' },
-                            { label: 'Ritual Points', path: '/loyalty' },
                             { label: 'Sales', path: '/sales' },
                         ].map((item) => (
                             <button 
@@ -227,7 +233,10 @@ const Header = forwardRef((props, ref) => {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-lg font-bold text-gray-900 leading-tight">{user.first_name}</span>
-                                    <span className="text-[13px] font-medium text-brand-pink">{loyaltyData?.stats?.points?.toLocaleString() || 0} Ritual Points</span>
+                                    <Link href="/loyalty" className="flex items-center gap-1.5 mt-1" onClick={() => setIsMenuOpen(false)}>
+                                        <Star size={12} className="text-brand-pink fill-brand-pink" />
+                                        <span className="text-[13px] font-medium text-brand-pink">{loyaltyData?.stats?.points?.toLocaleString() || 0} Points</span>
+                                    </Link>
                                 </div>
                             </div>
                         )}

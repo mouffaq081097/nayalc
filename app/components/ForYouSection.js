@@ -36,9 +36,9 @@ export const ForYouSection = () => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+        <div className="flex md:grid overflow-x-auto md:overflow-x-visible snap-x md:snap-none no-scrollbar gap-6 md:gap-8 -mx-4 px-4 md:mx-0 md:px-0 md:grid-cols-4">
           {forYouProducts.map((product) => (
-            <div key={product.id} className="h-full">
+            <div key={product.id} className="min-w-[85%] md:min-w-0 snap-center md:snap-align-none h-full">
                 <ProductCard
                     id={product.id}
                     name={product.name}

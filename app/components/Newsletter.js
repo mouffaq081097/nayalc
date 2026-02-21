@@ -1,7 +1,9 @@
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useState, useRef } from 'react';
-import { toast } from 'react-hot-toast'; // Assuming react-hot-toast is installed
+import { toast } from 'react-hot-toast';
+import { Sparkles, Mail, ArrowRight, Check } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export function Newsletter() {
   const [email, setEmail] = useState('');
@@ -10,7 +12,7 @@ export function Newsletter() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(''); // Clear previous messages
+    setMessage('');
 
     try {
       const response = await fetch('/api/subscribe', {
@@ -25,8 +27,8 @@ export function Newsletter() {
 
       if (response.ok) {
         toast.success(data.message);
-        setEmail(''); // Clear email input on success
-        formRef.current.reset(); // Reset the form
+        setEmail('');
+        formRef.current.reset();
       } else {
         toast.error(data.message || 'Subscription failed.');
       }
@@ -37,63 +39,98 @@ export function Newsletter() {
   };
 
   return (
-    <section className="py-16 bg-gradient-to-br from-[var(--brand-rose)] via-white to-[var(--brand-cream)] relative overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 bg-white/50 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles h-4 w-4 text-[var(--brand-pink)]" aria-hidden="true">
-                <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
-                <path d="M20 2v4"></path>
-                <path d="M22 4h-4"></path>
-                <circle cx="4" cy="20" r="2"></circle>
-              </svg>
-              <span className="text-sm text-[var(--brand-pink)]">Exclusive</span>
+    <section className="py-24 bg-[#FAF9F6] relative overflow-hidden border-t border-gray-100">
+      {/* Tactile Paper Texture */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col items-center text-center space-y-8">
+            {/* Minimal Badge */}
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="flex items-center gap-3"
+            >
+                <span className="w-8 h-px bg-brand-pink/30"></span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-pink flex items-center gap-2">
+                    <Sparkles size={10} />
+                    Exclusive Invitation
+                </span>
+                <span className="w-8 h-px bg-brand-pink/30"></span>
+            </motion.div>
+
+            {/* Typography - Apple/Luxury Style */}
+            <div className="space-y-4">
+                <h2 className="text-4xl md:text-6xl font-serif text-gray-900 italic leading-tight">
+                    Join the <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">Lumière Club</span>
+                </h2>
+                <p className="text-base md:text-lg font-sans text-gray-500 max-w-xl mx-auto leading-relaxed">
+                    Elevate your beauty ritual. Receive private previews, expert botanical insights, and bespoke offers reserved for our inner circle.
+                </p>
             </div>
-            <h2 className="text-3xl md:text-4xl mb-4">
-              <span className="text-gray-900">Join the </span>
-              <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">Lumière Club</span>
-            </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">Get exclusive previews of our new arrivals, beauty tips and special offers delivered straight to your inbox.</p>
-          </div>
-          <div className="max-w-md mx-auto mb-8">
-            <form ref={formRef} onSubmit={handleSubmit} className="flex gap-2">
-              <div className="flex-1 relative">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mail absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true">
-                  <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path>
-                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-                </svg>
-                <Input 
-                  type="email" 
-                  placeholder="your@email.com" 
-                  required 
-                  className="pl-10 h-12 border-gray-200 focus:border-[var(--brand-pink)] focus:ring-[var(--brand-pink)]"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <Button type="submit" className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity px-8">Subscribe</Button>
-            </form>
-            {message && <p className="mt-4 text-center text-sm text-green-600">{message}</p>}
-          </div>
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-[var(--brand-pink)] rounded-full"></div>
-              <span>Exclusive 20% off offers</span>
+
+            {/* Refined Form */}
+            <div className="w-full max-w-md mt-4">
+                <form ref={formRef} onSubmit={handleSubmit} className="relative group">
+                    <div className="relative flex flex-col md:flex-row gap-3">
+                        <div className="relative flex-grow">
+                            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-pink transition-colors">
+                                <Mail size={18} strokeWidth={1.5} />
+                            </div>
+                            <input 
+                                type="email" 
+                                placeholder="Indicate your email address" 
+                                required 
+                                className="w-full h-14 pl-14 pr-6 bg-white border border-gray-100 rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-pink/10 focus:border-brand-pink transition-all shadow-sm"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+                        <button 
+                            type="submit" 
+                            className="h-14 px-10 bg-black text-white rounded-full text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-brand-pink transition-all duration-500 flex items-center justify-center gap-3 shadow-lg shadow-black/5"
+                        >
+                            Subscribe
+                            <ArrowRight size={14} />
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-[var(--brand-blue)] rounded-full"></div>
-              <span>New arrivals first access</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-2 h-2 bg-[var(--brand-pink)] rounded-full"></div>
-              <span>Personalized beauty tips</span>
+
+            {/* Perks Grid - Minimalist */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 pt-12 border-t border-gray-100 w-full mt-8">
+                {[
+                    { label: "20% Selection Credit", sub: "Upon your first acquisition", icon: Check },
+                    { label: "Avant-Première Access", sub: "New botanical launches", icon: Check },
+                    { label: "Expert Consultation", sub: "Bespoke beauty protocols", icon: Check }
+                ].map((perk, i) => (
+                    <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.1 }}
+                        className="flex flex-col items-center gap-2"
+                    >
+                        <div className="w-6 h-6 rounded-full bg-brand-pink/5 flex items-center justify-center text-brand-pink mb-1">
+                            <perk.icon size={12} strokeWidth={3} />
+                        </div>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-900">{perk.label}</span>
+                        <span className="text-[10px] text-gray-400 font-medium">{perk.sub}</span>
+                    </motion.div>
+                ))}
             </div>
           </div>
         </div>
       </div>
-      <div className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-br from-[var(--brand-pink)]/10 to-[var(--brand-blue)]/10 rounded-full blur-xl"></div>
-      <div className="absolute bottom-20 right-10 w-32 h-32 bg-gradient-to-br from-[var(--brand-blue)]/10 to-[var(--brand-pink)]/10 rounded-full blur-xl"></div>
+
+      {/* Subtle Artistic Auras */}
+      <div className="absolute top-0 right-0 w-full h-full pointer-events-none overflow-hidden">
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] bg-brand-pink/[0.03] rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[20%] -left-[10%] w-[40%] h-[40%] bg-brand-blue/[0.03] rounded-full blur-[120px]"></div>
+      </div>
     </section>
   );
 }

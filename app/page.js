@@ -1,18 +1,20 @@
 'use client';
 import React from 'react';
-import AppleStyleHome from './components/AppleStyleHome';
-
-// Previous imports preserved for reference
-// import { useAppContext } from './context/AppContext';
-// import { FeaturedProducts } from './components/FeaturedProducts';
-// import { Categories } from './components/Categories';
-// import { HeroSection } from './components/HeroSection';
-// import { ForYouSection } from './components/ForYouSection';
-// import { MobileWelcomeBar } from './components/MobileWelcomeBar';
+import { HeroSection } from './components/HeroSection';
+import { Categories } from './components/Categories';
+import { FeaturedProducts } from './components/FeaturedProducts';
+import { ForYouSection } from './components/ForYouSection';
+import { EditorialShowcase } from './components/EditorialShowcase';
 
 const HomePage = () => {
     return (
-        <AppleStyleHome />
+        <div className="flex flex-col">
+            <HeroSection />
+            <Categories />
+            <FeaturedProducts />
+            <ForYouSection />
+            <EditorialShowcase />
+        </div>
     );
 };
 
