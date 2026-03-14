@@ -10,6 +10,7 @@ import { Textarea } from '@/app/components/ui/textarea';
 import { Send, ArrowLeft, MessageSquare, Loader2, Trash2, User, Clock, ShieldCheck, Zap, Mail, MessageCircle, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/app/components/ui/badge';
+import { Label } from '@/app/components/ui/label';
 import {
     Select,
     SelectContent,

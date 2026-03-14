@@ -4,11 +4,11 @@ export default async function sitemap() {
   const baseUrl = 'https://nayalc.com';
 
   // Fetch all products
-  const { rows: products } = await db.query('SELECT id, updated_at FROM products');
+  const { rows: products } = await db.query('SELECT id FROM products');
   
   const productUrls = products.map((product) => ({
     url: `${baseUrl}/product/${product.id}`,
-    lastModified: product.updated_at || new Date(),
+    lastModified: new Date(),
     changeFrequency: 'weekly',
     priority: 0.8,
   }));
