@@ -165,14 +165,19 @@ export const AppProvider = ({ children }) => {
         throw new Error('Failed to fetch products');
       }
       const data = await response.json();
-      const processedProducts = data.map(product => ({
-        ...product,
-        price: parseFloat(product.price), // Ensure price is a number
-        imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Ensure imageUrls always has at least one value
-        image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
-        brand: product.brandName, // Map brandName from backend to 'brand' property
-        stock_quantity: product.stock_quantity, // Add stock_quantity
-      }));
+      const processedProducts = data.map(product => {
+        const additionalImages = Array.isArray(product.additionalImagesData) ? product.additionalImagesData.map(img => img.url) : [];
+        return {
+          ...product,
+          price: parseFloat(product.price), // Ensure price is a number
+          imageUrls: [product.imageUrl || '/placeholder-image.jpg', ...additionalImages],
+          image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
+          altText: product.altText || '',
+          additionalImagesData: product.additionalImagesData || [], // Full data for admin
+          brand: product.brandName, // Map brandName from backend to 'brand' property
+          stock_quantity: product.stock_quantity, // Add stock_quantity
+        };
+      });
       setProducts(processedProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -188,14 +193,19 @@ export const AppProvider = ({ children }) => {
         throw new Error(`Failed to fetch products for category: ${categoryName}`);
       }
       const data = await response.json();
-      const processedProducts = data.map(product => ({
-        ...product,
-        price: parseFloat(product.price), // Ensure price is a number
-        imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Ensure imageUrls always has at least one value
-        image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
-        brand: product.brandName, // Map brandName from backend to 'brand' property
-        stock_quantity: product.stock_quantity, // Add stock_quantity
-      }));
+      const processedProducts = data.map(product => {
+        const additionalImages = Array.isArray(product.additionalImagesData) ? product.additionalImagesData.map(img => img.url) : [];
+        return {
+          ...product,
+          price: parseFloat(product.price), // Ensure price is a number
+          imageUrls: [product.imageUrl || '/placeholder-image.jpg', ...additionalImages],
+          image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
+          altText: product.altText || '',
+          additionalImagesData: product.additionalImagesData || [], // Full data for admin
+          brand: product.brandName, // Map brandName from backend to 'brand' property
+          stock_quantity: product.stock_quantity, // Add stock_quantity
+        };
+      });
       return processedProducts;
     } catch (error) {
       console.error(`Error fetching products for categories ${categoryIds}:`, error);

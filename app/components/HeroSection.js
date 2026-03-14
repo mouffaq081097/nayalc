@@ -1,79 +1,123 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useSpring, useInView, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ArrowRight, Sparkles, Droplets, Leaf, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
 import productPng from '../../public/ChatGPT_Image_Apr_12__2025__01_41_20_PM-removebg-preview.png';
 import rivieraProductPng from '../../public/Adobe Express - file (10).png';
-import midnightProductPng from '../../public/WhatsApp_Image_2025-07-14_at_19.58.12_7d2e719f-removebg-preview.png';
-import pureProductPng from '../../public/Adobe Express - file (8).png';
-import vibrantProductPng from '../../public/Adobe Express - file (9).png';
 import botanicalLightPng from '../../public/Adobe Express - file (13)-Photoroom.png';
 
 const heroSlides = [
   {
     id: 1,
-    title: "L'Excellence Organique",
+    title: "Biological Extraction",
     headline: "Botanical Light.",
-    subheadline: "Synchronizing with your cellular frequency through pure biological extraction.",
-    primaryLink: { text: "Shop Now", href: "/all-products" },
+    subheadline: "Cellular frequency meets pure botanical power. A new era of skin regeneration has arrived.",
+    primaryLink: { text: "Shop Collection", href: "/all-products" },
     imageSrc: botanicalLightPng,
-    bgClass: "bg-[#FAF9F6]",
-    dark: false,
-    aura: true
+    theme: {
+        bg: "bg-[#FAF9F6]",
+        accent: "text-brand-pink",
+        accentBg: "bg-brand-pink",
+        glow: "bg-brand-pink",
+        btn: "bg-black text-white hover:bg-gray-900",
+        text: "text-[#1d1d1f]",
+        subtext: "text-gray-500",
+    }
   },
   {
     id: 2,
-    title: "The Legend",
+    title: "Cellular Nourishment",
     headline: "Synchro Essence.",
-    subheadline: "The gold standard of cellular nutrition. Legendary French formula.",
-    primaryLink: { text: "Discover Now", href: "/collections/skincare" },
+    subheadline: "The legendary French formula redefined. A masterpiece of cellular nutrition for timeless, golden radiance.",
+    primaryLink: { text: "Discover the Legacy", href: "/collections/skincare" },
     imageSrc: productPng,
-    bgClass: "bg-[#FDFCFB]",
-    dark: false,
-    aura: true
+    theme: {
+        bg: "bg-[#FAF7F2]",
+        accent: "text-[#C5A059]",
+        accentBg: "bg-[#C5A059]",
+        glow: "bg-[#C5A059]",
+        btn: "bg-[#1d1d1f] text-white hover:bg-[#C5A059]",
+        text: "text-[#1d1d1f]",
+        subtext: "text-gray-500",
+    }
   },
   {
     id: 3,
-    title: "Riviera Morning",
+    title: "Riviera Luminous",
     headline: "Éclat Pur.",
-    subheadline: "Wake up to the luminosity of the Côte d'Azur. A fresh symphony of hydration.",
-    primaryLink: { text: "Shop Riviera", href: "/collections/riviera" },
+    subheadline: "A fresh symphony of hydration inspired by Côte d'Azur luminosity. 24H deep cellular moisture.",
+    primaryLink: { text: "Explore Riviera", href: "/collections/riviera" },
     imageSrc: rivieraProductPng,
-    bgClass: "bg-[#ECFEFF]",
-    dark: false,
-    aura: true
+    layout: "reverse",
+    theme: {
+        bg: "bg-[#F5F9FA]",
+        accent: "text-blue-500",
+        accentBg: "bg-blue-500",
+        glow: "bg-blue-400",
+        btn: "bg-blue-600 text-white hover:bg-blue-700",
+        text: "text-[#1d1d1f]",
+        subtext: "text-gray-500",
+    }
   }
 ];
 
-// --- ANIMATED TYPOGRAPHY COMPONENT ---
-const RevealText = ({ children, className, delay = 0 }) => {
-    return (
-        <div className={`overflow-hidden ${className}`}>
-            <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay }}
-            >
-                {children}
-            </motion.div>
-        </div>
-    );
+const RevealText = ({ children, delay = 0, className = "" }) => (
+    <div className={`overflow-hidden ${className}`}>
+        <motion.div
+            initial={{ y: "110%" }}
+            animate={{ y: 0 }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay }}
+        >
+            {children}
+        </motion.div>
+    </div>
+);
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.3,
+        },
+    },
+    exit: {
+        opacity: 0,
+        transition: {
+            staggerChildren: 0.05,
+            staggerDirection: -1,
+        },
+    },
 };
+
+const itemVariants = (isReverse) => ({
+    hidden: { opacity: 0, x: isReverse ? -30 : 30, filter: "blur(8px)" },
+    visible: { 
+        opacity: 1, 
+        x: 0, 
+        filter: "blur(0px)",
+        transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] }
+    },
+    exit: { 
+        opacity: 0, 
+        x: isReverse ? 30 : -30, 
+        filter: "blur(8px)",
+        transition: { duration: 0.5 }
+    },
+});
 
 export function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const sectionRef = useRef(null);
 
   useEffect(() => {
     if (!isAutoPlaying) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 8000);
+    const timer = setInterval(() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length), 8000);
     return () => clearInterval(timer);
   }, [isAutoPlaying]);
 
@@ -88,12 +132,12 @@ export function HeroSection() {
   };
 
   const slide = heroSlides[currentSlide];
+  const isReverse = slide.layout === "reverse";
+  const isLargePinedBottom = slide.id === 1 || slide.id === 3;
 
   return (
-    <section 
-        ref={sectionRef}
-        className={`relative w-full h-[500px] md:h-[600px] overflow-hidden transition-colors duration-1000 ${slide.bgClass} border-b border-black/5`}
-    >
+    <section className="relative w-full h-[75vh] min-h-[600px] overflow-hidden flex items-center bg-[#FAF9F6] font-sans">
+      {/* Background Transitions */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
@@ -101,113 +145,163 @@ export function HeroSection() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 1 }}
-          className="absolute inset-0 z-0 pointer-events-none"
+          className={`absolute inset-0 z-0 ${slide.theme.bg}`}
         >
-            {/* Dynamic Background Aura */}
-            {slide.aura && (
-                <div className="absolute inset-0 opacity-30">
-                    <motion.div 
-                        animate={{ opacity: [0.2, 0.4, 0.2] }}
-                        transition={{ duration: 8, repeat: Infinity }}
-                        className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-pink/10 via-transparent to-brand-blue/5 blur-[120px]"
-                    />
-                </div>
-            )}
+            {/* Subtle Texture/Grain */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply" />
+            
+            {/* Decorative Large Background Text */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden opacity-[0.03]">
+                <span className="text-[15vw] font-black uppercase tracking-tighter leading-none text-black whitespace-nowrap">
+                    {slide.headline.split(' ')[0]}
+                </span>
+            </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Global Grain Overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-10 bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
-
-      {/* Product Image - Aligned Left and Flush to Bottom */}
-      <div className={`absolute -left-12 md:left-0 bottom-0 w-full md:w-1/2 h-full ${slide.id === 2 ? 'z-30' : 'z-10'} pointer-events-none flex items-end justify-start`}>
-        <AnimatePresence mode="wait">
-          <motion.div 
-            key={currentSlide}
-            initial={{ opacity: 0, x: -150, scale: 0.9 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -50, scale: 0.95 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full h-[65%] md:h-[95%] max-w-[700px] md:max-w-[950px]"
-          >
-            <Image 
-                src={slide.imageSrc} 
-                alt={slide.headline} 
-                fill
-                className="object-contain object-left-bottom drop-shadow-[0_30px_60px_rgba(0,0,0,0.12)]"
-                priority
-            />
-          </motion.div>
-        </AnimatePresence>
+      {/* --- Product Image Side (Bleeding to Screen Edges on Desktop) --- */}
+      <div className={`absolute inset-y-0 ${isReverse ? 'left-0' : 'right-0'} w-full md:w-1/2 h-full z-10 pointer-events-none md:pointer-events-auto`}>
+          <div className={`w-full h-full flex ${isLargePinedBottom ? 'items-end' : 'items-center'} justify-center ${isReverse ? 'md:justify-start' : 'md:justify-end'}`}>
+              <AnimatePresence mode="wait">
+                  <motion.div
+                      key={currentSlide}
+                      initial={{ opacity: 0, scale: 0.8, x: isReverse ? -100 : 100, rotate: isReverse ? -5 : 5 }}
+                      animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, x: isReverse ? 100 : -100 }}
+                      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                      className={`relative w-full ${isLargePinedBottom ? 'h-[90%] md:h-full' : 'h-[70%] md:h-[90%]'} flex items-center group ${isLargePinedBottom ? '' : 'mt-[250px] md:mt-0'}`}
+                  >
+                      {/* Interactive Glow Effect behind image */}
+                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] rounded-full blur-[120px] opacity-20 pointer-events-none transition-colors duration-1000 ${slide.theme.glow}`} />
+                      
+                      <div className={`relative w-full h-full ${isLargePinedBottom ? '' : 'animate-float-slow'}`}>
+                          <Image 
+                              src={slide.imageSrc} 
+                              alt={slide.headline} 
+                              fill
+                              className={`object-contain ${isReverse ? 'object-left' : 'object-right'} ${isLargePinedBottom ? 'object-bottom' : ''} drop-shadow-[0_40px_100px_rgba(0,0,0,0.12)] transition-transform duration-700`}
+                              priority
+                          />
+                      </div>
+                  </motion.div>
+              </AnimatePresence>
+          </div>
       </div>
 
-      {/* Content - Middle Center (Desktop) / Top Center (Mobile) */}
-      <div className="relative z-20 w-full h-full flex flex-col items-center justify-start md:justify-center pointer-events-none px-6 pt-12 md:pt-0">
-        <div className="pointer-events-auto flex flex-col items-center text-center max-w-[90%] md:max-w-[1200px]">
-            <AnimatePresence mode="wait">
-            <motion.div
-                key={currentSlide}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col items-center gap-4"
-            >
-                <RevealText className="mb-1" delay={0.1}>
-                    <span className="text-[10px] md:text-[12px] font-sans font-black uppercase tracking-[0.5em] text-brand-pink">
-                        {slide.title}
-                    </span>
-                </RevealText>
-                
-                <RevealText delay={0.2}>
-                    <h2 className={`text-[42px] md:text-[72px] lg:text-[84px] font-serif italic leading-[1.1] tracking-tight ${slide.dark ? 'text-white' : 'text-black'}`}>
-                        {slide.headline}
-                    </h2>
-                </RevealText>
+      {/* --- Typography Side (Aligned to Container) --- */}
+      <div className="container mx-auto px-6 md:px-12 lg:px-20 relative z-20 h-full pointer-events-none">
+        <div className={`flex flex-col h-full ${isReverse ? 'md:flex-row-reverse' : 'md:flex-row'} items-center justify-between`}>
+            
+            {/* Typography Side */}
+            <div className={`w-full md:w-1/2 flex flex-col ${isReverse ? 'items-start text-left' : 'items-end text-right'} relative pointer-events-auto`}>
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={currentSlide}
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        className="flex flex-col gap-5 md:max-w-xl"
+                    >
+                        <motion.div variants={itemVariants(isReverse)} className="flex items-center gap-4 group">
+                            {!isReverse && <div className={`w-12 h-[1px] ${slide.theme.accentBg} transition-all group-hover:w-20`} />}
+                            <span className={`text-[12px] md:text-[14px] font-bold uppercase tracking-[0.4em] ${slide.theme.accent}`}>
+                                {slide.title}
+                            </span>
+                            {isReverse && <div className={`w-12 h-[1px] ${slide.theme.accentBg} transition-all group-hover:w-20`} />}
+                        </motion.div>
+                        
+                        <RevealText delay={0.2} className="relative">
+                            <h1 className={`text-[48px] md:text-[64px] lg:text-[80px] font-serif font-light ${slide.theme.text} leading-[0.9] tracking-tight`}>
+                                {slide.headline}
+                            </h1>
+                        </RevealText>
 
-                <motion.p 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5, duration: 1 }}
-                    className={`text-base md:text-xl font-sans font-medium max-w-xl leading-relaxed ${slide.dark ? 'text-gray-300' : 'text-gray-500'}`}
-                >
-                    {slide.subheadline}
-                </motion.p>
+                        <motion.p 
+                            variants={itemVariants(isReverse)}
+                            className={`text-base md:text-lg ${slide.theme.subtext} font-light leading-relaxed max-w-md ${isReverse ? 'mr-auto' : 'ml-auto'}`}
+                        >
+                            {slide.subheadline}
+                        </motion.p>
 
+                        <motion.div 
+                            variants={itemVariants(isReverse)}
+                            className={`flex flex-wrap items-center gap-6 mt-4 ${isReverse ? 'justify-start' : 'justify-end'}`}
+                        >
+                            <Link 
+                                href={slide.primaryLink.href} 
+                                className={`group relative px-8 py-3 ${slide.theme.btn} overflow-hidden rounded-full transition-all duration-500 transform hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl`}
+                            >
+                                <span className="relative z-10 font-bold tracking-wide uppercase text-sm">
+                                    {slide.primaryLink.text}
+                                </span>
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                            </Link>
+                            
+                            <Link 
+                                href="/all-products" 
+                                className={`flex items-center gap-2 ${slide.theme.text} text-sm font-bold uppercase tracking-widest hover:opacity-60 transition-all border-b border-transparent hover:border-current pb-1`}
+                            >
+                                Learn more
+                                <ArrowRight size={16} />
+                            </Link>
+                        </motion.div>
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+
+            {/* Mobile Spacer (to reserve space for the absolute image on desktop) */}
+            <div className="w-full md:w-1/2 h-[350px] md:h-full" />
+        </div>
+      </div>
+
+
+      {/* --- Refined Navigation Controls --- */}
+      <div className="absolute bottom-10 left-6 md:left-12 lg:left-20 z-50 flex flex-col gap-10">
+        {/* Slide Numbers */}
+        <div className="flex flex-col items-center gap-4">
+            <div className="h-20 w-[1px] bg-black/10 relative overflow-hidden">
                 <motion.div 
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="mt-6 md:mt-10 flex items-center gap-6"
-                >
-                    <Link href={slide.primaryLink.href} className="group relative flex items-center gap-4 px-8 md:px-12 py-3 md:py-5 bg-black text-white rounded-full overflow-hidden transition-all duration-500 hover:pr-14 md:hover:pr-16">
-                        <span className="relative z-10 font-sans font-bold text-[10px] md:text-[11px] uppercase tracking-[0.2em]">{slide.primaryLink.text}</span>
-                        <ArrowRight size={18} className="absolute right-6 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-                        <div className="absolute inset-0 bg-brand-pink translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
-                    </Link>
-                </motion.div>
-            </motion.div>
-            </AnimatePresence>
+                    className="absolute top-0 left-0 w-full bg-black"
+                    initial={{ height: 0 }}
+                    animate={{ height: `${((currentSlide + 1) / heroSlides.length) * 100}%` }}
+                    transition={{ duration: 0.5 }}
+                />
+            </div>
+            <div className="flex flex-col items-center font-sans tracking-tighter">
+                <span className="text-2xl font-bold">0{currentSlide + 1}</span>
+                <span className="text-[10px] text-black/40 font-bold uppercase">/ 0{heroSlides.length}</span>
+            </div>
+        </div>
+
+        {/* Arrow Controls */}
+        <div className="flex items-center gap-3">
+            <button 
+                onClick={prevSlide}
+                className="w-12 h-12 rounded-full border border-black/10 flex items-center justify-center hover:bg-black hover:text-white transition-all active:scale-90"
+                aria-label="Previous slide"
+            >
+                <ChevronLeft size={20} />
+            </button>
+            <button 
+                onClick={nextSlide}
+                className="w-12 h-12 rounded-full border border-black/10 flex items-center justify-center hover:bg-black hover:text-white transition-all active:scale-90"
+                aria-label="Next slide"
+            >
+                <ChevronRight size={20} />
+            </button>
         </div>
       </div>
 
-      {/* Navigation Controls - Bottom Right */}
-      <div className="absolute bottom-12 right-12 z-30 flex items-center gap-6 md:gap-8">
-        <button onClick={prevSlide} className="p-2 md:p-3 rounded-full bg-white/50 backdrop-blur-md border border-black/5 hover:bg-white transition-all">
-            <ChevronLeft size={20} />
-        </button>
-        <div className="flex gap-2 md:gap-3">
-            {heroSlides.map((_, i) => (
-                <button 
-                    key={i} 
-                    onClick={() => { setIsAutoPlaying(false); setCurrentSlide(i); }}
-                    className={`h-1 md:h-1.5 transition-all duration-500 rounded-full ${currentSlide === i ? 'w-8 md:w-12 bg-black' : 'w-2 md:w-3 bg-black/10'}`}
-                />
-            ))}
-        </div>
-        <button onClick={nextSlide} className="p-2 md:p-3 rounded-full bg-white/50 backdrop-blur-md border border-black/5 hover:bg-white transition-all">
-            <ChevronRight size={20} />
-        </button>
+      {/* Progress Bar (at the very bottom) */}
+      <div className="absolute bottom-0 left-0 w-full h-[2px] bg-black/5 z-50">
+        <motion.div 
+            key={currentSlide}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 8, ease: "linear" }}
+            className={`h-full origin-left ${slide.theme.accentBg}`}
+        />
       </div>
     </section>
   );

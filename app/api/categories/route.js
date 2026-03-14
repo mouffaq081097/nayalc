@@ -17,10 +17,10 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
 export async function GET() {
   try {
     const sql = `
-      SELECT c.id, c.name, c.image_url as "imageUrl", COUNT(cp.product_id) as "productsCount"
+      SELECT c.id, c.name, c.slug, c.image_url as "imageUrl", COUNT(cp.product_id) as "productsCount"
       FROM categories c
       LEFT JOIN category_products cp ON c.id = cp.category_id
-      GROUP BY c.id, c.name, c.image_url
+      GROUP BY c.id, c.name, c.slug, c.image_url
       ORDER BY c.name ASC
     `;
     const { rows } = await db.query(sql);
@@ -77,6 +77,18 @@ export async function POST(request) {
 
     await client.query('BEGIN');
 
+    // Generate unique slug
+    const slugify = (text) => text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
+    let baseSlug = slugify(name);
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+        const { rows: existing } = await client.query('SELECT id FROM categories WHERE slug = $1', [slug]);
+        if (existing.length === 0) break;
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+
     let imageUrl = null;
     if (imageFile && imageFile.size > 0) {
       const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
@@ -84,8 +96,8 @@ export async function POST(request) {
       imageUrl = uploadResult.secure_url;
     }
 
-    const categorySql = 'INSERT INTO categories (name, description, image_url) VALUES ($1, $2, $3) RETURNING id';
-    const { rows: categoryRows } = await client.query(categorySql, [name, description, imageUrl]);
+    const categorySql = 'INSERT INTO categories (name, description, image_url, slug) VALUES ($1, $2, $3, $4) RETURNING id';
+    const { rows: categoryRows } = await client.query(categorySql, [name, description, imageUrl, slug]);
     const newCategoryId = categoryRows[0].id;
 
     if (productIdsString) {

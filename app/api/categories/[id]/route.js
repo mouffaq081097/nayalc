@@ -17,20 +17,31 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
  */
 export async function GET(request, { params }) {
   const resolvedParams = await Promise.resolve(params);
-  const id = resolvedParams.id;
+  const idOrSlug = resolvedParams.id;
   try {
-    const categorySql = 'SELECT id, name, image_url as "imageUrl" FROM categories WHERE id = $1';
-    const { rows: categoryRows } = await db.query(categorySql, [id]);
+    // Try to find by ID first, then by slug
+    let categorySql, categoryValues;
+    if (!isNaN(parseInt(idOrSlug))) {
+        categorySql = 'SELECT id, name, slug, image_url as "imageUrl" FROM categories WHERE id = $1';
+        categoryValues = [parseInt(idOrSlug)];
+    } else {
+        categorySql = 'SELECT id, name, slug, image_url as "imageUrl" FROM categories WHERE slug = $1';
+        categoryValues = [idOrSlug];
+    }
+    
+    const { rows: categoryRows } = await db.query(categorySql, categoryValues);
 
     if (categoryRows.length === 0) {
       return NextResponse.json({ message: 'Category not found' }, { status: 404 });
     }
     const category = categoryRows[0];
+    const id = category.id;
 
         const productsSql = `
           SELECT
             p.id,
             p.name,
+            p.slug,
             p.description,
             p.price,
             b.name as "brandName",
@@ -43,7 +54,7 @@ export async function GET(request, { params }) {
           LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
           LEFT JOIN reviews r ON p.id = r.product_id
           WHERE cp.category_id = $1
-          GROUP BY p.id, p.name, p.description, p.price, b.name, pi.image_url
+          GROUP BY p.id, p.name, p.slug, p.description, p.price, b.name, pi.image_url
         `;
         const { rows: productRows } = await db.query(productsSql, [id]);    
     category.products = productRows;
@@ -51,7 +62,7 @@ export async function GET(request, { params }) {
     return NextResponse.json(category);
 
   } catch (error) {
-    console.error(`Error fetching category ${id}:`, error);
+    console.error(`Error fetching category ${idOrSlug}:`, error);
     return NextResponse.json({ message: 'Error fetching category from database' }, { status: 500 });
   }
 }
@@ -79,6 +90,7 @@ export async function PUT(request, { params }) {
     const formData = await request.formData();
     const name = formData.get('name');
     const description = formData.get('description');
+    const customSlug = formData.get('slug');
     const productIdsString = formData.get('product_ids');
     const imageFile = formData.get('image');
     const image_url = formData.get('image_url'); // To handle image removal
@@ -89,9 +101,27 @@ export async function PUT(request, { params }) {
 
     await client.query('BEGIN');
 
-    const { rows: existingRows } = await client.query('SELECT image_url FROM categories WHERE id = $1', [id]);
+    const { rows: existingRows } = await client.query('SELECT name, slug, image_url FROM categories WHERE id = $1', [id]);
     if (existingRows.length === 0) {
         return NextResponse.json({ message: 'Category not found' }, { status: 404 });
+    }
+
+    // Handle slug update
+    const slugify = (text) => text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
+    let slug = existingRows[0].slug;
+    
+    if (customSlug) {
+        slug = slugify(customSlug);
+    } else if (name !== existingRows[0].name || !slug) {
+        let baseSlug = slugify(name);
+        slug = baseSlug;
+        let counter = 1;
+        while (true) {
+            const { rows: existing } = await client.query('SELECT id FROM categories WHERE slug = $1 AND id != $2', [slug, id]);
+            if (existing.length === 0) break;
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+        }
     }
 
     let newImageUrl = existingRows[0].image_url;
@@ -104,8 +134,8 @@ export async function PUT(request, { params }) {
       newImageUrl = null;
     }
 
-    const updateCategorySql = 'UPDATE categories SET name = $1, description = $2, image_url = $3 WHERE id = $4';
-    await client.query(updateCategorySql, [name, description, newImageUrl, id]);
+    const updateCategorySql = 'UPDATE categories SET name = $1, description = $2, image_url = $3, slug = $4 WHERE id = $5';
+    await client.query(updateCategorySql, [name, description, newImageUrl, slug, id]);
 
     // Update product associations
     await client.query('DELETE FROM category_products WHERE category_id = $1', [id]);

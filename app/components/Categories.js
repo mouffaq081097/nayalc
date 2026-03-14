@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -20,6 +22,7 @@ export function Categories() {
         const data = await response.json();
         const formattedCategories = data.map(cat => ({
           id: cat.id,
+          slug: cat.slug,
           name: cat.name,
           description: cat.description || 'Explore Collection',
           image: cat.imageUrl,
@@ -51,13 +54,13 @@ export function Categories() {
 
       <Container className="relative z-10">
         {/* Section Header */}
-        <div className="mb-8 text-center space-y-4">
+        <div className="mb-6 text-center space-y-3">
             <div className="flex items-center justify-center gap-3">
                 <span className="w-8 h-px bg-brand-pink/30"></span>
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-pink">Our Departments</span>
                 <span className="w-8 h-px bg-brand-pink/30"></span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-serif text-gray-900 italic">
+            <h2 className="text-3xl md:text-4xl font-serif text-gray-900 italic">
                 Curated <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">Universes</span>
             </h2>
         </div>
@@ -73,12 +76,12 @@ export function Categories() {
           <CarouselContent className="-ml-4">
             {categories.map((category) => (
               <CarouselItem key={category.id} className="pl-4 basis-[85%] md:basis-1/3 lg:basis-1/4">
-                <Link href={category.id === 4 ? '/fragrance' : `/collections/${String(category.id)}`} className="block h-full group">
-                  <div className="relative h-[400px] w-full rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20">
+                <Link href={category.slug ? `/collections/${category.slug}` : `/collections/${category.id}`} className="block h-full group">
+                  <div className="relative h-[350px] w-full rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20">
                     
                     {/* Image Container */}
                     <div className="absolute inset-0 p-4">
-                        <div className="relative w-full h-[70%] rounded-[1.5rem] overflow-hidden bg-gray-50">
+                        <div className="relative w-full h-[75%] rounded-[1.5rem] overflow-hidden bg-gray-50">
                             <Image
                                 src={category.image}
                                 alt={category.name}
@@ -91,8 +94,8 @@ export function Categories() {
                     </div>
 
                     {/* Content */}
-                    <div className="absolute inset-x-0 bottom-0 h-[30%] flex flex-col items-center justify-center p-6 text-center">
-                        <h3 className="text-xl font-serif italic text-gray-900 mb-2 group-hover:text-brand-pink transition-colors duration-300">
+                    <div className="absolute inset-x-0 bottom-0 h-[25%] flex flex-col items-center justify-center p-6 text-center">
+                        <h3 className="text-lg font-serif italic text-gray-900 mb-2 group-hover:text-brand-pink transition-colors duration-300">
                             {category.name}
                         </h3>
                         <div className="flex items-center gap-2 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">

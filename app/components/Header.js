@@ -49,10 +49,10 @@ const Header = forwardRef((props, ref) => {
           isScrolled ? 'pt-4 px-4' : 'pt-0 px-0'
         }`}
       >
-        <div className={`mx-auto transition-all duration-500 ease-in-out flex flex-col ${isScrolled ? 'max-w-6xl bg-white/80 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-white/40 rounded-[2.5rem] overflow-hidden' : 'max-w-full bg-white border-b border-gray-100'}`}>
+        <div className={`mx-auto transition-all duration-500 ease-in-out flex flex-col ${isScrolled ? 'max-w-5xl bg-white/80 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-white/40 rounded-[2rem] overflow-hidden' : 'max-w-full bg-black/10 backdrop-blur-md border-b border-white/5'}`}>
             <div 
             className={`w-full flex items-center justify-between gap-4 md:gap-8 px-6 md:px-10 transition-all duration-500 ease-in-out ${
-                isScrolled ? 'h-16 md:h-18' : 'h-14 md:h-16'
+                isScrolled ? 'h-12 md:h-14' : 'h-14 md:h-16'
             }`}
             >
             
@@ -60,9 +60,9 @@ const Header = forwardRef((props, ref) => {
             <div className="flex items-center gap-6 flex-1">
                 <button 
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="md:hidden p-2 text-[#1d1d1f] hover:text-brand-pink transition-colors"
+                    className={`md:hidden p-2 transition-colors ${isScrolled ? 'text-[#1d1d1f]' : 'text-black'}`}
                 >
-                    {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                    {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
                 </button>
 
                 <nav className="hidden md:flex items-center gap-8">
@@ -75,7 +75,7 @@ const Header = forwardRef((props, ref) => {
                     <Link 
                         key={link.name} 
                         href={link.href} 
-                        className="text-[13px] md:text-[14px] font-medium tracking-tight text-gray-800 hover:text-brand-pink transition-all"
+                        className={`text-[12px] md:text-[13px] font-medium tracking-tight transition-all hover:text-brand-pink ${isScrolled ? 'text-gray-800' : 'text-black'}`}
                     >
                         {link.name}
                     </Link>
@@ -85,14 +85,14 @@ const Header = forwardRef((props, ref) => {
 
             {/* Center: Logo */}
             <Link href="/" className="flex items-center shrink-0 transition-all active:scale-95 group">
-                <NayaLumiereLogo className="h-7 md:h-9 w-auto transition-all duration-700" />
+                <NayaLumiereLogo className="h-6 md:h-8 w-auto transition-all duration-700" />
             </Link>
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2 md:gap-4 flex-1 justify-end">
                 <button 
                     onClick={() => setIsSearchOpen(!isSearchOpen)}
-                    className="hidden md:block p-2.5 text-gray-600 hover:text-brand-pink transition-colors rounded-full hover:bg-gray-50"
+                    className={`hidden md:block p-2.5 transition-colors rounded-full hover:bg-white/10 ${isScrolled ? 'text-gray-600' : 'text-black'}`}
                 >
                     <Search size={18} strokeWidth={2} />
                 </button>

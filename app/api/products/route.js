@@ -18,9 +18,11 @@ export async function GET(request) {
     if (isNew === 'true') {
             sql = `
               SELECT
-                p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
+                p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
                 b.name as "brandName",
-                pi.image_url as "imageUrl",
+                (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = TRUE LIMIT 1) as "imageUrl",
+                (SELECT alt_text FROM product_images WHERE product_id = p.id AND is_main = TRUE LIMIT 1) as "altText",
+                (SELECT JSON_AGG(JSON_BUILD_OBJECT('url', image_url, 'alt', alt_text)) FROM product_images WHERE product_id = p.id AND is_main = FALSE) as "additionalImagesData",
                 COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
                 COUNT(r.id) as "reviewCount"
               FROM
@@ -28,18 +30,18 @@ export async function GET(request) {
               LEFT JOIN
                 brands b ON p.brand_id = b.id
               LEFT JOIN
-                product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
-              LEFT JOIN
                 reviews r ON p.id = r.product_id
               WHERE p.id IS NOT NULL
-              GROUP BY p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id, b.name, pi.image_url
+              GROUP BY p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id, b.name
               ORDER BY p.id DESC
             `;    } else {
       sql = `
         SELECT
-          p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
+          p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id,
           b.name as "brandName",
-          pi.image_url as "imageUrl",
+          (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = TRUE LIMIT 1) as "imageUrl",
+          (SELECT alt_text FROM product_images WHERE product_id = p.id AND is_main = TRUE LIMIT 1) as "altText",
+          (SELECT JSON_AGG(JSON_BUILD_OBJECT('url', image_url, 'alt', alt_text)) FROM product_images WHERE product_id = p.id AND is_main = FALSE) as "additionalImagesData",
           COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
           COUNT(r.id) as "reviewCount",
           STRING_AGG(DISTINCT c.name, ', ') as "categoryNames",
@@ -48,8 +50,6 @@ export async function GET(request) {
           products p
         LEFT JOIN
           brands b ON p.brand_id = b.id
-        LEFT JOIN
-          product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
         LEFT JOIN
           category_products cp ON p.id = cp.product_id
         LEFT JOIN
@@ -81,7 +81,7 @@ export async function GET(request) {
         sql += ` WHERE ${whereClauses.join(' AND ')}`;
       }
 
-      sql += ` GROUP BY p.id, p.name, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id, b.name, pi.image_url`;
+      sql += ` GROUP BY p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id, b.name`;
     }
 
     if (random === 'true') {
@@ -119,11 +119,23 @@ export async function POST(request) {
       if (brandRows.length > 0) vendorName = brandRows[0].name;
     }
 
+    // Generate slug for new product
+    const slugify = (text) => text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
+    let baseSlug = slugify(name);
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+        const { rows: existing } = await client.query('SELECT id FROM products WHERE slug = $1', [slug]);
+        if (existing.length === 0) break;
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+
     const productSql = `
-      INSERT INTO products (name, description, price, stock_quantity, status, vendor, long_description, benefits, how_to_use, comparedprice, ingredients, brand_id)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id;
+      INSERT INTO products (name, slug, description, price, stock_quantity, status, vendor, long_description, benefits, how_to_use, comparedprice, ingredients, brand_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id;
     `;
-    const productValues = [name, description, price, stock_quantity, status, vendorName, long_description, benefits, how_to_use, comparedprice, ingredients, brand_id];
+    const productValues = [name, slug, description, price, stock_quantity, status, vendorName, long_description, benefits, how_to_use, comparedprice, ingredients, brand_id];
     const { rows: productRows } = await client.query(productSql, productValues);
     const productId = productRows[0].id;
 
@@ -134,18 +146,22 @@ export async function POST(request) {
     }
 
     const mainImageFile = formData.get('mainImage');
+    const mainAltText = formData.get('mainAltText') || '';
     if (mainImageFile && mainImageFile.size > 0) {
       const imageBuffer = Buffer.from(await mainImageFile.arrayBuffer());
       const uploadResult = await uploadImageToCloudinary(imageBuffer);
-      await client.query('INSERT INTO product_images (product_id, image_url, is_main) VALUES ($1, $2, TRUE)', [productId, uploadResult.secure_url]);
+      await client.query('INSERT INTO product_images (product_id, image_url, is_main, alt_text) VALUES ($1, $2, TRUE, $3)', [productId, uploadResult.secure_url, mainAltText]);
     }
 
     const additionalImageFiles = formData.getAll('additionalImages');
-    for (const imageFile of additionalImageFiles) {
+    const additionalAlts = formData.getAll('additionalAlts');
+    for (let i = 0; i < additionalImageFiles.length; i++) {
+      const imageFile = additionalImageFiles[i];
+      const altText = additionalAlts[i] || '';
       if (imageFile && imageFile.size > 0) {
         const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
         const uploadResult = await uploadImageToCloudinary(imageBuffer);
-        await client.query('INSERT INTO product_images (product_id, image_url, is_main) VALUES ($1, $2, FALSE)', [productId, uploadResult.secure_url]);
+        await client.query('INSERT INTO product_images (product_id, image_url, is_main, alt_text) VALUES ($1, $2, FALSE, $3)', [productId, uploadResult.secure_url, altText]);
       }
     }
 

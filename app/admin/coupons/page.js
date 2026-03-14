@@ -12,9 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import { Search, Tag, Calendar, Percent, DollarSign, Edit, Trash2, PlusCircle, Loader2, MoreHorizontal } from 'lucide-react';
+import { Search, Tag, Calendar, Percent, DollarSign, Edit, Trash2, PlusCircle, Loader2, MoreHorizontal, Ticket, ShieldCheck, Zap, Info, Clock, ArrowRight } from 'lucide-react';
 import Modal from '@/app/components/Modal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const CouponsPage = () => {
   const [coupons, setCoupons] = useState([]);
@@ -129,7 +130,7 @@ const CouponsPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this coupon?')) {
+    if (window.confirm('Are you sure you want to delete this privilege code? This cannot be undone.')) {
       try {
         const response = await fetch(`/api/coupons/${id}`, { method: 'DELETE' });
         if (!response.ok) {
@@ -148,166 +149,279 @@ const CouponsPage = () => {
 
   if (isLoading) {
     return (
-        <div className="flex justify-center items-center h-screen">
-            <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
+        <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Validating Privileges...</p>
         </div>
     );
   }
 
-  if (error) return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
-
   return (
-    <div>
-        <Modal isOpen={isModalOpen} onClose={resetForm} title={editMode ? 'Edit Coupon' : 'Add New Coupon'}>
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <fieldset disabled={isSubmitting} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <Label htmlFor="code">Coupon Code</Label>
-                        <Input id="code" name="code" value={currentCoupon.code} onChange={handleInputChange} required className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                    </div>
-                    <div>
-                        <Label htmlFor="discount_type">Discount Type</Label>
-                        <Select name="discount_type" value={currentCoupon.discount_type} onValueChange={(value) => handleSelectChange('discount_type', value)}>
-                            <SelectTrigger className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="percentage">Percentage</SelectItem>
-                                <SelectItem value="fixed_amount">Fixed Amount</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label htmlFor="discount_value">
-                            {currentCoupon.discount_type === 'percentage' ? 'Discount Percentage' : 'Discount Amount'}
-                        </Label>
-                        <Input
-                            id="discount_value"
-                            name="discount_value"
-                            type="number"
-                            step="0.01"
-                            value={currentCoupon.discount_value}
-                            onChange={handleInputChange}
-                            required
-                            placeholder={currentCoupon.discount_type === 'percentage' ? 'e.g., 10 (for 10%)' : 'e.g., 10 (for 10 AED)'}
-                            className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="expiration_date">Expiration Date</Label>
-                        <Input id="expiration_date" name="expiration_date" type="date" value={currentCoupon.expiration_date} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                    </div>
-                    <div>
-                        <Label htmlFor="usage_limit">Usage Limit</Label>
-                        <Input id="usage_limit" name="usage_limit" type="number" value={currentCoupon.usage_limit} onChange={handleInputChange} placeholder="Leave blank for no limit" className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                    </div>
-                    <div>
-                        <Label htmlFor="minimum_purchase_amount">Minimum Purchase Amount</Label>
-                        <Input id="minimum_purchase_amount" name="minimum_purchase_amount" type="number" step="0.01" value={currentCoupon.minimum_purchase_amount} onChange={handleInputChange} placeholder="Leave blank for no minimum" className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                    </div>
-                    <div className="flex items-center pt-6 space-x-2">
-                        <Checkbox id="is_active" name="is_active" checked={currentCoupon.is_active} onCheckedChange={(checked) => handleSelectChange('is_active', checked)} />
-                        <Label htmlFor="is_active">Active</Label>
-                    </div>
-                </fieldset>
-                <div className="mt-6 flex justify-end space-x-4">
-                    <Button type="button" variant="outline" onClick={resetForm} disabled={isSubmitting} className="px-6 py-3">Cancel</Button>
-                    <Button type="submit" disabled={isSubmitting} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white">
-                        {isSubmitting ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Saving...
-                            </>
-                        ) : (
-                            editMode ? 'Update Coupon' : 'Add Coupon'
-                        )}
-                    </Button>
-                </div>
-            </form>
-        </Modal>
-
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
-        <div className="relative w-full md:w-auto">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-                type="text"
-                placeholder="Search by code..."
-                className="pl-10 pr-4 py-2 border rounded-full w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
-        <Button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Coupon
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {filteredCoupons.map(coupon => (
-            <div key={coupon.id} className={`bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 ${!coupon.is_active ? 'opacity-60' : ''}`}>
-                <div className="p-6">
-                    <div className="flex justify-between items-start">
-                        <div className="flex items-center space-x-4">
-                             <div className="bg-indigo-100 p-3 rounded-full">
-                                <Tag className="h-6 w-6 text-indigo-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-gray-900">{coupon.code}</p>
-                                <p className={`text-sm font-semibold ${coupon.is_active ? 'text-green-500' : 'text-red-500'}`}>
-                                    {coupon.is_active ? 'Active' : 'Inactive'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex space-x-2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    <DropdownMenuItem onClick={() => handleEdit(coupon)}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDelete(coupon.id)}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
-                    
-                    <div className="mt-6 space-y-3 text-gray-700">
-                        <div className="flex items-center">
-                            {coupon.discount_type === 'percentage' ? <Percent className="h-5 w-5 mr-3 text-gray-400" /> : <DollarSign className="h-5 w-5 mr-3 text-gray-400" />}
-                            <span>{coupon.discount_value}{coupon.discount_type === 'percentage' ? '%' : ' AED'} discount</span>
-                        </div>
-                        <div className="flex items-center">
-                            <Calendar className="h-5 w-5 mr-3 text-gray-400" />
-                            <span>Expires: {coupon.expiration_date ? new Date(coupon.expiration_date).toLocaleDateString() : 'Never'}</span>
-                        </div>
-                        <div className="flex items-center">
-                            <DollarSign className="h-5 w-5 mr-3 text-gray-400" />
-                            <span>Min. Purchase: {coupon.minimum_purchase_amount ? `${coupon.minimum_purchase_amount} AED` : 'None'}</span>
-                        </div>
-                         <div className="flex items-center">
-                            <Tag className="h-5 w-5 mr-3 text-gray-400" />
-                            <span>Usage: {coupon.usage_count} / {coupon.usage_limit || '∞'}</span>
-                        </div>
-                    </div>
-                </div>
+    <div className="space-y-10 pb-20">
+        {/* Header Actions */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+            <div>
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Privilege Registry</h2>
+                <p className="text-sm text-gray-400 mt-1">Managing {coupons.length} promotional vectors for the Naya Lumière market</p>
             </div>
-        ))}
-      </div>
-       {filteredCoupons.length === 0 && (
-            <div className="text-center mt-10">
-                <p className="text-xl text-gray-500">No coupons found.</p>
+            
+            <div className="flex items-center gap-4">
+                <div className="relative flex-grow md:w-64">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search by code..."
+                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                
+                <Button 
+                    onClick={() => setIsModalOpen(true)} 
+                    className="bg-gray-900 hover:bg-indigo-600 text-white rounded-xl px-6 py-6 text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                >
+                    <PlusCircle className="mr-2 h-4 w-4" /> Issue New Privilege
+                </Button>
+            </div>
+        </div>
+
+        {/* Coupons Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <AnimatePresence>
+                {filteredCoupons.map(coupon => (
+                    <motion.div 
+                        key={coupon.id} 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`group relative bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col ${!coupon.is_active ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                    >
+                        {/* Decorative background element */}
+                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                            {coupon.discount_type === 'percentage' ? <Percent size={120} /> : <DollarSign size={120} />}
+                        </div>
+
+                        <div className="p-8 space-y-6 flex-grow relative z-10">
+                            <div className="flex justify-between items-start">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${coupon.is_active ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                            {coupon.is_active ? 'Active Privilege' : 'Deactivated'}
+                                        </p>
+                                    </div>
+                                    <h3 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">{coupon.code}</h3>
+                                </div>
+                                
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="w-10 h-10 rounded-xl hover:bg-gray-50 border border-gray-50 flex items-center justify-center transition-all">
+                                            <MoreHorizontal className="h-5 w-5 text-gray-300" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="rounded-xl shadow-2xl border-gray-100 p-2">
+                                        <DropdownMenuItem onClick={() => handleEdit(coupon)} className="rounded-lg px-4 py-3 text-sm font-medium gap-3">
+                                            <Edit size={16} className="text-indigo-600" /> Refine Parameters
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleDelete(coupon.id)} className="rounded-lg px-4 py-3 text-sm font-medium gap-3 text-red-600">
+                                            <Trash2 size={16} /> Revoke Privilege
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl font-black text-indigo-600 tracking-tighter">
+                                    {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `AED ${coupon.discount_value}`}
+                                </span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reduction</span>
+                            </div>
+
+                            <div className="space-y-3 pt-6 border-t border-gray-50">
+                                <div className="flex items-center gap-3">
+                                    <Calendar size={14} className="text-gray-300" />
+                                    <span className="text-xs font-medium text-gray-500 italic">
+                                        Expires {coupon.expiration_date ? new Date(coupon.expiration_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Indefinite'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Zap size={14} className="text-gray-300" />
+                                    <span className="text-xs font-medium text-gray-500 italic">
+                                        Min. Order: {coupon.minimum_purchase_amount ? `AED ${coupon.minimum_purchase_amount}` : 'No minimum'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-auto bg-gray-50/50 p-6 border-t border-gray-50 flex items-center justify-between">
+                            <div className="space-y-1">
+                                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Usage Quota</p>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-indigo-500 rounded-full" 
+                                            style={{ width: coupon.usage_limit ? `${(coupon.usage_count / coupon.usage_limit) * 100}%` : '5%' }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-xs font-bold text-gray-900">{coupon.usage_count} / {coupon.usage_limit || '∞'}</span>
+                                </div>
+                            </div>
+                            <button onClick={() => handleEdit(coupon)} className="p-2 text-gray-300 hover:text-indigo-600 transition-colors">
+                                <ArrowRight size={20} />
+                            </button>
+                        </div>
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </div>
+
+        {filteredCoupons.length === 0 && (
+            <div className="min-h-[300px] bg-white rounded-[2.5rem] border border-dashed border-gray-200 flex flex-col items-center justify-center gap-4">
+                <Ticket size={40} className="text-gray-200" />
+                <p className="text-lg font-medium text-gray-400 italic">No privilege codes match your current parameters.</p>
             </div>
         )}
-    </div>
-  );
+
+        {/* Modal Redesign */}
+        <Modal 
+            isOpen={isModalOpen} 
+            onClose={resetForm} 
+            title={editMode ? 'Refine Privilege Parameters' : 'Issue New Privilege'}
+            size="max-w-4xl"
+            noBodyPadding
+        >
+            <form onSubmit={handleSubmit} className="p-10 lg:p-14">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <section className="space-y-8">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 mb-2 flex items-center gap-3">
+                                <span className="w-10 h-px bg-indigo-600/20"></span>
+                                Core Registry
+                            </h3>
+                            
+                            <div className="group">
+                                <label htmlFor="code" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-indigo-600">Privilege Code</label>
+                                <input 
+                                    id="code" name="code" value={currentCoupon.code} onChange={handleInputChange} 
+                                    placeholder="e.g., ROYALTY2025"
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-black text-gray-900 focus:bg-white transition-all text-xl uppercase tracking-tighter shadow-inner"
+                                    required disabled={isSubmitting} 
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="group">
+                                    <label htmlFor="discount_type" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Reduction Mechanism</label>
+                                    <Select name="discount_type" value={currentCoupon.discount_type} onValueChange={(value) => handleSelectChange('discount_type', value)}>
+                                        <SelectTrigger className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 h-auto font-bold text-gray-900 focus:bg-white transition-all">
+                                            <SelectValue placeholder="Mechanism" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl shadow-2xl border-gray-100">
+                                            <SelectItem value="percentage" className="rounded-xl px-4 py-3">Percentage (%)</SelectItem>
+                                            <SelectItem value="fixed_amount" className="rounded-xl px-4 py-3">Fixed Amount (AED)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="group">
+                                    <label htmlFor="discount_value" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Quantum Value</label>
+                                    <input
+                                        id="discount_value" name="discount_value" type="number" step="0.01" value={currentCoupon.discount_value} onChange={handleInputChange}
+                                        placeholder={currentCoupon.discount_type === 'percentage' ? 'e.g., 15' : 'e.g., 50'}
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-black text-gray-900 focus:bg-white transition-all shadow-inner"
+                                        required disabled={isSubmitting}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="bg-indigo-50/50 rounded-3xl p-8 border border-indigo-100/30">
+                                <div className="flex items-center gap-3 mb-4 text-indigo-600">
+                                    <ShieldCheck size={18} />
+                                    <span className="text-[11px] font-black uppercase tracking-widest">Protocol Verification</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-[11px] text-gray-500 font-medium italic">Is this privilege currently active in the ecosystem?</p>
+                                    <div className="flex items-center gap-3">
+                                        <Checkbox 
+                                            id="is_active" checked={currentCoupon.is_active} 
+                                            onCheckedChange={(checked) => handleSelectChange('is_active', checked)} 
+                                            className="w-6 h-6 rounded-lg border-2 border-indigo-200 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                                        />
+                                        <Label htmlFor="is_active" className="text-[11px] font-black uppercase tracking-widest text-gray-900 cursor-pointer">Active</Label>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="space-y-8">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 mb-2 flex items-center gap-3">
+                                <span className="w-10 h-px bg-indigo-600/20"></span>
+                                Logistics & Scope
+                            </h3>
+                            
+                            <div className="group">
+                                <label htmlFor="expiration_date" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Void Threshold (Expiration)</label>
+                                <div className="relative">
+                                    <Clock className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                                    <input 
+                                        id="expiration_date" name="expiration_date" type="date" value={currentCoupon.expiration_date} onChange={handleInputChange} 
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-16 pr-6 py-4 font-bold text-gray-600 focus:bg-white transition-all cursor-pointer"
+                                        disabled={isSubmitting} 
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="group">
+                                <label htmlFor="usage_limit" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Activation Quota (Usage Limit)</label>
+                                <input 
+                                    id="usage_limit" name="usage_limit" type="number" value={currentCoupon.usage_limit} onChange={handleInputChange} 
+                                    placeholder="Indefinite activation if blank"
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white transition-all shadow-inner"
+                                    disabled={isSubmitting} 
+                                />
+                            </div>
+
+                            <div className="group">
+                                <label htmlFor="minimum_purchase_amount" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Transaction Minimum (AED)</label>
+                                <div className="relative">
+                                    <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                                    <input 
+                                        id="minimum_purchase_amount" name="minimum_purchase_amount" type="number" step="0.01" value={currentCoupon.minimum_purchase_amount} onChange={handleInputChange} 
+                                        placeholder="No transaction limit if blank"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-16 pr-6 py-4 font-bold text-gray-900 focus:bg-white transition-all shadow-inner"
+                                        disabled={isSubmitting} 
+                                    />
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div className="mt-12 pt-10 border-t border-gray-50 flex justify-end gap-6">
+                        <button 
+                            type="button" 
+                            onClick={resetForm} 
+                            className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
+                            disabled={isSubmitting}
+                        >
+                            Retract Request
+                        </button>
+                        <Button 
+                            type="submit" 
+                            disabled={isSubmitting} 
+                            className="px-10 py-6 bg-indigo-600 hover:bg-gray-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                                    <span>Synchronizing...</span>
+                                </>
+                            ) : (
+                                editMode ? 'Update Privilege' : 'Issue Privilege'
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+        </div>
+    );
 };
 
 export default CouponsPage;

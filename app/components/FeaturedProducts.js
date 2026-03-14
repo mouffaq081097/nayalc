@@ -1,3 +1,5 @@
+'use client';
+
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from './ui/carousel.tsx';
 import { Container } from './ui/Container';
 import ProductCard from './ProductCard';
@@ -21,13 +23,13 @@ export function FeaturedProducts() {
 
       <Container className="relative z-10">
         {/* Section Header */}
-        <div className="mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
+        <div className="mb-6 flex flex-col md:flex-row justify-between items-end gap-5">
           <div className="space-y-3">
              <div className="flex items-center gap-3">
                 <span className="w-8 h-px bg-brand-pink/30"></span>
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-pink">Editor's Pick</span>
              </div>
-             <h2 className="text-4xl md:text-5xl font-serif text-gray-900 italic">
+             <h2 className="text-3xl md:text-4xl font-serif text-gray-900 italic">
                 Signature <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">Selection</span>
              </h2>
           </div>
@@ -49,9 +51,9 @@ export function FeaturedProducts() {
           }}
           className="w-full"
         >
-          <CarouselContent className="-ml-4">
+          <CarouselContent className="-ml-2">
             {displayedProducts.map((product) => (
-              <CarouselItem key={product.id} className="pl-4 basis-[85%] md:basis-1/3 lg:basis-1/4">
+              <CarouselItem key={product.id} className="pl-2 basis-[85%] md:basis-1/3 lg:basis-1/4">
                 <div className="h-full p-1"> {/* Padding for hover effects */}
                     <ProductCard
                     key={product.id}

@@ -382,7 +382,7 @@ export default function AllProductsPage() {
               <div className="space-y-16">
                 <motion.div 
                     layout
-                    className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-x-4 md:gap-x-5 gap-y-8 md:gap-y-12`}
+                    className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-x-3 md:gap-x-4 gap-y-6 md:gap-y-10`}
                 >
                     <AnimatePresence mode='popLayout'>
                         {displayedProducts.map((product, index) => (

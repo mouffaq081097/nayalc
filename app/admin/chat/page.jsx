@@ -4,10 +4,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAppContext } from '../../context/AppContext';
 import Link from 'next/link';
-import { Loader2, MessageSquare, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Loader2, MessageSquare, MoreHorizontal, Trash2, Zap, Clock, User, ArrowRight, MessageCircle, ShieldCheck, Search } from 'lucide-react';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminChatPage = () => {
     const { fetchWithAuth } = useAppContext();
@@ -15,12 +16,13 @@ const AdminChatPage = () => {
     const [liveConversations, setLiveConversations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const socketRef = useRef(null); // Use useRef for socket instance
+    const [searchTerm, setSearchTerm] = useState('');
+    const socketRef = useRef(null);
 
     // Socket.io initialization and event listeners
     useEffect(() => {
         const initSocket = async () => {
-            await fetch('/api/socket'); // Ensure Socket.io server is initialized
+            await fetch('/api/socket');
             const newSocket = io('/', { path: '/api/socket_io' });
             socketRef.current = newSocket;
 
@@ -34,27 +36,22 @@ const AdminChatPage = () => {
                     if (existingConvIndex > -1) {
                         const updatedConv = {
                             ...prev[existingConvIndex],
-                            updatedAt: new Date().toISOString(), // Update timestamp
+                            updatedAt: new Date().toISOString(),
                             status: message.senderType === 'customer' ? 'pending_admin_response' : prev[existingConvIndex].status,
-                            // Optionally, update last message snippet here if available
                         };
                         const newConvs = [...prev];
                         newConvs[existingConvIndex] = updatedConv;
                         return newConvs;
-                    } else {
-                        // If conversation not found, it might be a new one, re-fetch all
-                        // For simplicity, let's refetch all for now, or add specific logic
-                        return prev;
                     }
+                    return prev;
                 });
-                // Re-filter live conversations
+                
                 setLiveConversations(prev => {
                     const updatedPrev = prev.map(conv =>
                         conv.id === message.conversationId
                             ? { ...conv, updatedAt: new Date().toISOString(), status: message.senderType === 'customer' ? 'pending_admin_response' : conv.status }
                             : conv
                     );
-                    // If the updated conversation's status changes to non-live, filter it out
                     return updatedPrev.filter(conv => conv.status === 'open' || conv.status === 'pending_admin_response');
                 });
             });
@@ -70,21 +67,15 @@ const AdminChatPage = () => {
                     return prev;
                 });
                 setLiveConversations(prev => {
-                    // Update if status is live, remove if not
                     const updatedPrev = prev.map(conv => conv.id === updatedConversation.id ? updatedConversation : conv);
                     return updatedPrev.filter(conv => conv.status === 'open' || conv.status === 'pending_admin_response');
                 });
             });
-
-
-            newSocket.on('disconnect', () => {
-            });
         };
 
-        if (isLoading === false) { // Only initialize socket after initial conversation data is loaded
+        if (isLoading === false) {
             initSocket();
         }
-
 
         return () => {
             if (socketRef.current) {
@@ -92,7 +83,7 @@ const AdminChatPage = () => {
                 socketRef.current = null;
             }
         };
-    }, [isLoading, setConversations, setLiveConversations]); // Depends on isLoading to ensure data is loaded and state setters
+    }, [isLoading]);
 
     const fetchAllConversations = useCallback(async () => {
         setIsLoading(true);
@@ -112,7 +103,7 @@ const AdminChatPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [fetchWithAuth, setConversations, setLiveConversations]); // Added fetchWithAuth and setters to dependencies
+    }, [fetchWithAuth]);
 
     useEffect(() => {
         fetchAllConversations();
@@ -127,119 +118,206 @@ const AdminChatPage = () => {
                     method: 'DELETE',
                 });
                 if (res.ok) {
-                    alert('Conversation deleted successfully!');
-                    setConversations(prev => prev.filter(conv => conv.id !== conversationId)); // Remove from local state
-                    setLiveConversations(prev => prev.filter(conv => conv.id !== conversationId)); // Remove from live state
-                } else {
-                    const errData = await res.json();
-                    alert(`Failed to delete conversation: ${errData.message}`);
+                    setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+                    setLiveConversations(prev => prev.filter(conv => conv.id !== conversationId));
                 }
             } catch (err) {
-                alert(`Error deleting conversation: ${err.message}`);
+                console.error(err);
             }
         }
     };
 
-
-    const getStatusVariant = (status) => {
+    const getStatusStyles = (status) => {
         switch (status?.toLowerCase()) {
-            case 'open': return 'default';
-            case 'pending_admin_response': return 'destructive'; // Highlight for admin to respond
-            case 'pending_customer_response': return 'secondary';
-            case 'closed': return 'outline';
-            default: return 'default';
+            case 'open': return 'bg-blue-50 text-blue-600 border-blue-100';
+            case 'pending_admin_response': return 'bg-red-50 text-red-600 border-red-100 animate-pulse';
+            case 'pending_customer_response': return 'bg-orange-50 text-orange-600 border-orange-100';
+            case 'closed': return 'bg-gray-50 text-gray-400 border-gray-100';
+            default: return 'bg-gray-50 text-gray-400 border-gray-100';
         }
     };
 
+    const filteredConversations = conversations.filter(conv => 
+        (conv.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (conv.customerEmail || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                <Loader2 className="h-32 w-32 animate-spin text-indigo-500" />
+            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Activating Concierge Network...</p>
             </div>
         );
     }
 
-    if (error) {
-        return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
-    }
-
     return (
-        <div className="flex flex-col gap-6">
-            <h1 className="text-3xl font-bold text-gray-900">Customer Chats</h1>
-
-            {/* Live Customers Section */}
-            <div className="bg-white shadow-lg rounded-xl p-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Live Customers ({liveConversations.length})</h2>
-                {liveConversations.length === 0 ? (
-                    <div className="text-center text-gray-500 py-4">
-                        <MessageSquare className="h-8 w-8 mx-auto mb-2" />
-                        <p>No customers currently online or needing attention.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {liveConversations.map(conv => (
-                            <Link key={conv.id} href={`/admin/chat/${conv.id}`} className="block">
-                                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <p className="font-semibold text-gray-800 truncate">{conv.customerName || 'N/A'}</p>
-                                        <Badge variant={getStatusVariant(conv.status)}>{conv.status}</Badge>
-                                    </div>
-                                    <p className="text-sm text-gray-600 truncate">{conv.customerEmail}</p>
-                                    <span className="text-xs text-gray-500 mt-1 block">Last updated: {new Date(conv.updatedAt).toLocaleTimeString()}</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
+        <div className="space-y-12 pb-20">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Concierge Network</h2>
+                    <p className="text-sm text-gray-400 mt-1">Managing real-time interactions with Naya Lumière clientele</p>
+                </div>
+                
+                <div className="relative flex-grow max-w-md">
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search by client identity..."
+                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mt-6 mb-4">All Conversations</h2>
-            {conversations.length === 0 ? (
-                <div className="text-center text-gray-500 mt-10">
-                    <MessageSquare className="h-12 w-12 mx-auto mb-4" />
-                    <p>No conversations found.</p>
-                </div>
-            ) : (
-                <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-                    <ul className="divide-y divide-gray-200">
-                        {conversations.map((conv) => (
-                            <li key={conv.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-4">
-                                <Link href={`/admin/chat/${conv.id}`} className="flex-1 flex flex-col">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <p className="text-lg font-semibold text-gray-800">
-                                            {conv.customerName || 'N/A'}
-                                        </p>
-                                        <span className="text-xs text-gray-500">
-                                            {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm text-gray-500">
-                                        <p className="truncate">{conv.customerEmail}</p>
-                                        {/* Optional: Add a last message snippet here if available from API */}
-                                    </div>
-                                </Link>
+            {/* Live Attention Section */}
+            <section className="space-y-6">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500 mb-6 flex items-center gap-3">
+                    <span className="w-10 h-px bg-red-500/20"></span>
+                    <Zap size={12} className="animate-pulse" />
+                    Priority Attention Required ({liveConversations.length})
+                </h3>
+                
+                {liveConversations.length === 0 ? (
+                    <div className="bg-white rounded-[2.5rem] border border-dashed border-gray-100 p-12 flex flex-col items-center justify-center text-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center text-gray-200">
+                            <ShieldCheck size={32} />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Protocol Nominal</p>
+                            <p className="text-xs text-gray-300 italic mt-1">No clients currently awaiting concierge intervention.</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <AnimatePresence>
+                            {liveConversations.map(conv => (
+                                <motion.div 
+                                    key={conv.id}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="group relative bg-white rounded-[2rem] border border-red-100 shadow-xl shadow-red-500/5 overflow-hidden flex flex-col hover:border-red-200 transition-all duration-500"
+                                >
+                                    <div className="p-8 space-y-6">
+                                        <div className="flex justify-between items-start">
+                                            <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 shadow-inner">
+                                                <User size={28} strokeWidth={1.5} />
+                                            </div>
+                                            <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border ${getStatusStyles(conv.status)}`}>
+                                                Priority
+                                            </span>
+                                        </div>
+                                        
+                                        <div>
+                                            <h4 className="text-xl font-bold text-gray-900 tracking-tight">{conv.customerName || 'Anonymous Client'}</h4>
+                                            <p className="text-xs text-gray-400 font-medium truncate">{conv.customerEmail}</p>
+                                        </div>
 
-                                <div className="flex items-center space-x-2 flex-shrink-0">
-                                    <Badge variant={getStatusVariant(conv.status)}>{conv.status}</Badge>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}>
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                                        <div className="flex items-center gap-4 text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                                            <div className="flex items-center gap-1.5">
+                                                <Clock size={12} />
+                                                Last Active: {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <Link href={`/admin/chat/${conv.id}`} className="mt-auto">
+                                        <button className="w-full py-5 bg-red-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-gray-900 transition-all flex items-center justify-center gap-3">
+                                            Enter Consultation
+                                            <ArrowRight size={14} />
+                                        </button>
+                                    </Link>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                )}
+            </section>
+
+            {/* Archive Section */}
+            <section className="space-y-6">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 mb-6 flex items-center gap-3">
+                    <span className="w-10 h-px bg-gray-100"></span>
+                    Conversation Archives
+                </h3>
+                
+                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                    {filteredConversations.length === 0 ? (
+                        <div className="p-20 text-center flex flex-col items-center gap-4">
+                            <MessageSquare size={40} className="text-gray-100" />
+                            <p className="text-lg font-medium text-gray-400 italic">No historical dossiers found.</p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-gray-50">
+                                        <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Client Dossier</th>
+                                        <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Protocol State</th>
+                                        <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Last Transmission</th>
+                                        <th className="px-8 py-5"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {filteredConversations.map((conv) => (
+                                        <tr key={conv.id} className="group hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-8 py-6">
+                                                <div className="flex items-center gap-5">
+                                                    <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-white group-hover:shadow-md transition-all">
+                                                        <MessageCircle size={24} strokeWidth={1.5} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-gray-900">{conv.customerName || 'N/A'}</p>
+                                                        <p className="text-[11px] text-gray-400 font-medium italic truncate max-w-[200px]">{conv.customerEmail}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border ${getStatusStyles(conv.status)}`}>
+                                                    {conv.status?.replace(/_/g, ' ')}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-gray-900">
+                                                        {new Date(conv.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                    </span>
+                                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">
+                                                        {new Date(conv.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <Link href={`/admin/chat/${conv.id}`}>
+                                                        <button className="px-5 py-2.5 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-indigo-600 hover:text-white rounded-xl transition-all">
+                                                            Enter
+                                                        </button>
+                                                    </Link>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <button className="w-10 h-10 rounded-xl hover:bg-gray-50 flex items-center justify-center text-gray-300 hover:text-gray-900 transition-all">
+                                                                <MoreHorizontal size={18} />
+                                                            </button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="rounded-xl shadow-2xl border-gray-100 p-2">
+                                                            <DropdownMenuItem onClick={() => handleDeleteConversation(conv.id)} className="rounded-lg px-4 py-3 text-sm font-medium gap-3 text-red-600">
+                                                                <Trash2 size={16} /> Delete Dossier
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
-            )}
+            </section>
         </div>
     );
 };

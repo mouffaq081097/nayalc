@@ -33,14 +33,17 @@ export async function GET(request, context) {
             SELECT
                 p.id, p.name, p.description, p.price, b.name as "brand", p.stock_quantity,
                 p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice,
+                pi.image_url as "imageUrl",
+                pi.alt_text as "altText",
                 COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
                 COUNT(r.id) as "reviewCount"
             FROM products p
             LEFT JOIN reviews r ON p.id = r.product_id
             LEFT JOIN brands b ON p.brand_id = b.id
+            LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
             WHERE p.id = $1
             GROUP BY p.id, p.name, p.description, p.price, p.vendor, p.stock_quantity,
-                     p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice, b.name;
+                     p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice, b.name, pi.image_url, pi.alt_text;
         `;
         const { rows: productRows } = await client.query(productSql, [id]);
 
@@ -54,7 +57,7 @@ export async function GET(request, context) {
         product.comparedprice = parseFloat(product.comparedprice);
 
         const imagesSql = `
-            SELECT image_url
+            SELECT image_url, alt_text
             FROM product_images
             WHERE product_id = $1
             ORDER BY display_order ASC, id ASC;
@@ -62,6 +65,8 @@ export async function GET(request, context) {
         const { rows: imageRows } = await client.query(imagesSql, [id]);
 
         product.images = imageRows.map(row => row.image_url);
+        product.imagesData = imageRows.map(row => ({ url: row.image_url, alt: row.alt_text }));
+        product.additionalImagesData = imageRows.filter(row => row.image_url !== product.imageUrl).map(row => ({ url: row.image_url, alt: row.alt_text }));
 
         return NextResponse.json(product);
 
@@ -101,6 +106,7 @@ export async function PUT(request, context) {
         const how_to_use = formData.get('how_to_use');
         const status = formData.get('status');
         const mainImageFile = formData.get('mainImage'); // This will be a File object if uploaded
+        const mainAltText = formData.get('mainAltText') || '';
         const existingImageUrl = formData.get('imageUrl'); // Existing image URL if no new file
 
 
@@ -131,9 +137,48 @@ export async function PUT(request, context) {
             await client.query("DELETE FROM product_images WHERE product_id = $1 AND is_main = TRUE", [id]);
             // Insert new main image entry
             await client.query(
-                "INSERT INTO product_images (product_id, image_url, is_main, display_order) VALUES ($1, $2, TRUE, 0)",
-                [id, imageUrl]
+                "INSERT INTO product_images (product_id, image_url, is_main, display_order, alt_text) VALUES ($1, $2, TRUE, 0, $3)",
+                [id, imageUrl, mainAltText]
             );
+        }
+
+        // 2.5 Update additional images
+        const existingAdditionalImages = formData.getAll('existingAdditionalImages');
+        const existingAdditionalAlts = formData.getAll('existingAdditionalAlts');
+        
+        // Delete all non-main images that are not in the list of existing images to keep
+        if (existingAdditionalImages.length > 0) {
+            await client.query(
+                "DELETE FROM product_images WHERE product_id = $1 AND is_main = FALSE AND image_url NOT IN (" + 
+                existingAdditionalImages.map((_, i) => `$${i + 2}`).join(',') + ")",
+                [id, ...existingAdditionalImages]
+            );
+            
+            // Update alt text for the images we kept
+            for (let i = 0; i < existingAdditionalImages.length; i++) {
+                await client.query(
+                    "UPDATE product_images SET alt_text = $1 WHERE product_id = $2 AND image_url = $3",
+                    [existingAdditionalAlts[i] || '', id, existingAdditionalImages[i]]
+                );
+            }
+        } else {
+            await client.query("DELETE FROM product_images WHERE product_id = $1 AND is_main = FALSE", [id]);
+        }
+
+        // Upload and insert new additional images
+        const additionalImageFiles = formData.getAll('additionalImages');
+        const additionalAlts = formData.getAll('additionalAlts');
+        for (let i = 0; i < additionalImageFiles.length; i++) {
+            const imageFile = additionalImageFiles[i];
+            const altText = additionalAlts[i] || '';
+            if (imageFile && imageFile.size > 0) {
+                const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
+                const uploadResult = await uploadImageToCloudinary(imageBuffer);
+                await client.query(
+                    'INSERT INTO product_images (product_id, image_url, is_main, alt_text) VALUES ($1, $2, FALSE, $3)',
+                    [id, uploadResult.secure_url, altText]
+                );
+            }
         }
 
         // 3. Update category_products table

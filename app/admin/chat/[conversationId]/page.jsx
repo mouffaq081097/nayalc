@@ -4,11 +4,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/context/AuthContext';
-import { useAppContext } from '@/app/context/AppContext'; // Import useAppContext
+import { useAppContext } from '@/app/context/AppContext';
 import { Button } from '@/app/components/ui/button';
-
 import { Textarea } from '@/app/components/ui/textarea';
-import { Send, ArrowLeft, MessageSquare, Loader2, Trash, User, Clock } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Loader2, Trash2, User, Clock, ShieldCheck, Zap, Mail, MessageCircle, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/app/components/ui/badge';
 import {
@@ -18,13 +17,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/app/components/ui/select';
+import { motion, AnimatePresence } from 'framer-motion';
 
-let socket; // Global socket instance
+let socket;
 
 const AdminConversationPage = () => {
     const { conversationId } = useParams();
-    const { user } = useAuth(); // Assuming admin user is also available via AuthContext
-    const { fetchWithAuth } = useAppContext(); // Get fetchWithAuth from AppContext
+    const { user } = useAuth();
+    const { fetchWithAuth } = useAppContext();
     const router = useRouter();
 
     const [conversation, setConversation] = useState(null);
@@ -36,14 +36,11 @@ const AdminConversationPage = () => {
     const [newStatus, setNewStatus] = useState('');
     const messagesEndRef = useRef(null);
 
-    // Pagination states
-    const displayLimit = 10; // Number of messages to load at once
+    const displayLimit = 20;
     const [offset, setOffset] = useState(0);
-
     const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-
 
     const scrollToBottom = (behavior = "smooth") => {
         messagesEndRef.current?.scrollIntoView({ behavior });
@@ -51,58 +48,36 @@ const AdminConversationPage = () => {
 
     const handleDeleteConversation = async () => {
         if (!conversationId) return;
-
-        if (window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+        if (window.confirm('Are you sure you want to delete this historical dossier? This action is irreversible.')) {
             try {
                 const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}`, {
                     method: 'DELETE',
                 });
-                if (res.ok) {
-                    alert('Conversation deleted successfully!');
-                    router.push('/admin/chat'); // Redirect to conversation list
-                } else {
-                    const errData = await res.json();
-                    alert(`Failed to delete conversation: ${errData.message}`);
-                }
+                if (res.ok) router.push('/admin/chat');
             } catch (err) {
-                alert(`Error deleting conversation: ${err.message}`);
+                console.error(err);
             }
         }
     };
-
 
     const socketInitializer = useCallback(async () => {
         await fetch('/api/socket');
         socket = io('/', { path: '/api/socket_io' });
 
         socket.on('connect', () => {
-            console.log('Admin connected to Socket.io server');
-            if (conversationId) {
-                socket.emit('join_room', `conversation-${conversationId}`);
-            }
+            if (conversationId) socket.emit('join_room', `conversation-${conversationId}`);
         });
 
         socket.on('receive_message', (message) => {
             setMessages((prevMessages) => {
-                // Prevent adding duplicate messages
-                if (prevMessages.some(msg => msg.id === message.id)) {
-                    return prevMessages;
-                }
-                // Append new messages to ensure they appear at the bottom
-                const newMsgs = [...prevMessages, message];
-
-                return newMsgs;
+                if (prevMessages.some(msg => msg.id === message.id)) return prevMessages;
+                return [...prevMessages, message];
             });
-            scrollToBottom(); // Scroll to bottom on new message
-        });
-
-        socket.on('disconnect', () => {
-            console.log('Admin disconnected from Socket.io server');
+            scrollToBottom();
         });
     }, [conversationId]);
 
     const fetchConversationDetails = useCallback(async () => {
-        setIsLoading(true);
         try {
             const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}`);
             if (!res.ok) throw new Error('Failed to fetch conversation');
@@ -111,21 +86,16 @@ const AdminConversationPage = () => {
             setNewStatus(data.status);
         } catch (err) {
             setError(err.message);
-        } finally {
-            // setIsLoading(false); // Set false after messages are fetched
         }
     }, [conversationId, fetchWithAuth]);
+
     const fetchMessages = useCallback(async (isLoadMore = false) => {
         if (!conversationId) return;
-
-        if (isLoadMore) {
-            setIsLoadingMore(true);
-        } else {
-            setIsLoading(true); // Only for initial full load
-        }
+        if (isLoadMore) setIsLoadingMore(true);
+        else setIsLoading(true);
 
         try {
-            const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/messages?limit=${displayLimit}&offset=${offset}`);
+            const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/messages?limit=${displayLimit}&offset=${isLoadMore ? offset : 0}`);
             if (!res.ok) throw new Error('Failed to fetch messages');
             const data = await res.json();
 
@@ -133,105 +103,55 @@ const AdminConversationPage = () => {
                 const uniqueNewMessages = data.messages.filter(
                     (newMessage) => !prevMessages.some((existingMessage) => existingMessage.id === newMessage.id)
                 );
-                // Append new messages because they are fetched in DESC order and we want newest at bottom
-                return [...prevMessages, ...uniqueNewMessages];
+                return isLoadMore ? [...uniqueNewMessages, ...prevMessages] : data.messages.reverse();
             });
 
             setHasMoreMessages(data.totalMessages > (offset + data.messages.length));
-            setOffset(prevOffset => prevOffset + data.messages.length); // Update offset for next load
+            setOffset(prevOffset => prevOffset + data.messages.length);
 
             if (!isLoadMore) {
-                setInitialLoadComplete(true); // Mark initial load complete
-                scrollToBottom("auto"); // Scroll to bottom instantly on initial load
+                setInitialLoadComplete(true);
+                setTimeout(() => scrollToBottom("auto"), 100);
             }
         } catch (err) {
-            console.error('Error fetching messages:', err);
             setError(err.message);
         } finally {
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [conversationId, displayLimit, offset, fetchWithAuth]);
+    }, [conversationId, offset, fetchWithAuth]);
 
     useEffect(() => {
         if (conversationId && user?.id) {
             socketInitializer();
             fetchConversationDetails();
-            fetchMessages(); // Initial fetch
+            fetchMessages();
         }
-
-        return () => {
-            if (socket) {
-                socket.disconnect();
-            }
-        };
-    }, [conversationId, user, socketInitializer, fetchConversationDetails, fetchMessages]);
-
-    useEffect(() => {
-        // Only scroll to bottom for new messages if initial load is complete
-        if (initialLoadComplete) {
-            scrollToBottom();
-        }
-    }, [messages, initialLoadComplete]);
-
-    // Effect to clear notification when admin views the conversation
-    useEffect(() => {
-        if (conversation && conversation.status === 'pending_admin_response') {
-            const clearNotification = async () => {
-                try {
-                    await fetch(`/api/chat/conversation/${conversationId}/status`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ status: 'open' }),
-                    });
-                    // Optimistically update local state
-                    setConversation(prev => ({ ...prev, status: 'open' }));
-                    console.log(`Conversation ${conversationId} status updated to 'open' upon admin view.`);
-                } catch (error) {
-                    console.error('Error clearing admin notification:', error);
-                }
-            };
-            clearNotification();
-        }
-    }, [conversationId, conversation]); // Rerun when conversation or conversationId changes
+        return () => { if (socket) socket.disconnect(); };
+    }, [conversationId, user?.id]);
 
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !user?.id || !conversationId) return;
-
         setIsSending(true);
-        const messagePayload = {
-            senderId: user.id, // Assuming admin user ID
-            sender_type: 'admin',
-            content: newMessage, // Changed from message_text
-        };
+        const messagePayload = { senderId: user.id, sender_type: 'admin', content: newMessage };
 
         try {
             const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/messages`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(messagePayload),
             });
             if (res.ok) {
-                const newMessageData = await res.json(); // Get the returned message data
+                const newMessageData = await res.json();
                 setMessages((prevMessages) => {
-                    // Prevent adding duplicate messages
-                    if (prevMessages.some(msg => msg.id === newMessageData.id)) {
-                        return prevMessages;
-                    }
+                    if (prevMessages.some(msg => msg.id === newMessageData.id)) return prevMessages;
                     return [...prevMessages, newMessageData];
                 });
                 setNewMessage('');
-                // Message will also be added via socket event for other clients, but local UI is updated instantly
-            } else {
-                const errData = await res.json();
-                console.error('Failed to send message:', errData.message);
+                scrollToBottom();
             }
         } catch (err) {
-            console.error('Error sending message:', err);
+            console.error(err);
         } finally {
             setIsSending(false);
         }
@@ -239,170 +159,221 @@ const AdminConversationPage = () => {
 
     const handleUpdateStatus = async () => {
         if (!newStatus || !conversationId) return;
-
         try {
             const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/status`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus }),
             });
             if (res.ok) {
                 const updatedConv = await res.json();
                 setConversation(updatedConv.conversation);
-                // Optionally, inform user or refresh conversation list
-            } else {
-                const errData = await res.json();
-                console.error('Failed to update status:', errData.message);
             }
         } catch (err) {
-            console.error('Error updating status:', err);
+            console.error(err);
         }
     };
 
-    const getStatusBadgeVariant = (status) => {
+    const getStatusStyles = (status) => {
         switch (status?.toLowerCase()) {
-            case 'open': return 'default';
-            case 'pending_admin_response': return 'destructive';
-            case 'pending_customer_response': return 'secondary';
-            case 'closed': return 'outline';
-            default: return 'default';
+            case 'open': return 'bg-blue-50 text-blue-600 border-blue-100';
+            case 'pending_admin_response': return 'bg-red-50 text-red-600 border-red-100 animate-pulse';
+            case 'pending_customer_response': return 'bg-orange-50 text-orange-600 border-orange-100';
+            case 'closed': return 'bg-gray-50 text-gray-400 border-gray-100';
+            default: return 'bg-gray-50 text-gray-400 border-gray-100';
         }
     };
 
-
-    if (isLoading && !initialLoadComplete) { // Only show full loading screen on initial load
+    if (isLoading && !initialLoadComplete) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                <Loader2 className="h-32 w-32 animate-spin text-indigo-500" />
+            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Opening Secure Portal...</p>
             </div>
         );
     }
 
-    if (error) {
-        return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
-    }
-
-    if (!conversation) {
-        return <div className="text-center mt-10 text-gray-500">Conversation not found.</div>;
-    }
+    if (!conversation) return null;
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="mb-6 flex items-center justify-between">
-                <Link href="/admin/chat">
-                    <Button variant="outline">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Conversations
-                    </Button>
-                </Link>
-                <div className="flex items-center gap-4">
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        Conversation with {conversation.customerName || 'N/A'} (ID: {conversation.id})
-                    </h1>
-                    <Button variant="destructive" size="icon" onClick={handleDeleteConversation}>
-                        <Trash className="h-4 w-4" />
-                    </Button>
+        <div className="space-y-8 pb-20">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                    <Link href="/admin/chat">
+                        <button className="w-12 h-12 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:shadow-lg transition-all">
+                            <ArrowLeft size={20} />
+                        </button>
+                    </Link>
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tighter">Concierge Portal</h1>
+                            <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-full border ${getStatusStyles(conversation.status)}`}>
+                                {conversation.status?.replace(/_/g, ' ')}
+                            </span>
+                        </div>
+                        <p className="text-sm text-gray-400 font-medium italic">Consultation Dossier #{conversation.id}</p>
+                    </div>
                 </div>
+                
+                <Button onClick={handleDeleteConversation} variant="outline" className="rounded-xl border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all">
+                    <Trash2 size={16} className="mr-2" /> Dissolve Dossier
+                </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Conversation Details & Status */}
-                <div className="md:col-span-1 bg-white shadow-lg rounded-xl p-6 h-fit space-y-4">
-                    <div className="pb-2 border-b border-gray-200 mb-4">
-                        <h2 className="text-xl font-semibold text-gray-800">Details</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* Chat Interface */}
+                <div className="lg:col-span-8 flex flex-col h-[70vh] bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/20">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                                <MessageCircle size={20} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Transmission</p>
+                                <p className="text-sm font-bold text-gray-900">Synchronized with {conversation.customerName || 'Client'}</p>
+                            </div>
+                        </div>
+                        <Badge variant="outline" className="rounded-full border-green-100 bg-green-50 text-green-600 text-[9px] font-black tracking-widest">SECURE PORTAL</Badge>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <User className="h-5 w-5 text-gray-500" />
-                        <p className="text-gray-800 font-medium">Customer: {conversation.customerName} (<span className="text-sm text-gray-600">{conversation.customerEmail}</span>)</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Clock className="h-5 w-5 text-gray-500" />
-                        <p className="text-gray-800 font-medium">Started: <span className="text-sm text-gray-600">{conversation.createdAt && !isNaN(new Date(conversation.createdAt)) ? new Date(conversation.createdAt).toLocaleString() : 'N/A'}</span></p>
+                    <div className="flex-grow overflow-y-auto p-8 space-y-6 no-scrollbar bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]">
+                        {hasMoreMessages && (
+                            <button 
+                                onClick={() => fetchMessages(true)} 
+                                disabled={isLoadingMore}
+                                className="w-full py-4 text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 hover:text-indigo-600 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isLoadingMore ? <Loader2 size={14} className="animate-spin" /> : <ChevronUp size={14} />}
+                                Load Historical Transmissions
+                            </button>
+                        )}
+
+                        <AnimatePresence initial={false}>
+                            {messages.map((msg) => (
+                                <motion.div 
+                                    key={msg.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`flex ${msg.senderType === 'admin' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    <div className={`max-w-[80%] space-y-2 ${msg.senderType === 'admin' ? 'items-end' : 'items-start'}`}>
+                                        <div className={`px-6 py-4 rounded-[2rem] text-sm font-medium shadow-sm transition-all duration-500 ${
+                                            msg.senderType === 'admin' 
+                                            ? 'bg-indigo-600 text-white rounded-br-none' 
+                                            : 'bg-white border border-gray-100 text-gray-700 rounded-bl-none'
+                                        }`}>
+                                            {msg.messageText}
+                                        </div>
+                                        <div className={`flex items-center gap-2 px-2 ${msg.senderType === 'admin' ? 'flex-row-reverse' : ''}`}>
+                                            <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">
+                                                {msg.senderType === 'admin' ? 'You' : conversation.customerName || 'Client'}
+                                            </p>
+                                            <span className="w-1 h-1 rounded-full bg-gray-100"></span>
+                                            <p className="text-[9px] font-medium text-gray-300 italic">
+                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                        <div ref={messagesEndRef} />
                     </div>
 
-                    <div className="pt-4 border-t border-gray-200">
-                        <h3 className="font-semibold text-gray-800 mb-2">Status</h3>
-                        <Badge variant={getStatusBadgeVariant(conversation.status)} className="ml-2 py-2 px-3 text-base">
-                            {conversation.status}
-                        </Badge>
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                        <h3 className="font-semibold text-gray-800 mb-2">Update Status</h3>
-                        <Select value={newStatus} onValueChange={setNewStatus}>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Change status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="open">Open</SelectItem>
-                                <SelectItem value="pending_admin_response">Pending Admin Response</SelectItem>
-                                <SelectItem value="pending_customer_response">Pending Customer Response</SelectItem>
-                                <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Button onClick={handleUpdateStatus} className="mt-3 w-full">Update Status</Button>
+                    <div className="p-6 border-t border-gray-50 bg-white">
+                        <div className="relative flex items-end gap-4">
+                            <Textarea
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSendMessage();
+                                    }
+                                }}
+                                placeholder="Compose response..."
+                                className="flex-1 min-h-[60px] max-h-[200px] bg-gray-50/50 border-gray-100 rounded-3xl px-6 py-4 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 transition-all text-sm font-medium resize-none no-scrollbar"
+                                disabled={isSending}
+                            />
+                            <button 
+                                onClick={handleSendMessage} 
+                                disabled={isSending || !newMessage.trim()} 
+                                className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-200 hover:bg-gray-900 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+                            >
+                                {isSending ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} />}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Message Area */}
-                <div className="md:col-span-2 bg-white shadow-lg rounded-xl flex flex-col flex-1 min-h-[500px]">
-                    <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
-                        {isLoadingMore && <div className="text-center text-gray-500"><Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> Loading more messages...</div>}
-                        {!isLoadingMore && hasMoreMessages && (
-                            <div className="text-center">
-                                <Button variant="link" onClick={() => fetchMessages(true)} disabled={isLoadingMore}>
-                                    Load More
-                                </Button>
+                {/* Info Sidebar */}
+                <div className="lg:col-span-4 space-y-10">
+                    <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-900 mb-8 border-b border-gray-50 pb-4 flex justify-between items-center">
+                            Client Identity
+                            <User size={14} className="text-gray-300" />
+                        </h3>
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner">
+                                    <User size={28} strokeWidth={1.5} />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-lg font-bold text-gray-900 leading-none">{conversation.customerName || 'Verified Client'}</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Portal Active</p>
+                                    </div>
+                                </div>
                             </div>
-                        )}
-                        {messages.length === 0 && !isLoading && <div className="text-center text-gray-500 mt-10">
-                            <MessageSquare className="h-10 w-10 mx-auto mb-3" />
-                            <p>No messages in this conversation yet.</p>
+                            <div className="space-y-4 pt-4 border-t border-gray-50">
+                                <div className="flex items-center gap-3">
+                                    <Mail size={14} className="text-gray-300" />
+                                    <p className="text-xs font-medium text-gray-500 italic truncate">{conversation.customerEmail}</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Clock size={14} className="text-gray-300" />
+                                    <p className="text-xs font-medium text-gray-500 italic">Initiated {new Date(conversation.createdAt).toLocaleDateString()}</p>
+                                </div>
+                            </div>
                         </div>
-                        }
-                        {messages.map((msg) => (
-                            // Console log removed from here to avoid syntax error, will add it inside the JSX if needed
-                            <div
-                                key={msg.id}
-                                className={`flex ${msg.senderType === 'admin' ? 'justify-end' : 'justify-start'}`}
-                            >
-                                {console.log('Rendering message in admin:', msg.id, msg.messageText, msg)} {/* Moved console.log here */}
-                                <div
-                                    className={`max-w-[75%] p-3 ${msg.senderType === 'admin'
-                                        ? 'bg-indigo-600 text-white rounded-xl rounded-br-none'
-                                        : 'bg-gray-100 text-gray-800 rounded-xl rounded-bl-none'
-                                        }`}
-                                >
-                                    <p className="text-sm font-semibold">{msg.senderType === 'admin' ? 'You' : conversation.customerName || 'Customer'}</p>
-                                    <p className="text-base">{msg.messageText}</p>
-                                                                    <span className="text-xs text-gray-400 block text-right mt-1">
-                                                                        {msg.createdAt && !isNaN(new Date(msg.createdAt)) ? new Date(msg.createdAt).toLocaleString() : 'N/A'}
-                                                                    </span>                                </div>
+                    </section>
+
+                    <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-900 mb-8 border-b border-gray-50 pb-4 flex justify-between items-center">
+                            Protocol Control
+                            <ShieldCheck size={14} />
+                        </h3>
+                        <div className="space-y-6">
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Transmission State</Label>
+                                <Select value={newStatus} onValueChange={setNewStatus}>
+                                    <SelectTrigger className="w-full h-12 rounded-xl bg-gray-50 border-gray-100 font-bold">
+                                        <SelectValue placeholder="Transition Protocol" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl shadow-2xl border-gray-100">
+                                        <SelectItem value="open">Active Portal</SelectItem>
+                                        <SelectItem value="pending_admin_response">Requires Concierge</SelectItem>
+                                        <SelectItem value="pending_customer_response">Awaiting Client</SelectItem>
+                                        <SelectItem value="closed">Archive Dossier</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                    </div>
-                    <div className="p-4 border-t border-gray-200 flex items-center bg-white shadow-md">
-                        <Textarea
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSendMessage();
-                                }
-                            }}
-                            placeholder="Type your message..."
-                            className="flex-1 mr-2 resize-none rounded-3xl py-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            rows={1}
-                            disabled={isSending}
-                        />
-                        <Button onClick={handleSendMessage} disabled={isSending} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-2 h-10 w-10">
-                            {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-                        </Button>
+                            <Button onClick={handleUpdateStatus} className="w-full py-6 bg-gray-900 hover:bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                                Update Protocol State
+                            </Button>
+                        </div>
+                    </section>
+
+                    <div className="p-8 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/30">
+                        <div className="flex items-center gap-3 mb-4 text-indigo-600">
+                            <Zap size={18} />
+                            <span className="text-[11px] font-black uppercase tracking-widest">Concierge Efficiency</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 font-medium italic leading-relaxed">
+                            Maintain Naya Lumière standards by responding within 15 minutes of client transmission.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -411,5 +382,3 @@ const AdminConversationPage = () => {
 };
 
 export default AdminConversationPage;
-
-

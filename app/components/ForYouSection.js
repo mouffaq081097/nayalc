@@ -23,7 +23,7 @@ export const ForYouSection = () => {
 
       <Container className="relative z-10">
         {/* Section Header */}
-        <div className="mb-10 space-y-3">
+        <div className="mb-8 space-y-3">
           <div className="flex items-center gap-3">
              <span className="w-8 h-px bg-brand-pink/30"></span>
              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-pink flex items-center gap-2">
@@ -31,12 +31,12 @@ export const ForYouSection = () => {
                 Tailored Experience
              </span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-serif text-gray-900 italic">
+          <h2 className="text-3xl md:text-4xl font-serif text-gray-900 italic">
             Just for <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">You</span>
           </h2>
         </div>
 
-        <div className="flex md:grid overflow-x-auto md:overflow-x-visible snap-x md:snap-none no-scrollbar gap-6 md:gap-8 -mx-4 px-4 md:mx-0 md:px-0 md:grid-cols-4">
+        <div className="flex md:grid overflow-x-auto md:overflow-x-visible snap-x md:snap-none no-scrollbar gap-4 md:gap-4 -mx-2 px-2 md:mx-0 md:px-0 md:grid-cols-4">
           {forYouProducts.map((product) => (
             <div key={product.id} className="min-w-[85%] md:min-w-0 snap-center md:snap-align-none h-full">
                 <ProductCard

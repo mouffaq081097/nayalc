@@ -1,107 +1,69 @@
-"use client";
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
+import db from '@/lib/db';
+import CollectionClient from './CollectionClient';
+import Script from 'next/script';
 
-const ProductCard = dynamic(() => import('../../components/ProductCard'));
+async function getCategory(id) {
+  try {
+    const categorySql = 'SELECT id, name, description, image_url as "imageUrl" FROM categories WHERE id = $1';
+    const { rows } = await db.query(categorySql, [id]);
+    return rows.length > 0 ? rows[0] : null;
+  } catch (error) {
+    console.error("Error fetching category for metadata:", error);
+    return null;
+  }
+}
 
-export default function CollectionDetailsPage() {
-  const { categoryId } = useParams();
-  const [collection, setCollection] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+export async function generateMetadata({ params }) {
+  const { categoryId } = await params;
+  const category = await getCategory(categoryId);
 
-  useEffect(() => {
-    if (categoryId) {
-      const fetchCollectionDetails = async () => {
-        try {
-          const response = await fetch(`/api/categories/${categoryId}`);
-          if (!response.ok) {
-            throw new Error('Failed to fetch collection details');
-          }
-          const data = await response.json();
-          setCollection(data);
-          setProducts(data.products || []); // Assuming products are nested under the collection object
-        } catch (err) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchCollectionDetails();
+  if (!category) {
+    return {
+      title: 'Collection Not Found | nayalc.com',
+    };
+  }
+
+  const title = `${category.name} Collection | Beauty & Skincare | nayalc.com UAE`;
+  const description = category.description || `Explore the ${category.name} collection at nayalc.com. Premium beauty and skincare essentials delivered in the UAE.`;
+
+  return {
+    title: title,
+    description: description.substring(0, 160),
+    openGraph: {
+      title: title,
+      description: description,
+      images: category.imageUrl ? [{ url: category.imageUrl }] : [],
+      type: 'website',
+    },
+    alternates: {
+      canonical: `https://nayalc.com/collections/${categoryId}`
     }
-  }, [categoryId]);
+  };
+}
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading collection...</div>;
-  }
+export default async function Page({ params }) {
+  const { categoryId } = await params;
+  const category = await getCategory(categoryId);
 
-  if (error) {
-    return <div className="min-h-screen flex items-center justify-center text-red-500">Error: {error}</div>;
-  }
+  if (!category) return <CollectionClient />;
 
-  if (!collection) {
-    return <div className="min-h-screen flex items-center justify-center">Collection not found.</div>;
-  }
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${category.name} Collection`,
+    description: category.description,
+    url: `https://nayalc.com/collections/${categoryId}`,
+    image: category.imageUrl,
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section for Collection Details */}
-      <section className="bg-gradient-to-br from-[var(--brand-rose)] via-white to-[var(--brand-cream)] py-16">
-        <div className="container mx-auto px-4">
-          <Link href="/collections" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6">
-            <ChevronLeft className="h-5 w-5 mr-1" /> Back to Collections
-          </Link>
-          <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] text-white">
-              {collection.name} Collection
-            </Badge>
-            <h1 className="text-4xl md:text-5xl mb-4">
-              <span className="text-gray-900">{collection.name} </span>
-              <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-                Essentials
-              </span>
-            </h1>
-            <p className="text-lg text-gray-600 mb-6">
-              {collection.description || "Explore the curated selection of products in this exclusive collection."}
-            </p>
-            <Button size="lg" className="bg-[var(--brand-blue)] hover:bg-[var(--brand-pink)] text-white">
-              Shop All Products
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Products Grid */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl text-gray-900 mb-8 text-center">Products in this Collection</h2>
-          {products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  price={product.price}
-                  image={product.imageUrl}
-                  averageRating={product.averageRating}
-                  reviewCount={product.reviewCount}
-                  brandName={product.brandName}
-                  stock_quantity={product.stock_quantity}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-gray-600">No products found in this collection.</p>
-          )}
-        </div>
-      </section>
-    </div>
+    <>
+      <Script
+        id="collection-jsonld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <CollectionClient />
+    </>
   );
 }

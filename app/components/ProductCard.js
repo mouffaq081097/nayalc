@@ -27,7 +27,7 @@ const TypewriterText = ({ text, speed = 10 }) => {
   return <div className="whitespace-pre-wrap">{displayedText}</div>;
 };
 
-const ProductCard = ({ id, name, price, originalPrice, image, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, variant = 'light' }) => {
+const ProductCard = ({ id, slug, name, price, originalPrice, image, altText, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, variant = 'light' }) => {
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -41,6 +41,11 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
 
   const isDark = variant === 'dark';
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  
+  // Use slug for URL if available, fallback to ID
+  const productUrl = `/product/${slug || id}`;
+
+  const seoAlt = altText || `${name} - ${brandName || 'Luxury Beauty'} | nayalc.com`;
 
   const handleAIGenerate = async (e) => {
     e.preventDefault();
@@ -126,7 +131,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
   return (
     <>
       <div 
-        className={`group relative overflow-hidden flex flex-col h-full transition-all duration-500 ${
+        className={`group relative overflow-hidden flex flex-col h-full transition-all duration-500 shadow-sm hover:shadow-xl ${
             isDark 
             ? 'bg-[#0a0a0a] text-white border-white/5' 
             : 'bg-white text-gray-900 border-gray-100'
@@ -158,12 +163,12 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
         </div>
 
         {/* Main Image Section */}
-        <div className={`relative aspect-square overflow-hidden ${isDark ? 'bg-black/40' : 'bg-[#FAFAFA]'}`}>
-            <Link href={`/product/${id}`} className="block w-full h-full relative z-0">
+        <div className={`relative aspect-square overflow-hidden ${isDark ? 'bg-black/40' : 'bg-white'}`}>
+            <Link href={productUrl} className="block w-full h-full relative z-0">
                 <motion.div className="w-full h-full p-4" whileTap={{ scale: 0.98 }}>
                     <Image
                         src={image || '/placeholder-image.jpg'}
-                        alt={name || 'Product Image'}
+                        alt={seoAlt}
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
                         className="object-contain"
@@ -331,7 +336,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
                             {/* Product Card Micro-Header */}
                             <div className="flex items-center gap-5 mb-8 bg-gray-50/50 p-4 rounded-3xl border border-gray-100 shadow-sm">
                                 <div className="w-16 h-16 rounded-2xl overflow-hidden relative border border-white p-2 bg-white shadow-sm">
-                                    <Image src={image} alt={name} fill className="object-contain mix-blend-multiply" />
+                                    <Image src={image} alt={`${name} - Quick View`} fill className="object-contain mix-blend-multiply" />
                                 </div>
                                 <div className="space-y-0.5">
                                     <h4 className="text-[17px] font-semibold text-gray-900 tracking-tight leading-none">{name}</h4>
@@ -395,7 +400,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
             </div>
             
             <div className="space-y-1">
-                <Link href={`/product/${id}`} className="text-[15px] font-medium text-gray-900 hover:text-brand-pink transition-colors block leading-tight tracking-tight">
+                <Link href={productUrl} className="text-[15px] font-medium text-gray-900 hover:text-brand-pink transition-colors block leading-tight tracking-tight">
                     {name}
                 </Link>
                 <p className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-[12px] leading-relaxed font-normal line-clamp-2`}>
@@ -441,7 +446,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
             >
                 <Image
                 src={image || '/placeholder-image.jpg'}
-                alt={name}
+                alt={seoAlt}
                 fill
                 className="object-contain mix-blend-multiply"
                 />
@@ -516,7 +521,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, averageRating, rev
                         </button>
                     </div>
 
-                    <Link href={`/product/${id}`} onClick={() => setIsQuickViewOpen(false)} className="group flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.4em] font-black text-gray-400 hover:text-brand-pink transition-all">
+                    <Link href={productUrl} onClick={() => setIsQuickViewOpen(false)} className="group flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.4em] font-black text-gray-400 hover:text-brand-pink transition-all">
                         View Full Dossier
                         <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
                     </Link>
