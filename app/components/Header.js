@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, forwardRef } from 'react';
-import { ShoppingBag, Search, Menu, X, User, ChevronRight, Star } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, User, ChevronRight, Star, ShieldCheck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -52,7 +52,7 @@ const Header = forwardRef((props, ref) => {
         <div className={`mx-auto transition-all duration-500 ease-in-out flex flex-col ${isScrolled ? 'max-w-5xl bg-white/80 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-white/40 rounded-[2rem] overflow-hidden' : 'max-w-full bg-black/10 backdrop-blur-md border-b border-white/5'}`}>
             <div 
             className={`w-full flex items-center justify-between gap-4 md:gap-8 px-6 md:px-10 transition-all duration-500 ease-in-out ${
-                isScrolled ? 'h-12 md:h-14' : 'h-14 md:h-16'
+                isScrolled ? 'h-14 md:h-14' : 'h-14 md:h-16'
             }`}
             >
             
@@ -85,7 +85,7 @@ const Header = forwardRef((props, ref) => {
 
             {/* Center: Logo */}
             <Link href="/" className="flex items-center shrink-0 transition-all active:scale-95 group">
-                <NayaLumiereLogo className="h-6 md:h-8 w-auto transition-all duration-700" />
+                <NayaLumiereLogo className="h-8 md:h-9 w-auto transition-all duration-700" />
             </Link>
 
             {/* Right: Actions */}
@@ -107,21 +107,40 @@ const Header = forwardRef((props, ref) => {
                         </Link>
                     )}
                     
-                    <button 
-                    onClick={handleAccountClick} 
-                    className="group flex items-center gap-3 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-all"
-                    >
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-brand-pink group-hover:text-white transition-all">
-                        <User size={16} strokeWidth={2} />
-                    </div>
-                    {user && (
-                        <div className="hidden lg:flex flex-col items-start -space-y-0.5">
-                            <span className="text-[11px] font-black tracking-widest uppercase text-gray-900 leading-tight">
-                                {user.first_name}
-                            </span>
+                    <div className="relative group/account">
+                        <button 
+                        onClick={handleAccountClick} 
+                        className="flex items-center gap-3 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-all"
+                        >
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-brand-pink group-hover:text-white transition-all">
+                            <User size={16} strokeWidth={2} />
                         </div>
-                    )}
-                    </button>
+                        {user && (
+                            <div className="hidden lg:flex flex-col items-start -space-y-0.5">
+                                <span className="text-[11px] font-black tracking-widest uppercase text-gray-900 leading-tight">
+                                    {user.first_name}
+                                </span>
+                            </div>
+                        )}
+                        </button>
+
+                        {/* Admin Dropdown on Hover */}
+                        {user?.email === 'mouffaq@nayalc.com' && (
+                            <div className="absolute top-full right-0 mt-2 w-48 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-white/40 overflow-hidden opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-300 transform translate-y-2 group-hover/account:translate-y-0 z-[200]">
+                                <Link 
+                                    href="/admin"
+                                    className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-all group/admin"
+                                >
+                                    <div className="w-8 h-8 rounded-full bg-brand-pink/10 flex items-center justify-center text-brand-pink group-hover/admin:bg-brand-pink group-hover:text-white transition-all">
+                                        <ShieldCheck size={16} strokeWidth={2} />
+                                    </div>
+                                    <span className="text-[11px] font-black tracking-widest uppercase text-gray-900">
+                                        Admin Panel
+                                    </span>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <button 
@@ -198,7 +217,7 @@ const Header = forwardRef((props, ref) => {
                     className="absolute top-0 left-0 bottom-0 w-[85%] max-w-[400px] bg-white shadow-2xl flex flex-col rounded-r-[2.5rem]"
                 >
                     <div className="p-6 md:p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/20">
-                        <NayaLumiereLogo className="h-6 w-auto" />
+                        <NayaLumiereLogo className="h-8 w-auto" />
                         <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full bg-white shadow-sm border border-gray-100 active:scale-95 transition-all">
                             <X size={18} />
                         </button>
@@ -239,6 +258,15 @@ const Header = forwardRef((props, ref) => {
                                     </Link>
                                 </div>
                             </div>
+                        )}
+                        {user?.email === 'mouffaq@nayalc.com' && (
+                            <button 
+                                onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}
+                                className="w-full mb-3 bg-white border border-gray-100 text-gray-900 rounded-2xl h-14 font-black uppercase tracking-widest text-[12px] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-sm"
+                            >
+                                <ShieldCheck size={16} className="text-brand-pink" strokeWidth={2.5} />
+                                ADMIN PANEL
+                            </button>
                         )}
                         <button 
                             onClick={() => { router.push(user ? '/account' : '/auth'); setIsMenuOpen(false); }}

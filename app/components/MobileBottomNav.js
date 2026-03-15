@@ -87,9 +87,9 @@ function MobileBottomNav() {
       initial={{ y: 0 }}
       animate={{ y: isVisible ? 0 : 100 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="md:hidden fixed bottom-8 left-0 right-0 z-[70] px-6 pointer-events-none"
+      className="md:hidden fixed bottom-8 left-0 right-0 z-[70] px-4 pointer-events-none"
     >
-      <nav className="max-w-md mx-auto bg-white/90 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[3rem] p-2 pointer-events-auto flex items-center justify-between relative">
+      <nav className="max-w-md mx-auto bg-white/95 backdrop-blur-3xl border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[2rem] h-14 px-2 pointer-events-auto flex items-center justify-between relative">
         <AnimatePresence mode="popLayout">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
@@ -98,17 +98,17 @@ function MobileBottomNav() {
               <button
                 key={item.id}
                 onClick={() => handleItemClick(item.id)}
-                className="relative flex items-center justify-center transition-all duration-500"
+                className="relative flex items-center justify-center transition-all duration-500 h-full flex-1"
               >
                 <motion.div
                   layout
                   initial={false}
                   animate={{
-                    width: isActive ? 'auto' : '48px',
+                    width: isActive ? 'auto' : '44px',
                     backgroundColor: isActive ? '#111827' : 'transparent',
                   }}
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  className={`flex items-center gap-2 h-12 px-3 rounded-full ${
+                  className={`flex items-center gap-2 h-10 px-3 rounded-full ${
                     isActive ? 'text-white shadow-lg shadow-black/10' : 'text-gray-400'
                   }`}
                 >

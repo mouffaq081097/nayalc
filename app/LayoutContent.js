@@ -6,7 +6,6 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { Newsletter } from './components/Newsletter';
 import MobileBottomNav from './components/MobileBottomNav';
-import { AdminButton } from './components/AdminButton';
 import SideCart from './components/SideCart'; // Import SideCart
 import ChatWidget from './components/ChatWidget'; // Import ChatWidget
 
@@ -21,7 +20,6 @@ export default function LayoutContent({ children }) {
 
   return (
     <>
-      <AdminButton />
       {!isAuthPage && !isAdminPage && !isCartPage && !isCheckoutPage && <ChatWidget />}
       {!isAuthPage && !isAdminPage && !isCartPage && !isCheckoutPage && (
         <Header />
