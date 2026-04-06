@@ -5,14 +5,17 @@ export async function GET() {
     const client = await db.connect();
     try {
         const result = await client.query(
-            `SELECT 
-                c.id, 
-                c.user_id, 
-                c.created_at as "createdAt", 
-                c.updated_at as "updatedAt", 
+            `SELECT
+                c.id,
+                c.user_id,
+                c.created_at as "createdAt",
+                c.updated_at as "updatedAt",
                 c.status,
                 u.first_name || ' ' || u.last_name as "customerName",
-                u.email as "customerEmail"
+                u.email as "customerEmail",
+                (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND sender_type = 'customer' AND read_by_admin = false)::int as "unreadCount",
+                (SELECT message_text FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as "lastMessage",
+                (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as "lastMessageAt"
             FROM conversations c
             JOIN users u ON c.user_id = u.id
             ORDER BY c.updated_at DESC`

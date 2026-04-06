@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 export const EditorialShowcase = () => {
   return (
-    <section className="py-16 bg-white relative overflow-hidden">
+    <section className="py-16 relative overflow-hidden" style={{ background: 'var(--cl-bg)' }}>
       {/* Global Grain Overlay */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.02] z-10 bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
       
@@ -35,8 +35,8 @@ export const EditorialShowcase = () => {
             
             {/* Minimal floating badge */}
             <div className="absolute top-6 left-6 flex items-center gap-2 px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full border border-black/5 shadow-sm">
-                <Star size={10} className="text-brand-pink fill-brand-pink" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-900">Selection of the Month</span>
+                <Star size={10} style={{ color: 'var(--cl-purple)', fill: 'var(--cl-purple)' }} />
+                <span className="text-[9px] font-black tracking-widest text-gray-900">Selection of the Month</span>
             </div>
           </motion.div>
 
@@ -49,19 +49,19 @@ export const EditorialShowcase = () => {
                 className="space-y-5"
             >
                 <div className="flex items-center gap-3">
-                    <span className="w-10 h-px bg-brand-pink/30"></span>
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-pink flex items-center gap-2">
+                    <span className="w-10 h-px" style={{ background: 'var(--cl-gradient)' }}></span>
+                    <span className="text-[12px] font-black tracking-tight flex items-center gap-2" style={{ color: 'var(--cl-text-soft)' }}>
                         <Sparkles size={10} />
                         Editorial Spotlight
                     </span>
                 </div>
-                
+
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif italic text-gray-900 leading-[1.1] tracking-tight">
                     The Essence of <br/>
                     <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">Pure Radiance.</span>
                 </h2>
-                
-                <p className="text-base md:text-lg font-sans text-gray-500 max-w-lg leading-relaxed font-medium">
+
+                <p className="text-base md:text-lg font-sans max-w-lg leading-relaxed font-medium" style={{ color: 'var(--cl-text-light)' }}>
                     Discover the transformative power of Swiss molecular precision combined with the soul of wild-harvested botanicals.
                 </p>
             </motion.div>
@@ -74,11 +74,11 @@ export const EditorialShowcase = () => {
                 className="grid grid-cols-2 gap-8 w-full border-t border-gray-100 pt-8"
             >
                 <div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-900 block mb-2">Purity Standard</span>
+                    <span className="text-[12px] font-black tracking-tight text-gray-900 block mb-2">Purity Standard</span>
                     <p className="text-xs text-gray-400 font-medium">100% Organic & Certified Bio-extraction.</p>
                 </div>
                 <div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-900 block mb-2">Clinical Results</span>
+                    <span className="text-[12px] font-black tracking-tight text-gray-900 block mb-2">Clinical Results</span>
                     <p className="text-xs text-gray-400 font-medium">Visible cellular renewal within 14 days.</p>
                 </div>
             </motion.div>
@@ -89,10 +89,9 @@ export const EditorialShowcase = () => {
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
             >
-                <Link href="/all-products" className="group relative flex items-center gap-5 px-8 py-4 bg-black text-white rounded-full overflow-hidden transition-all duration-500 hover:pr-12">
-                    <span className="relative z-10 font-sans font-bold text-[10px] uppercase tracking-[0.2em]">Explore the Science</span>
-                    <ArrowRight size={16} className="absolute right-5 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-                    <div className="absolute inset-0 bg-brand-pink translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                <Link href="/all-products" className="inline-flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-full text-[12px] font-bold tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm group">
+                    Explore the Science
+                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
             </motion.div>
           </div>
@@ -103,7 +102,8 @@ export const EditorialShowcase = () => {
 
       {/* Background Decorative Aura */}
       <div className="absolute bottom-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute -bottom-[10%] -left-[10%] w-[50%] h-[50%] bg-brand-blue/[0.03] rounded-full blur-[120px]"></div>
+        <div className="cl-aura cl-aura-purple" style={{ width: 400, height: 400, bottom: '-10%', left: '-10%', opacity: 0.3 }} />
+        <div className="cl-aura cl-aura-rose" style={{ width: 300, height: 300, top: '-10%', right: '-5%', opacity: 0.2 }} />
       </div>
     </section>
   );

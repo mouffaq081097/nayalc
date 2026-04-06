@@ -1,18 +1,22 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { AccountMenuList } from './_components/AccountMenuList';
+import { setAccountNavDirection } from './_components/navDirection';
+import { Elements } from '@stripe/react-stripe-js';
+import getStripe from '@/lib/stripe';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import {
   User, Package, Heart, MapPin,
-  LogOut, ChevronRight, Star, Sparkles, Plus, Settings, Bell, ShieldCheck, ShoppingBag, Crown, CreditCard, Gift, Clock, ArrowRight, Camera
+  LogOut, ChevronRight, Star, Sparkles, Plus, Settings, Bell, Lock, ShieldCheck, ShoppingBag, Crown, CreditCard, Gift, Clock, ArrowRight, Camera
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Modal from '../components/Modal';
 import AddressInputForm from '../components/AddressInputForm';
-import { Elements } from '@stripe/react-stripe-js';
-import getStripe from '@/lib/stripe';
 import Image from 'next/image';
 
 const stripePromise = getStripe();
@@ -471,11 +475,44 @@ const AccountPageContent = () => {
 };
 
 export default function AccountPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    setAccountNavDirection(-1);
+  }, []);
+
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center text-brand-pink font-black uppercase tracking-[0.5em]">Synchronizing...</div>}>
-      <Elements stripe={stripePromise}>
-        <AccountPageContent />
-      </Elements>
-    </Suspense>
+    <>
+      <AccountMenuList />
+      <div className="hidden md:block px-6 pt-12 pb-32">
+        <div className="mx-auto max-w-[1400px] rounded-[var(--radius-card)] border border-black/[0.06] bg-white/70 p-10 shadow-sm backdrop-blur-xl">
+          <p className="text-sm text-neutral-600">
+            On desktop, use{' '}
+            <button
+              type="button"
+              onClick={() => router.push('/account/dashboard')}
+              className="text-brand-pink underline underline-offset-4"
+            >
+              Dashboard
+            </button>{' '}
+            to access your account sections.
+          </p>
+        </div>
+      </div>
+
+      <div className="hidden md:block">
+        <Suspense
+          fallback={
+            <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center text-brand-pink font-black uppercase tracking-[0.5em]">
+              Synchronizing...
+            </div>
+          }
+        >
+          <Elements stripe={stripePromise}>
+            <AccountPageContent />
+          </Elements>
+        </Suspense>
+      </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use, useRef, useMemo } from 'react';
+import { useState, useEffect, use, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -10,9 +10,9 @@ import Link from 'next/link';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Separator } from '../../components/ui/separator';
-import { Heart, Star, Plus, Minus, Check, ChevronRight, Info, ArrowRight, Sparkles, Zap, Maximize2, Loader2, Clock, ShieldCheck, Quote, FlaskConical, Droplets, Microscope, Waves, Truck, RotateCcw } from 'lucide-react';
+import { Heart, Star, Plus, Minus, Check, ChevronRight, Info, ArrowRight, Sparkles, Zap, Maximize2, Loader2, Clock, ShieldCheck, Quote, FlaskConical, Droplets, Microscope, Waves, Truck, RotateCcw, X, ShoppingBag } from 'lucide-react';
 import Reviews from '../../components/Reviews';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
 import ProductCard from '../../components/ProductCard';
 
@@ -38,7 +38,8 @@ export default function ProductClient({ params, initialProduct }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
-  
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
   const buyButtonRef = useRef(null);
 
   const ingredients = useMemo(() => {
@@ -80,6 +81,17 @@ export default function ProductClient({ params, initialProduct }) {
     fetchProduct();
   }, [productId, user, initialProduct]);
 
+  useEffect(() => {
+    const el = buyButtonRef.current;
+    if (!el || !product) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [product]);
+
   const handleAddToCart = () => {
     addToCart(product, quantity);
     setIsAdded(true);
@@ -108,7 +120,7 @@ export default function ProductClient({ params, initialProduct }) {
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 border-4 border-brand-pink/20 border-t-brand-pink rounded-full animate-spin"></div>
-        <span className="text-[10px] uppercase tracking-[0.4em] text-gray-400 font-bold">Synchronizing Vault</span>
+        <span className="text-[10px] tracking-[0.4em] text-gray-400 font-bold">Synchronizing Vault</span>
       </div>
     </div>
   );
@@ -117,7 +129,7 @@ export default function ProductClient({ params, initialProduct }) {
     <div className="min-h-screen bg-white flex items-center justify-center p-6 text-center">
       <div className="max-w-md space-y-6">
         <h2 className="text-3xl font-serif italic text-gray-900">Selection Offline</h2>
-        <Button onClick={() => router.push('/all-products')} className="bg-black text-white px-10 py-6 rounded-full text-[11px] font-black uppercase tracking-[0.3em] transition-all">
+        <Button onClick={() => router.push('/all-products')} className="bg-black text-white px-10 py-6 rounded-full text-[11px] font-black tracking-[0.3em] transition-all">
           Return to Boutique
         </Button>
       </div>
@@ -126,6 +138,83 @@ export default function ProductClient({ params, initialProduct }) {
 
   return (
     <div className="bg-white min-h-screen font-sans text-[#1d1d1f] antialiased selection:bg-brand-pink/10">
+
+      {/* Sticky Buy Bar — appears when main Add to Bag scrolls out of view */}
+      <AnimatePresence>
+        {showStickyBar && product && (
+          <motion.div
+            initial={{ y: -56, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -56, opacity: 0 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+            className="fixed top-[72px] left-0 right-0 z-[140] bg-white/92 backdrop-blur-3xl border-b border-gray-100 shadow-[0_1px_20px_rgba(0,0,0,0.06)] hidden lg:flex items-center justify-between px-16 h-14"
+          >
+            <div>
+              <p className="text-[9px] font-bold tracking-[0.3em] text-gray-400 leading-none mb-1">{product.brand || 'Naya Lumière'}</p>
+              <h2 className="text-[15px] font-semibold tracking-tight text-gray-900 leading-none">{product.name}</h2>
+            </div>
+            <div className="flex items-center gap-6">
+              <span className="text-[15px] font-semibold">AED {Number(product.price).toFixed(2)}</span>
+              <button
+                onClick={handleAddToCart}
+                className={`flex items-center gap-2 h-10 px-6 rounded-full text-[11px] font-black tracking-widest transition-all duration-500 shadow-lg ${isAdded ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-brand-pink'}`}
+              >
+                {isAdded ? <><Check size={14} /> Secured</> : <><ShoppingBag size={14} /> Add to Bag</>}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Full-Screen Image Modal */}
+      <AnimatePresence>
+        {isZoomed && product && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-[500] bg-black/92 backdrop-blur-md flex items-center justify-center"
+            onClick={() => setIsZoomed(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.92 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.92 }}
+              transition={{ duration: 0.25 }}
+              className="relative max-h-[90vh] max-w-[90vw]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                src={product.images ? product.images[selectedImage] : product.imageUrl}
+                alt={product.name}
+                width={900}
+                height={1100}
+                className="max-h-[85vh] max-w-[85vw] object-contain rounded-2xl"
+              />
+              {product.images && product.images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {product.images.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedImage(i)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${selectedImage === i ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+            <button
+              onClick={() => setIsZoomed(false)}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-[1440px] mx-auto">
         <div className="grid lg:grid-cols-12 gap-0 lg:pt-24 pb-12">
           
@@ -201,9 +290,9 @@ export default function ProductClient({ params, initialProduct }) {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <span className="h-[1px] w-6 bg-brand-pink/30 hidden lg:block"></span>
-                            <p className="text-[10px] lg:text-[11px] font-bold text-brand-pink uppercase tracking-[0.3em]">{product.brand || 'Naya Lumière Signature'}</p>
+                            <p className="text-[10px] lg:text-[11px] font-bold text-brand-pink tracking-[0.3em]">{product.brand || 'Naya Lumière Signature'}</p>
                         </div>
-                        {product.isNew && <Badge className="bg-gray-100 text-gray-900 border-none px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest lg:hidden">New</Badge>}
+                        {product.isNew && <Badge className="bg-gray-100 text-gray-900 border-none px-2.5 py-1 rounded-md text-[8px] font-black tracking-widest lg:hidden">New</Badge>}
                     </div>
                     <h1 className="text-3xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-gray-900">{product.name}</h1>
                     <div className="flex items-baseline gap-2">
@@ -213,7 +302,7 @@ export default function ProductClient({ params, initialProduct }) {
                 </div>
 
                 <div className="flex items-center gap-3 lg:hidden">
-                    <button onClick={handleAddToCart} className={`flex-grow h-12 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-500 ${isAdded ? 'bg-green-600 text-white' : 'bg-gray-900 text-white active:scale-[0.98]'}`}>
+                    <button onClick={handleAddToCart} className={`flex-grow h-12 rounded-full text-[11px] font-black tracking-widest transition-all duration-500 ${isAdded ? 'bg-green-600 text-white' : 'bg-gray-900 text-white active:scale-[0.98]'}`}>
                         {isAdded ? 'Selection Secured' : 'Add to Bag'}
                     </button>
                     <button onClick={handleWishlistToggle} className={`w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center transition-all ${isWishlisted ? 'bg-brand-pink/5 text-brand-pink border-brand-pink/20' : 'bg-white text-gray-900'}`}>
@@ -227,49 +316,71 @@ export default function ProductClient({ params, initialProduct }) {
                             <span className="text-base font-bold">4.9</span>
                             <div className="flex text-brand-pink">{[...Array(5)].map((_, i) => <Star key={i} size={11} fill="currentColor" />)}</div>
                         </div>
-                        <span className="text-[8px] lg:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Satisfaction</span>
+                        <span className="text-[8px] lg:text-[9px] font-bold text-gray-400 tracking-widest">Satisfaction</span>
                     </div>
                     <Separator orientation="vertical" className="h-6 lg:h-8" />
                     <div className="flex flex-col gap-0.5 text-left">
                         <span className="text-base font-bold">100%</span>
-                        <span className="text-[8px] lg:text-[9px] font-bold text-gray-400 uppercase tracking-widest">Originality</span>
+                        <span className="text-[8px] lg:text-[9px] font-bold text-gray-400 tracking-widest">Originality</span>
                     </div>
                 </div>
 
                 <div className="space-y-6 lg:space-y-8 text-left">
-                    {ingredients.length > 0 && (
+                    <div className="space-y-2 lg:space-y-3">
+                        <h3 className="text-[10px] lg:text-[11px] font-bold tracking-widest text-gray-400">The Selection</h3>
+                        <p className="text-[14px] lg:text-[15px] text-gray-600 leading-relaxed font-normal">{product.description}</p>
+                    </div>
+
+                    {product.benefits && (
+                        <div className="space-y-2 lg:space-y-3">
+                            <h3 className="text-[10px] lg:text-[11px] font-bold tracking-widest text-gray-400">Benefits</h3>
+                            <ul className="space-y-1.5">
+                                {product.benefits.split('\n').filter(Boolean).map((b, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-[13px] lg:text-[14px] text-gray-600 leading-relaxed">
+                                        <span className="mt-1.5 w-1 h-1 rounded-full bg-brand-pink shrink-0" />
+                                        {b.replace(/^[-•]\s*/, '')}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {product.ingredients && (
+                        <div className="space-y-2 lg:space-y-3">
+                            <h3 className="text-[10px] lg:text-[11px] font-bold tracking-widest text-gray-400">Key Ingredients</h3>
+                            <p className="text-[13px] lg:text-[14px] text-gray-500 leading-relaxed">{product.ingredients}</p>
+                        </div>
+                    )}
+
+                    {!product.ingredients && ingredients.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                             {ingredients.map((ing, i) => (
                                 <div key={i} className="px-3 py-1.5 lg:px-4 lg:py-2 bg-gray-50 rounded-full border border-gray-100 flex items-center gap-1.5">
                                     <Sparkles size={10} className="text-brand-pink opacity-50" />
-                                    <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-gray-900">{ing}</span>
+                                    <span className="text-[9px] lg:text-[10px] font-black tracking-widest text-gray-900">{ing}</span>
                                 </div>
                             ))}
                         </div>
                     )}
-                    <div className="space-y-2 lg:space-y-3">
-                        <h3 className="text-[10px] lg:text-[11px] font-bold uppercase tracking-widest text-gray-400">The Selection</h3>
-                        <p className="text-[14px] lg:text-[15px] text-gray-600 leading-relaxed font-normal">{product.description}</p>
+
+                    <div className="flex items-center justify-between p-4 bg-[#f5f5f7] rounded-2xl border border-gray-100">
+                        <div className="space-y-0.5 text-left">
+                            <span className="text-[9px] font-bold text-gray-400 tracking-widest">Quantity</span>
+                            <p className="text-[13px] font-semibold">Reserve {quantity} units</p>
+                        </div>
+                        <div className="flex items-center bg-white rounded-full p-1 shadow-sm gap-1">
+                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50"><Minus size={14} /></button>
+                            <span className="text-base font-bold w-6 text-center tabular-nums">{quantity}</span>
+                            <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50"><Plus size={14} /></button>
+                        </div>
                     </div>
 
-                    <div className="space-y-4 lg:space-y-6 pt-2 hidden lg:block">
-                        <div className="flex items-center justify-between p-4 bg-[#f5f5f7] rounded-2xl border border-gray-100">
-                            <div className="space-y-0.5 text-left">
-                                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Quantity</span>
-                                <p className="text-[13px] font-semibold">Reserve {quantity} units</p>
-                            </div>
-                            <div className="flex items-center bg-white rounded-full p-1 shadow-sm gap-1">
-                                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50"><Minus size={14} /></button>
-                                <span className="text-base font-bold w-6 text-center tabular-nums">{quantity}</span>
-                                <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50"><Plus size={14} /></button>
-                            </div>
-                        </div>
-
+                    <div className="hidden lg:block">
                         <div className="space-y-3" ref={buyButtonRef}>
-                            <button onClick={handleAddToCart} className={`w-full h-14 rounded-xl text-[13px] font-bold uppercase tracking-[0.2em] transition-all duration-500 shadow-xl ${isAdded ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-brand-pink'}`}>
+                            <button onClick={handleAddToCart} className={`w-full h-14 rounded-xl text-[13px] font-bold tracking-[0.2em] transition-all duration-500 shadow-xl ${isAdded ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-brand-pink'}`}>
                                 {isAdded ? <div className="flex items-center justify-center gap-2"><Check size={18} /> Selection Secured</div> : 'Reserve for Acquisition'}
                             </button>
-                            <button onClick={handleWishlistToggle} className={`w-full h-12 rounded-xl border border-gray-200 text-[11px] font-bold uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 ${isWishlisted ? 'bg-brand-pink/5 text-brand-pink border-brand-pink/20' : 'bg-white text-gray-900 hover:bg-[#f5f5f7]'}`}>
+                            <button onClick={handleWishlistToggle} className={`w-full h-12 rounded-xl border border-gray-200 text-[11px] font-bold tracking-[0.1em] transition-all flex items-center justify-center gap-2 ${isWishlisted ? 'bg-brand-pink/5 text-brand-pink border-brand-pink/20' : 'bg-white text-gray-900 hover:bg-[#f5f5f7]'}`}>
                                 <Heart size={16} className={isWishlisted ? 'fill-current' : ''} /> {isWishlisted ? 'Saved to Vault' : 'Save for Later'}
                             </button>
                         </div>
@@ -285,7 +396,7 @@ export default function ProductClient({ params, initialProduct }) {
                         <div key={i} className="flex gap-4 group cursor-default">
                             <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-[#f5f5f7] flex items-center justify-center text-gray-900 group-hover:bg-brand-pink/10 group-hover:text-brand-pink transition-colors"><feat.icon size={18} strokeWidth={1.5} /></div>
                             <div className="space-y-0.5 text-left">
-                                <h4 className="text-[11px] lg:text-[12px] font-bold uppercase tracking-tight">{feat.title}</h4>
+                                <h4 className="text-[11px] lg:text-[12px] font-bold tracking-tight">{feat.title}</h4>
                                 <p className="text-[11px] lg:text-[12px] text-gray-500 leading-snug">{feat.desc}</p>
                             </div>
                         </div>
@@ -298,7 +409,7 @@ export default function ProductClient({ params, initialProduct }) {
         <section className="mt-20 space-y-24 px-6 lg:px-20 pb-20 relative">
             <div className="max-w-5xl mx-auto text-center space-y-10">
                 <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                    <Badge className="bg-brand-pink/10 text-brand-pink border-none font-black uppercase text-[9px] tracking-[0.4em] px-5 py-2">The Narrative</Badge>
+                    <Badge className="bg-brand-pink/10 text-brand-pink border-none font-black text-[9px] tracking-[0.4em] px-5 py-2">The Narrative</Badge>
                     <h2 className="text-4xl lg:text-6xl font-semibold tracking-tight text-gray-900 leading-[1.1]">Designed for <br/> <span className="italic serif font-light text-brand-pink">Absolute Radiance.</span></h2>
                 </motion.div>
                 <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.3 }} className="relative">
@@ -310,36 +421,36 @@ export default function ProductClient({ params, initialProduct }) {
             <div className="bg-[#f5f5f7] rounded-[4rem] p-12 lg:p-20 overflow-hidden relative">
                 <div className="grid lg:grid-cols-12 gap-16 relative z-10 text-left">
                     <div className="lg:col-span-4 space-y-6">
-                        <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight leading-tight text-gray-900">Laboratory <br/> Specifications.</h2>
-                        <p className="text-gray-500 text-base leading-relaxed font-normal">A clinical deep-dive into the biological composition and structural performance of this selection.</p>
+                        <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight leading-tight text-gray-900">Our <br/> Standards.</h2>
+                        <p className="text-gray-500 text-base leading-relaxed font-normal">Every Naya Lumière selection is held to the highest standards of clean beauty, clinical integrity, and ethical sourcing.</p>
                     </div>
                     <div className="lg:col-span-8 grid md:grid-cols-2 gap-x-10 gap-y-10">
-                        {[ 
-                            { label: 'pH Equilibrium', value: '5.5 — 6.0 (Optimal)', icon: FlaskConical },
-                            { label: 'Active Concentration', value: '15.2% Pure Actives', icon: Zap },
-                            { label: 'Molecular Density', value: 'Micro-Emulsion Matrix', icon: Microscope },
-                            { label: 'Dermal Absorption', value: 'Rapid Synchronization', icon: Waves },
-                            { label: 'Biological Integrity', value: '100% Phthalate Free', icon: ShieldCheck },
-                            { label: 'Shelf Maturity (PAO)', value: '12 Months Post-Reveal', icon: Clock }
+                        {[
+                            { label: 'Animal Welfare', value: 'Cruelty Free', icon: ShieldCheck },
+                            { label: 'Clinical Validation', value: 'Dermatologically Tested', icon: FlaskConical },
+                            { label: 'Formula Integrity', value: 'Vegan Formula', icon: Droplets },
+                            { label: 'Clean Chemistry', value: 'Paraben & SLS Free', icon: Zap },
+                            { label: 'Beauty Standard', value: 'Clean Beauty Certified', icon: Sparkles },
+                            { label: 'Environmental Care', value: 'Sustainable Sourcing', icon: Waves }
                         ].map((spec, i) => (
                             <div key={i} className="space-y-3 group">
                                 <div className="flex items-center gap-3">
                                     <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform"><spec.icon size={12} className="text-brand-pink" /></div>
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{spec.label}</span>
+                                    <span className="text-[10px] font-bold text-gray-400 tracking-widest">{spec.label}</span>
                                 </div>
                                 <p className="text-xl font-medium border-b border-gray-200 pb-3 text-gray-900">{spec.value}</p>
                             </div>
                         ))}
                     </div>
                 </div>
-                <div className="absolute right-0 bottom-0 text-[20vw] font-black text-white/40 select-none pointer-events-none -mb-16 -mr-8 uppercase italic">Soin</div>
+                <div className="absolute right-0 bottom-0 text-[20vw] font-black text-white/40 select-none pointer-events-none -mb-16 -mr-8 italic">Soin</div>
             </div>
 
             {product.how_to_use && (
                 <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 lg:gap-20 items-start text-left">
                     <div className="space-y-8 lg:sticky lg:top-40">
                         <div className="space-y-4">
-                            <Badge className="bg-brand-pink text-white border-none px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest">Protocol</Badge>
+                            <Badge className="bg-brand-pink text-white border-none px-4 py-1.5 rounded-full text-[9px] font-black tracking-widest">Protocol</Badge>
                             <h2 className="text-4xl lg:text-6xl font-semibold tracking-tighter leading-tight">The Ritual.</h2>
                         </div>
                         <p className="text-lg text-gray-500 leading-relaxed font-medium">A precise sequence designed to synchronize our clinical formulas with your skin's natural frequency.</p>
@@ -353,7 +464,7 @@ export default function ProductClient({ params, initialProduct }) {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-white/40 to-transparent pointer-events-none"></div>
                             <div className="absolute bottom-10 left-10 text-gray-900">
-                                <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-40">Ritual Masterpiece</p>
+                                <p className="text-xs font-bold tracking-[0.2em] opacity-40">Ritual Masterpiece</p>
                                 <h4 className="text-xl font-serif italic">{product.name}</h4>
                             </div>
                         </div>
@@ -374,12 +485,12 @@ export default function ProductClient({ params, initialProduct }) {
         </section>
 
         <section className="py-24 bg-[#f5f5f7]/50 border-y border-gray-100 relative overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] select-none pointer-events-none"><span className="text-[20vw] font-black uppercase tracking-tighter italic">Standards</span></div>
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] select-none pointer-events-none"><span className="text-[20vw] font-black tracking-tighter italic">Standards</span></div>
             <div className="max-w-7xl mx-auto px-6 lg:px-20 relative z-10 text-center">
                 <div className="mb-16 space-y-4">
                     <div className="flex items-center justify-center gap-3">
                         <span className="h-[1px] w-8 bg-brand-pink/30"></span>
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-pink">Boutique Ethics</span>
+                        <span className="text-[10px] font-black tracking-[0.4em] text-brand-pink">Boutique Ethics</span>
                         <span className="h-[1px] w-8 bg-brand-pink/30"></span>
                     </div>
                     <h2 className="text-3xl lg:text-5xl font-semibold tracking-tight text-gray-900">Selection Integrity</h2>
@@ -393,7 +504,7 @@ export default function ProductClient({ params, initialProduct }) {
                         <div key={i} className={`${item.bg} backdrop-blur-xl p-10 rounded-[3rem] border border-white shadow-xl shadow-gray-200/20 group hover:shadow-2xl transition-all duration-700 flex flex-col items-center text-center space-y-6`}>
                             <div className="w-16 h-16 rounded-[1.5rem] bg-gray-50 border border-gray-100 flex items-center justify-center text-brand-pink transition-all duration-500 group-hover:scale-110 group-hover:bg-brand-pink group-hover:text-white group-hover:shadow-lg"><item.icon size={28} strokeWidth={1.5} /></div>
                             <div className="space-y-3">
-                                <h3 className="text-xl font-bold tracking-tight text-gray-900 uppercase">{item.title}</h3>
+                                <h3 className="text-xl font-bold tracking-tight text-gray-900">{item.title}</h3>
                                 <p className="text-[15px] text-gray-500 font-medium leading-relaxed italic">"{item.desc}"</p>
                             </div>
                         </div>
@@ -406,7 +517,7 @@ export default function ProductClient({ params, initialProduct }) {
             <div className="max-w-7xl mx-auto space-y-12">
                 <div className="flex flex-col md:flex-row items-end justify-between gap-6 border-b border-gray-100 pb-8 text-left">
                     <div className="space-y-2">
-                        <Badge className="bg-brand-pink/10 text-brand-pink border-none font-bold uppercase text-[9px] tracking-widest px-3 py-1">Synergy</Badge>
+                        <Badge className="bg-brand-pink/10 text-brand-pink border-none font-bold text-[9px] tracking-widest px-3 py-1">Synergy</Badge>
                         <h2 className="text-3xl lg:text-5xl font-semibold tracking-tight text-gray-900 leading-none">Complete the Routine.</h2>
                     </div>
                     <Link href="/all-products" className="text-[#0071e3] hover:underline flex items-center gap-1 text-base font-medium group text-left">

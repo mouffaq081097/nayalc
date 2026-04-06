@@ -25,8 +25,18 @@ const SocketHandler = (req, res) => {
       });
 
       socket.on('send_message', (message) => {
-        console.log('Received message via send_message:', message);
         io.to(message.room).emit('receive_message', message);
+      });
+
+      // Typing indicator — broadcast to the conversation room except sender
+      socket.on('typing', ({ conversationId, isTyping, senderType }) => {
+        const room = `conversation-${conversationId}`;
+        const event = senderType === 'admin' ? 'admin_typing' : 'customer_typing';
+        socket.to(room).emit(event, { isTyping });
+        // Also notify admin room for admin-side indicators
+        if (senderType === 'customer') {
+          socket.to('admin').emit('customer_typing', { conversationId, isTyping });
+        }
       });
 
       socket.on('disconnect', () => {

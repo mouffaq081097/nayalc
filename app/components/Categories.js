@@ -42,26 +42,23 @@ export function Categories() {
   if (error) return null;
 
   return (
-    <section className="pt-8 pb-6 bg-[#FAF9F6] relative overflow-hidden">
-      {/* Tactile Paper Texture */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
-      
-      {/* Soft Background Auras */}
+    <section className="pt-8 pb-6 relative overflow-hidden" style={{ background: 'transparent' }}>
+      {/* Cloud Luxe aura orbs */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute top-[10%] -left-[10%] w-[50%] h-[50%] bg-brand-pink/[0.03] rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-[10%] -right-[10%] w-[50%] h-[50%] bg-brand-blue/[0.03] rounded-full blur-[100px]"></div>
+        <div className="cl-aura cl-aura-purple" style={{ width: 400, height: 400, top: '-10%', left: '-10%', opacity: 0.35 }} />
+        <div className="cl-aura cl-aura-rose" style={{ width: 300, height: 300, bottom: '-10%', right: '-10%', opacity: 0.25 }} />
       </div>
 
       <Container className="relative z-10">
         {/* Section Header */}
         <div className="mb-6 text-center space-y-3">
             <div className="flex items-center justify-center gap-3">
-                <span className="w-8 h-px bg-brand-pink/30"></span>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-pink">Our Departments</span>
-                <span className="w-8 h-px bg-brand-pink/30"></span>
+                <span className="w-8 h-px" style={{ background: 'var(--cl-gradient)' }}></span>
+                <span className="text-[10px] font-black tracking-[0.3em] uppercase" style={{ color: 'var(--cl-text-soft)' }}>Our Departments</span>
+                <span className="w-8 h-px" style={{ background: 'var(--cl-gradient)' }}></span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-serif text-gray-900 italic">
-                Curated <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">Universes</span>
+            <h2 className="text-3xl md:text-4xl font-serif italic text-gray-900">
+                Curated <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">Universes</span>
             </h2>
         </div>
 
@@ -77,7 +74,7 @@ export function Categories() {
             {categories.map((category) => (
               <CarouselItem key={category.id} className="pl-4 basis-[85%] md:basis-1/3 lg:basis-1/4">
                 <Link href={category.slug ? `/collections/${category.slug}` : `/collections/${category.id}`} className="block h-full group">
-                  <div className="relative h-[350px] w-full rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20">
+                  <div className="relative h-[350px] w-full rounded-[2rem] overflow-hidden transition-all duration-500 cl-glass-card hover:shadow-cl-card-hover">
                     
                     {/* Image Container */}
                     <div className="absolute inset-0 p-4">
@@ -95,12 +92,12 @@ export function Categories() {
 
                     {/* Content */}
                     <div className="absolute inset-x-0 bottom-0 h-[25%] flex flex-col items-center justify-center p-6 text-center">
-                        <h3 className="text-lg font-serif italic text-gray-900 mb-2 group-hover:text-brand-pink transition-colors duration-300">
+                        <h3 className="text-lg font-serif italic mb-2 transition-colors duration-300" style={{ color: 'var(--cl-text-deep)' }}>
                             {category.name}
                         </h3>
                         <div className="flex items-center gap-2 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Explore</span>
-                            <ArrowRight size={12} className="text-brand-pink" />
+                            <span className="text-[9px] font-bold tracking-widest" style={{ color: 'var(--cl-text-muted)' }}>Explore</span>
+                            <ArrowRight size={12} style={{ color: 'var(--cl-purple)' }} />
                         </div>
                     </div>
                   </div>
@@ -109,8 +106,8 @@ export function Categories() {
             ))}
           </CarouselContent>
           <div className="hidden md:block">
-            <CarouselPrevious className="left-[-20px] bg-white border-gray-100 hover:bg-brand-pink hover:text-white hover:border-brand-pink transition-colors" />
-            <CarouselNext className="right-[-20px] bg-white border-gray-100 hover:bg-brand-pink hover:text-white hover:border-brand-pink transition-colors" />
+            <CarouselPrevious className="left-[-20px] transition-colors" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }} />
+            <CarouselNext className="right-[-20px] transition-colors" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }} />
           </div>
         </Carousel>
       </Container>

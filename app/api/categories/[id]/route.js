@@ -22,14 +22,29 @@ export async function GET(request, { params }) {
     // Try to find by ID first, then by slug
     let categorySql, categoryValues;
     if (!isNaN(parseInt(idOrSlug))) {
-        categorySql = 'SELECT id, name, slug, image_url as "imageUrl" FROM categories WHERE id = $1';
+        categorySql = 'SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId" FROM categories WHERE id = $1';
         categoryValues = [parseInt(idOrSlug)];
     } else {
-        categorySql = 'SELECT id, name, slug, image_url as "imageUrl" FROM categories WHERE slug = $1';
+        categorySql = 'SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId" FROM categories WHERE slug = $1';
         categoryValues = [idOrSlug];
     }
     
-    const { rows: categoryRows } = await db.query(categorySql, categoryValues);
+    let categoryRows;
+    try {
+        const result = await db.query(categorySql, categoryValues);
+        categoryRows = result.rows;
+    } catch (dbError) {
+        if (dbError.message.includes('column') || dbError.message.includes('banner_url')) {
+            // Fallback for old schema
+            const fallbackSql = !isNaN(parseInt(idOrSlug)) 
+                ? 'SELECT id, name, slug, image_url as "imageUrl" FROM categories WHERE id = $1'
+                : 'SELECT id, name, slug, image_url as "imageUrl" FROM categories WHERE slug = $1';
+            const result = await db.query(fallbackSql, categoryValues);
+            categoryRows = result.rows.map(r => ({ ...r, description: '', bannerUrl: null, parentId: null }));
+        } else {
+            throw dbError;
+        }
+    }
 
     if (categoryRows.length === 0) {
       return NextResponse.json({ message: 'Category not found' }, { status: 404 });
@@ -93,7 +108,10 @@ export async function PUT(request, { params }) {
     const customSlug = formData.get('slug');
     const productIdsString = formData.get('product_ids');
     const imageFile = formData.get('image');
-    const image_url = formData.get('image_url'); // To handle image removal
+    const image_url = formData.get('image_url'); 
+    const bannerFile = formData.get('banner');
+    const banner_url = formData.get('banner_url');
+    const parentId = formData.get('parent_id');
 
     if (!name) {
       return NextResponse.json({ message: 'Category name is required.' }, { status: 400 });
@@ -101,7 +119,7 @@ export async function PUT(request, { params }) {
 
     await client.query('BEGIN');
 
-    const { rows: existingRows } = await client.query('SELECT name, slug, image_url FROM categories WHERE id = $1', [id]);
+    const { rows: existingRows } = await client.query('SELECT name, slug, image_url, banner_url, parent_id FROM categories WHERE id = $1', [id]);
     if (existingRows.length === 0) {
         return NextResponse.json({ message: 'Category not found' }, { status: 404 });
     }
@@ -130,12 +148,20 @@ export async function PUT(request, { params }) {
       const uploadResult = await uploadImageToCloudinary(imageBuffer);
       newImageUrl = uploadResult.secure_url;
     } else if (image_url === 'null') {
-      // Client can send 'null' string to indicate image removal
       newImageUrl = null;
     }
 
-    const updateCategorySql = 'UPDATE categories SET name = $1, description = $2, image_url = $3, slug = $4 WHERE id = $5';
-    await client.query(updateCategorySql, [name, description, newImageUrl, slug, id]);
+    let newBannerUrl = existingRows[0].banner_url;
+    if (bannerFile && bannerFile.size > 0) {
+      const bannerBuffer = Buffer.from(await bannerFile.arrayBuffer());
+      const uploadResult = await uploadImageToCloudinary(bannerBuffer);
+      newBannerUrl = uploadResult.secure_url;
+    } else if (banner_url === 'null') {
+      newBannerUrl = null;
+    }
+
+    const updateCategorySql = 'UPDATE categories SET name = $1, description = $2, image_url = $3, banner_url = $4, slug = $5, parent_id = $6 WHERE id = $7';
+    await client.query(updateCategorySql, [name, description, newImageUrl, newBannerUrl, slug, parentId ? parseInt(parentId) : null, id]);
 
     // Update product associations
     await client.query('DELETE FROM category_products WHERE category_id = $1', [id]);

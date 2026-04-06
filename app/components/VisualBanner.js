@@ -33,14 +33,14 @@ export const VisualBanner = () => {
                         <div className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
                             <Microscope size={14} className="text-brand-pink" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Molecular Research</span>
+                        <span className="text-[10px] font-black tracking-[0.3em] text-white">Molecular Research</span>
                     </div>
                     <h3 className="text-3xl md:text-5xl font-serif italic text-white leading-tight">The Science of <br/>Lumière</h3>
                     <p className="text-white/80 text-sm md:text-base font-medium max-w-xs leading-relaxed">
                         Precision biological extraction from the heart of the Swiss Alps.
                     </p>
                     <div className="pt-4">
-                        <span className="inline-flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-white border-b border-white/30 pb-1 group-hover:border-white transition-all">
+                        <span className="inline-flex items-center gap-3 text-[10px] font-black tracking-[0.2em] text-white border-b border-white/30 pb-1 group-hover:border-white transition-all">
                             Explore Protocols <ArrowRight size={14} />
                         </span>
                     </div>
@@ -70,14 +70,14 @@ export const VisualBanner = () => {
                         <div className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
                             <Sparkles size={14} className="text-brand-pink" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Artisanal Curation</span>
+                        <span className="text-[10px] font-black tracking-[0.3em] text-white">Artisanal Curation</span>
                     </div>
                     <h3 className="text-3xl md:text-5xl font-serif italic text-white leading-tight">The Art of <br/>The Ritual</h3>
                     <p className="text-white/80 text-sm md:text-base font-medium max-w-xs leading-relaxed">
                         Curated masterpieces for your daily transformative journey.
                     </p>
                     <div className="pt-4">
-                        <span className="inline-flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-white border-b border-white/30 pb-1 group-hover:border-white transition-all">
+                        <span className="inline-flex items-center gap-3 text-[10px] font-black tracking-[0.2em] text-white border-b border-white/30 pb-1 group-hover:border-white transition-all">
                             Discover Collection <ArrowRight size={14} />
                         </span>
                     </div>

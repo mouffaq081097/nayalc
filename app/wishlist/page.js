@@ -19,7 +19,7 @@ const SectionTitle = ({ title, subtitle }) => (
         <h2 className="text-[32px] md:text-[42px] font-semibold text-[#1d1d1f] tracking-tight leading-tight">
             {title}
         </h2>
-        {subtitle && <p className="text-[13px] font-bold text-brand-pink uppercase tracking-[0.3em] mt-3">{subtitle}</p>}
+        {subtitle && <p className="text-[13px] font-bold text-brand-pink tracking-[0.3em] mt-3">{subtitle}</p>}
     </div>
 );
 
@@ -80,7 +80,7 @@ const WishlistCard = ({ item, onRemove }) => {
                 
                 {item.stockQuantity <= 0 && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500 bg-white px-4 py-2 rounded-full shadow-sm">
+                        <span className="text-[10px] font-black tracking-[0.3em] text-red-500 bg-white px-4 py-2 rounded-full shadow-sm">
                             Sold Out
                         </span>
                     </div>
@@ -90,7 +90,7 @@ const WishlistCard = ({ item, onRemove }) => {
             {/* Info Section */}
             <div className="p-6 flex flex-col flex-grow">
                 <div className="space-y-1 mb-4">
-                    <p className="text-[10px] font-black text-brand-pink uppercase tracking-widest">
+                    <p className="text-[10px] font-black text-brand-pink tracking-widest">
                         {item.brandName || 'Naya Lumière'}
                     </p>
                     <h3 
@@ -175,7 +175,7 @@ const WishlistContent = () => {
         <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
                 <div className="w-12 h-12 border-4 border-brand-pink/20 border-t-brand-pink rounded-full animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 animate-pulse">Curating Artistry</p>
+                <p className="text-[10px] font-black tracking-[0.4em] text-gray-400 animate-pulse">Curating Artistry</p>
             </div>
         </div>
     );
@@ -246,7 +246,7 @@ const WishlistContent = () => {
                             <p className="text-gray-400 text-[15px] font-medium mb-12 max-w-sm mx-auto">Discover and curate the products that resonate with your frequency.</p>
                             <button 
                                 onClick={() => router.push('/all-products')}
-                                className="px-12 py-5 bg-gray-900 text-white rounded-2xl text-[12px] font-black uppercase tracking-[0.4em] shadow-2xl hover:bg-brand-pink transition-all active:scale-95 duration-300"
+                                className="px-12 py-5 bg-gray-900 text-white rounded-2xl text-[12px] font-black tracking-[0.4em] shadow-2xl hover:bg-brand-pink transition-all active:scale-95 duration-300"
                             >
                                 Explore Collection
                             </button>
@@ -267,13 +267,13 @@ const WishlistContent = () => {
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                                 <button 
                                     onClick={() => router.push('/all-products')}
-                                    className="w-full sm:w-auto px-10 py-5 bg-white text-gray-900 rounded-2xl text-[11px] font-black uppercase tracking-[0.4em] hover:bg-brand-pink hover:text-white transition-all shadow-xl"
+                                    className="w-full sm:w-auto px-10 py-5 bg-white text-gray-900 rounded-2xl text-[11px] font-black tracking-[0.4em] hover:bg-brand-pink hover:text-white transition-all shadow-xl"
                                 >
                                     Shop All
                                 </button>
                                 <button 
                                     onClick={() => router.push('/skin-quiz')}
-                                    className="w-full sm:w-auto px-10 py-5 bg-white/10 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.4em] border border-white/10 hover:bg-white/20 transition-all backdrop-blur-md"
+                                    className="w-full sm:w-auto px-10 py-5 bg-white/10 text-white rounded-2xl text-[11px] font-black tracking-[0.4em] border border-white/10 hover:bg-white/20 transition-all backdrop-blur-md"
                                 >
                                     Take Skin Quiz
                                 </button>
@@ -285,7 +285,7 @@ const WishlistContent = () => {
                 {/* Footnote */}
                 <div className="mt-32 flex flex-col items-center gap-4 text-center opacity-30">
                     <div className="w-8 h-[1px] bg-gray-900" />
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-900">Naya Lumière Gallery</p>
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-gray-900">Naya Lumière Gallery</p>
                 </div>
             </div>
         </div>
@@ -294,7 +294,7 @@ const WishlistContent = () => {
 
 export default function WishlistPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center text-brand-pink font-black uppercase tracking-[0.5em]">Curating Artistry...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center text-brand-pink font-black tracking-[0.5em]">Curating Artistry...</div>}>
             <WishlistContent />
         </Suspense>
     );

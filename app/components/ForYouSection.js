@@ -12,7 +12,7 @@ export const ForYouSection = () => {
   const forYouProducts = products.slice(0, 8);
 
   return (
-    <section className="pt-6 pb-16 bg-[#FAF9F6] relative overflow-hidden border-t border-gray-100">
+    <section className="pt-6 pb-16 bg-[#fff0f8] relative overflow-hidden border-t border-gray-100">
       {/* Tactile Paper Texture */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
       
@@ -26,7 +26,7 @@ export const ForYouSection = () => {
         <div className="mb-8 space-y-3">
           <div className="flex items-center gap-3">
              <span className="w-8 h-px bg-brand-pink/30"></span>
-             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-pink flex items-center gap-2">
+             <span className="text-[12px] font-black tracking-tight text-brand-pink flex items-center gap-2">
                 <Sparkles size={10} />
                 Tailored Experience
              </span>

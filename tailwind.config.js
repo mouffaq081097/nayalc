@@ -10,6 +10,23 @@ export default {
   theme: {
     extend: {
       colors: {
+        /* Cloud Luxe palette */
+        'cl-purple': 'var(--cl-purple)',
+        'cl-purple-light': 'var(--cl-purple-light)',
+        'cl-purple-deep': 'var(--cl-purple-deep)',
+        'cl-pink': 'var(--cl-pink)',
+        'cl-pink-light': 'var(--cl-pink-light)',
+        'cl-bg': 'var(--cl-bg)',
+        'cl-bg-rose': 'var(--cl-bg-rose)',
+        'cl-bg-lavender': 'var(--cl-bg-lavender)',
+        'cl-glass': 'var(--cl-glass)',
+        'cl-glass-border': 'var(--cl-glass-border)',
+        'cl-deep': 'var(--cl-text-deep)',
+        'cl-mid': 'var(--cl-text-mid)',
+        'cl-soft': 'var(--cl-text-soft)',
+        'cl-light': 'var(--cl-text-light)',
+        'cl-muted': 'var(--cl-text-muted)',
+        /* brand */
         'brand-blue': 'var(--brand-blue)',
         'brand-blue-light': 'var(--brand-blue-light)',
         'brand-blue-extra-light': 'var(--brand-blue-extra-light)',
@@ -28,7 +45,16 @@ export default {
       },
       fontFamily: {
         'serif': ['"Cormorant Garamond"', 'serif'],
-        'sans': ['"Montserrat"', 'sans-serif'],
+        'sans': ['"Instrument Sans"', '"Montserrat"', 'sans-serif'],
+        'instrument': ['"Instrument Sans"', 'sans-serif'],
+      },
+      boxShadow: {
+        'premium': '0 20px 50px -12px rgba(0, 0, 0, 0.08)',
+        'luxury': '0 30px 60px -15px rgba(255, 102, 153, 0.1)',
+        'cl-card': '0 8px 32px rgba(147, 51, 234, 0.10)',
+        'cl-card-hover': '0 20px 48px rgba(147, 51, 234, 0.22)',
+        'cl-glow': '0 0 40px rgba(147, 51, 234, 0.20)',
+        'cl-btn': '0 8px 24px rgba(147, 51, 234, 0.30)',
       },
       textShadow: {
         sm: '0 1px 2px var(--tw-shadow-color)',
@@ -73,6 +99,15 @@ export default {
           '0%, 100%': { 'background-size': '200% 200%', 'background-position': 'left center' },
           '50%': { 'background-size': '200% 200%', 'background-position': 'right center' },
         },
+        'cl-aura-float': {
+          '0%, 100%': { transform: 'translateY(0px) scale(1)' },
+          '33%': { transform: 'translateY(-18px) scale(1.04)' },
+          '66%': { transform: 'translateY(10px) scale(0.97)' },
+        },
+        'cl-shimmer': {
+          '0%': { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -84,6 +119,9 @@ export default {
         'fade-in': 'fade-in 0.5s ease-in-out forwards',
         shimmer: 'shimmer 2s infinite',
         'gradient-x': 'gradient-x 3s ease infinite',
+        'cl-aura-float': 'cl-aura-float 10s ease-in-out infinite',
+        'cl-aura-float-slow': 'cl-aura-float 14s ease-in-out infinite',
+        'cl-shimmer': 'cl-shimmer 3s linear infinite',
       },
     },
   },

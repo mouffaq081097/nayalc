@@ -17,7 +17,9 @@ export const AppProvider = ({ children }) => {
   const [cancelledOrders, setCancelledOrders] = useState({ orders: [], totalCount: 0, page: 1, limit: 10 });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]); // New state for brands
+  const [concerns, setConcerns] = useState([]);
+  const [brands, setBrands] = useState([]);
+ // New state for brands
   const [featuredProducts, setFeaturedProducts] = useState([]); // New state for featured products
   const [isChatOpen, setIsChatOpen] = useState(false); // Global chat widget state
   const [loyaltyData, setLoyaltyData] = useState({ stats: { points: 0, tier: 'Member', nextTierPoints: 2000 }, transactions: [] });
@@ -245,7 +247,8 @@ export const AppProvider = ({ children }) => {
       const data = await response.json();
       const processedCategories = data.map(category => ({
         ...category,
-        image_url: category.imageUrl, // Map imageUrl from API to image_url for consistency
+        image_url: category.imageUrl, 
+        banner_url: category.bannerUrl,
       }));
       setCategories(processedCategories);
     } catch (error) {
@@ -253,6 +256,19 @@ export const AppProvider = ({ children }) => {
       setCategories([]);
     }
   }, []); // Empty dependency array as it has no external dependencies
+
+  // Function to fetch concerns from the backend
+  const fetchConcerns = useCallback(async () => {
+    try {
+      const response = await fetch('/api/concerns');
+      if (response.ok) {
+        const data = await response.json();
+        setConcerns(data);
+      }
+    } catch (error) {
+      console.warn('Concerns fetch error (resilience):', error);
+    }
+  }, []);
 
   // Function to fetch brands from the backend
   const fetchBrands = async () => {
@@ -447,6 +463,7 @@ export const AppProvider = ({ children }) => {
     fetchProducts(); // Fetch all products
     fetchFeaturedProducts(); // Fetch random featured products
     fetchCategories(); // Fetch categories
+    fetchConcerns(); // Fetch concerns
     fetchBrands(); // Fetch brands
     if (isAuthenticated && user?.id) {
       fetchOrders(); // Fetch orders only if authenticated
@@ -466,6 +483,7 @@ export const AppProvider = ({ children }) => {
       cancelledOrders, fetchCancelledOrders,
       products, setProducts,
       categories, setCategories,
+      concerns, setConcerns,
       brands, setBrands,
       featuredProducts, setFeaturedProducts,
       addBrand, updateBrand, deleteBrand,

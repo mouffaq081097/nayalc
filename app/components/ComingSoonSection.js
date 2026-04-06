@@ -4,7 +4,7 @@ const ComingSoonSection = () => {
     return (
         <section className="mt-16 bg-[var(--brand-premium-bg)] rounded-2xl p-12 text-center relative overflow-hidden">
             <div className="relative z-10">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--brand-blue)]">Launching Soon</h3>
+                <h3 className="text-sm font-semibold tracking-wider text-[var(--brand-blue)]">Launching Soon</h3>
                 <h2 className="text-2xl sm:text-3xl font-bold text-[var(--brand-text)] font-serif mt-4">The Bespoke Collection</h2>
                 <p className="text-[var(--brand-muted)] mt-4 max-w-xl mx-auto">
                     Experience skincare tailored to you. Sign up to be the first to know when our personalized collection arrives, and receive an exclusive launch offer.

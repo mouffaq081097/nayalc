@@ -8,7 +8,7 @@ import StoreCategoryNav from '../components/StoreCategoryNav';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Search, X, Filter, Sparkles, Check, Hash, ArrowRight, Minus, Plus as PlusIcon } from 'lucide-react';
+import { Search, X, Filter, Sparkles, Check, Hash, ArrowRight, Minus, Plus as PlusIcon, Star, Gift, Droplets, CreditCard, Zap, Heart } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { Slider } from '../components/ui/slider';
@@ -77,11 +77,11 @@ const SidebarFilters = ({
     <div className="space-y-10">
       <div className="flex items-center justify-between pb-6 border-b border-gray-100">
         <div>
-            <h2 className="text-[11px] uppercase tracking-[0.4em] font-black text-gray-900">Selection</h2>
+            <h2 className="text-[11px] tracking-[0.4em] font-black text-gray-900">Selection</h2>
         </div>
         <button 
           onClick={clearFilters}
-          className="text-[9px] uppercase tracking-widest text-brand-pink hover:text-gray-900 transition-all font-black border-b border-brand-pink/20 pb-0.5"
+          className="text-[9px] tracking-widest text-brand-pink hover:text-gray-900 transition-all font-black border-b border-brand-pink/20 pb-0.5"
         >
           Reset
         </button>
@@ -108,7 +108,7 @@ const SidebarFilters = ({
                     }}
                 >
                   <div className="flex items-center">
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedCategories.includes(category) ? 'bg-brand-pink border-brand-pink' : 'border-gray-200 bg-white'}`}>
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedCategories.includes(category) ? 'bg-gray-900 border-gray-900' : 'border-gray-200 bg-white'}`}>
                         {selectedCategories.includes(category) && <Check size={10} className="text-white" strokeWidth={4} />}
                     </div>
                     <span className={`ml-3 text-[12px] tracking-widest transition-colors ${selectedCategories.includes(category) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>
@@ -331,7 +331,7 @@ export default function AllProductsPage() {
   const activeFiltersCount = selectedCategories.length + selectedBrands.length + (showInStock ? 1 : 0);
 
   return (
-    <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+    <div className="bg-[#fff0f8] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       
       {/* Subtle Boutique Aura */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -344,14 +344,237 @@ export default function AllProductsPage() {
       <StoreHeader title="Store." />
       <StoreCategoryNav />
 
+      {/* ── The Naya Lumière Difference ── */}
+      <section className="w-full pt-8 pb-10 bg-transparent border-b border-gray-100/60 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply" />
+        <div className="max-w-[1400px] mx-auto">
+          {/* Section header — matches "Curated Universes" style */}
+          <div className="px-6 md:px-10 mb-6 text-center space-y-3">
+            <div className="flex items-center justify-center gap-3">
+              <span className="w-8 h-px bg-brand-pink/30" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-pink">Our Promise</span>
+              <span className="w-8 h-px bg-brand-pink/30" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-serif italic text-gray-900">
+              The Naya Lumière{' '}
+              <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">difference.</span>
+            </h2>
+            <p className="text-[13px] text-gray-400 font-medium">Even more reasons to shop with us.</p>
+          </div>
+
+          {/* Horizontally scrollable card rail */}
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pl-6 md:pl-10 pr-6 md:pr-10 pb-3" style={{ scrollSnapType: 'x mandatory' }}>
+
+            {/* Card 1 — Seasonal Offer */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0, duration: 0.45 }}
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              style={{ scrollSnapAlign: 'start' }}
+            >
+              {/* Inner image zone — 75% */}
+              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
+                style={{ background: 'radial-gradient(ellipse at 60% 30%, #7c3aed 0%, #4c1d95 40%, #1c0050 90%)' }}>
+                {[...Array(16)].map((_, i) => (
+                  <div key={i} className="absolute rounded-full bg-white"
+                    style={{ width: i%3===0?'2px':'1px', height: i%3===0?'2px':'1px', top:`${8+(i*19)%80}%`, left:`${4+(i*27)%90}%`, opacity: 0.35+(i%4)*0.15 }} />
+                ))}
+                <div className="relative z-10 w-36 h-[84px] rounded-[14px] shadow-2xl flex flex-col justify-between p-3.5 overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #5b21b6 100%)' }}>
+                  <div className="absolute inset-0 opacity-15" style={{ background: 'radial-gradient(circle at 70% 15%, #fff 0%, transparent 55%)' }} />
+                  <div className="flex justify-between items-start">
+                    <div className="w-6 h-4 rounded bg-yellow-300/80 shadow-sm" />
+                    <CreditCard size={13} className="text-white/50" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <div className="text-[7px] font-bold text-white/50 tracking-widest uppercase mb-0.5">Tabby</div>
+                    <div className="text-[10px] font-bold text-white tracking-wider">•••• •••• •••• 4242</div>
+                  </div>
+                </div>
+              </div>
+              {/* Text zone — 25% */}
+              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Seasonal Offer</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                  0% installment plan with Tabby.
+                </h3>
+                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Great ways to pay</span>
+                  <ArrowRight size={11} className="text-brand-pink" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 2 — Curated For You */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.06, duration: 0.45 }}
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              style={{ scrollSnapAlign: 'start' }}
+            >
+              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-end justify-center"
+                style={{ background: 'linear-gradient(160deg, #9d174d 0%, #be185d 40%, #831843 100%)' }}>
+                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 30% 0%, #fff 0%, transparent 50%)' }} />
+                <div className="relative z-10 mb-0 flex gap-2 items-end px-6">
+                  {[
+                    { bg: '#db2777', h: 'h-20', icon: <Droplets size={18} className="text-white/70" strokeWidth={1.5} /> },
+                    { bg: '#be185d', h: 'h-28', icon: <Sparkles size={18} className="text-white/80" strokeWidth={1.5} /> },
+                    { bg: '#9d174d', h: 'h-16', icon: <Heart size={18} className="text-white/70" strokeWidth={1.5} /> },
+                  ].map((b, i) => (
+                    <div key={i} className={`flex-1 ${b.h} rounded-t-2xl flex items-center justify-center shadow-lg`} style={{ backgroundColor: b.bg }}>
+                      {b.icon}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Curated For You</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                  Customize your daily skincare routine.
+                </h3>
+                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Explore</span>
+                  <ArrowRight size={11} className="text-brand-pink" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 3 — AI Specialist */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.12, duration: 0.45 }}
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              style={{ scrollSnapAlign: 'start' }}
+            >
+              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
+                style={{ background: 'linear-gradient(160deg, #003566 0%, #001d3d 70%)' }}>
+                <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 50% 40%, #0096c7 0%, transparent 60%)' }} />
+                <div className="relative z-10 flex items-center justify-center">
+                  <div className="absolute w-28 h-28 rounded-full border border-blue-400/20 animate-ping" style={{ animationDuration: '3s' }} />
+                  <div className="absolute w-18 h-18 rounded-full border border-blue-400/25" style={{ width: '4.5rem', height: '4.5rem' }} />
+                  <div className="w-14 h-14 rounded-full bg-blue-500/20 border border-blue-400/40 flex items-center justify-center">
+                    <Sparkles size={28} className="text-blue-300" strokeWidth={1.5} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">AI Specialist</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                  Skin diagnosis in seconds.
+                </h3>
+                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Try AI Consultant</span>
+                  <ArrowRight size={11} className="text-brand-pink" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 4 — Loyalty Rewards */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.18, duration: 0.45 }}
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              style={{ scrollSnapAlign: 'start' }}
+            >
+              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
+                style={{ background: 'linear-gradient(155deg, #92400e 0%, #b45309 50%, #78350f 100%)' }}>
+                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 20% 10%, #fde68a 0%, transparent 50%)' }} />
+                <div className="relative z-10 flex flex-col items-center gap-2">
+                  <Star size={56} className="text-yellow-300 fill-yellow-300 drop-shadow-lg" strokeWidth={1} />
+                  <div className="flex gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={12} className="text-yellow-300/80 fill-yellow-300/80" strokeWidth={1} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Loyalty Rewards</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                  Earn Naya Points with every purchase.
+                </h3>
+                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Redeem for rewards</span>
+                  <ArrowRight size={11} className="text-brand-pink" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 5 — Art of Gifting */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.24, duration: 0.45 }}
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              style={{ scrollSnapAlign: 'start' }}
+            >
+              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
+                style={{ background: 'linear-gradient(150deg, #064e3b 0%, #065f46 50%, #047857 100%)' }}>
+                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 80% 10%, #6ee7b7 0%, transparent 50%)' }} />
+                <div className="relative z-10">
+                  <div className="relative w-24 h-20 rounded-xl bg-emerald-400 shadow-2xl flex items-center justify-center">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-4 rounded-lg bg-emerald-300" />
+                    <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-emerald-300" />
+                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex gap-1">
+                      <div className="w-5 h-5 rounded-full border-[2.5px] border-emerald-300 -rotate-12" />
+                      <div className="w-5 h-5 rounded-full border-[2.5px] border-emerald-300 rotate-12" />
+                    </div>
+                    <Gift size={24} className="text-white mt-2" strokeWidth={1.5} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">The Art of Gifting</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                  Luxury gifts are in the cards.
+                </h3>
+                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Shop gift sets</span>
+                  <ArrowRight size={11} className="text-brand-pink" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 6 — Your Ritual */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.30, duration: 0.45 }}
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              style={{ scrollSnapAlign: 'start' }}
+            >
+              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
+                style={{ background: 'linear-gradient(150deg, #4c1d95 0%, #5b21b6 50%, #3b0764 100%)' }}>
+                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 20% 80%, #c4b5fd 0%, transparent 50%)' }} />
+                <div className="relative z-10 flex items-end gap-3">
+                  <div className="w-9 h-20 rounded-full bg-violet-400/80 shadow-lg flex items-center justify-center">
+                    <Droplets size={16} className="text-white/80" strokeWidth={1.5} />
+                  </div>
+                  <div className="w-11 h-28 rounded-[1.5rem] bg-violet-500/90 shadow-xl flex items-center justify-center">
+                    <Droplets size={20} className="text-white/90" strokeWidth={1.5} />
+                  </div>
+                  <div className="w-9 h-16 rounded-full bg-violet-300/80 shadow-lg flex items-center justify-center">
+                    <Droplets size={14} className="text-white/80" strokeWidth={1.5} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Your Ritual</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                  Master your new skincare ritual.
+                </h3>
+                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Discover the routine</span>
+                  <ArrowRight size={11} className="text-brand-pink" />
+                </div>
+              </div>
+            </motion.div>
+
+          </div>
+        </div>
+      </section>
+      {/* ── End Difference Section ── */}
+
       <div className="container mx-auto px-4 md:px-10 relative z-30 pt-4">
         <div className="flex justify-end mb-6">
             <button 
                 onClick={() => setIsFilterOpen(true)}
-                className="flex items-center gap-2 px-6 py-2 bg-transparent text-[#1d1d1f] rounded-full text-[12px] font-medium border border-gray-200 hover:border-brand-pink hover:text-brand-pink transition-all duration-300 active:scale-95 group"
+                className="flex items-center gap-2 px-6 py-2 bg-gray-900 text-white rounded-full text-[12px] font-bold tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm active:scale-95 group"
             >
                 <span>Refine</span>
-                <Filter size={14} className="group-hover:rotate-12 transition-transform text-gray-400 group-hover:text-brand-pink" />
+                <Filter size={14} className="group-hover:rotate-12 transition-transform text-white" />
             </button>
         </div>
         <main className="w-full">
@@ -414,25 +637,25 @@ export default function AllProductsPage() {
 
                 {/* Load More */}
                 {visibleCount < filteredAndSortedProducts.length && (
-                    <div className="flex flex-col items-center gap-12 py-20 border-t border-gray-200">
-                        <div className="flex flex-col items-center gap-5">
-                            <span className="text-[9px] uppercase tracking-[0.5em] text-gray-400 font-black">Collection Progress</span>
-                            <div className="w-72 h-1 bg-gray-100 rounded-full overflow-hidden border border-gray-50 shadow-inner">
-                                <motion.div 
+                    <div className="flex flex-col items-center gap-5 pt-10 pb-6 border-t border-gray-100">
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-48 h-0.5 bg-gray-100 rounded-full overflow-hidden">
+                                <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(displayedProducts.length / filteredAndSortedProducts.length) * 100}%` }}
-                                    className="h-full bg-gradient-to-r from-brand-pink to-brand-blue shadow-[0_0_10px_rgba(255,105,180,0.5)]"
-                                ></motion.div>
+                                    className="h-full bg-brand-pink/40 rounded-full"
+                                />
                             </div>
+                            <span className="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-medium">
+                                {displayedProducts.length} of {filteredAndSortedProducts.length}
+                            </span>
                         </div>
-                        <button 
+                        <button
                             onClick={loadMore}
-                            className="group flex items-center gap-8 px-16 py-6 bg-white border border-gray-300 text-gray-900 rounded-2xl shadow-xl hover:bg-gray-900 hover:text-white transition-all active:scale-95 duration-500"
+                            className="group flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-full text-[11px] font-bold tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm active:scale-95"
                         >
-                            <span className="text-[13px] font-black uppercase tracking-[0.4em]">Reveal Further</span>
-                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-white/10 group-hover:text-white transition-all duration-500">
-                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                            </div>
+                            Show more
+                            <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
                         </button>
                     </div>
                 )}
@@ -457,7 +680,7 @@ export default function AllProductsPage() {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: "spring", damping: 35, stiffness: 300 }}
-                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[#FAF9F6] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-gray-300 flex flex-col"
+                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[#fff0f8] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-gray-300 flex flex-col"
             >
                 {/* Drawer Header */}
                 <div className="p-10 border-b border-gray-200 bg-white/50 backdrop-blur-md sticky top-0 z-20">

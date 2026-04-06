@@ -12,7 +12,7 @@ export function FeaturedProducts() {
   const displayedProducts = featuredProducts;
 
   return (
-    <section className="pt-6 pb-12 bg-[#FAF9F6] relative">
+    <section className="pt-6 pb-12 bg-[#fff0f8] relative">
        {/* Tactile Paper Texture */}
        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
        
@@ -27,7 +27,7 @@ export function FeaturedProducts() {
           <div className="space-y-3">
              <div className="flex items-center gap-3">
                 <span className="w-8 h-px bg-brand-pink/30"></span>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-pink">Editor's Pick</span>
+                <span className="text-[12px] font-black tracking-tight text-brand-pink">Editor's Pick</span>
              </div>
              <h2 className="text-3xl md:text-4xl font-serif text-gray-900 italic">
                 Signature <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">Selection</span>
@@ -36,7 +36,7 @@ export function FeaturedProducts() {
 
           <Link
             href="/all-products"
-            className="group flex items-center gap-3 px-6 py-3 bg-white border border-gray-200 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-300 shadow-sm"
+            className="group flex items-center gap-3 px-6 py-3 bg-gray-900 text-white rounded-full text-[12px] font-black tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm"
           >
             View Full Collection
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />

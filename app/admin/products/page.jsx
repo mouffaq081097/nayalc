@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ManageProducts = () => {
-    const { products, categories, brands, addProduct, updateProduct, deleteProduct, loading: isDataLoading } = useAppContext();
+    const { products, categories, concerns, brands, addProduct, updateProduct, deleteProduct, loading: isDataLoading } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
@@ -29,6 +29,7 @@ const ManageProducts = () => {
             price: product?.price || 0,
             stock_quantity: product?.stock_quantity || 0,
             categoryIds: product?.category_ids || product?.categories?.map(cat => cat.id) || [],
+            concernIds: product?.concern_ids || [],
             brand: product?.brandName || '',
             imageUrl: product?.imageUrl || '',
             altText: product?.altText || '',
@@ -92,6 +93,17 @@ const ManageProducts = () => {
         });
     };
 
+    const handleConcernChange = (concernId, isChecked) => {
+        setFormData(prev => {
+            const currentConcernIds = prev.concernIds || [];
+            if (isChecked) {
+                return { ...prev, concernIds: [...currentConcernIds, concernId] };
+            } else {
+                return { ...prev, concernIds: currentConcernIds.filter(id => id !== concernId) };
+            }
+        });
+    };
+
     const handleFileChange = (e) => {
         setImageFile(e.target.files[0]);
     };
@@ -149,6 +161,8 @@ const ManageProducts = () => {
                         productFormData.append('existingAdditionalImages', img.url);
                         productFormData.append('existingAdditionalAlts', img.alt || '');
                     });
+                } else if (key === 'categoryIds' || key === 'concernIds') {
+                    productFormData.append(key, finalProductData[key].join(','));
                 } else if (Array.isArray(finalProductData[key])) {
                     finalProductData[key].forEach(item => productFormData.append(key, item));
                 } else {
@@ -671,7 +685,7 @@ const ManageProducts = () => {
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Universe (Categories)</label>
-                                            <div className="space-y-3">
+                                            <div className="space-y-3 max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
                                                 {categories.map(c => (
                                                     <label key={c.id} className="flex items-center group/cat cursor-pointer">
                                                         <div className="relative">
@@ -683,11 +697,11 @@ const ManageProducts = () => {
                                                                 disabled={isSubmitting}
                                                             />
                                                             <div className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${
-                                                                formData.categoryIds.includes(c.id) 
-                                                                ? 'bg-indigo-600 border-indigo-600' 
+                                                                formData.categoryIds.includes(c.id)
+                                                                ? 'bg-indigo-600 border-indigo-600'
                                                                 : 'border-gray-100 bg-gray-50 group-hover/cat:border-indigo-200'
                                                             }`}>
-                                                                {formData.categoryIds.includes(c.id) && <Plus size={14} className="text-white rotate-45" />}
+                                                                {formData.categoryIds.includes(c.id) && <CheckCircle2 size={14} className="text-white" />}
                                                             </div>
                                                         </div>
                                                         <span className={`ml-4 text-[13px] font-bold transition-colors ${
@@ -699,6 +713,39 @@ const ManageProducts = () => {
                                                 ))}
                                             </div>
                                         </div>
+
+                                        <div>
+                                            <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Targeted Concerns</label>
+                                            <div className="space-y-3 max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
+                                                {concerns.map(con => (
+                                                    <label key={con.id} className="flex items-center group/con cursor-pointer">
+                                                        <div className="relative">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={formData.concernIds.includes(con.id)}
+                                                                onChange={(e) => handleConcernChange(con.id, e.target.checked)}
+                                                                className="sr-only"
+                                                                disabled={isSubmitting}
+                                                            />
+                                                            <div className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${
+                                                                formData.concernIds.includes(con.id)
+                                                                ? 'bg-brand-pink border-brand-pink'
+                                                                : 'border-gray-100 bg-gray-50 group-hover/con:border-brand-pink/20'
+                                                            }`}>
+                                                                {formData.concernIds.includes(con.id) && <CheckCircle2 size={14} className="text-white" />}
+                                                            </div>
+                                                        </div>
+                                                        <span className={`ml-4 text-[13px] font-bold transition-colors ${
+                                                            formData.concernIds.includes(con.id) ? 'text-gray-900' : 'text-gray-400 group-hover/con:text-gray-600'
+                                                        }`}>
+                                                            {con.name}
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            {concerns.length === 0 && <p className="text-[10px] text-gray-400 italic">No concerns defined. Please run SQL migration.</p>}
+                                        </div>
+
                                     </div>
                                 </section>
 

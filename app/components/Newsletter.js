@@ -54,7 +54,7 @@ export function Newsletter() {
                 className="flex items-center gap-3"
             >
                 <span className="w-8 h-px bg-brand-pink/30"></span>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-pink flex items-center gap-2">
+                <span className="text-[10px] font-black text-brand-pink flex items-center gap-2">
                     <Sparkles size={10} />
                     Exclusive Invitation
                 </span>
@@ -90,7 +90,7 @@ export function Newsletter() {
                         </div>
                         <button 
                             type="submit" 
-                            className="h-14 px-10 bg-black text-white rounded-full text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-brand-pink transition-all duration-500 flex items-center justify-center gap-3 shadow-lg shadow-black/5"
+                            className="h-14 px-10 bg-black text-white rounded-full text-[10px] font-bold hover:bg-brand-pink transition-all duration-500 flex items-center justify-center gap-3 shadow-lg shadow-black/5"
                         >
                             Subscribe
                             <ArrowRight size={14} />
@@ -117,7 +117,7 @@ export function Newsletter() {
                         <div className="w-6 h-6 rounded-full bg-brand-pink/5 flex items-center justify-center text-brand-pink mb-1">
                             <perk.icon size={12} strokeWidth={3} />
                         </div>
-                        <span className="text-[11px] font-black uppercase tracking-widest text-gray-900">{perk.label}</span>
+                        <span className="text-[11px] font-black text-gray-900">{perk.label}</span>
                         <span className="text-[10px] text-gray-400 font-medium">{perk.sub}</span>
                     </motion.div>
                 ))}

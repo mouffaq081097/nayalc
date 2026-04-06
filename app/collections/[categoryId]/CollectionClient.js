@@ -3,7 +3,6 @@
 import { useSearchParams, useParams } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../../components/ProductCard';
-import StoreHeader from '../../components/StoreHeader';
 import StoreCategoryNav from '../../components/StoreCategoryNav';
 import { Filter, Search, X, Check, ArrowRight, Minus, Plus as PlusIcon } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
@@ -21,6 +20,9 @@ const SidebarFilters = ({
   brands,
   selectedBrands,
   setSelectedBrands,
+  concerns,
+  selectedConcerns,
+  setSelectedConcerns,
   priceRange,
   setPriceRange,
   showInStock,
@@ -50,6 +52,18 @@ const SidebarFilters = ({
     return counts;
   }, [allProducts]);
 
+  const concernCounts = useMemo(() => {
+    const counts = {};
+    allProducts.forEach(p => {
+      if (p.concern_ids && Array.isArray(p.concern_ids)) {
+        p.concern_ids.forEach(cid => {
+            counts[cid] = (counts[cid] || 0) + 1;
+        });
+      }
+    });
+    return counts;
+  }, [allProducts]);
+
   const displayedBrands = showAllBrands ? brands : brands.slice(0, 8);
 
   return (
@@ -66,7 +80,43 @@ const SidebarFilters = ({
         </button>
       </div>
 
-      <Accordion type="multiple" defaultValue={['brand', 'price']} className="w-full">
+      <Accordion type="multiple" defaultValue={['brand', 'price', 'concern']} className="w-full">
+        {concerns && concerns.length > 0 && (
+          <AccordionItem value="concern" className="border-b border-gray-50 mb-2">
+            <AccordionTrigger className="hover:no-underline py-5 text-[10px] uppercase tracking-[0.3em] font-black text-gray-900 flex-1 text-left">
+              Ritual Focus
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-3 pt-1 pb-4 pr-2">
+                {concerns.map((con) => (
+                  <div 
+                      key={con.id} 
+                      className="flex items-center justify-between group/item cursor-pointer"
+                      onClick={() => {
+                          const next = selectedConcerns.includes(con.id)
+                          ? selectedConcerns.filter((id) => id !== con.id)
+                          : [...selectedConcerns, con.id];
+                          setSelectedConcerns(next);
+                      }}
+                  >
+                  <div className="flex items-center">
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedConcerns.includes(con.id) ? 'bg-gray-900 border-gray-900' : 'border-gray-200 bg-white'}`}>
+                          {selectedConcerns.includes(con.id) && <Check size={10} className="text-white" strokeWidth={4} />}
+                      </div>
+                      <span className={`ml-3 text-[12px] tracking-widest transition-colors ${selectedConcerns.includes(con.id) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>
+                          {con.name}
+                      </span>
+                  </div>
+                  <span className="text-[9px] font-black text-gray-200 group-hover/item:text-brand-pink transition-colors">
+                      {concernCounts[con.id] || 0}
+                  </span>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
         <AccordionItem value="brand" className="border-b border-gray-50 mb-2">
           <div className="flex items-center justify-between">
             <AccordionTrigger className="hover:no-underline py-5 text-[10px] uppercase tracking-[0.3em] font-black text-gray-900 flex-1">
@@ -160,15 +210,67 @@ const SidebarFilters = ({
   );
 };
 
+const CategoryHero = ({ category }) => {
+  if (!category) return null;
+  return (
+    <div className="relative w-full overflow-hidden mb-8 md:mb-12">
+      {/* Banner image — soft fade into blush pink */}
+      {category.banner_url && (
+        <div className="relative w-full h-[260px] md:h-[380px]">
+          <img
+            src={category.banner_url}
+            alt={category.name}
+            className="w-full h-full object-cover"
+          />
+          {/* Soft gradient fade — no dark overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#fff0f8] via-[#fff0f8]/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#fff0f8]/20 via-transparent to-[#fff0f8]/20" />
+        </div>
+      )}
+
+      {/* Text content — overlaps banner from below */}
+      <div className={`${category.banner_url ? 'relative -mt-16 md:-mt-24' : 'pt-16'} pb-10 px-6 text-center`}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-4 max-w-3xl mx-auto"
+        >
+          {/* Eyebrow badge */}
+          <div className="flex items-center justify-center gap-3">
+            <span className="w-8 h-px bg-brand-pink/30" />
+            <span className="text-[10px] font-black tracking-[0.3em] text-brand-pink">Our Collection</span>
+            <span className="w-8 h-px bg-brand-pink/30" />
+          </div>
+
+          {/* Golden-standard headline */}
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif italic text-gray-900 leading-[1.05] tracking-tight">
+            Discover{' '}
+            <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">
+              {category.name}.
+            </span>
+          </h1>
+
+          {/* Description */}
+          <p className="text-sm md:text-base font-sans text-gray-500 max-w-xl mx-auto leading-relaxed">
+            {category.description || 'A meticulously curated universe of clinical botanical masterpieces.'}
+          </p>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
 export default function CollectionClient() {
   const { categoryId } = useParams();
-  const { products: allProducts, categories: appCategories, fetchProducts } = useAppContext();
+  const { products: allProducts, categories: appCategories, concerns, fetchProducts } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
   const [isLoading, setIsLoading] = useState(true);
   const [gridCols, setGridCols] = useState(4);
 
   const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedConcerns, setSelectedConcerns] = useState([]);
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [showInStock, setShowInStock] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -213,6 +315,7 @@ export default function CollectionClient() {
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedBrands([]);
+    setSelectedConcerns([]);
     setPriceRange([0, maxPrice]);
     setShowInStock(false);
   }
@@ -232,6 +335,12 @@ export default function CollectionClient() {
       filtered = filtered.filter(product => selectedBrands.includes(product.brand));
     }
 
+    if (selectedConcerns.length > 0) {
+      filtered = filtered.filter(product => 
+        product.concern_ids && product.concern_ids.some(cid => selectedConcerns.includes(cid))
+      );
+    }
+
     filtered = filtered.filter(product => product.price >= priceRange[0] && product.price <= priceRange[1]);
 
     if (showInStock) {
@@ -246,13 +355,13 @@ export default function CollectionClient() {
       default: filtered.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
     }
     return filtered;
-  }, [searchTerm, selectedBrands, priceRange, showInStock, sortBy, categoryProducts]);
+  }, [searchTerm, selectedBrands, selectedConcerns, priceRange, showInStock, sortBy, categoryProducts]);
 
   const displayedProducts = filteredAndSortedProducts.slice(0, visibleCount);
   const loadMore = () => setVisibleCount(prev => prev + 12);
 
   return (
-    <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+    <div className="bg-[#fff0f8] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       {/* Subtle Boutique Aura */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-brand-pink/[0.02] to-transparent"></div>
@@ -261,17 +370,17 @@ export default function CollectionClient() {
       {/* Tactile Paper Grain */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
 
-      <StoreHeader title={currentCategory?.name || "Collection"} />
       <StoreCategoryNav />
+      <CategoryHero category={currentCategory} />
 
       <div className="container mx-auto px-4 md:px-10 relative z-30 pt-4">
         <div className="flex justify-end mb-6">
             <button 
                 onClick={() => setIsFilterOpen(true)}
-                className="flex items-center gap-2 px-6 py-2 bg-transparent text-[#1d1d1f] rounded-full text-[12px] font-medium border border-gray-200 hover:border-brand-pink hover:text-brand-pink transition-all duration-300 active:scale-95 group"
+                className="flex items-center gap-2 px-6 py-2 bg-gray-900 text-white rounded-full text-[12px] font-bold tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm active:scale-95 group"
             >
                 <span>Refine</span>
-                <Filter size={14} className="group-hover:rotate-12 transition-transform text-gray-400 group-hover:text-brand-pink" />
+                <Filter size={14} className="group-hover:rotate-12 transition-transform text-white" />
             </button>
         </div>
         <main className="w-full">
@@ -326,6 +435,7 @@ export default function CollectionClient() {
                             isBestseller={product.isBestseller}
                             brandName={product.brand}
                             stock_quantity={product.stock_quantity}
+                            imageUrls={product.additionalImagesData?.map(img => img.url) || []}
                             />
                         </motion.div>
                         ))}
@@ -335,24 +445,24 @@ export default function CollectionClient() {
                 {/* Load More */}
                 {visibleCount < filteredAndSortedProducts.length && (
                     <div className="flex flex-col items-center gap-12 py-20 border-t border-gray-200">
-                        <div className="flex flex-col items-center gap-5">
-                            <span className="text-[9px] uppercase tracking-[0.5em] text-gray-400 font-black">Collection Progress</span>
-                            <div className="w-72 h-1 bg-gray-100 rounded-full overflow-hidden border border-gray-50 shadow-inner">
-                                <motion.div 
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="w-48 h-0.5 bg-gray-100 rounded-full overflow-hidden">
+                                <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(displayedProducts.length / filteredAndSortedProducts.length) * 100}%` }}
-                                    className="h-full bg-gradient-to-r from-brand-pink to-brand-blue shadow-[0_0_10px_rgba(255,105,180,0.5)]"
-                                ></motion.div>
+                                    className="h-full bg-gray-900/30 rounded-full"
+                                />
                             </div>
+                            <span className="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-medium">
+                                {displayedProducts.length} of {filteredAndSortedProducts.length}
+                            </span>
                         </div>
-                        <button 
+                        <button
                             onClick={loadMore}
-                            className="group flex items-center gap-8 px-16 py-6 bg-white border border-gray-300 text-gray-900 rounded-2xl shadow-xl hover:bg-gray-900 hover:text-white transition-all active:scale-95 duration-500"
+                            className="group flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-full text-[11px] font-bold tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm active:scale-95"
                         >
-                            <span className="text-[13px] font-black uppercase tracking-[0.4em]">Reveal Further</span>
-                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-white/10 group-hover:text-white transition-all duration-500">
-                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                            </div>
+                            Show more
+                            <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
                         </button>
                     </div>
                 )}
@@ -377,7 +487,7 @@ export default function CollectionClient() {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: "spring", damping: 35, stiffness: 300 }}
-                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[#FAF9F6] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-gray-300 flex flex-col"
+                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[#fff0f8] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-gray-300 flex flex-col"
             >
                 <div className="p-10 border-b border-gray-200 bg-white/50 backdrop-blur-md sticky top-0 z-20">
                     <div className="flex items-center justify-between mb-8">
@@ -399,6 +509,9 @@ export default function CollectionClient() {
                         brands={brands}
                         selectedBrands={selectedBrands}
                         setSelectedBrands={setSelectedBrands}
+                        concerns={concerns}
+                        selectedConcerns={selectedConcerns}
+                        setSelectedConcerns={setSelectedConcerns}
                         priceRange={priceRange}
                         setPriceRange={setPriceRange}
                         showInStock={showInStock}

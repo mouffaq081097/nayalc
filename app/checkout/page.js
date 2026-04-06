@@ -413,7 +413,7 @@ export default function CheckoutPage() {
                                     <div className="bg-[#F5F5F7] rounded-2xl lg:rounded-[2rem] p-4 lg:p-8 text-gray-900 shadow-inner">
                                         {clientSecret && stripePromise ? (
                                             <Elements stripe={stripePromise} options={{ clientSecret }}>
-                                                <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" />
+                                                <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" amount={Math.round(total * 100)} clientSecret={clientSecret} />
                                             </Elements>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center py-8 lg:py-10 gap-4 text-center">

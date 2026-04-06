@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Lock, CreditCard, Sparkles, Loader2 } from 'lucide-react';
 
-const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now" }) => {
+const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0, clientSecret = null }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -13,38 +13,46 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now" }) => {
   const [paymentRequest, setPaymentRequest] = useState(null);
 
   useEffect(() => {
-    if (stripe) {
-      const pr = stripe.paymentRequest({
-        country: 'AE',
-        currency: 'aed',
-        total: {
-          label: 'Naya Lumière Acquisition',
-          amount: 1000,
-        },
-        requestPayerName: true,
-        requestPayerEmail: true,
-      });
+    if (!stripe || !amount) return;
 
-      pr.canMakePayment().then(result => {
-        if (result) {
-          setPaymentRequest(pr);
+    const pr = stripe.paymentRequest({
+      country: 'AE',
+      currency: 'aed',
+      total: {
+        label: 'Naya Lumière Acquisition',
+        amount, // dynamic amount in fils (smallest AED unit)
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    pr.canMakePayment().then(result => {
+      if (result) setPaymentRequest(pr);
+    });
+
+    pr.on('paymentmethod', async (ev) => {
+      if (!clientSecret) {
+        ev.complete('fail');
+        return;
+      }
+      const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
+        clientSecret,
+        { payment_method: ev.paymentMethod.id },
+        { handleActions: false }
+      );
+
+      if (confirmError) {
+        ev.complete('fail');
+        toast.error(confirmError.message);
+      } else {
+        ev.complete('success');
+        if (paymentIntent.status === 'requires_action') {
+          await stripe.confirmCardPayment(clientSecret);
         }
-      });
-
-      pr.on('paymentmethod', async (ev) => {
-        const {paymentIntent, error: confirmError} = await stripe.confirmCardPayment(
-            // clientSecret from parent
-        );
-
-        if (confirmError) {
-          ev.complete('fail');
-        } else {
-          ev.complete('success');
-          onSuccessfulPayment(paymentIntent.id);
-        }
-      });
-    }
-  }, [stripe]);
+        onSuccessfulPayment(paymentIntent.id);
+      }
+    });
+  }, [stripe, amount, clientSecret]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();

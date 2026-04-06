@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Directions — Naya Lumière Cosmetics</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; padding: 32px 24px; }
+  h1 { font-size: 22px; font-weight: 600; color: #111; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 32px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+  .card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
+  .card.selected { border-color: #8b3a5a; box-shadow: 0 0 0 4px rgba(139,58,90,0.12); }
+
+  .preview { height: 260px; position: relative; overflow: hidden; }
+  .info { padding: 16px 18px 20px; }
+  .info h3 { font-size: 14px; font-weight: 700; color: #111; margin-bottom: 5px; }
+  .info p { font-size: 12px; color: #666; line-height: 1.6; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-top: 8px; }
+
+  .select-hint { text-align: center; font-size: 12px; color: #999; margin-top: 24px; }
+  .selected-indicator { text-align: center; margin-top: 28px; padding: 16px; background: white; border-radius: 12px; display: none; }
+  .selected-indicator.show { display: block; }
+  .selected-indicator p { font-size: 13px; color: #555; }
+  .selected-indicator strong { color: #8b3a5a; }
+
+  /* 1: French Maison Noir */
+  .d1 { background: #1a1208; }
+  .d1-nav { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid rgba(255,220,150,0.1); }
+  .d1-logo { font-family:Georgia,serif; font-size:11px; font-weight:300; color:#d4a843; letter-spacing:0.2em; text-transform:uppercase; }
+  .d1-links { display:flex; gap:12px; }
+  .d1-links span { font-size:7px; letter-spacing:0.35em; color:rgba(212,168,67,0.45); text-transform:uppercase; }
+  .d1-hero { padding:20px 16px; }
+  .d1-overline { font-size:7px; letter-spacing:0.5em; color:rgba(212,168,67,0.5); text-transform:uppercase; margin-bottom:8px; }
+  .d1-title { font-family:Georgia,serif; font-size:24px; font-weight:200; color:#f0e6d0; line-height:1.15; letter-spacing:0.04em; }
+  .d1-title em { color:#d4a843; font-style:italic; }
+  .d1-sub { font-size:9px; color:rgba(240,230,208,0.45); letter-spacing:0.15em; text-transform:uppercase; margin-top:10px; }
+  .d1-btn { margin-top:14px; display:inline-block; border:1px solid rgba(212,168,67,0.5); padding:6px 16px; font-size:8px; letter-spacing:0.3em; color:#d4a843; text-transform:uppercase; border-radius:2px; }
+  .d1-products { display:flex; gap:8px; padding:0 16px 16px; }
+  .d1-product { flex:1; background:rgba(255,220,150,0.04); border:1px solid rgba(212,168,67,0.1); border-radius:4px; padding:10px 6px; text-align:center; }
+  .d1-product-img { width:100%; height:50px; background:radial-gradient(ellipse,rgba(212,168,67,0.1) 0%,transparent 70%); border-radius:2px; margin-bottom:6px; }
+  .d1-product-name { font-size:7px; color:rgba(240,230,208,0.5); letter-spacing:0.2em; text-transform:uppercase; }
+  .d1-product-price { font-size:8px; color:#d4a843; margin-top:3px; }
+
+  /* 2: Soft Japanese Wabi */
+  .d2 { background:#faf8f5; }
+  .d2-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
+  .d2-logo { display:flex; align-items:center; gap:6px; }
+  .d2-logo-mark { width:20px; height:20px; border-radius:50%; background:rgba(180,140,120,0.2); border:1px solid rgba(180,140,120,0.3); }
+  .d2-logo-text { font-family:Georgia,serif; font-size:9px; color:#7a6055; letter-spacing:0.2em; text-transform:uppercase; }
+  .d2-links { display:flex; gap:14px; }
+  .d2-links span { font-size:7px; color:rgba(122,96,85,0.4); letter-spacing:0.25em; text-transform:uppercase; }
+  .d2-hero { display:flex; flex-direction:column; align-items:center; text-align:center; padding:16px; }
+  .d2-circle { width:90px; height:90px; border-radius:50%; background:radial-gradient(ellipse,#f0e8e0 0%,#faf8f5 70%); border:1px solid rgba(180,140,120,0.2); display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+  .d2-circle-inner { font-family:Georgia,serif; font-size:8px; color:#a08070; letter-spacing:0.1em; text-align:center; line-height:1.5; }
+  .d2-title { font-family:Georgia,serif; font-size:18px; font-weight:300; color:#4a3530; letter-spacing:0.06em; line-height:1.3; }
+  .d2-body { font-size:9px; color:rgba(74,53,48,0.45); letter-spacing:0.08em; margin-top:8px; line-height:1.7; }
+  .d2-btn { margin-top:10px; background:#7a6055; border-radius:20px; padding:6px 18px; font-size:8px; letter-spacing:0.2em; color:white; text-transform:uppercase; }
+  .d2-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:10px 14px 14px; }
+  .d2-item { background:white; border-radius:8px; padding:8px; box-shadow:0 2px 8px rgba(122,96,85,0.06); }
+  .d2-item-img { height:36px; background:linear-gradient(135deg,#f5ede8 0%,#faf8f5 100%); border-radius:4px; margin-bottom:5px; }
+  .d2-item-name { font-size:7px; color:#7a6055; letter-spacing:0.15em; text-transform:uppercase; }
+
+  /* 3: Neon Dubai */
+  .d3 { background:#0d0d1a; }
+  .d3-nav { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid rgba(180,100,255,0.1); }
+  .d3-logo { font-family:Georgia,serif; font-size:10px; font-weight:400; color:white; letter-spacing:0.15em; }
+  .d3-logo span { color:#c084fc; }
+  .d3-links { display:flex; gap:12px; }
+  .d3-links a { font-size:7px; color:rgba(255,255,255,0.3); letter-spacing:0.3em; text-transform:uppercase; }
+  .d3-hero { padding:18px 16px; position:relative; }
+  .d3-glow1 { position:absolute; top:-20px; right:-10px; width:140px; height:140px; border-radius:50%; background:radial-gradient(circle,rgba(192,132,252,0.2) 0%,transparent 70%); pointer-events:none; }
+  .d3-glow2 { position:absolute; bottom:0; left:-10px; width:100px; height:100px; border-radius:50%; background:radial-gradient(circle,rgba(244,114,182,0.15) 0%,transparent 70%); pointer-events:none; }
+  .d3-badge { display:inline-block; background:rgba(192,132,252,0.15); border:1px solid rgba(192,132,252,0.3); border-radius:4px; padding:3px 10px; font-size:7px; letter-spacing:0.3em; color:#c084fc; text-transform:uppercase; margin-bottom:10px; }
+  .d3-title { font-family:Georgia,serif; font-size:22px; font-weight:300; color:white; line-height:1.2; }
+  .d3-title span { background:linear-gradient(90deg,#c084fc,#f472b6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-style:italic; }
+  .d3-sub { font-size:9px; color:rgba(255,255,255,0.35); margin-top:8px; line-height:1.6; }
+  .d3-btns { display:flex; gap:8px; margin-top:14px; }
+  .d3-btn1 { background:linear-gradient(135deg,#c084fc,#f472b6); border-radius:20px; padding:6px 16px; font-size:8px; letter-spacing:0.2em; color:white; text-transform:uppercase; }
+  .d3-btn2 { border:1px solid rgba(192,132,252,0.3); border-radius:20px; padding:6px 16px; font-size:8px; letter-spacing:0.2em; color:#c084fc; text-transform:uppercase; }
+  .d3-products { display:flex; gap:8px; padding:0 16px 14px; }
+  .d3-prod { flex:1; background:rgba(255,255,255,0.04); border:1px solid rgba(192,132,252,0.12); border-radius:8px; padding:8px; text-align:center; }
+  .d3-prod-img { height:44px; background:radial-gradient(ellipse,rgba(192,132,252,0.12) 0%,transparent 70%); border-radius:4px; margin-bottom:5px; }
+  .d3-prod-name { font-size:7px; color:rgba(255,255,255,0.35); letter-spacing:0.15em; text-transform:uppercase; }
+  .d3-prod-price { font-size:9px; color:#c084fc; margin-top:2px; }
+
+  /* 4: Riviera Nude */
+  .d4 { background:#f7f3ef; }
+  .d4-nav { display:flex; align-items:center; justify-content:space-between; padding:10px 18px; background:white; border-bottom:1px solid #ede8e3; }
+  .d4-logo-wrap { display:flex; flex-direction:column; }
+  .d4-logo-main { font-family:Georgia,serif; font-size:10px; font-weight:400; color:#2a1f1a; letter-spacing:0.2em; text-transform:uppercase; }
+  .d4-logo-sub { font-size:6px; letter-spacing:0.5em; color:rgba(42,31,26,0.35); text-transform:uppercase; margin-top:1px; }
+  .d4-links { display:flex; gap:14px; }
+  .d4-links span { font-size:7px; color:rgba(42,31,26,0.4); letter-spacing:0.25em; text-transform:uppercase; }
+  .d4-hero { display:flex; align-items:stretch; min-height:160px; }
+  .d4-left { flex:1; padding:18px 16px; display:flex; flex-direction:column; justify-content:center; }
+  .d4-season { font-size:7px; letter-spacing:0.5em; color:rgba(42,31,26,0.35); text-transform:uppercase; margin-bottom:8px; }
+  .d4-title { font-family:Georgia,serif; font-size:20px; font-weight:300; color:#2a1f1a; line-height:1.2; }
+  .d4-title em { font-style:italic; color:#9b7b6a; }
+  .d4-body { font-size:9px; color:rgba(42,31,26,0.45); line-height:1.7; margin-top:8px; }
+  .d4-btn { margin-top:12px; background:#2a1f1a; border-radius:2px; padding:7px 18px; font-size:8px; letter-spacing:0.3em; color:#f7f3ef; text-transform:uppercase; display:inline-block; }
+  .d4-right { flex:0.8; background:linear-gradient(135deg,#ede8e3 0%,#e8dfd8 100%); display:flex; align-items:center; justify-content:center; }
+  .d4-img-placeholder { width:70px; height:100px; background:radial-gradient(ellipse,rgba(155,123,106,0.2) 0%,transparent 70%); border-radius:4px 4px 40px 40px; display:flex; align-items:center; justify-content:center; }
+  .d4-img-text { font-size:7px; color:rgba(42,31,26,0.3); letter-spacing:0.1em; text-align:center; }
+  .d4-strip { display:flex; border-top:1px solid #ede8e3; }
+  .d4-strip-item { flex:1; padding:8px; text-align:center; border-right:1px solid #ede8e3; background:white; }
+  .d4-strip-item:last-child { border-right:none; }
+  .d4-strip-label { font-size:6px; letter-spacing:0.4em; color:rgba(42,31,26,0.35); text-transform:uppercase; }
+  .d4-strip-val { font-size:9px; color:#9b7b6a; margin-top:2px; font-family:Georgia,serif; font-style:italic; }
+
+  /* 5: Neo Arabesque */
+  .d5 { background:#fdfaf5; }
+  .d5-nav { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:2px solid #1a1208; }
+  .d5-logo { font-family:Georgia,serif; font-size:10px; color:#1a1208; letter-spacing:0.3em; text-transform:uppercase; }
+  .d5-logo span { color:#b8860b; }
+  .d5-links { display:flex; gap:12px; }
+  .d5-links a { font-size:7px; color:rgba(26,18,8,0.45); letter-spacing:0.3em; text-transform:uppercase; }
+  .d5-hero { position:relative; padding:20px 16px; overflow:hidden; }
+  .d5-pattern { position:absolute; top:0; right:0; width:140px; height:140px; opacity:0.05; background-image:repeating-conic-gradient(#b8860b 0% 25%,transparent 0% 50%); background-size:12px 12px; }
+  .d5-tag { display:inline-block; background:#b8860b; padding:3px 10px; font-size:7px; letter-spacing:0.4em; color:white; text-transform:uppercase; margin-bottom:10px; position:relative; z-index:1; }
+  .d5-title { font-family:Georgia,serif; font-size:22px; font-weight:300; color:#1a1208; line-height:1.2; position:relative; z-index:1; }
+  .d5-title em { font-style:italic; color:#b8860b; }
+  .d5-divider { width:32px; height:2px; background:#b8860b; margin:10px 0; position:relative; z-index:1; }
+  .d5-body { font-size:9px; color:rgba(26,18,8,0.5); line-height:1.7; position:relative; z-index:1; }
+  .d5-btns { display:flex; gap:8px; margin-top:14px; position:relative; z-index:1; }
+  .d5-btn1 { background:#1a1208; padding:7px 16px; font-size:8px; letter-spacing:0.3em; color:#fdfaf5; text-transform:uppercase; border-radius:2px; }
+  .d5-btn2 { border:1px solid #b8860b; padding:7px 16px; font-size:8px; letter-spacing:0.3em; color:#b8860b; text-transform:uppercase; border-radius:2px; }
+  .d5-products { display:flex; gap:0; border-top:1px solid rgba(26,18,8,0.08); }
+  .d5-prod { flex:1; padding:10px 8px; text-align:center; border-right:1px solid rgba(26,18,8,0.06); }
+  .d5-prod:last-child { border-right:none; }
+  .d5-prod-img { height:44px; background:linear-gradient(180deg,#f5efd8 0%,#fdfaf5 100%); margin-bottom:5px; border-radius:2px; }
+  .d5-prod-name { font-size:7px; color:rgba(26,18,8,0.4); letter-spacing:0.2em; text-transform:uppercase; }
+  .d5-prod-price { font-size:8px; color:#b8860b; margin-top:2px; font-family:Georgia,serif; }
+
+  /* 6: Cloud Luxe */
+  .d6 { background:linear-gradient(160deg,#fdf8ff 0%,#f8f0ff 50%,#fff0f8 100%); }
+  .d6-nav { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; }
+  .d6-logo { font-family:Georgia,serif; font-size:10px; font-weight:300; color:#6b21a8; letter-spacing:0.15em; }
+  .d6-links { display:flex; gap:14px; }
+  .d6-links span { font-size:7px; color:rgba(107,33,168,0.35); letter-spacing:0.25em; text-transform:uppercase; }
+  .d6-hero { padding:16px 16px 12px; text-align:center; }
+  .d6-aura { width:90px; height:90px; border-radius:50%; background:radial-gradient(ellipse,rgba(216,180,254,0.5) 0%,rgba(249,168,212,0.2) 50%,transparent 70%); margin:0 auto 12px; display:flex; align-items:center; justify-content:center; }
+  .d6-aura-inner { font-size:8px; color:rgba(107,33,168,0.4); letter-spacing:0.1em; text-align:center; font-family:Georgia,serif; font-style:italic; line-height:1.5; }
+  .d6-title { font-family:Georgia,serif; font-size:20px; font-weight:300; color:#3b0764; line-height:1.25; }
+  .d6-title span { background:linear-gradient(90deg,#9333ea,#db2777); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .d6-body { font-size:9px; color:rgba(59,7,100,0.4); margin-top:8px; line-height:1.7; }
+  .d6-btns { display:flex; justify-content:center; gap:8px; margin-top:12px; }
+  .d6-btn1 { background:linear-gradient(135deg,#9333ea,#db2777); border-radius:20px; padding:7px 18px; font-size:8px; letter-spacing:0.2em; color:white; text-transform:uppercase; }
+  .d6-btn2 { background:rgba(147,51,234,0.08); border-radius:20px; padding:7px 18px; font-size:8px; letter-spacing:0.2em; color:#9333ea; text-transform:uppercase; }
+  .d6-products { display:flex; gap:8px; padding:10px 14px 14px; }
+  .d6-prod { flex:1; background:rgba(255,255,255,0.7); border-radius:12px; padding:8px; text-align:center; box-shadow:0 4px 16px rgba(147,51,234,0.08); border:1px solid rgba(216,180,254,0.3); }
+  .d6-prod-img { height:40px; background:radial-gradient(ellipse,rgba(216,180,254,0.3) 0%,transparent 70%); border-radius:6px; margin-bottom:5px; }
+  .d6-prod-name { font-size:7px; color:rgba(59,7,100,0.4); letter-spacing:0.15em; text-transform:uppercase; }
+  .d6-prod-price { font-size:9px; color:#9333ea; margin-top:2px; }
+</style>
+</head>
+<body>
+
+<h1>More Design Directions — Naya Lumière Cosmetics</h1>
+<p class="subtitle">Six fresh aesthetics. Click any card to select. Mix ideas from multiple if you like.</p>
+
+<div class="grid">
+
+  <div class="card" id="c1" onclick="pick('c1','French Maison Noir')">
+    <div class="preview d1">
+      <div class="d1-nav">
+        <div class="d1-links"><span>SKINCARE</span><span>PARFUM</span><span>BRANDS</span></div>
+        <div class="d1-logo">NAYA LUMIÈRE</div>
+        <div style="display:flex;gap:8px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,67,0.5)" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,67,0.5)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+        </div>
+      </div>
+      <div class="d1-hero">
+        <div class="d1-overline">COLLECTION PRINTEMPS · GERnétic</div>
+        <div class="d1-title">L'Art de la<br/><em>Beauté</em></div>
+        <div class="d1-sub">Naya Lumière Cosmetics · UAE</div>
+        <div class="d1-btn">DÉCOUVRIR</div>
+      </div>
+      <div class="d1-products">
+        <div class="d1-product"><div class="d1-product-img"></div><div class="d1-product-name">SYNCHRO</div><div class="d1-product-price">AED 480</div></div>
+        <div class="d1-product"><div class="d1-product-img"></div><div class="d1-product-name">ARÔME</div><div class="d1-product-price">AED 320</div></div>
+        <div class="d1-product"><div class="d1-product-img"></div><div class="d1-product-name">LUMIÈRE</div><div class="d1-product-price">AED 560</div></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>French Maison Noir</h3>
+      <p>Deep black canvas, aged-gold type, French haute couture energy. Channels Chanel, Sisley, Guerlain. Maximum prestige for a luxury UAE audience.</p>
+      <span class="tag" style="background:#fdf5e0;color:#b8860b;">Dark · Gold · Haute Couture</span>
+    </div>
+  </div>
+
+  <div class="card" id="c2" onclick="pick('c2','Soft Japanese Wabi')">
+    <div class="preview d2">
+      <div class="d2-nav">
+        <div class="d2-links"><span>SKINCARE</span><span>RITUALS</span></div>
+        <div class="d2-logo"><div class="d2-logo-mark"></div><div class="d2-logo-text">NAYA LUMIÈRE</div></div>
+        <div style="display:flex;gap:8px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(122,96,85,0.4)" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(122,96,85,0.4)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+        </div>
+      </div>
+      <div class="d2-hero">
+        <div class="d2-circle"><div class="d2-circle-inner">RITUAL<br/>· 01 ·</div></div>
+        <div class="d2-title">Stillness<br/>in Every Drop</div>
+        <div class="d2-body">Mindful formulations for the modern ritual</div>
+        <div class="d2-btn">EXPLORE</div>
+      </div>
+      <div class="d2-grid">
+        <div class="d2-item"><div class="d2-item-img"></div><div class="d2-item-name">ESSENCE</div></div>
+        <div class="d2-item"><div class="d2-item-img"></div><div class="d2-item-name">SERUM</div></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>Soft Japanese Wabi</h3>
+      <p>Warm ivory, clay tones, centered composition. Inspired by Tatcha and Shiseido. Serene, meditative, deeply premium.</p>
+      <span class="tag" style="background:#f5ede8;color:#7a6055;">Neutral · Calm · Ritual</span>
+    </div>
+  </div>
+
+  <div class="card" id="c3" onclick="pick('c3','Neon Dubai Glow')">
+    <div class="preview d3">
+      <div class="d3-nav">
+        <div class="d3-logo">NAYA <span>LUMIÈRE</span></div>
+        <div class="d3-links"><a>SKINCARE</a><a>PARFUM</a><a>BRANDS</a></div>
+        <div style="display:flex;gap:8px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(192,132,252,0.5)" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(192,132,252,0.5)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+        </div>
+      </div>
+      <div class="d3-hero">
+        <div class="d3-glow1"></div>
+        <div class="d3-glow2"></div>
+        <div class="d3-badge">NEW DROP · SS26</div>
+        <div class="d3-title">Glow Beyond<br/><span>Imagination</span></div>
+        <div class="d3-sub">Naya Lumière Cosmetics — Dubai's premier beauty destination</div>
+        <div class="d3-btns"><div class="d3-btn1">SHOP NOW</div><div class="d3-btn2">EXPLORE</div></div>
+      </div>
+      <div class="d3-products">
+        <div class="d3-prod"><div class="d3-prod-img"></div><div class="d3-prod-name">GLOW</div><div class="d3-prod-price">AED 380</div></div>
+        <div class="d3-prod"><div class="d3-prod-img"></div><div class="d3-prod-name">RADIANCE</div><div class="d3-prod-price">AED 450</div></div>
+        <div class="d3-prod"><div class="d3-prod-img"></div><div class="d3-prod-name">ELIXIR</div><div class="d3-prod-price">AED 520</div></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>Neon Dubai Glow</h3>
+      <p>Midnight black with violet-pink neon glow. Captures Dubai's modern energy. Bold, futuristic, Instagram-magnetic for a younger audience.</p>
+      <span class="tag" style="background:#fdf4ff;color:#9333ea;">Dark · Neon · Bold</span>
+    </div>
+  </div>
+
+  <div class="card" id="c4" onclick="pick('c4','Riviera Nude')">
+    <div class="preview d4">
+      <div class="d4-nav">
+        <div class="d4-logo-wrap"><div class="d4-logo-main">NAYA LUMIÈRE</div><div class="d4-logo-sub">COSMETICS · EST. 2026</div></div>
+        <div class="d4-links"><span>SKINCARE</span><span>PARFUM</span><span>BRANDS</span></div>
+        <div style="display:flex;gap:8px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(42,31,26,0.35)" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(42,31,26,0.35)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+        </div>
+      </div>
+      <div class="d4-hero">
+        <div class="d4-left">
+          <div class="d4-season">SPRING · SUMMER 2026</div>
+          <div class="d4-title">The <em>Art</em> of<br/>Natural Glow</div>
+          <div class="d4-body">Where science meets the poetry of skin.</div>
+          <div class="d4-btn">SHOP COLLECTION</div>
+        </div>
+        <div class="d4-right">
+          <div class="d4-img-placeholder"><div class="d4-img-text">PRODUCT</div></div>
+        </div>
+      </div>
+      <div class="d4-strip">
+        <div class="d4-strip-item"><div class="d4-strip-label">SKINCARE</div><div class="d4-strip-val">GERnétic</div></div>
+        <div class="d4-strip-item"><div class="d4-strip-label">FRAGRANCE</div><div class="d4-strip-val">Zorah</div></div>
+        <div class="d4-strip-item"><div class="d4-strip-label">PARFUMS</div><div class="d4-strip-val">N. Lumière</div></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>Riviera Nude</h3>
+      <p>Warm sand, ivory, clay — clean European luxury. Like Caudalie or La Mer. Split-screen hero with brand strip below. Timeless, confident.</p>
+      <span class="tag" style="background:#f7f3ef;color:#9b7b6a;">Warm · Clean · European</span>
+    </div>
+  </div>
+
+  <div class="card" id="c5" onclick="pick('c5','Neo Arabesque')">
+    <div class="preview d5">
+      <div class="d5-nav">
+        <div class="d5-links"><a>SKINCARE</a><a>PARFUM</a><a>BRANDS</a></div>
+        <div class="d5-logo">NAYA <span>LUMIÈRE</span></div>
+        <div style="display:flex;gap:8px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(26,18,8,0.4)" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(26,18,8,0.4)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+        </div>
+      </div>
+      <div class="d5-hero">
+        <div class="d5-pattern"></div>
+        <div class="d5-tag">EXCLUSIVE · UAE</div>
+        <div class="d5-title">Heritage of<br/><em>Golden Skin</em></div>
+        <div class="d5-divider"></div>
+        <div class="d5-body">Where Middle Eastern beauty wisdom meets modern science.</div>
+        <div class="d5-btns"><div class="d5-btn1">EXPLORE</div><div class="d5-btn2">NEW IN</div></div>
+      </div>
+      <div class="d5-products">
+        <div class="d5-prod"><div class="d5-prod-img"></div><div class="d5-prod-name">OUD RITUAL</div><div class="d5-prod-price">AED 680</div></div>
+        <div class="d5-prod"><div class="d5-prod-img"></div><div class="d5-prod-name">GOLD SERUM</div><div class="d5-prod-price">AED 540</div></div>
+        <div class="d5-prod"><div class="d5-prod-img"></div><div class="d5-prod-name">AMBER OIL</div><div class="d5-prod-price">AED 420</div></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>Neo Arabesque</h3>
+      <p>Ivory + deep amber-gold, geometric micro-patterns. Celebrates UAE identity with subtle arabesque motifs. Heritage meets modern luxury.</p>
+      <span class="tag" style="background:#fdfaf5;color:#b8860b;">Gold · Heritage · UAE Identity</span>
+    </div>
+  </div>
+
+  <div class="card" id="c6" onclick="pick('c6','Cloud Luxe')">
+    <div class="preview d6">
+      <div class="d6-nav">
+        <div class="d6-links"><span>SKINCARE</span><span>PARFUM</span></div>
+        <div class="d6-logo">Naya Lumière Cosmetics</div>
+        <div style="display:flex;gap:8px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(107,33,168,0.35)" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(107,33,168,0.35)" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/></svg>
+        </div>
+      </div>
+      <div class="d6-hero">
+        <div class="d6-aura"><div class="d6-aura-inner">Lumière<br/>~ ~</div></div>
+        <div class="d6-title">Where Beauty<br/><span>Transcends</span></div>
+        <div class="d6-body">Formulated for radiance. Designed for you.</div>
+        <div class="d6-btns"><div class="d6-btn1">DISCOVER</div><div class="d6-btn2">SKIN QUIZ</div></div>
+      </div>
+      <div class="d6-products">
+        <div class="d6-prod"><div class="d6-prod-img"></div><div class="d6-prod-name">ESSENCE</div><div class="d6-prod-price">AED 390</div></div>
+        <div class="d6-prod"><div class="d6-prod-img"></div><div class="d6-prod-name">SERUM</div><div class="d6-prod-price">AED 480</div></div>
+        <div class="d6-prod"><div class="d6-prod-img"></div><div class="d6-prod-name">OIL</div><div class="d6-prod-price">AED 320</div></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>Cloud Luxe</h3>
+      <p>Soft lavender-rose gradients, glassmorphism cards, glowing auras. Dreamy, aspirational, ultra-feminine. Glossier grown into high-end territory.</p>
+      <span class="tag" style="background:#fdf4ff;color:#9333ea;">Lavender · Dreamy · Feminine</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="select-hint" id="hint" style="margin-top:24px;">Click any card to select. You can pick multiple to blend ideas.</div>
+<div class="selected-indicator" id="sel"></div>
+
+<script>
+  const picked = new Set();
+  function pick(id, name) {
+    const el = document.getElementById(id);
+    if (picked.has(id)) { picked.delete(id); el.classList.remove('selected'); }
+    else { picked.add(id); el.classList.add('selected'); }
+    const display = document.getElementById('sel');
+    const hint = document.getElementById('hint');
+    if (picked.size === 0) { display.classList.remove('show'); hint.style.display='block'; return; }
+    hint.style.display = 'none';
+    const names = [...picked].map(i => document.getElementById(i).querySelector('h3').textContent);
+    display.classList.add('show');
+    display.innerHTML = '<p>Selected: <strong>' + names.join(', ') + '</strong><br/><span style="font-size:11px;color:#999;">Tell me in the terminal what you like or want to blend.</span></p>';
+    if (typeof toggleSelect === 'function') toggleSelect(el);
+  }
+</script>
+</body>
+</html>

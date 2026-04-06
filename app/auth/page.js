@@ -10,7 +10,99 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Mail, Lock, Eye, ArrowLeft, Sparkles, UserPlus, LogIn, Chrome, Facebook, ShieldCheck, Check, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-function Login() {
+function ForgotPassword({ onBack }) {
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setMessage(data.message);
+      } else {
+        setError(data.error);
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6 md:space-y-8"
+    >
+      <div className="text-left space-y-1.5">
+        <button onClick={onBack} className="flex items-center gap-2 text-[10px] font-bold text-gray-400 hover:text-brand-pink transition-colors mb-4">
+          <ArrowLeft size={12} /> Back to Sign in
+        </button>
+        <h3 className="font-serif text-3xl md:text-4xl italic text-gray-900 leading-tight">Restore Access</h3>
+        <p className="text-[13px] md:text-sm text-gray-400 font-medium leading-relaxed">Enter your email and we'll send you a secure link to reset your password.</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold text-gray-400 ml-1" htmlFor="forgot-email">Email address</label>
+          <div className="relative group">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-brand-pink transition-colors" />
+            <input
+              id="forgot-email"
+              type="email"
+              placeholder="Enter your registered email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full h-12 md:h-14 pl-12 pr-6 rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/30 focus:bg-white focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/5 transition-all duration-500 outline-none text-sm font-medium"
+            />
+          </div>
+        </div>
+
+        {message && (
+          <p className="text-green-600 text-[11px] font-bold text-center bg-green-50 py-3 rounded-xl border border-green-100">
+            {message}
+          </p>
+        )}
+
+        {error && (
+          <p className="text-red-500 text-[11px] font-bold text-center bg-red-50 py-3 rounded-xl border border-red-100">
+            {error}
+          </p>
+        )}
+
+        <button 
+          type="submit" 
+          disabled={isLoading} 
+          className="w-full h-14 md:h-16 bg-black text-white rounded-full font-bold text-[13px] md:text-[14px] hover:bg-brand-pink shadow-xl transition-all duration-500 flex items-center justify-center gap-4 mt-2"
+        >
+          {isLoading ? (
+            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <>
+              Send Reset Link
+              <ArrowRight size={16} />
+            </>
+          )}
+        </button>
+      </form>
+    </motion.div>
+  );
+}
+
+function Login({ onForgotClick }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -68,7 +160,7 @@ function Login() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between px-1">
             <label className="text-[11px] font-semibold text-gray-400" htmlFor="signin-password">Password</label>
-            <button type="button" className="text-[10px] font-bold text-brand-pink/60 hover:text-brand-pink transition-colors">Forgot?</button>
+            <button type="button" onClick={onForgotClick} className="text-[10px] font-bold text-brand-pink/60 hover:text-brand-pink transition-colors">Forgot?</button>
           </div>
           <div className="relative group">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-brand-pink transition-colors" />
@@ -272,6 +364,7 @@ function Register() {
 
 export default function AuthPage() {
   const router = useRouter();
+  const [authMode, setAuthMode] = useState('login');
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] relative overflow-hidden flex flex-col font-sans">
@@ -374,7 +467,7 @@ export default function AuthPage() {
                {/* Subtle Grain in White Card */}
                <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
 
-              <Tabs defaultValue="login" className="w-full relative z-10">
+              <Tabs value={authMode === 'forgot-password' ? 'login' : authMode} onValueChange={setAuthMode} className="w-full relative z-10">
                 <TabsList className="flex bg-gray-50/50 p-1 rounded-full mb-8 md:mb-12 border border-gray-100/50 backdrop-blur-sm">
                   <TabsTrigger 
                     value="login" 
@@ -391,7 +484,11 @@ export default function AuthPage() {
                 </TabsList>
 
                 <TabsContent value="login" className="mt-0 outline-none">
-                  <Login />
+                  {authMode === 'forgot-password' ? (
+                    <ForgotPassword onBack={() => setAuthMode('login')} />
+                  ) : (
+                    <Login onForgotClick={() => setAuthMode('forgot-password')} />
+                  )}
                 </TabsContent>
                 <TabsContent value="register" className="mt-0 outline-none">
                   <Register />

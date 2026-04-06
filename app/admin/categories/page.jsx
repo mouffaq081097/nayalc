@@ -15,7 +15,10 @@ const ManageCategories = () => {
     const [editingCategory, setEditingCategory] = useState(null);
     const [categoryName, setCategoryName] = useState('');
     const [categorySlug, setCategorySlug] = useState('');
+    const [categoryDescription, setCategoryDescription] = useState('');
+    const [parentCategoryId, setParentCategoryId] = useState('');
     const [imageFile, setImageFile] = useState(null);
+    const [bannerFile, setBannerFile] = useState(null);
     const [categoryProducts, setCategoryProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -23,7 +26,10 @@ const ManageCategories = () => {
         if (isModalOpen) {
             setCategoryName(editingCategory ? editingCategory.name : '');
             setCategorySlug(editingCategory ? editingCategory.slug : '');
+            setCategoryDescription(editingCategory ? (editingCategory.description || '') : '');
+            setParentCategoryId(editingCategory ? (editingCategory.parentId || '') : '');
             setImageFile(null);
+            setBannerFile(null);
         }
     }, [isModalOpen, editingCategory]);
 
@@ -74,12 +80,19 @@ const ManageCategories = () => {
             const formData = new FormData();
             formData.append('name', categoryName);
             formData.append('slug', categorySlug);
-            formData.append('description', editingCategory?.description || 'A curated universe of beauty.');
+            formData.append('description', categoryDescription);
+            formData.append('parent_id', parentCategoryId);
 
             if (imageFile) {
                 formData.append('image', imageFile);
-            } else if (editingCategory && editingCategory.image_url) {
-                formData.append('image_url', editingCategory.image_url);
+            } else if (editingCategory && editingCategory.imageUrl) {
+                formData.append('image_url', editingCategory.imageUrl);
+            }
+
+            if (bannerFile) {
+                formData.append('banner', bannerFile);
+            } else if (editingCategory && editingCategory.bannerUrl) {
+                formData.append('banner_url', editingCategory.bannerUrl);
             }
 
             if (editingCategory) {
@@ -89,7 +102,8 @@ const ManageCategories = () => {
             }
 
             handleCloseModal();
-        } catch (error) {
+        }
+ catch (error) {
             console.error("Failed to save category", error);
         } finally {
             setIsSubmitting(false);
@@ -237,6 +251,28 @@ const ManageCategories = () => {
                                     />
                                 </div>
                                 <div>
+                                    <label htmlFor="parentCategory" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Ancestry (Parent Category)</label>
+                                    <select
+                                        id="parentCategory" value={parentCategoryId} onChange={(e) => setParentCategoryId(e.target.value)}
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white transition-all text-sm shadow-inner appearance-none"
+                                        disabled={isSubmitting}
+                                    >
+                                        <option value="">Top Level (Grand Maison)</option>
+                                        {categories.filter(c => c.id !== editingCategory?.id).map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label htmlFor="categoryDescription" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Lore & Philosophy (Description)</label>
+                                    <textarea
+                                        id="categoryDescription" value={categoryDescription} onChange={(e) => setCategoryDescription(e.target.value)}
+                                        placeholder="Describe the essence of this collection..."
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-medium text-gray-700 focus:bg-white transition-all text-sm shadow-inner min-h-[120px]"
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+                                <div>
                                     <label htmlFor="categorySlug" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">URL Path (Slug)</label>
                                     <div className="relative">
                                         <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 font-bold">/</span>
@@ -262,8 +298,26 @@ const ManageCategories = () => {
                                                 <span className="text-[9px] font-black uppercase tracking-widest">Select Image</span>
                                             </div>
                                         )}
-                                        <input type="file" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isSubmitting} />
+                                        <input type="file" onChange={(e) => setImageFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isSubmitting} />
                                     </div>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="banner" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Cinematic Header (Banner)</label>
+                                    <div className="relative group/banner aspect-[21/9] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-4 transition-all hover:bg-gray-100/50">
+                                        {bannerFile ? (
+                                            <Image src={URL.createObjectURL(bannerFile)} alt="Banner Preview" fill className="object-cover rounded-xl" />
+                                        ) : editingCategory?.bannerUrl ? (
+                                            <Image src={editingCategory.bannerUrl} alt="Current Banner" fill className="object-cover rounded-xl" />
+                                        ) : (
+                                            <div className="text-gray-200 flex flex-col items-center gap-2">
+                                                <ImageIcon size={32} />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Select Banner</span>
+                                            </div>
+                                        )}
+                                        <input type="file" onChange={(e) => setBannerFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isSubmitting} />
+                                    </div>
+                                    <p className="mt-2 text-[9px] text-gray-400 italic text-right">Recommended: 1920x600px</p>
                                 </div>
                             </div>
 

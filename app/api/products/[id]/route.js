@@ -36,7 +36,8 @@ export async function GET(request, context) {
                 pi.image_url as "imageUrl",
                 pi.alt_text as "altText",
                 COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
-                COUNT(r.id) as "reviewCount"
+                COUNT(r.id) as "reviewCount",
+                (SELECT ARRAY_AGG(concern_id) FROM product_concerns WHERE product_id = p.id) as "concern_ids"
             FROM products p
             LEFT JOIN reviews r ON p.id = r.product_id
             LEFT JOIN brands b ON p.brand_id = b.id
@@ -45,7 +46,19 @@ export async function GET(request, context) {
             GROUP BY p.id, p.name, p.description, p.price, p.vendor, p.stock_quantity,
                      p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice, b.name, pi.image_url, pi.alt_text;
         `;
-        const { rows: productRows } = await client.query(productSql, [id]);
+        let productRows;
+        try {
+            const result = await client.query(productSql, [id]);
+            productRows = result.rows;
+        } catch (dbError) {
+            if (dbError.message.includes('product_concerns')) {
+                const fallbackSql = productSql.replace('(SELECT ARRAY_AGG(concern_id) FROM product_concerns WHERE product_id = p.id) as "concern_ids"', 'NULL as "concern_ids"');
+                const result = await client.query(fallbackSql, [id]);
+                productRows = result.rows;
+            } else {
+                throw dbError;
+            }
+        }
 
         if (productRows.length === 0) {
             return NextResponse.json({ message: 'Product not found' }, { status: 404 });
@@ -90,9 +103,8 @@ export async function PUT(request, context) {
         const description = formData.get('description');
         const price = parseFloat(formData.get('price')) || 0;
         const stock_quantity = parseInt(formData.get('stock_quantity'), 10) || 0;
-        const categoryIds = formData.getAll('categoryIds')
-            .map(Number)
-            .filter(id => !isNaN(id)); // Filter out invalid category IDs
+        const categoryIds = (formData.get('categoryIds') || '').split(',').map(Number).filter(id => !isNaN(id) && id > 0);
+        const concernIds = (formData.get('concernIds') || '').split(',').map(Number).filter(id => !isNaN(id) && id > 0);
 
         const brand_idRaw = parseInt(formData.get('brand_id'), 10);
         const brand_id = isNaN(brand_idRaw) ? null : brand_idRaw;
@@ -186,6 +198,17 @@ export async function PUT(request, context) {
         if (categoryIds && categoryIds.length > 0) {
             const categoryProductValues = categoryIds.map(catId => `(${id}, ${catId})`).join(',');
             await client.query(`INSERT INTO category_products (product_id, category_id) VALUES ${categoryProductValues}`);
+        }
+
+        // 4. Update product_concerns table
+        try {
+            await client.query("DELETE FROM product_concerns WHERE product_id = $1", [id]);
+            if (concernIds && concernIds.length > 0) {
+                const concernProductValues = concernIds.map(conId => `(${id}, ${conId})`).join(',');
+                await client.query(`INSERT INTO product_concerns (product_id, concern_id) VALUES ${concernProductValues}`);
+            }
+        } catch (e) {
+            console.warn('Could not update product concerns, table might be missing.');
         }
 
         await client.query('COMMIT');

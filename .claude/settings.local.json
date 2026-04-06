@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.apple.com)",
+      "Bash(bash:*)",
+      "Read(//c/Users/Mouffaq/Desktop/**)",
+      "Read(//c/Users/Mouffaq/**)",
+      "Read(//tmp/**)",
+      "Bash(node -e ':*)",
+      "Bash(npm run:*)",
+      "Bash(npx eslint:*)",
+      "WebFetch(domain:www.figma.com)",
+      "WebSearch"
+    ]
+  }
+}

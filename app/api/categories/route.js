@@ -16,16 +16,34 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
  */
 export async function GET() {
   try {
+    // Attempt query with new columns
     const sql = `
-      SELECT c.id, c.name, c.slug, c.image_url as "imageUrl", COUNT(cp.product_id) as "productsCount"
+      SELECT c.id, c.name, c.slug, c.description, c.image_url as "imageUrl", c.banner_url as "bannerUrl", c.parent_id as "parentId", COUNT(cp.product_id) as "productsCount"
       FROM categories c
       LEFT JOIN category_products cp ON c.id = cp.category_id
-      GROUP BY c.id, c.name, c.slug, c.image_url
+      GROUP BY c.id, c.name, c.slug, c.description, c.image_url, c.banner_url, c.parent_id
       ORDER BY c.name ASC
     `;
     const { rows } = await db.query(sql);
     return NextResponse.json(rows);
   } catch (error) {
+    // If it fails (likely missing columns), fallback to basic query
+    if (error.message.includes('column') || error.message.includes('banner_url')) {
+      try {
+        const fallbackSql = `
+          SELECT c.id, c.name, c.slug, c.image_url as "imageUrl", COUNT(cp.product_id) as "productsCount"
+          FROM categories c
+          LEFT JOIN category_products cp ON c.id = cp.category_id
+          GROUP BY c.id, c.name, c.slug, c.image_url
+          ORDER BY c.name ASC
+        `;
+        const { rows } = await db.query(fallbackSql);
+        // Map null values for missing columns so frontend doesn't crash
+        return NextResponse.json(rows.map(r => ({ ...r, description: '', bannerUrl: null, parentId: null })));
+      } catch (fallbackError) {
+        console.error('Fallback fetch error:', fallbackError);
+      }
+    }
     console.error('Error fetching categories:', error);
     return NextResponse.json({ message: 'Error fetching categories from database' }, { status: 500 });
   }
@@ -36,7 +54,7 @@ export async function GET() {
  * /api/categories:
  *   post:
  *     summary: Add a new category
- *     description: Creates a new category, links it to products, and uploads an image.
+ *     description: Creates a new category, links it to products, and uploads an image and banner.
  *     requestBody:
  *       required: true
  *       content:
@@ -52,6 +70,9 @@ export async function GET() {
  *                 type: string
  *                 description: A comma-separated string of product IDs.
  *               image:
+ *                 type: string
+ *                 format: binary
+ *               banner:
  *                 type: string
  *                 format: binary
  *     responses:
@@ -70,6 +91,8 @@ export async function POST(request) {
     const description = formData.get('description');
     const productIdsString = formData.get('product_ids');
     const imageFile = formData.get('image');
+    const bannerFile = formData.get('banner');
+    const parentId = formData.get('parent_id');
 
     if (!name) {
       return NextResponse.json({ message: 'Category name is required.' }, { status: 400 });
@@ -96,8 +119,15 @@ export async function POST(request) {
       imageUrl = uploadResult.secure_url;
     }
 
-    const categorySql = 'INSERT INTO categories (name, description, image_url, slug) VALUES ($1, $2, $3, $4) RETURNING id';
-    const { rows: categoryRows } = await client.query(categorySql, [name, description, imageUrl, slug]);
+    let bannerUrl = null;
+    if (bannerFile && bannerFile.size > 0) {
+      const bannerBuffer = Buffer.from(await bannerFile.arrayBuffer());
+      const uploadResult = await uploadImageToCloudinary(bannerBuffer);
+      bannerUrl = uploadResult.secure_url;
+    }
+
+    const categorySql = 'INSERT INTO categories (name, description, image_url, banner_url, slug, parent_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id';
+    const { rows: categoryRows } = await client.query(categorySql, [name, description, imageUrl, bannerUrl, slug, parentId ? parseInt(parentId) : null]);
     const newCategoryId = categoryRows[0].id;
 
     if (productIdsString) {

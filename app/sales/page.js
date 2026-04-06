@@ -79,7 +79,7 @@ export default function SalePage() {
                         <item.icon className={item.color} size={24} strokeWidth={1.5} />
                     </div>
                     <div className="space-y-0.5 text-left">
-                        <h3 className="text-[14px] font-bold tracking-tight text-gray-900 uppercase">{item.title}</h3>
+                        <h3 className="text-[14px] font-bold tracking-tight text-gray-900">{item.title}</h3>
                         <p className="text-[11px] text-gray-400 font-medium tracking-tight leading-snug">{item.desc}</p>
                     </div>
                 </div>
@@ -95,14 +95,14 @@ export default function SalePage() {
             <div className="space-y-2 items-start flex flex-col text-left">
                 <div className="flex items-center gap-3">
                     <span className="w-8 h-[1.5px] bg-brand-pink"></span>
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-pink">Selection Inventory</span>
+                    <span className="text-[10px] font-black tracking-[0.4em] text-brand-pink">Selection Inventory</span>
                 </div>
                 <h2 className="text-3xl font-serif italic text-gray-900 leading-none">Reductions Catalogue</h2>
             </div>
             
             <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto no-scrollbar max-w-full">
                 {['All Items', '50% Off', '30% Off', 'Flash Deals'].map((cat, i) => (
-                    <button key={cat} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${i === 0 ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'}`}>
+                    <button key={cat} className={`px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${i === 0 ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'}`}>
                         {cat}
                     </button>
                 ))}
@@ -132,7 +132,7 @@ export default function SalePage() {
                 onMouseMove={handleMagneticMove}
                 onMouseLeave={resetMagnetic}
                 style={{ x: buttonSpringX, y: buttonSpringY }}
-                className="group flex items-center gap-6 bg-gray-900 text-white px-10 py-4.5 rounded-full text-[11px] font-black uppercase tracking-[0.3em] hover:bg-brand-pink transition-all duration-500 shadow-xl"
+                className="group flex items-center gap-6 bg-gray-900 text-white px-10 py-4.5 rounded-full text-[11px] font-black tracking-[0.3em] hover:bg-brand-pink transition-all duration-500 shadow-xl"
             >
                 <span>Synchronize More</span>
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-all">
@@ -152,7 +152,7 @@ export default function SalePage() {
                 <p className="text-gray-400 text-[13px] font-medium tracking-tight">Complete your ritual with curated collections.</p>
             </div>
             <div className="h-px flex-1 bg-gray-50 hidden md:block mx-10"></div>
-            <Badge className="bg-brand-pink/5 text-brand-pink border-brand-pink/10 rounded-full px-4 py-1.5 font-bold uppercase tracking-widest text-[9px]">
+            <Badge className="bg-brand-pink/5 text-brand-pink border-brand-pink/10 rounded-full px-4 py-1.5 font-bold tracking-widest text-[9px]">
                 Bundle & Save Up to 40%
             </Badge>
           </div>
@@ -168,9 +168,9 @@ export default function SalePage() {
                     </div>
                     <div className="flex-1 flex flex-col justify-between py-1">
                         <div>
-                            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-brand-pink mb-2 block">{bundle.discount}% Exclusive Reduction</span>
+                            <span className="text-[8px] font-black tracking-[0.2em] text-brand-pink mb-2 block">{bundle.discount}% Exclusive Reduction</span>
                             <h3 className="text-xl font-serif italic text-gray-900 leading-tight">{bundle.title}</h3>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2">{bundle.items}</p>
+                            <p className="text-[10px] text-gray-400 font-bold tracking-widest mt-2">{bundle.items}</p>
                         </div>
                         <div className="flex items-center justify-between mt-6">
                             <div className="flex items-center gap-3">
@@ -191,7 +191,7 @@ export default function SalePage() {
       {/* Sale Protocols - High Density Cards */}
       <section className="py-20 bg-[#FAF9F6] border-t border-gray-100 relative">
         <div className="absolute top-0 right-0 p-20 opacity-[0.02] select-none pointer-events-none rotate-90">
-            <span className="text-[15vw] font-black uppercase">Service</span>
+            <span className="text-[15vw] font-black">Service</span>
         </div>
         <div className="container mx-auto px-6 text-left">
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -215,7 +215,7 @@ export default function SalePage() {
                         <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-brand-pink">
                             <col.icon size={22} />
                         </div>
-                        <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-gray-900">{col.title}</h3>
+                        <h3 className="text-[12px] font-black tracking-[0.3em] text-gray-900">{col.title}</h3>
                     </div>
                     <ul className="space-y-5 relative z-10">
                         {col.items.map(text => (
@@ -238,7 +238,7 @@ export default function SalePage() {
           <div className="space-y-4">
             <h3 className="text-4xl md:text-5xl font-serif italic text-gray-900 leading-tight">
                 Never miss a <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-pink to-brand-blue not-italic font-black uppercase tracking-tighter">Ritual Reduction</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-pink to-brand-blue not-italic font-black tracking-tighter">Ritual Reduction</span>
             </h3>
             <p className="text-gray-400 text-[14px] font-medium tracking-tight max-w-md mx-auto leading-relaxed italic">
                 Join our exclusive journal for early access to seasonal previews, flash deals, and neural selection events.
@@ -246,7 +246,7 @@ export default function SalePage() {
           </div>
           <div className="max-w-sm mx-auto relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-brand-pink/20 to-brand-blue/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-            <button className="relative w-full bg-gray-900 text-white py-5 rounded-full text-[11px] font-black uppercase tracking-[0.4em] shadow-xl hover:bg-brand-pink transition-all active:scale-[0.98]">
+            <button className="relative w-full bg-gray-900 text-white py-5 rounded-full text-[11px] font-black tracking-[0.4em] shadow-xl hover:bg-brand-pink transition-all active:scale-[0.98]">
                 Join the VIP list
             </button>
           </div>

@@ -2,11 +2,10 @@ import React, { useState, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartContext } from '../context/CartContext';
-import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Eye, Sparkles, Wand2, Loader2 } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, BadgeCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
-import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -27,7 +26,7 @@ const TypewriterText = ({ text, speed = 10 }) => {
   return <div className="whitespace-pre-wrap">{displayedText}</div>;
 };
 
-const ProductCard = ({ id, slug, name, price, originalPrice, image, altText, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, variant = 'light' }) => {
+const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, variant = 'light' }) => {
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -36,46 +35,34 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, altText, ave
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [isHovered, setIsHovered] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const isDark = variant === 'dark';
   const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
-  
-  // Use slug for URL if available, fallback to ID
   const productUrl = `/product/${slug || id}`;
-
   const seoAlt = altText || `${name} - ${brandName || 'Luxury Beauty'} | nayalc.com`;
+  const displayImage = (isHovered && imageUrls.length > 1) ? imageUrls[1] : (image || (imageUrls.length > 0 ? imageUrls[0] : '/placeholder-image.jpg'));
 
   const handleAIGenerate = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
     setIsAIModalOpen(true);
-    if (aiResult) return; // Don't regenerate if we already have it
-
+    if (aiResult) return;
     try {
       setIsGeneratingAI(true);
       const response = await fetch('/api/ai/product-info', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productName: name,
-          brandName: brandName || 'Naya Lumière',
-          description: description,
-          price: price,
-          category: category
-        })
+        body: JSON.stringify({ productName: name, brandName: brandName || 'Naya Lumière', description, price, category })
       });
-
       if (response.ok) {
         const data = await response.json();
         setAiResult(data.response);
       } else {
         setAiResult("Our AI specialist is currently unavailable. Please try again later.");
       }
-    } catch (error) {
-      console.error('Error generating AI info:', error);
+    } catch {
       setAiResult("An error occurred while curating your product insights.");
     } finally {
       setIsGeneratingAI(false);
@@ -85,12 +72,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, altText, ave
   const handleWishlistToggle = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!isAuthenticated) {
-      router.push('/auth');
-      return;
-    }
-
+    if (!isAuthenticated) { router.push('/auth'); return; }
     try {
       const method = isWishlisted ? 'DELETE' : 'POST';
       const response = await fetch('/api/wishlist', {
@@ -98,434 +80,409 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, altText, ave
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, productId: id })
       });
-
-      if (response.ok) {
-        setIsWishlisted(!isWishlisted);
-      }
+      if (response.ok) setIsWishlisted(!isWishlisted);
     } catch (error) {
       console.error('Error toggling wishlist:', error);
     }
   };
 
   const handleAddToCart = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    const productForCart = { id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity: stock_quantity };
-    addToCart(productForCart, quantity);
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    addToCart({ id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity }, quantity);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const toggleQuickView = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     setQuantity(1);
     setIsQuickViewOpen(!isQuickViewOpen);
   };
 
   return (
     <>
-      <div 
-        className={`group relative overflow-hidden flex flex-col h-full transition-all duration-500 shadow-sm hover:shadow-xl ${
-            isDark 
-            ? 'bg-[#0a0a0a] text-white border-white/5' 
-            : 'bg-white text-gray-900 border-gray-100'
-        } border rounded-[2.5rem]`}
+      {/* ── Glass Product Card ── */}
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="group relative flex flex-col h-full transition-all duration-500 cl-glass-card overflow-hidden"
+        style={{
+          borderRadius: '20px',
+          transform: isHovered ? 'translateY(-6px)' : 'translateY(0)',
+          boxShadow: isHovered ? 'var(--cl-shadow-card-hover)' : 'var(--cl-shadow-card)',
+          borderColor: isHovered ? 'var(--cl-glass-border-hover)' : 'var(--cl-glass-border)',
+        }}
       >
-        {/* Instagram Header Style - Soft & Minimal */}
-        <div className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-500 ${isDark ? 'bg-gray-800 border-white/10' : 'bg-gray-50 border-gray-100'}`}>
-                    <Sparkles size={16} className="text-brand-pink/60" strokeWidth={1.5} />
-                </div>
-                <div className="flex flex-col">
-                    <div className="flex items-center gap-1.5">
-                        <p className="text-[13px] font-semibold tracking-tight text-gray-900">
-                            {brandName || 'Naya Lumière'}
-                        </p>
-                        <div className="w-3 h-3 rounded-full bg-blue-500 flex items-center justify-center">
-                            <Check size={8} className="text-white" strokeWidth={4} />
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-gray-400 font-medium tracking-tight">Paris · Excellence Française</p>
-                </div>
-            </div>
-            {isNew && (
-                <span className="text-[10px] font-medium text-brand-pink bg-brand-pink/5 px-3 py-1 rounded-full border border-brand-pink/10">
-                    New
-                </span>
-            )}
-        </div>
-
-        {/* Main Image Section */}
-        <div className={`relative aspect-square overflow-hidden ${isDark ? 'bg-black/40' : 'bg-white'}`}>
-            <Link href={productUrl} className="block w-full h-full relative z-0">
-                <motion.div className="w-full h-full p-4" whileTap={{ scale: 0.98 }}>
-                    <Image
-                        src={image || '/placeholder-image.jpg'}
-                        alt={seoAlt}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                        className="object-contain"
-                    />
+        {/* Image area */}
+        <div className="relative aspect-square overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--cl-bg-lavender), var(--cl-bg-rose))' }}>
+          <Link href={productUrl} className="block w-full h-full relative z-0">
+            <motion.div className="w-full h-full p-4 relative" whileTap={{ scale: 0.98 }}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={displayImage}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="relative w-full h-full"
+                >
+                  <Image
+                    src={displayImage}
+                    alt={seoAlt}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                    className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
                 </motion.div>
-            </Link>
+              </AnimatePresence>
+            </motion.div>
+          </Link>
+
+          {/* Top-left badges */}
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+            {discount > 0 && (
+              <span
+                className="text-[9px] font-bold text-white px-2 py-1 rounded-full"
+                style={{ background: 'var(--cl-gradient)' }}
+              >
+                -{discount}%
+              </span>
+            )}
+            {isNew && (
+              <span className="text-[9px] font-bold text-white px-2 py-1 rounded-full bg-violet-500/80">
+                New
+              </span>
+            )}
+          </div>
+
+          {/* Top-right: wishlist + AI wand */}
+          <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
+            <button
+              onClick={handleWishlistToggle}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+              style={{
+                background: isWishlisted ? 'var(--cl-gradient)' : 'var(--cl-glass)',
+                border: '1px solid var(--cl-glass-border)',
+                backdropFilter: 'blur(8px)',
+              }}
+              aria-label="Add to wishlist"
+            >
+              <Heart
+                size={14}
+                strokeWidth={1.75}
+                style={{ color: isWishlisted ? 'white' : 'var(--cl-purple)' }}
+                className={isWishlisted ? 'fill-white' : ''}
+              />
+            </button>
+            <button
+              onClick={handleAIGenerate}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 relative group/ai"
+              style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)', backdropFilter: 'blur(8px)' }}
+              aria-label="AI Insights"
+            >
+              <Wand2 size={14} strokeWidth={1.75} style={{ color: 'var(--cl-purple)' }} />
+              <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-[var(--cl-text-deep)] text-white text-[8px] font-semibold px-2 py-1 rounded-full opacity-0 group-hover/ai:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                AI Insights
+              </span>
+            </button>
+            <button
+              onClick={toggleQuickView}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+              style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)', backdropFilter: 'blur(8px)' }}
+              aria-label="Quick view"
+            >
+              <Eye size={14} strokeWidth={1.75} style={{ color: 'var(--cl-purple)' }} />
+            </button>
+          </div>
         </div>
 
-        {/* Interaction Bar - Social Style */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-            <div className="flex items-center gap-4">
-                <button onClick={handleWishlistToggle} className="transition-transform active:scale-125">
-                    <Heart size={24} className={`${isWishlisted ? 'fill-brand-pink text-brand-pink' : ''}`} strokeWidth={1.5} />
-                </button>
-                <button onClick={toggleQuickView} className="transition-transform active:scale-125">
-                    <Eye size={24} strokeWidth={1.5} />
-                </button>
-                <button 
-                    onClick={handleAIGenerate}
-                    className="transition-transform active:scale-125 relative group/ai"
-                >
-                    <Wand2 size={24} strokeWidth={1.5} className="text-brand-pink" />
-                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded opacity-0 group-hover/ai:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        AI Insights
-                    </span>
-                </button>
+        {/* Info section */}
+        <div className="flex flex-col flex-1 px-4 pt-3 pb-4 gap-2.5">
+          {/* Brand */}
+          <span
+            className="text-[11px] font-bold tracking-tight uppercase"
+            style={{ color: 'var(--cl-text-soft)' }}
+          >
+            {brandName || 'Naya Lumière Cosmetics'}
+          </span>
+
+          {/* Name */}
+          <Link href={productUrl} className="block transition-colors duration-200" style={{ color: 'var(--cl-text-deep)' }}>
+            <span className="font-serif text-[15px] font-light italic leading-snug tracking-tight">
+              {name}
+            </span>
+          </Link>
+
+          {/* Stars */}
+          {reviewCount > 0 && (
+            <div className="flex items-center gap-1.5">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={9} className={i < Math.floor(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} />
+                ))}
+              </div>
+              <p className="text-[10px] font-medium" style={{ color: 'var(--cl-text-muted)' }}>{reviewCount}</p>
             </div>
-            {!stock_quantity || stock_quantity <= 0 ? (
-                <span className="text-[10px] text-red-500 font-black uppercase tracking-widest italic">Sold Out</span>
-            ) : (
-                <button 
-                    onClick={handleAddToCart}
-                    className={`transition-all active:scale-90 ${addedToCart ? 'text-green-500' : ''}`}
-                >
-                    {addedToCart ? <Check size={24} strokeWidth={3} /> : <ShoppingBag size={24} strokeWidth={1.5} />}
-                </button>
+          )}
+
+          {/* Price row */}
+          <div className="flex items-end justify-between mt-auto pt-2 border-t border-gray-100/60">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-black tracking-[0.2em] text-brand-pink mb-0.5">AED</span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-serif italic text-[22px] text-gray-900 leading-none">
+                  {Math.floor(price)}
+                </span>
+                <span className="text-[11px] font-medium text-gray-400">
+                  .{(price % 1).toFixed(2).split('.')[1]}
+                </span>
+              </div>
+              {originalPrice && (
+                <span className="text-[10px] line-through text-gray-300 font-medium mt-0.5">
+                  AED {originalPrice}
+                </span>
+              )}
+            </div>
+            {discount > 0 && (
+              <span className="text-[9px] font-black text-brand-pink bg-brand-pink/10 px-2 py-1 rounded-full mb-0.5">
+                −{discount}%
+              </span>
             )}
-        </div>
+          </div>
 
-        {/* AI Insight Modal - Harmonized Brand & AI Design */}
-        <Modal
-            isOpen={isAIModalOpen}
-            onClose={() => setIsAIModalOpen(false)}
-            title=""
-            size="max-w-2xl"
-            noBodyPadding
-        >
-            <div className="relative overflow-hidden min-h-[500px] bg-white flex flex-col">
-                {/* Subtle Brand Background Aura */}
-                <div className="absolute inset-0 z-0 opacity-20">
-                    <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[100px] bg-brand-pink/20 animate-pulse-slow"></div>
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[100px] bg-gray-100 animate-pulse-slow"></div>
-                </div>
-
-                {/* Header - Brand First */}
-                <div className="relative z-10 px-8 pt-8 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center shadow-sm relative group overflow-hidden">
-                            <motion.div
-                                animate={{ rotate: [0, 15, -15, 0] }}
-                                transition={{ duration: 4, repeat: Infinity }}
-                            >
-                                <Sparkles className="text-brand-pink/60" size={24} strokeWidth={1.5} />
-                            </motion.div>
-                        </div>
-                        <div>
-                            <h3 className="text-[15px] font-semibold tracking-tight text-gray-900">
-                                Olfactory Insights
-                            </h3>
-                            <div className="flex items-center gap-2">
-                                <p className="text-[10px] text-gray-400 font-medium tracking-tight">AI Concierge · Powered by Gemini 3</p>
-                                <div className="flex gap-1">
-                                    <div className="w-1 h-1 rounded-full bg-brand-pink/40 animate-pulse"></div>
-                                    <div className="w-1 h-1 rounded-full bg-brand-pink/40 animate-pulse [animation-delay:0.2s]"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <button onClick={() => setIsAIModalOpen(false)} className="w-10 h-10 rounded-full hover:bg-gray-50 flex items-center justify-center transition-colors border border-gray-100">
-                        <X size={20} className="text-gray-400" />
-                    </button>
-                </div>
-                
-                <div className="relative z-10 flex-grow px-8 py-10">
-                    {isGeneratingAI ? (
-                        <div className="flex flex-col items-center justify-center py-24 gap-10 text-center">
-                            <div className="relative w-40 h-40 flex items-center justify-center">
-                                {/* Neural Powerhouse Core */}
-                                <motion.div 
-                                    animate={{ 
-                                        scale: [1, 1.2, 1],
-                                        rotate: 360,
-                                        opacity: [0.3, 0.6, 0.3]
-                                    }}
-                                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                                    className="absolute inset-0 rounded-full border border-brand-pink/20 border-t-brand-pink/60 border-l-brand-pink/40"
-                                />
-                                <motion.div 
-                                    animate={{ 
-                                        scale: [1.2, 1, 1.2],
-                                        rotate: -360,
-                                        opacity: [0.2, 0.5, 0.2]
-                                    }}
-                                    transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-                                    className="absolute inset-4 rounded-full border border-blue-400/20 border-b-blue-400/60 border-r-blue-400/40"
-                                />
-                                <motion.div 
-                                    animate={{ 
-                                        scale: [1, 1.1, 1],
-                                        opacity: [0.5, 1, 0.5]
-                                    }}
-                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                    className="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-pink via-purple-500 to-blue-500 blur-md shadow-[0_0_30px_rgba(236,72,153,0.4)]"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Sparkles size={24} className="text-white animate-pulse" />
-                                </div>
-
-                                {/* Energy Arcs */}
-                                {[...Array(4)].map((_, i) => (
-                                    <motion.div
-                                        key={i}
-                                        animate={{ 
-                                            rotate: [0, 360],
-                                            opacity: [0, 1, 0],
-                                            scale: [0.8, 1.2, 0.8]
-                                        }}
-                                        transition={{ 
-                                            duration: 3, 
-                                            repeat: Infinity, 
-                                            delay: i * 0.5,
-                                            ease: "easeInOut" 
-                                        }}
-                                        className="absolute w-full h-full rounded-full border-t border-transparent border-brand-pink/30"
-                                        style={{ transform: `rotate(${i * 45}deg)` }}
-                                    />
-                                ))}
-                            </div>
-                            <div className="space-y-3">
-                                <p className="text-2xl font-semibold text-gray-900 tracking-tight">Activating Gemini Core</p>
-                                <div className="flex flex-col items-center gap-2">
-                                    <p className="text-[11px] text-gray-400 font-normal tracking-tight uppercase">Synchronizing Neural Weights</p>
-                                    <div className="flex gap-1">
-                                        {[...Array(3)].map((_, i) => (
-                                            <motion.div
-                                                key={i}
-                                                animate={{ 
-                                                    scale: [1, 1.5, 1],
-                                                    backgroundColor: ["#9CA3AF", "#EC4899", "#9CA3AF"]
-                                                }}
-                                                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                                                className="w-1.5 h-1.5 rounded-full"
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="h-full flex flex-col"
-                        >
-                            {/* Product Card Micro-Header */}
-                            <div className="flex items-center gap-5 mb-8 bg-gray-50/50 p-4 rounded-3xl border border-gray-100 shadow-sm">
-                                <div className="w-16 h-16 rounded-2xl overflow-hidden relative border border-white p-2 bg-white shadow-sm">
-                                    <Image src={image} alt={`${name} - Quick View`} fill className="object-contain mix-blend-multiply" />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h4 className="text-[17px] font-semibold text-gray-900 tracking-tight leading-none">{name}</h4>
-                                    <p className="text-[11px] font-medium text-brand-pink tracking-tight">{brandName || 'Naya Lumière'}</p>
-                                </div>
-                            </div>
-                            
-                            {/* Content Area - Apple Style Typography & ChatGPT Reveal */}
-                            <div className="bg-white rounded-[2rem] p-8 lg:p-10 border border-gray-100 shadow-sm flex-grow">
-                                <div className="font-sans text-[15px] leading-[1.8] text-gray-700 font-normal">
-                                    <TypewriterText text={aiResult} speed={15} />
-                                </div>
-                            </div>
-
-                            <div className="mt-10 flex flex-col items-center gap-6 pb-8">
-                                <button 
-                                    onClick={() => setIsAIModalOpen(false)}
-                                    className="group relative px-14 py-4 bg-gray-900 text-white rounded-full text-[12px] font-medium tracking-tight overflow-hidden transition-all shadow-xl hover:bg-brand-pink"
-                                >
-                                    <span className="relative z-10 flex items-center gap-3">
-                                        Conclude Consultation
-                                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                                    </span>
-                                </button>
-                                
-                                <div className="flex items-center gap-3 opacity-30 hover:opacity-100 transition-opacity duration-700 cursor-default">
-                                    <div className="flex gap-1.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-purple-400"></div>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-pink-400"></div>
-                                    </div>
-                                    <span className="text-[10px] font-medium text-gray-500 tracking-tight">
-                                        Powered by Gemini 3 Intelligence
-                                    </span>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </div>
+          {/* Add to cart */}
+          {stock_quantity > 0 ? (
+            <motion.button
+              onClick={handleAddToCart}
+              whileTap={{ scale: 0.97 }}
+              className={`w-full mt-2 h-10 rounded-full text-[10px] font-bold tracking-tight flex items-center justify-center gap-2 border transition-all duration-500 ${
+                addedToCart
+                  ? 'bg-gray-900/5 border-gray-200 text-gray-500 cursor-default'
+                  : 'border-gray-200 text-gray-700 bg-white/60 hover:bg-gray-900 hover:text-white hover:border-gray-900 group'
+              }`}
+            >
+              {addedToCart ? (
+                <>
+                  <BadgeCheck size={13} className="text-brand-pink" strokeWidth={2} />
+                  <span>Added to your bag</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag size={12} strokeWidth={1.75} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <span>Add to Bag</span>
+                </>
+              )}
+            </motion.button>
+          ) : (
+            <div className="w-full mt-2 h-10 flex items-center justify-center text-[10px] font-medium text-gray-300 rounded-full border border-gray-100 bg-white/40 tracking-tight">
+              Sold Out
             </div>
-        </Modal>
-
-        {/* Info Section - Soft Caption Style */}
-        <div className="px-4 pb-6 space-y-3">
-            <div className="flex items-center justify-between">
-                <div className="flex items-baseline gap-2">
-                    <div className="bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100/50 flex items-baseline gap-1">
-                        <span className="text-[10px] font-bold text-brand-pink/60 tracking-tight">AED</span>
-                        <span className="text-[18px] font-bold text-gray-900 tracking-tighter">
-                            {Math.floor(price)}
-                            <span className="text-[12px] opacity-40">.{ (price % 1).toFixed(2).split('.')[1] }</span>
-                        </span>
-                    </div>
-                    {originalPrice && <span className="text-[11px] text-gray-400 line-through tracking-tight font-light">AED {originalPrice}</span>}
-                </div>
-                {discount > 0 && (
-                    <span className="text-[10px] font-bold text-brand-pink bg-brand-pink/5 px-2 py-1 rounded-lg">
-                        -{discount}%
-                    </span>
-                )}
-            </div>
-            
-            <div className="space-y-1">
-                <Link href={productUrl} className="text-[15px] font-medium text-gray-900 hover:text-brand-pink transition-colors block leading-tight tracking-tight">
-                    {name}
-                </Link>
-                <p className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-[12px] leading-relaxed font-normal line-clamp-2`}>
-                    {description || 'Discover the timeless essence of Naya Lumière luxury beauty...'}
-                </p>
-            </div>
-
-            {reviewCount > 0 && (
-                <div className="flex items-center gap-1.5 pt-0.5">
-                    <div className="flex gap-0.5">
-                        {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={8} className={i < Math.floor(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} />
-                        ))}
-                    </div>
-                    <p className="text-[11px] text-gray-400 font-medium">
-                        {reviewCount} reviews
-                    </p>
-                </div>
-            )}
+          )}
         </div>
       </div>
 
-      {/* Improved Quick View Modal */}
-      <Modal 
-        isOpen={isQuickViewOpen} 
-        onClose={() => setIsQuickViewOpen(false)}
-        title=""
-        size="max-w-5xl"
-        noBodyPadding
-      >
-        <div className="grid md:grid-cols-2 gap-0 relative overflow-hidden">
-          {/* Modal Background Aura */}
-          <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-             <div className="absolute -top-[20%] -right-[20%] w-full h-full bg-brand-pink/[0.03] rounded-full blur-[120px]"></div>
+      {/* ── AI Insights Modal ── */}
+      <Modal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} title="" size="max-w-2xl" noBodyPadding>
+        <div className="relative overflow-hidden min-h-[500px] flex flex-col" style={{ background: 'var(--cl-bg)' }}>
+          {/* Aura bg */}
+          <div className="absolute inset-0 pointer-events-none z-0">
+            <div className="cl-aura cl-aura-purple" style={{ width: 300, height: 300, top: '-10%', left: '-10%', opacity: 0.5 }} />
+            <div className="cl-aura cl-aura-rose" style={{ width: 250, height: 250, bottom: '-10%', right: '-10%', opacity: 0.4 }} />
           </div>
 
-          <div className="aspect-square relative bg-gray-50 flex items-center justify-center overflow-hidden border-r border-gray-100">
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="relative w-full h-full p-12 md:p-20"
+          {/* Header */}
+          <div className="relative z-10 px-8 pt-8 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
+              >
+                <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 4, repeat: Infinity }}>
+                  <Sparkles size={22} style={{ color: 'var(--cl-purple)' }} strokeWidth={1.5} />
+                </motion.div>
+              </div>
+              <div>
+                <h3 className="text-[15px] font-semibold" style={{ color: 'var(--cl-text-deep)' }}>AI Insights</h3>
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] font-medium" style={{ color: 'var(--cl-text-muted)' }}>AI Concierge · Powered by Gemini</p>
+                  <div className="flex gap-1">
+                    <div className="w-1 h-1 rounded-full animate-pulse" style={{ background: 'var(--cl-purple)' }} />
+                    <div className="w-1 h-1 rounded-full animate-pulse [animation-delay:0.2s]" style={{ background: 'var(--cl-pink)' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsAIModalOpen(false)}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+              style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
             >
-                <Image
-                src={image || '/placeholder-image.jpg'}
-                alt={seoAlt}
-                fill
-                className="object-contain mix-blend-multiply"
-                />
+              <X size={18} style={{ color: 'var(--cl-text-light)' }} />
+            </button>
+          </div>
+
+          <div className="relative z-10 flex-grow px-8 py-8">
+            {isGeneratingAI ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-8">
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                  <motion.div
+                    animate={{ rotate: 360, opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-0 rounded-full"
+                    style={{ border: '1px solid', borderColor: 'var(--cl-purple)', borderTopColor: 'transparent' }}
+                  />
+                  <motion.div
+                    animate={{ rotate: -360, opacity: [0.2, 0.5, 0.2] }}
+                    transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+                    className="absolute inset-4 rounded-full"
+                    style={{ border: '1px solid', borderColor: 'var(--cl-pink)', borderBottomColor: 'transparent' }}
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="w-14 h-14 rounded-full"
+                    style={{ background: 'var(--cl-gradient)', filter: 'blur(8px)' }}
+                  />
+                  <Sparkles size={22} className="absolute text-white" />
+                </div>
+                <p className="text-lg font-semibold" style={{ color: 'var(--cl-text-deep)' }}>Curating your insights…</p>
+              </div>
+            ) : (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col h-full">
+                {/* Product micro-header */}
+                <div
+                  className="flex items-center gap-4 mb-6 p-4 rounded-2xl"
+                  style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
+                >
+                  <div className="w-14 h-14 rounded-xl overflow-hidden relative bg-white/60 p-1.5">
+                    <Image src={image} alt={name} fill className="object-contain" />
+                  </div>
+                  <div>
+                    <h4 className="text-[15px] font-semibold leading-tight" style={{ color: 'var(--cl-text-deep)' }}>{name}</h4>
+                    <p className="text-[11px] font-medium mt-0.5 cl-gradient-text">{brandName || 'Naya Lumière Cosmetics'}</p>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div
+                  className="rounded-2xl p-6 flex-grow"
+                  style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid var(--cl-glass-border)' }}
+                >
+                  <div className="font-sans text-[14px] leading-[1.8]" style={{ color: 'var(--cl-text-light)' }}>
+                    <TypewriterText text={aiResult} speed={15} />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-col items-center gap-4 pb-2">
+                  <button
+                    onClick={() => setIsAIModalOpen(false)}
+                    className="cl-gradient-btn px-12 py-3 text-[11px] font-semibold tracking-[0.1em] text-white"
+                  >
+                    Close Consultation
+                  </button>
+                  <p className="text-[10px]" style={{ color: 'var(--cl-text-muted)' }}>Powered by Gemini Intelligence</p>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Quick View Modal ── */}
+      <Modal isOpen={isQuickViewOpen} onClose={() => setIsQuickViewOpen(false)} title="" size="max-w-5xl" noBodyPadding>
+        <div className="grid md:grid-cols-2 gap-0 relative overflow-hidden">
+          {/* Left: image */}
+          <div
+            className="aspect-square relative flex items-center justify-center overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, var(--cl-bg-lavender), var(--cl-bg-rose))' }}
+          >
+            <div className="cl-aura cl-aura-purple pointer-events-none" style={{ width: 300, height: 300, top: '-20%', left: '-20%', opacity: 0.5 }} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="relative w-full h-full p-14"
+            >
+              <Image src={image || '/placeholder-image.jpg'} alt={seoAlt} fill className="object-contain" />
             </motion.div>
-            
-            <div className="absolute top-10 left-10 flex flex-col gap-2">
-                {isNew && <Badge className="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-[10px] font-black tracking-widest uppercase shadow-xl border-none">New Discovery</Badge>}
-                {isBestseller && <Badge className="bg-brand-pink text-white px-4 py-1.5 rounded-lg text-[10px] font-black tracking-widest uppercase shadow-xl border-none">Signature Elite</Badge>}
+            <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
+              {isNew && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--cl-gradient)' }}>New</Badge>}
+              {isBestseller && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--cl-gradient-soft)' }}>Bestseller</Badge>}
             </div>
           </div>
 
-          <div className="p-12 md:p-16 flex flex-col justify-center bg-white relative z-10">
-            <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-            >
-                <p className="text-[10px] uppercase tracking-[0.4em] text-brand-blue font-black mb-6 flex items-center gap-3">
-                    <span className="w-10 h-[1px] bg-brand-blue/20"></span>
-                    {brandName || 'Naya Lumière'}
-                </p>
-                <h2 className="font-serif text-4xl md:text-5xl text-gray-900 mb-8 leading-[1.1] italic tracking-tight">{name}</h2>
-                
-                <div className="flex items-baseline gap-5 mb-10 pb-10 border-b border-gray-50">
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-bold text-gray-400">AED</span>
-                        <span className="text-5xl font-black text-gray-900">{price}</span>
-                    </div>
-                    {originalPrice && <span className="text-2xl text-gray-200 line-through font-medium tracking-tighter">AED {originalPrice}</span>}
-                    {discount > 0 && <span className="text-[10px] font-black text-brand-pink uppercase tracking-[0.2em] bg-brand-rose px-4 py-1.5 rounded-full">Save {discount}%</span>}
+          {/* Right: info */}
+          <div className="p-10 md:p-14 flex flex-col justify-center" style={{ background: 'var(--cl-bg)' }}>
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
+              <p
+                className="text-[9px] font-bold tracking-[0.35em] uppercase mb-4 flex items-center gap-3"
+                style={{ color: 'var(--cl-text-soft)' }}
+              >
+                <span className="w-8 h-px" style={{ background: 'var(--cl-gradient)' }} />
+                {brandName || 'Naya Lumière Cosmetics'}
+              </p>
+              <h2 className="font-serif text-4xl font-light italic leading-[1.1] mb-6" style={{ color: 'var(--cl-text-deep)' }}>{name}</h2>
+
+              <div className="flex items-baseline gap-4 mb-8 pb-8" style={{ borderBottom: '1px solid var(--cl-glass-border)' }}>
+                <span className="text-4xl font-bold cl-gradient-text">AED {price}</span>
+                {originalPrice && <span className="text-xl line-through" style={{ color: 'var(--cl-text-muted)' }}>AED {originalPrice}</span>}
+                {discount > 0 && (
+                  <span className="text-[10px] font-bold text-white px-3 py-1 rounded-full" style={{ background: 'var(--cl-gradient)' }}>
+                    -{discount}%
+                  </span>
+                )}
+              </div>
+
+              <p className="text-sm leading-[1.8] italic mb-8" style={{ color: 'var(--cl-text-light)' }}>
+                "{description || 'Experience the essence of transformative luxury beauty, formulated for radiance.'}"
+              </p>
+
+              <div className="flex gap-8 mb-8">
+                <div className="flex items-center gap-2.5 text-[9px] font-semibold" style={{ color: 'var(--cl-text-muted)' }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}>
+                    <Truck size={14} style={{ color: 'var(--cl-purple)' }} />
+                  </div>
+                  Complimentary Shipping
                 </div>
-
-                <div className="space-y-8 mb-12">
-                    <p className="text-gray-500 text-sm leading-[1.8] font-medium italic opacity-80">
-                        "{description || 'Experience the essence of transformative beauty. This curated selection combines botanical excellence with modern scientific precision for unparalleled results.'}"
-                    </p>
-                    
-                    <div className="flex gap-10">
-                        <div className="flex items-center gap-3 text-[9px] uppercase tracking-widest font-black text-gray-400">
-                            <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 shadow-inner">
-                                <Truck size={14} className="text-gray-400" />
-                            </div>
-                            <span>Complimentary Shipping</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-[9px] uppercase tracking-widest font-black text-gray-400">
-                            <div className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 shadow-inner">
-                                <ShieldCheck size={14} className="text-gray-400" />
-                            </div>
-                            <span>Original selection</span>
-                        </div>
-                    </div>
+                <div className="flex items-center gap-2.5 text-[9px] font-semibold" style={{ color: 'var(--cl-text-muted)' }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}>
+                    <ShieldCheck size={14} style={{ color: 'var(--cl-purple)' }} />
+                  </div>
+                  Authentic Selection
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-8">
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center bg-gray-50 rounded-2xl p-1.5 border border-gray-100 shadow-inner">
-                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-brand-pink transition-colors"><Minus size={16} /></button>
-                            <span className="w-12 text-center font-black text-sm text-gray-900">{quantity}</span>
-                            <button onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-brand-pink transition-colors"><Plus size={16} /></button>
-                        </div>
-
-                        <button 
-                            onClick={handleAddToCart}
-                            disabled={!stock_quantity || stock_quantity <= 0}
-                            className={`flex-grow h-16 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl transition-all duration-500 active:scale-95 ${addedToCart ? 'bg-green-500 text-white' : 'bg-gray-900 text-white hover:bg-brand-pink shadow-brand-pink/20'}`}
-                        >
-                            {addedToCart ? (
-                                <span className="flex items-center justify-center gap-3"><Check size={20} /> Added to selection</span>
-                            ) : (
-                                `Acquire Selection — AED ${(price * quantity).toFixed(2)}`
-                            )}
-                        </button>
-                    </div>
-
-                    <Link href={productUrl} onClick={() => setIsQuickViewOpen(false)} className="group flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.4em] font-black text-gray-400 hover:text-brand-pink transition-all">
-                        View Full Dossier
-                        <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
-                    </Link>
+              <div className="flex items-center gap-4 mb-5">
+                <div
+                  className="flex items-center rounded-xl p-1"
+                  style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
+                >
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-11 h-11 flex items-center justify-center transition-colors" style={{ color: 'var(--cl-text-light)' }}><Minus size={15} /></button>
+                  <span className="w-10 text-center text-sm font-bold" style={{ color: 'var(--cl-text-deep)' }}>{quantity}</span>
+                  <button onClick={() => setQuantity(quantity + 1)} className="w-11 h-11 flex items-center justify-center transition-colors" style={{ color: 'var(--cl-text-light)' }}><Plus size={15} /></button>
                 </div>
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!stock_quantity || stock_quantity <= 0}
+                  className="flex-1 h-14 rounded-xl text-[11px] font-semibold text-white transition-all active:scale-95 cl-gradient-btn"
+                >
+                  {addedToCart ? (
+                    <span className="flex items-center justify-center gap-2"><Check size={16} /> Added</span>
+                  ) : (
+                    `Add to Cart — AED ${(price * quantity).toFixed(0)}`
+                  )}
+                </button>
+              </div>
+
+              <Link
+                href={productUrl}
+                onClick={() => setIsQuickViewOpen(false)}
+                className="flex items-center justify-center gap-2 text-[10px] font-semibold transition-all group"
+                style={{ color: 'var(--cl-text-soft)' }}
+              >
+                View Full Details
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
             </motion.div>
           </div>
         </div>

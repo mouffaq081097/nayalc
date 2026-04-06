@@ -67,7 +67,7 @@ const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false, size =
               <div className="w-1.5 h-8 bg-indigo-600 rounded-full" />
               <h2 className="text-3xl font-serif italic text-gray-900 leading-tight">{title}</h2>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-300 mt-3 ml-5">Operational Protocol</p>
+            <p className="text-[10px] font-black text-gray-300 mt-3 ml-5">Operational Protocol</p>
           </div>
         )}
         

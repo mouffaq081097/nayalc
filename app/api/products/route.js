@@ -45,7 +45,8 @@ export async function GET(request) {
           COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
           COUNT(r.id) as "reviewCount",
           STRING_AGG(DISTINCT c.name, ', ') as "categoryNames",
-          ARRAY_AGG(DISTINCT cp.category_id) as "category_ids"
+          ARRAY_AGG(DISTINCT cp.category_id) as "category_ids",
+          (SELECT ARRAY_AGG(concern_id) FROM product_concerns WHERE product_id = p.id) as "concern_ids"
         FROM
           products p
         LEFT JOIN
@@ -93,7 +94,19 @@ export async function GET(request) {
       params.push(parseInt(limit));
     }
 
-    const { rows } = await db.query(sql, params.length > 0 ? params : undefined);
+    let rows;
+    try {
+        const result = await db.query(sql, params.length > 0 ? params : undefined);
+        rows = result.rows;
+    } catch (dbError) {
+        if (dbError.message.includes('product_concerns')) {
+            const fallbackSql = sql.replace('(SELECT ARRAY_AGG(concern_id) FROM product_concerns WHERE product_id = p.id) as "concern_ids"', 'NULL as "concern_ids"');
+            const result = await db.query(fallbackSql, params.length > 0 ? params : undefined);
+            rows = result.rows;
+        } else {
+            throw dbError;
+        }
+    }
     return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -105,7 +118,7 @@ export async function POST(request) {
   const client = await db.connect();
   try {
     const formData = await request.formData();
-    const { name, description, price, stock_quantity, status, long_description, benefits, how_to_use, comparedprice, ingredients, brand_id, categoryIds: categoryIdsString } = Object.fromEntries(formData.entries());
+    const { name, description, price, stock_quantity, status, long_description, benefits, how_to_use, comparedprice, ingredients, brand_id, categoryIds: categoryIdsString, concernIds: concernIdsString } = Object.fromEntries(formData.entries());
 
     if (!name || !price || !stock_quantity || !categoryIdsString) {
       return NextResponse.json({ message: 'Missing required fields (name, price, stock_quantity, categoryIds).' }, { status: 400 });
@@ -143,6 +156,18 @@ export async function POST(request) {
     if (categoryIds.length > 0) {
       const categoryProductValues = categoryIds.map(catId => `(${catId}, ${productId})`).join(',');
       await client.query(`INSERT INTO category_products (category_id, product_id) VALUES ${categoryProductValues}`);
+    }
+
+    if (concernIdsString) {
+      const concernIds = concernIdsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (concernIds.length > 0) {
+        try {
+            const concernProductValues = concernIds.map(conId => `(${conId}, ${productId})`).join(',');
+            await client.query(`INSERT INTO product_concerns (concern_id, product_id) VALUES ${concernProductValues}`);
+        } catch (e) {
+            console.warn('Could not save product concerns, table might be missing.');
+        }
+      }
     }
 
     const mainImageFile = formData.get('mainImage');

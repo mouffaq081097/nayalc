@@ -86,7 +86,7 @@ export default function Reviews({ productId }) {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
                 <span className="w-10 h-px bg-brand-pink"></span>
-                <span className="text-[10px] font-bold tracking-[0.4em] uppercase text-brand-pink">Reflections</span>
+                <span className="text-[10px] font-bold text-brand-pink">Reflections</span>
             </div>
             <h2 className="font-serif text-4xl md:text-5xl text-gray-900 italic tracking-tight leading-tight">
                 Client <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-pink to-purple-400">Experiences</span>
@@ -103,8 +103,8 @@ export default function Reviews({ productId }) {
             </div>
             <div className="h-8 w-px bg-gray-200"></div>
             <div className="text-left">
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 block">{reviews.length} Total Reviews</span>
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Verified Purchases</span>
+                <span className="text-[11px] font-black text-gray-900 block">{reviews.length} Total Reviews</span>
+                <span className="text-[9px] font-bold text-gray-400 tracking-widest">Verified Purchases</span>
             </div>
           </div>
         </div>
@@ -131,14 +131,14 @@ export default function Reviews({ productId }) {
                 </div>
                 <div className="text-left">
                     <h3 className="text-xl font-serif italic text-gray-900 leading-none">Share Perspective</h3>
-                    <p className="text-[9px] uppercase tracking-widest text-gray-400 mt-2 font-bold">Document your journey</p>
+                    <p className="text-[9px] text-gray-400 mt-2 font-bold">Document your journey</p>
                 </div>
               </div>
               
               <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
                 <div className="text-left">
                   <div className="flex items-baseline justify-between mb-4">
-                    <label className="text-[10px] uppercase tracking-[0.4em] font-black text-gray-400">Rating</label>
+                    <label className="text-[10px] font-black text-gray-400">Rating</label>
                     <span className="text-[10px] font-serif italic text-brand-pink">{rating || 0}/5 Excellence</span>
                   </div>
                   <div className="flex gap-3 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 shadow-inner justify-center">
@@ -154,7 +154,7 @@ export default function Reviews({ productId }) {
                 </div>
 
                 <div className="text-left">
-                  <label className="text-[10px] uppercase tracking-[0.4em] font-black text-gray-400 block mb-4">Your Commentary</label>
+                  <label className="text-[10px] font-black text-gray-400 block mb-4">Your Commentary</label>
                   <Textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
@@ -170,7 +170,7 @@ export default function Reviews({ productId }) {
                 >
                   <div className="absolute inset-0 bg-brand-pink opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative z-10 flex items-center justify-center gap-3">
-                    <span className="text-[11px] font-black uppercase tracking-[0.3em]">{isLoading ? 'Archiving...' : 'Submit Review'}</span>
+                    <span className="text-[11px] font-black tracking-[0.3em]">{isLoading ? 'Archiving...' : 'Submit Review'}</span>
                     <Sparkles size={14} className="group-hover:rotate-12 transition-transform" />
                   </div>
                 </button>
@@ -197,10 +197,10 @@ export default function Reviews({ productId }) {
                         </div>
                         <div className="text-left">
                             <div className="flex items-center gap-2.5 mb-1.5">
-                                <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.15em]">{review.username || 'Anonymous Client'}</h4>
+                                <h4 className="text-[11px] font-black text-gray-900 tracking-[0.15em]">{review.username || 'Anonymous Client'}</h4>
                                 <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-100">
                                     <Check size={8} className="text-green-600" />
-                                    <span className="text-[8px] font-bold text-green-700 uppercase tracking-widest">Verified</span>
+                                    <span className="text-[8px] font-bold text-green-700 tracking-widest">Verified</span>
                                 </div>
                             </div>
                             <div className="flex gap-0.5">
@@ -211,7 +211,7 @@ export default function Reviews({ productId }) {
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-3">
-                        <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest">{new Date(review.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <span className="text-[9px] font-bold text-gray-300 tracking-widest">{new Date(review.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         {isAdmin && (
                             <button
                                 onClick={() => handleDeleteReview(review.id)}
@@ -237,7 +237,7 @@ export default function Reviews({ productId }) {
                     <Quote size={32} className="text-gray-200" />
                   </div>
                   <h3 className="font-serif text-3xl text-gray-900 mb-4 italic">Awaiting Your Story</h3>
-                  <p className="text-gray-400 font-medium max-w-xs mx-auto text-[10px] uppercase tracking-[0.3em] leading-loose px-6">
+                  <p className="text-gray-400 font-medium max-w-xs mx-auto text-[10px] tracking-[0.3em] leading-loose px-6">
                     No reflections have been shared yet. <br/>Be the first to document your experience.
                   </p>
                 </div>

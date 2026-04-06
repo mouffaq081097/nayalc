@@ -41,7 +41,7 @@ const Brands = () => {
                     <path d="M22 4h-4"></path>
                     <circle cx="4" cy="20" r="2"></circle>
                   </svg>
-                  <div className="text-sm font-medium text-gray-900">Clinical Results</div>
+                  <div className="text-base font-medium text-gray-900 tracking-tight">Clinical Results</div>
                 </div>
               </div>
             </div>
