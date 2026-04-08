@@ -50,7 +50,7 @@ export default {
       },
       boxShadow: {
         'premium': '0 20px 50px -12px rgba(0, 0, 0, 0.08)',
-        'luxury': '0 30px 60px -15px rgba(255, 102, 153, 0.1)',
+        'luxury': '0 30px 60px -15px rgba(147, 51, 234, 0.10)',
         'cl-card': '0 8px 32px rgba(147, 51, 234, 0.10)',
         'cl-card-hover': '0 20px 48px rgba(147, 51, 234, 0.22)',
         'cl-glow': '0 0 40px rgba(147, 51, 234, 0.20)',

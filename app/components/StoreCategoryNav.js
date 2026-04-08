@@ -55,7 +55,7 @@ export default function StoreCategoryNav({ onFilterClick }) {
   }, []);
 
   if (isLoading) return (
-    <div className="w-full bg-[#fff0f8]/80 border-b border-gray-100/60 h-16 flex items-center px-6 md:px-10">
+    <div className="w-full bg-[var(--cl-bg)]/80 border-b border-[var(--cl-glass-border)]/50 h-16 flex items-center px-6 md:px-10">
       <div className="flex gap-2 animate-pulse">
         {[1, 2, 3, 4, 5, 6].map(i => (
           <div key={i} className="h-9 w-28 rounded-full bg-gray-200/60" />
@@ -67,7 +67,7 @@ export default function StoreCategoryNav({ onFilterClick }) {
   const isAllActive = pathname === '/all-products';
 
   return (
-    <nav className="w-full bg-[#fff0f8]/80 backdrop-blur-sm border-b border-gray-100/60 sticky top-0 z-40">
+    <nav className="w-full bg-[var(--cl-bg)]/80 backdrop-blur-md border-b border-[var(--cl-glass-border)]/50 sticky top-0 z-40">
       <div className="max-w-[1400px] mx-auto overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-2 px-6 md:px-10 py-3 min-w-max">
 
@@ -81,9 +81,10 @@ export default function StoreCategoryNav({ onFilterClick }) {
               href="/all-products"
               className={`flex-shrink-0 flex items-center px-5 py-2 rounded-full text-[11px] font-bold tracking-tight transition-all duration-300 ${
                 isAllActive
-                  ? 'bg-gray-900 text-white shadow-sm'
-                  : 'bg-white/70 border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900'
+                  ? 'text-white shadow-sm'
+                  : 'bg-white/70 border border-[var(--cl-glass-border)] text-cl-mid hover:border-[var(--cl-purple)] hover:text-[var(--cl-purple)]'
               }`}
+              style={isAllActive ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
             >
               All
             </Link>
@@ -102,9 +103,10 @@ export default function StoreCategoryNav({ onFilterClick }) {
                   href={cat.href}
                   className={`flex-shrink-0 flex items-center gap-2.5 px-4 py-2 rounded-full text-[11px] font-semibold tracking-tight transition-all duration-300 ${
                     isActive
-                      ? 'bg-gray-900 text-white shadow-sm'
-                      : 'bg-white/70 border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900'
+                      ? 'text-white shadow-sm'
+                      : 'bg-white/70 border border-[var(--cl-glass-border)] text-cl-mid hover:border-[var(--cl-purple)] hover:text-[var(--cl-purple)]'
                   }`}
+                  style={isActive ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
                 >
                   {cat.image && (
                     <div className="relative w-5 h-5 rounded-full overflow-hidden bg-gray-50 flex-shrink-0">

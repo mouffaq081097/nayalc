@@ -81,7 +81,7 @@ const SidebarFilters = ({
         </div>
         <button 
           onClick={clearFilters}
-          className="text-[9px] tracking-widest text-brand-pink hover:text-gray-900 transition-all font-black border-b border-brand-pink/20 pb-0.5"
+          style={{ color: 'var(--cl-text-soft)' }}
         >
           Reset
         </button>
@@ -108,14 +108,17 @@ const SidebarFilters = ({
                     }}
                 >
                   <div className="flex items-center">
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedCategories.includes(category) ? 'bg-gray-900 border-gray-900' : 'border-gray-200 bg-white'}`}>
+                    <div
+                      className="w-4 h-4 rounded border flex items-center justify-center transition-all"
+                      style={selectedCategories.includes(category) ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderColor: 'rgb(167,139,250)' } : { background: 'white', borderColor: '#e5e7eb' }}
+                    >
                         {selectedCategories.includes(category) && <Check size={10} className="text-white" strokeWidth={4} />}
                     </div>
                     <span className={`ml-3 text-[12px] tracking-widest transition-colors ${selectedCategories.includes(category) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>
                         {category.charAt(0).toUpperCase() + category.slice(1)}
                     </span>
                   </div>
-                  <span className="text-[9px] font-black text-gray-200 group-hover/item:text-brand-pink transition-colors">
+                  <span className="text-[9px] font-black text-gray-200 group-hover/item:text-[var(--cl-purple)] transition-colors">
                     {categoryCounts[category] || 0}
                   </span>
                 </div>
@@ -144,14 +147,17 @@ const SidebarFilters = ({
                     }}
                 >
                 <div className="flex items-center">
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedBrands.includes(brand) ? 'bg-gray-900 border-gray-900' : 'border-gray-200 bg-white'}`}>
+                    <div
+                      className="w-4 h-4 rounded border flex items-center justify-center transition-all"
+                      style={selectedBrands.includes(brand) ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderColor: 'rgb(167,139,250)' } : { background: 'white', borderColor: '#e5e7eb' }}
+                    >
                         {selectedBrands.includes(brand) && <Check size={10} className="text-white" strokeWidth={4} />}
                     </div>
                     <span className={`ml-3 text-[12px] tracking-widest transition-colors ${selectedBrands.includes(brand) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>
                         {brand}
                     </span>
                 </div>
-                <span className="text-[9px] font-black text-gray-200 group-hover/item:text-brand-pink transition-colors">
+                <span className="text-[9px] font-black text-gray-200 group-hover/item:text-[var(--cl-purple)] transition-colors">
                     {brandCounts[brand] || 0}
                 </span>
                 </div>
@@ -160,7 +166,7 @@ const SidebarFilters = ({
               {brands.length > 8 && (
                 <button 
                     onClick={() => setShowMoreBrands(!showAllBrands)}
-                    className="text-[9px] font-black text-gray-400 hover:text-brand-pink transition-colors pt-2 uppercase tracking-widest flex items-center gap-2"
+                    className="text-[9px] font-black text-gray-400 hover:text-[var(--cl-purple)] transition-colors pt-2 uppercase tracking-widest flex items-center gap-2"
                 >
                     {showAllBrands ? <Minus size={10} /> : <PlusIcon size={10} />}
                     {showAllBrands ? 'Condense' : `View All (${brands.length})`}
@@ -331,35 +337,36 @@ export default function AllProductsPage() {
   const activeFiltersCount = selectedCategories.length + selectedBrands.length + (showInStock ? 1 : 0);
 
   return (
-    <div className="bg-[#fff0f8] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+    <div className="bg-[var(--cl-bg)] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       
-      {/* Subtle Boutique Aura */}
+      {/* Cloud Luxe aura orbs */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-brand-pink/[0.02] to-transparent"></div>
+        <div className="cl-aura cl-aura-purple" style={{ width: 600, height: 600, top: '-10%', right: '-10%', opacity: 0.15 }} />
+        <div className="cl-aura cl-aura-rose" style={{ width: 500, height: 500, bottom: '10%', left: '-10%', opacity: 0.1 }} />
       </div>
 
       {/* Tactile Paper Grain */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
 
       <StoreHeader title="Store." />
       <StoreCategoryNav />
 
       {/* ── The Naya Lumière Difference ── */}
-      <section className="w-full pt-8 pb-10 bg-transparent border-b border-gray-100/60 relative overflow-hidden">
+      <section className="w-full pt-8 pb-10 bg-transparent border-b border-[var(--cl-glass-border)]/50 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply" />
         <div className="max-w-[1400px] mx-auto">
           {/* Section header — matches "Curated Universes" style */}
           <div className="px-6 md:px-10 mb-6 text-center space-y-3">
             <div className="flex items-center justify-center gap-3">
-              <span className="w-8 h-px bg-brand-pink/30" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-pink">Our Promise</span>
-              <span className="w-8 h-px bg-brand-pink/30" />
+              <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(216,180,254), rgb(196,167,254))' }} />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'rgb(147,104,236)' }}>Our Promise</span>
+              <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }} />
             </div>
-            <h2 className="text-3xl md:text-4xl font-serif italic text-gray-900">
+            <h2 className="text-3xl md:text-5xl font-serif italic text-cl-deep leading-tight">
               The Naya Lumière{' '}
-              <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">difference.</span>
+              <span className="font-sans not-italic font-black" style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>difference.</span>
             </h2>
-            <p className="text-[13px] text-gray-400 font-medium">Even more reasons to shop with us.</p>
+            <p className="text-[13px] font-medium" style={{ color: 'var(--cl-text-light)' }}>Even more reasons to shop with us.</p>
           </div>
 
           {/* Horizontally scrollable card rail */}
@@ -368,7 +375,7 @@ export default function AllProductsPage() {
             {/* Card 1 — Seasonal Offer */}
             <motion.div
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
               style={{ scrollSnapAlign: 'start' }}
             >
               {/* Inner image zone — 75% */}
@@ -393,13 +400,13 @@ export default function AllProductsPage() {
               </div>
               {/* Text zone — 25% */}
               <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Seasonal Offer</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                <p style={{ color: 'var(--cl-purple)' }}>Seasonal Offer</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
                   0% installment plan with Tabby.
                 </h3>
                 <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Great ways to pay</span>
-                  <ArrowRight size={11} className="text-brand-pink" />
+                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
                 </div>
               </div>
             </motion.div>
@@ -407,17 +414,17 @@ export default function AllProductsPage() {
             {/* Card 2 — Curated For You */}
             <motion.div
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.06, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
               style={{ scrollSnapAlign: 'start' }}
             >
               <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-end justify-center"
-                style={{ background: 'linear-gradient(160deg, #9d174d 0%, #be185d 40%, #831843 100%)' }}>
-                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 30% 0%, #fff 0%, transparent 50%)' }} />
+                style={{ background: 'linear-gradient(160deg, #4c1d95 0%, #6d28d9 40%, #3b0764 100%)' }}>
+                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 30% 0%, #e9d5ff 0%, transparent 50%)' }} />
                 <div className="relative z-10 mb-0 flex gap-2 items-end px-6">
                   {[
-                    { bg: '#db2777', h: 'h-20', icon: <Droplets size={18} className="text-white/70" strokeWidth={1.5} /> },
-                    { bg: '#be185d', h: 'h-28', icon: <Sparkles size={18} className="text-white/80" strokeWidth={1.5} /> },
-                    { bg: '#9d174d', h: 'h-16', icon: <Heart size={18} className="text-white/70" strokeWidth={1.5} /> },
+                    { bg: 'rgb(167,139,250)', h: 'h-20', icon: <Droplets size={18} className="text-white/70" strokeWidth={1.5} /> },
+                    { bg: 'rgb(126,105,230)', h: 'h-28', icon: <Sparkles size={18} className="text-white/80" strokeWidth={1.5} /> },
+                    { bg: 'rgb(196,167,254)', h: 'h-16', icon: <Heart size={18} className="text-white/70" strokeWidth={1.5} /> },
                   ].map((b, i) => (
                     <div key={i} className={`flex-1 ${b.h} rounded-t-2xl flex items-center justify-center shadow-lg`} style={{ backgroundColor: b.bg }}>
                       {b.icon}
@@ -426,13 +433,13 @@ export default function AllProductsPage() {
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Curated For You</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                <p style={{ color: 'var(--cl-purple)' }}>Curated For You</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
                   Customize your daily skincare routine.
                 </h3>
                 <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Explore</span>
-                  <ArrowRight size={11} className="text-brand-pink" />
+                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
                 </div>
               </div>
             </motion.div>
@@ -440,7 +447,7 @@ export default function AllProductsPage() {
             {/* Card 3 — AI Specialist */}
             <motion.div
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.12, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
               style={{ scrollSnapAlign: 'start' }}
             >
               <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
@@ -455,13 +462,13 @@ export default function AllProductsPage() {
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">AI Specialist</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                <p style={{ color: 'var(--cl-purple)' }}>AI Specialist</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
                   Skin diagnosis in seconds.
                 </h3>
                 <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Try AI Consultant</span>
-                  <ArrowRight size={11} className="text-brand-pink" />
+                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
                 </div>
               </div>
             </motion.div>
@@ -469,7 +476,7 @@ export default function AllProductsPage() {
             {/* Card 4 — Loyalty Rewards */}
             <motion.div
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.18, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
               style={{ scrollSnapAlign: 'start' }}
             >
               <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
@@ -485,13 +492,13 @@ export default function AllProductsPage() {
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Loyalty Rewards</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                <p style={{ color: 'var(--cl-purple)' }}>Loyalty Rewards</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
                   Earn Naya Points with every purchase.
                 </h3>
                 <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Redeem for rewards</span>
-                  <ArrowRight size={11} className="text-brand-pink" />
+                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
                 </div>
               </div>
             </motion.div>
@@ -499,7 +506,7 @@ export default function AllProductsPage() {
             {/* Card 5 — Art of Gifting */}
             <motion.div
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.24, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
               style={{ scrollSnapAlign: 'start' }}
             >
               <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
@@ -518,13 +525,13 @@ export default function AllProductsPage() {
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">The Art of Gifting</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                <p style={{ color: 'var(--cl-purple)' }}>The Art of Gifting</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
                   Luxury gifts are in the cards.
                 </h3>
                 <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Shop gift sets</span>
-                  <ArrowRight size={11} className="text-brand-pink" />
+                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
                 </div>
               </div>
             </motion.div>
@@ -532,7 +539,7 @@ export default function AllProductsPage() {
             {/* Card 6 — Your Ritual */}
             <motion.div
               initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.30, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] hover:border-brand-pink/20 flex flex-col group"
+              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
               style={{ scrollSnapAlign: 'start' }}
             >
               <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
@@ -551,13 +558,13 @@ export default function AllProductsPage() {
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-pink mb-1">Your Ritual</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-brand-pink transition-colors duration-300">
+                <p style={{ color: 'var(--cl-purple)' }}>Your Ritual</p>
+                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
                   Master your new skincare ritual.
                 </h3>
                 <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Discover the routine</span>
-                  <ArrowRight size={11} className="text-brand-pink" />
+                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
                 </div>
               </div>
             </motion.div>
@@ -571,7 +578,8 @@ export default function AllProductsPage() {
         <div className="flex justify-end mb-6">
             <button 
                 onClick={() => setIsFilterOpen(true)}
-                className="flex items-center gap-2 px-6 py-2 bg-gray-900 text-white rounded-full text-[12px] font-bold tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm active:scale-95 group"
+                className="flex items-center gap-2 px-6 py-2 text-white rounded-full text-[12px] font-bold tracking-tight active:scale-95 group transition-all duration-500"
+                style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 14px rgba(147,51,234,0.22)' }}
             >
                 <span>Refine</span>
                 <Filter size={14} className="group-hover:rotate-12 transition-transform text-white" />
@@ -595,8 +603,9 @@ export default function AllProductsPage() {
                 </div>
                 <h3 className="font-serif text-4xl text-gray-900 mb-6 italic">Selection Not Found</h3>
                 <button 
-                  onClick={clearFilters} 
-                  className="px-12 py-4 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-brand-pink transition-all active:scale-95 shadow-lg"
+                  onClick={clearFilters}
+                  className="px-12 py-4 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all active:scale-95 shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
                 >
                   Reset Parameters
                 </button>
@@ -637,13 +646,14 @@ export default function AllProductsPage() {
 
                 {/* Load More */}
                 {visibleCount < filteredAndSortedProducts.length && (
-                    <div className="flex flex-col items-center gap-5 pt-10 pb-6 border-t border-gray-100">
+                    <div className="flex flex-col items-center gap-5 pt-10 pb-6 border-t border-[var(--cl-glass-border)]/50">
                         <div className="flex flex-col items-center gap-2">
                             <div className="w-48 h-0.5 bg-gray-100 rounded-full overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(displayedProducts.length / filteredAndSortedProducts.length) * 100}%` }}
-                                    className="h-full bg-brand-pink/40 rounded-full"
+                                    className="h-full rounded-full"
+                                    style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(126,105,230))' }}
                                 />
                             </div>
                             <span className="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-medium">
@@ -652,7 +662,8 @@ export default function AllProductsPage() {
                         </div>
                         <button
                             onClick={loadMore}
-                            className="group flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-full text-[11px] font-bold tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm active:scale-95"
+                            className="group flex items-center gap-2 px-6 py-2.5 text-white rounded-full text-[11px] font-bold tracking-tight active:scale-95 transition-all duration-500 hover:shadow-[0_6px_20px_rgba(147,51,234,0.35)]"
+                            style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 14px rgba(147,51,234,0.22)' }}
                         >
                             Show more
                             <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
@@ -680,16 +691,16 @@ export default function AllProductsPage() {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: "spring", damping: 35, stiffness: 300 }}
-                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[#fff0f8] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-gray-300 flex flex-col"
+                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[var(--cl-bg)] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-[var(--cl-glass-border)] flex flex-col"
             >
                 {/* Drawer Header */}
-                <div className="p-10 border-b border-gray-200 bg-white/50 backdrop-blur-md sticky top-0 z-20">
+                <div className="p-10 border-b border-[var(--cl-glass-border)]/50 bg-white/50 backdrop-blur-md sticky top-0 z-20">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-4xl font-serif italic text-gray-900 tracking-tighter leading-none">Refine</h2>
-                            <p className="text-[9px] uppercase tracking-[0.4em] text-brand-pink font-black mt-3">Selection Criteria</p>
+                            <h2 className="text-4xl font-serif italic text-cl-deep tracking-tighter leading-none">Refine</h2>
+                            <p className="text-[9px] uppercase tracking-[0.4em] font-black mt-3" style={{ color: 'var(--cl-text-soft)' }}>Selection Criteria</p>
                         </div>
-                        <button onClick={() => setIsFilterOpen(false)} className="w-12 h-12 bg-white text-gray-900 rounded-2xl shadow-lg hover:rotate-90 transition-all border border-gray-200 flex items-center justify-center">
+                        <button onClick={() => setIsFilterOpen(false)} className="w-12 h-12 bg-white text-cl-deep rounded-2xl shadow-lg hover:rotate-90 transition-all border border-[var(--cl-glass-border)]/50 flex items-center justify-center">
                             <X size={20} strokeWidth={1.5} />
                         </button>
                     </div>
@@ -718,10 +729,11 @@ export default function AllProductsPage() {
                     </div>
                 </div>
                 
-                <div className="p-10 pt-6 pb-12 sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-gray-100">
+                <div className="p-10 pt-6 pb-12 sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-[var(--cl-glass-border)]/50">
                     <button 
                         onClick={() => setIsFilterOpen(false)}
-                        className="w-full bg-gray-900 text-white py-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl hover:bg-brand-pink transition-all active:scale-95 duration-300"
+                        className="w-full py-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.4em] text-white active:scale-95 transition-all duration-300 hover:shadow-[0_8px_28px_rgba(147,51,234,0.35)]"
+                        style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 16px rgba(147,51,234,0.22)' }}
                     >
                         Reveal Selection ({filteredAndSortedProducts.length})
                     </button>

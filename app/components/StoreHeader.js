@@ -22,9 +22,9 @@ export default function StoreHeader({ title = "Store.", subtitle = "The definiti
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="flex-shrink-0 relative z-10"
         >
-            <h1 className="text-6xl md:text-7xl lg:text-[90px] font-bold tracking-tighter text-[#1d1d1f] leading-none">
+            <h1 className="text-6xl md:text-7xl lg:text-[90px] font-black tracking-tighter text-cl-deep leading-none">
                 {titleText}
-                {hasDot && <span className="text-gray-400">.</span>}
+                {hasDot && <span style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>.</span>}
             </h1>
         </motion.div>
 
@@ -37,8 +37,8 @@ export default function StoreHeader({ title = "Store.", subtitle = "The definiti
         >
             {/* Heart & Title Block */}
             <div className="flex flex-col lg:items-end gap-3">
-                 <h2 className="text-2xl md:text-3xl lg:text-[28px] font-semibold text-[#1d1d1f] leading-[1.15] tracking-tight">
-                    <span className="text-brand-pink inline-block mr-2 lg:mr-0 lg:ml-2">
+                 <h2 className="text-2xl md:text-3xl lg:text-[28px] font-serif italic text-cl-deep leading-[1.15] tracking-tight">
+                    <span>
                         {subtitle}
                     </span>
                  </h2>
@@ -48,12 +48,13 @@ export default function StoreHeader({ title = "Store.", subtitle = "The definiti
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.4, type: "spring" }}
-                        className="w-10 h-10 rounded-full bg-brand-pink/10 flex items-center justify-center group-hover:bg-brand-pink group-hover:text-white transition-all duration-500"
+                        className="w-10 h-10 rounded-full bg-[var(--cl-purple-extra-light)] flex items-center justify-center group-hover:bg-[var(--cl-purple)] group-hover:text-white transition-all duration-500 shadow-sm"
+                        style={{ color: 'var(--cl-purple)' }}
                     >
                          <Sparkles size={18} />
                     </motion.div>
-                    <p className="text-gray-500 font-medium text-lg group-hover:text-brand-pink transition-colors">
-                        Consult AI Specialist <span className="text-brand-pink ml-1 text-xl group-hover:translate-x-1 inline-block transition-transform">›</span>
+                    <p className="text-gray-400 font-medium text-lg group-hover:text-[var(--cl-purple)] transition-colors">
+                        Consult AI Specialist <span className="ml-1 text-xl group-hover:translate-x-1 inline-block transition-transform" style={{ color: 'var(--cl-purple)' }}>›</span>
                     </p>
                  </div>
             </div>

@@ -11,8 +11,8 @@ export const AnnouncementBar = forwardRef(function AnnouncementBarComponent({ me
   }
 
   return (
-    <div ref={ref} className="fixed top-0 left-0 right-0 z-50 bg-gray-800 text-white text-center p-2 flex items-center justify-center relative">
-      <p className="text-sm font-medium">{message}</p>
+    <div ref={ref} className="fixed top-0 left-0 right-0 z-[200] text-white text-center p-2 flex items-center justify-center relative shadow-sm" style={{ background: 'var(--cl-gradient)' }}>
+      <p className="text-[11px] font-black uppercase tracking-[0.2em]">{message}</p>
       <button
         onClick={() => setIsVisible(false)}
         className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300"

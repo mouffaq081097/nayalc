@@ -2,6 +2,15 @@
 @import "slick-carousel/slick/slick-theme.css";
 @import "tailwindcss";
 
+/* Google Maps Autocomplete dropdown — must sit above modals/drawers */
+.pac-container {
+  z-index: 99999 !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(216, 180, 254, 0.3);
+  margin-top: 4px;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -50,9 +59,9 @@
   --cl-purple-deep: #7e22ce;
   --cl-pink: #db2777;
   --cl-pink-light: #ec4899;
-  --cl-bg: #fdf8ff;
+  --cl-bg: #faf9f6;
   --cl-bg-rose: #fff0f8;
-  --cl-bg-lavender: #f8f0ff;
+  --cl-bg-lavender: #f4ebff;
   --cl-glass: rgba(255, 255, 255, 0.72);
   --cl-glass-dark: rgba(255, 255, 255, 0.45);
   --cl-glass-border: rgba(216, 180, 254, 0.35);
@@ -70,28 +79,28 @@
   --cl-aura-3: rgba(192, 132, 252, 0.20);
   --cl-gradient: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
   --cl-gradient-soft: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-  --cl-gradient-bg: linear-gradient(160deg, #fdf8ff 0%, #f8f0ff 50%, #fff0f8 100%);
+  --cl-gradient-bg: linear-gradient(160deg, #faf9f6 0%, #fefdf9 50%, #faf9f6 100%);
   --cl-shadow-card: 0 8px 32px rgba(147, 51, 234, 0.10);
   --cl-shadow-card-hover: 0 20px 48px rgba(147, 51, 234, 0.22);
   --cl-shadow-glow: 0 0 40px rgba(147, 51, 234, 0.20);
 
-  /* Naya Lumiere Brand Colors */
-  --brand-blue: #2563eb;
-  --brand-blue-rgb: 37, 99, 235; /* RGB for #2563eb */
-  --brand-blue-light: #60a5fa;
-  --brand-blue-dark: #1d4ed8;
-  --brand-blue-extra-light: rgba(96, 165, 250, 0.4); /* Extra light blue */
-  --brand-pink: #ec4899;
-  --brand-pink-rgb: 236, 72, 153; /* RGB for #ec4899 */
-  --brand-pink-light: #f472b6;
-  --brand-pink-extra-light: rgba(244, 114, 182, 0.4); /* Extra light pink */
-  --brand-pink-dark: #db2777;
+  /* Naya Lumiere Brand Colors — remapped to Cloud Luxe palette */
+  --brand-blue: var(--cl-pink);                          /* #db2777 — CL secondary */
+  --brand-blue-rgb: 219, 39, 119;
+  --brand-blue-light: var(--cl-pink-light);              /* #ec4899 */
+  --brand-blue-dark: #be185d;
+  --brand-blue-extra-light: rgba(219, 39, 119, 0.15);
+  --brand-pink: var(--cl-purple);                        /* #9333ea — CL primary */
+  --brand-pink-rgb: 147, 51, 234;
+  --brand-pink-light: var(--cl-purple-light);            /* #a855f7 */
+  --brand-pink-extra-light: rgba(147, 51, 234, 0.15);
+  --brand-pink-dark: var(--cl-purple-deep);              /* #7e22ce */
   --brand-rose: #fef7f4;
   --brand-cream: #fefdf9;
 
   /* Direct hex values for primary and button-bg as Tailwind uses them directly */
-  --brand-primary: var(--brand-pink);
-  --brand-button-bg: var(--brand-blue);
+  --brand-primary: var(--cl-purple);
+  --brand-button-bg: var(--cl-pink);
   --brand-gray-100: rgba(209, 213, 219, 0.5);
 
   /* Mobile app shell (bottom tab bar + safe areas) — match MobileBottomNav bottom offset + bar height */
@@ -225,6 +234,10 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* Avoid WebKit clipping descenders (e.g. g, y) on large display italic */
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    padding-bottom: 0.06em;
   }
 
   /* Gradient button */
@@ -284,9 +297,36 @@
 @layer components {
   .hero-radial-cloud-luxe {
     background:
-      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(216, 180, 254, 0.35) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 80% 70%, rgba(249, 168, 212, 0.25) 0%, transparent 60%),
-      linear-gradient(160deg, #fdf8ff 0%, #f8f0ff 50%, #fff0f8 100%);
+      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(216, 180, 254, 0.30) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 70%, rgba(249, 168, 212, 0.20) 0%, transparent 60%),
+      radial-gradient(ellipse 55% 45% at 55% 5%,  rgba(192, 132, 252, 0.18) 0%, transparent 55%),
+      radial-gradient(ellipse 45% 38% at 10% 85%, rgba(253, 164, 175, 0.12) 0%, transparent 55%),
+      var(--cl-gradient-bg);
+  }
+}
+
+/* Lavender filled button — soft Cloud Luxe lavender style */
+@layer components {
+  .cl-lavender-btn {
+    background: rgba(147, 51, 234, 0.07);
+    border: 1px solid rgba(167, 139, 250, 0.40);
+    color: var(--cl-text-mid);
+    border-radius: 9999px;
+    transition: background 0.3s cubic-bezier(0.16,1,0.3,1),
+                border-color 0.3s cubic-bezier(0.16,1,0.3,1),
+                box-shadow 0.3s cubic-bezier(0.16,1,0.3,1),
+                transform 0.2s cubic-bezier(0.16,1,0.3,1);
+  }
+  .cl-lavender-btn:hover {
+    background: rgba(147, 51, 234, 0.13);
+    border-color: var(--cl-purple);
+    color: var(--cl-purple);
+    box-shadow: 0 4px 20px rgba(147, 51, 234, 0.18), 0 0 0 1px rgba(147, 51, 234, 0.10);
+    transform: translateY(-1px);
+  }
+  .cl-lavender-btn:active {
+    transform: scale(0.97);
+    box-shadow: none;
   }
 }
 

@@ -23,12 +23,13 @@ export const UserProvider = ({ children }) => {
       return;
     }
     try {
-      const data = await fetchWithAuth(`/api/users/${user.id}/contact-info`);
+      const response = await fetchWithAuth(`/api/users/${user.id}/contact-info`);
+      const data = await response.json();
 
       setContactInfo({
-        name: data.customer_name || '',
+        name: data?.customer_name || '',
         email: user.email, // Email always from AuthContext user
-        phone: data.customer_phone || '',
+        phone: data?.customer_phone || '',
       });
     } catch (error) {
       console.error('Error fetching contact info:', error);
@@ -46,9 +47,10 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-      const data = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+      const response = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+      const data = await response.json();
 
-      setShippingAddresses(data);
+      setShippingAddresses(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching shipping addresses:', error);
       setShippingAddresses([]);
@@ -116,17 +118,17 @@ export const UserProvider = ({ children }) => {
     if (!isAuthenticated || !user?.id) return;
     try {
       const transformedAddress = {
-        address_line1: newAddress.shipping_address || '',
+        address_line1: newAddress.addressLine1 || newAddress.shipping_address || '',
         city: newAddress.city || '',
-        zip_code: newAddress.zip_code || '',
+        zip_code: newAddress.zipCode || newAddress.zip_code || '',
         country: newAddress.country || '',
-        address_line2: newAddress.address_line2 || null,
+        address_line2: newAddress.apartment || newAddress.address_line2 || null,
         state: newAddress.state || null,
-        is_default: newAddress.is_default || false,
-        address_label: newAddress.address_label || 'Other',
-        customer_name: newAddress.customer_name || '',
+        is_default: newAddress.isDefault || newAddress.is_default || false,
+        address_label: newAddress.addressLabel || newAddress.addressLine1 || 'Other',
+        customer_name: newAddress.customer_name || `${user.first_name} ${user.last_name}`.trim() || '',
         customer_email: newAddress.customer_email || user.email || '',
-        customer_phone: newAddress.customer_phone || '',
+        customer_phone: newAddress.customerPhone || newAddress.customer_phone || '',
       };
       await fetchWithAuth(`/api/users/${user.id}/addresses`, {
         method: 'POST',
@@ -143,17 +145,17 @@ export const UserProvider = ({ children }) => {
     if (!isAuthenticated || !user?.id) return;
     try {
       const transformedAddress = {
-        address_line1: updatedAddress.shipping_address || '',
+        address_line1: updatedAddress.addressLine1 || updatedAddress.shipping_address || '',
         city: updatedAddress.city || '',
-        zip_code: updatedAddress.zip_code || '',
+        zip_code: updatedAddress.zipCode || updatedAddress.zip_code || '',
         country: updatedAddress.country || '',
-        address_line2: updatedAddress.address_line2 || null,
+        address_line2: updatedAddress.apartment || updatedAddress.address_line2 || null,
         state: updatedAddress.state || null,
-        is_default: updatedAddress.is_default || false,
-        address_label: updatedAddress.address_label || 'Other',
-        customer_name: updatedAddress.customer_name || '',
+        is_default: updatedAddress.isDefault || updatedAddress.is_default || false,
+        address_label: updatedAddress.addressLabel || updatedAddress.addressLine1 || 'Other',
+        customer_name: updatedAddress.customer_name || `${user.first_name} ${user.last_name}`.trim() || '',
         customer_email: updatedAddress.customer_email || user.email || '',
-        customer_phone: updatedAddress.customer_phone || '',
+        customer_phone: updatedAddress.customerPhone || updatedAddress.customer_phone || '',
       };
       await fetchWithAuth(`/api/users/${user.id}/addresses/${updatedAddress.id}`, {
         method: 'PUT',

@@ -112,7 +112,7 @@ function SkinQuizResults() {
 
 export default function SkinQuizResultsPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[40vh]"><div className="w-8 h-8 rounded-full border-2 border-[var(--cl-purple)]/20 border-t-[var(--cl-purple)] animate-spin" /></div>}>
             <SkinQuizResults />
         </Suspense>
     )

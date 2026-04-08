@@ -4,15 +4,15 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/context/AuthContext';
 import { useAppContext } from '@/app/context/AppContext';
-import { Send, MessageSquare, X, Loader2, Sparkles, ShoppingBag, Zap, HelpCircle, UserCheck, Clock, Check, AlertCircle } from 'lucide-react';
+import { Send, MessageSquare, X, Loader2, Sparkles, ShoppingBag, Zap, HelpCircle, UserCheck, Clock, Check, CheckCheck, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
 const QUICK_ACTIONS = [
-    { id: 'ritual', label: 'Skincare Ritual', icon: <Sparkles className="w-3 h-3" />, prompt: "I'd like a personalized skincare ritual for my skin type." },
-    { id: 'order', label: 'Order Status', icon: <ShoppingBag className="w-3 h-3" />, prompt: "Can you help me check the status of my latest order?" },
-    { id: 'advice', label: 'Skin Advice', icon: <Zap className="w-3 h-3" />, prompt: "I need a recommendation for my specific skin concerns." },
-    { id: 'help', label: 'General Help', icon: <HelpCircle className="w-3 h-3" />, prompt: "I have a question about Naya Lumière services." },
+    { id: 'ritual', label: 'Skincare Ritual', icon: <Sparkles className="w-3.5 h-3.5" />, prompt: "I'd like a personalized skincare ritual for my skin type." },
+    { id: 'order', label: 'Order Status', icon: <ShoppingBag className="w-3.5 h-3.5" />, prompt: "Can you help me check the status of my latest order?" },
+    { id: 'advice', label: 'Skin Advice', icon: <Zap className="w-3.5 h-3.5" />, prompt: "I need a recommendation for my specific skin concerns." },
+    { id: 'help', label: 'General Help', icon: <HelpCircle className="w-3.5 h-3.5" />, prompt: "I have a question about Naya Lumière services." },
 ];
 
 function formatGroupTimestamp(dateStr) {
@@ -91,10 +91,9 @@ const ChatWidget = () => {
                     messageText: message.message_text || message.messageText,
                     senderType: message.sender_type || message.senderType,
                     createdAt: message.created_at || message.createdAt || new Date().toISOString(),
-                    status: 'sent',
+                    status: 'sent', // Assume delivered to server
                 };
                 setMessages((prev) => {
-                    // Replace matching temp message by content+senderType to avoid duplicates
                     const tempIndex = prev.findIndex(
                         m => m.id?.startsWith('temp-') &&
                             m.messageText === transformed.messageText &&
@@ -124,6 +123,11 @@ const ChatWidget = () => {
                 if (isTyping) {
                     adminTypingTimeoutRef.current = setTimeout(() => setAdminIsTyping(false), 3500);
                 }
+            });
+
+            // Read receipts simulation for Phase 1
+            newSocket.on('messages_read', () => {
+                 setMessages(prev => prev.map(m => m.senderType === 'customer' ? { ...m, status: 'read' } : m));
             });
 
             newSocket.on('disconnect', () => setIsConnected(false));
@@ -160,7 +164,16 @@ const ChatWidget = () => {
                         createdAt: new Date().toISOString(),
                     }]);
                 } else {
-                    setMessages(data.messages.slice().reverse());
+                    // Mark old customer messages as read if an admin or AI has replied after them
+                    let hasReply = false;
+                    const loadedMessages = data.messages.map(m => {
+                        if (m.senderType !== 'customer') hasReply = true;
+                        return {
+                            ...m,
+                            status: m.senderType === 'customer' ? (hasReply ? 'read' : 'sent') : undefined
+                        }
+                    }).reverse();
+                    setMessages(loadedMessages);
                 }
             } catch (error) {
                 console.error('Error fetching messages:', error);
@@ -202,7 +215,6 @@ const ChatWidget = () => {
             if (!currentConvId) { setIsSending(false); return; }
         }
 
-        // Stop typing indicator
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         socketRef.current?.emit('typing', { conversationId: currentConvId, isTyping: false, senderType: 'customer' });
 
@@ -266,7 +278,6 @@ const ChatWidget = () => {
     const isAiHandling = conversationStatus === 'ai_handling';
     const hasCustomerMessages = messages.some(m => m.senderType === 'customer');
 
-    // Build render list with grouped timestamp dividers (5-min gap)
     const renderItems = [];
     let lastTs = null;
     messages.forEach((msg, i) => {
@@ -287,20 +298,21 @@ const ChatWidget = () => {
                         initial={{ scale: 0, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0, opacity: 0 }}
-                        className="absolute hidden md:flex bottom-8 right-8 pointer-events-auto"
+                        className="absolute hidden md:flex bottom-8 right-8 pointer-events-auto group"
                     >
                         <button
                             onClick={() => setIsChatOpen(true)}
-                            className="relative w-14 h-14 rounded-full bg-gray-900 text-white flex items-center justify-center shadow-xl hover:bg-gray-700 transition-colors"
+                            className="relative w-16 h-16 rounded-full text-white flex items-center justify-center shadow-luxury hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1"
+                            style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(147,104,236))' }}
                         >
-                            <MessageSquare className="w-6 h-6" />
+                            <MessageSquare className="w-7 h-7" />
                             <AnimatePresence>
                                 {unreadMessageCount > 0 && (
                                     <motion.span
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         exit={{ scale: 0 }}
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white"
+                                        className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white"
                                     >
                                         {unreadMessageCount}
                                     </motion.span>
@@ -315,49 +327,54 @@ const ChatWidget = () => {
             <AnimatePresence>
                 {isChatOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 16, scale: 0.98 }}
-                        transition={{ duration: 0.18, ease: 'easeOut' }}
-                        className="fixed inset-0 md:inset-auto md:bottom-8 md:right-8 flex flex-col w-full h-full md:w-[380px] md:h-[580px] bg-white md:rounded-2xl md:shadow-2xl overflow-hidden border border-gray-200 pointer-events-auto"
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="fixed inset-0 md:inset-auto md:bottom-8 md:right-8 flex flex-col w-full h-full md:w-[350px] md:h-[540px] bg-white md:rounded-[24px] md:shadow-2xl overflow-hidden border border-gray-100 pointer-events-auto"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-                            <div className="flex items-center gap-3">
-                                <div className="relative shrink-0">
-                                    <div className="w-8 h-8 rounded-full overflow-hidden relative">
-                                        <Image src="/favicon.jpeg" alt="Support" fill className="object-cover" />
+                        <div className="relative px-5 py-4 shrink-0 shadow-sm z-10" style={{ background: 'linear-gradient(135deg, rgb(196,167,254) 0%, rgb(167,139,250) 50%, rgb(147,104,236) 100%)' }}>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative shrink-0">
+                                        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30 shadow-sm relative">
+                                            <Image src="/favicon.jpeg" alt="Support" fill className="object-cover" />
+                                        </div>
+                                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-[rgb(196,167,254)]" />
                                     </div>
-                                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
+                                    <div className="text-white">
+                                        <p className="text-sm font-semibold tracking-wide drop-shadow-sm leading-none">Naya Concierge</p>
+                                        <p className="text-[11px] font-medium text-white/90 mt-1 leading-none drop-shadow-sm flex items-center gap-1">
+                                            {isAiHandling ? <><Sparkles className="w-3 h-3"/> AI Specialist · Online</> : 'Usually replies instantly'}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-semibold text-gray-900 leading-none">Naya Support</p>
-                                    <p className="text-xs text-gray-400 mt-0.5 leading-none">
-                                        {isAiHandling ? 'AI · Online' : 'Typically replies instantly'}
-                                    </p>
-                                </div>
+                                <button
+                                    onClick={() => setIsChatOpen(false)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setIsChatOpen(false)}
-                                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
                         </div>
 
                         {/* Messages area */}
-                        <div className="flex-1 overflow-y-auto px-4 py-4 bg-gray-50 space-y-0.5">
+                        <div className="flex-1 overflow-y-auto px-4 py-4 bg-[#fcfcfd] space-y-0.5">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-full">
-                                    <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+                                    <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
                                 </div>
                             ) : (
                                 <>
                                     {messages.length === 0 && (
-                                        <div className="flex flex-col items-center justify-center h-full text-center space-y-1.5 py-8">
-                                            <p className="text-gray-900 font-semibold text-sm">Hi {user.first_name}!</p>
+                                        <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-8">
+                                            <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mb-2">
+                                                <Sparkles className="w-6 h-6 text-purple-400" />
+                                            </div>
+                                            <p className="text-gray-900 font-semibold text-sm">Bonjour, {user.first_name}!</p>
                                             <p className="text-xs text-gray-500 max-w-[220px] leading-relaxed">
-                                                Ask us anything about skincare, orders, or our collection.
+                                                Ask us anything about skincare rituals, order updates, or our collections.
                                             </p>
                                         </div>
                                     )}
@@ -365,8 +382,8 @@ const ChatWidget = () => {
                                     {renderItems.map((item) => {
                                         if (item.type === 'timestamp') {
                                             return (
-                                                <div key={item.key} className="flex justify-center py-3">
-                                                    <span className="text-[11px] text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                                                <div key={item.key} className="flex justify-center py-4">
+                                                    <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
                                                         {formatGroupTimestamp(item.time)}
                                                     </span>
                                                 </div>
@@ -378,41 +395,46 @@ const ChatWidget = () => {
                                         const isAi = msg.senderType === 'ai';
                                         const isFailed = msg.status === 'failed';
                                         const isSendingMsg = msg.status === 'sending';
+                                        const isRead = msg.status === 'read';
 
                                         return (
-                                            <div key={item.key} className={`flex ${isCustomer ? 'justify-end' : 'justify-start'} mb-1.5`}>
+                                            <div key={item.key} className={`flex ${isCustomer ? 'justify-end' : 'justify-start'} mb-2`}>
                                                 {!isCustomer && (
-                                                    <div className="shrink-0 w-6 h-6 rounded-full overflow-hidden mr-2 mt-auto mb-1 relative">
+                                                    <div className="shrink-0 w-7 h-7 rounded-full overflow-hidden mr-2 mt-auto mb-1 relative shadow-sm">
                                                         <Image src="/favicon.jpeg" alt="Naya" fill className="object-cover" />
                                                     </div>
                                                 )}
-                                                <div className={`flex flex-col ${isCustomer ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                                                <div className={`flex flex-col ${isCustomer ? 'items-end' : 'items-start'} max-w-[80%]`}>
                                                     {isAi && (
-                                                        <span className="text-[10px] text-purple-500 font-medium flex items-center gap-1 mb-1 ml-0.5">
+                                                        <span className="text-[10px] font-semibold flex items-center gap-1 mb-1 ml-0.5" style={{ color: 'var(--cl-purple)' }}>
                                                             <Sparkles className="w-2.5 h-2.5" /> Naya AI
                                                         </span>
                                                     )}
-                                                    <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                                                        isCustomer
-                                                            ? isFailed
-                                                                ? 'bg-red-50 text-red-700 border border-red-200 rounded-br-sm'
-                                                                : 'bg-gray-900 text-white rounded-br-sm'
-                                                            : isAi
-                                                                ? 'bg-white text-gray-800 border border-purple-100 shadow-sm rounded-bl-sm'
-                                                                : 'bg-white text-gray-800 border border-gray-100 shadow-sm rounded-bl-sm'
-                                                    }`}>
+                                                    <div
+                                                        className={`px-4 py-2.5 text-[13px] leading-[1.4] shadow-sm ${
+                                                            isCustomer
+                                                                ? isFailed
+                                                                    ? 'bg-red-50 text-red-700 border border-red-200 rounded-[20px] rounded-br-sm'
+                                                                    : 'text-white rounded-[20px] rounded-br-sm'
+                                                                : isAi
+                                                                    ? 'bg-white text-gray-800 border border-purple-200/30 rounded-[20px] rounded-bl-sm'
+                                                                    : 'bg-white text-gray-800 border border-gray-100 rounded-[20px] rounded-bl-sm'
+                                                        }`}
+                                                        style={isCustomer && !isFailed ? { background: 'linear-gradient(135deg, rgb(167,139,250), rgb(126,105,230))' } : undefined}
+                                                    >
                                                         {msg.messageText}
                                                     </div>
                                                     {isCustomer && (
-                                                        <div className="flex items-center gap-1 mt-1 px-0.5">
-                                                            {isSendingMsg && <Clock className="w-3 h-3 text-gray-300" />}
-                                                            {msg.status === 'sent' && <Check className="w-3 h-3 text-gray-300" />}
+                                                        <div className="flex items-center gap-1 mt-1 px-1">
+                                                            {isSendingMsg && <Clock className="w-[11px] h-[11px] text-gray-300" />}
+                                                            {!isSendingMsg && !isFailed && !isRead && <Check className="w-[12px] h-[12px] text-gray-400" />}
+                                                            {!isSendingMsg && !isFailed && isRead && <CheckCheck className="w-[13px] h-[13px] text-purple-400" />}
                                                             {isFailed && (
                                                                 <button
                                                                     onClick={() => handleRetry(msg)}
-                                                                    className="flex items-center gap-1 text-[11px] text-red-500 hover:text-red-600 font-medium transition-colors"
+                                                                    className="flex items-center gap-1 text-[10px] text-red-500 hover:text-red-600 font-medium transition-colors"
                                                                 >
-                                                                    <AlertCircle className="w-3 h-3" /> Failed · Tap to retry
+                                                                    <AlertCircle className="w-[11px] h-[11px]" /> Failed · Tap to retry
                                                                 </button>
                                                             )}
                                                         </div>
@@ -429,15 +451,15 @@ const ChatWidget = () => {
                                                 initial={{ opacity: 0, y: 4 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: 4 }}
-                                                className="flex items-end gap-2 mb-1.5"
+                                                className="flex items-end gap-2 mb-2"
                                             >
-                                                <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 relative">
+                                                <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 relative shadow-sm">
                                                     <Image src="/favicon.jpeg" alt="Naya" fill className="object-cover" />
                                                 </div>
-                                                <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-sm px-3.5 py-3 shadow-sm flex items-center gap-1">
-                                                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                                                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                                                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                                                <div className="bg-white border border-gray-100 rounded-[20px] rounded-bl-sm px-4 py-3.5 shadow-sm flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 bg-purple-300 rounded-full animate-bounce [animation-delay:0ms]" />
+                                                    <span className="w-1.5 h-1.5 bg-purple-300 rounded-full animate-bounce [animation-delay:150ms]" />
+                                                    <span className="w-1.5 h-1.5 bg-purple-300 rounded-full animate-bounce [animation-delay:300ms]" />
                                                 </div>
                                             </motion.div>
                                         )}
@@ -448,7 +470,7 @@ const ChatWidget = () => {
                         </div>
 
                         {/* Input area */}
-                        <div className="bg-white border-t border-gray-100 shrink-0">
+                        <div className="bg-white border-t border-gray-100 shrink-0 pb-1">
                             {/* Talk to Human */}
                             <AnimatePresence>
                                 {isAiHandling && (
@@ -456,26 +478,27 @@ const ChatWidget = () => {
                                         initial={{ opacity: 0, height: 0 }}
                                         animate={{ opacity: 1, height: 'auto' }}
                                         exit={{ opacity: 0, height: 0 }}
-                                        className="overflow-hidden"
+                                        className="overflow-hidden bg-purple-50/30"
                                     >
-                                        <div className="px-4 pt-3">
+                                        <div className="px-4 py-2 border-b border-purple-100">
                                             <button
                                                 onClick={handleRequestHuman}
                                                 disabled={isRequestingHuman}
-                                                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 transition-colors disabled:opacity-60"
+                                                className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-60"
+                                                style={{ color: 'var(--cl-purple)' }}
                                             >
                                                 {isRequestingHuman
                                                     ? <Loader2 className="w-3 h-3 animate-spin" />
-                                                    : <UserCheck className="w-3 h-3" />
+                                                    : <UserCheck className="w-3.5 h-3.5" />
                                                 }
-                                                Talk to a Human
+                                                Escalate to Human Concierge
                                             </button>
                                         </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            {/* Quick actions — hidden after first customer message */}
+                            {/* Quick actions */}
                             <AnimatePresence>
                                 {!hasCustomerMessages && (
                                     <motion.div
@@ -484,12 +507,12 @@ const ChatWidget = () => {
                                         transition={{ duration: 0.2 }}
                                         className="overflow-hidden"
                                     >
-                                        <div className="flex gap-2 overflow-x-auto px-4 pt-3 pb-1 no-scrollbar">
+                                        <div className="flex gap-2.5 overflow-x-auto px-4 pt-3 pb-1 no-scrollbar">
                                             {QUICK_ACTIONS.map(action => (
                                                 <button
                                                     key={action.id}
                                                     onClick={() => handleSendMessage(action.prompt)}
-                                                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-xs font-medium text-gray-600 hover:border-gray-300 hover:bg-gray-100 transition-colors whitespace-nowrap"
+                                                    className="shrink-0 flex items-center gap-2 px-3.5 py-1.5 bg-white border border-gray-200 rounded-full text-[11px] font-medium text-gray-600 hover:border-purple-300 hover:text-purple-600 hover:bg-purple-50/50 transition-all shadow-sm"
                                                 >
                                                     {action.icon}
                                                     {action.label}
@@ -514,17 +537,18 @@ const ChatWidget = () => {
                                     }}
                                     placeholder="Type a message..."
                                     rows={1}
-                                    className="flex-1 resize-none bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300 leading-relaxed overflow-y-auto"
-                                    style={{ minHeight: '40px', maxHeight: '120px' }}
+                                    className="flex-1 resize-none bg-[#f8f9fa] border border-gray-200 rounded-2xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-300/50 focus:border-purple-300/50 focus:bg-white transition-all leading-relaxed overflow-y-auto"
+                                    style={{ minHeight: '42px', maxHeight: '120px' }}
                                 />
                                 <button
                                     onClick={() => handleSendMessage()}
                                     disabled={!newMessage.trim() || isSending}
-                                    className="shrink-0 w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors mb-0.5"
+                                    className="shrink-0 w-10 h-10 rounded-full text-white flex items-center justify-center hover:shadow-lg disabled:opacity-40 disabled:grayscale disabled:cursor-not-allowed transition-all mb-0.5"
+                                    style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(147,104,236))' }}
                                 >
                                     {isSending
-                                        ? <Loader2 className="w-4 h-4 animate-spin" />
-                                        : <Send className="w-4 h-4" />
+                                        ? <Loader2 className="w-[18px] h-[18px] animate-spin" />
+                                        : <Send className="w-[18px] h-[18px] ml-0.5" />
                                     }
                                 </button>
                             </div>

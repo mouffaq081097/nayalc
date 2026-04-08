@@ -161,16 +161,42 @@ const Header = forwardRef((props, ref) => {
                 </nav>
             </div>
 
-            {/* Center: Logo — absolute center on mobile, static on desktop */}
-            <Link href="/" className="md:static absolute left-1/2 -translate-x-1/2 flex items-center shrink-0 transition-all active:scale-95">
+            {/* Center: Logo + Brand Name — absolute center on mobile, static on desktop */}
+            <Link href="/" className="md:static absolute left-1/2 -translate-x-1/2 flex items-center gap-0 shrink-0 transition-all active:scale-95">
                 <Image
                   src="/Adobe Express - file (5).png"
                   alt="Naya Lumière Cosmetics"
                   height={36}
                   width={120}
-                  className="h-7 md:h-9 w-auto object-contain"
+                  className="h-7 md:h-9 w-auto object-contain shrink-0"
                   priority
                 />
+                {/* Brand name text — collapses when scrolled */}
+                <motion.div
+                  initial={false}
+                  animate={{
+                    opacity: isScrolled ? 0 : 1,
+                    maxWidth: isScrolled ? 0 : 180,
+                    marginLeft: isScrolled ? 0 : 10,
+                  }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="overflow-hidden whitespace-nowrap"
+                >
+                  <div className="flex flex-col justify-center leading-none">
+                    <span
+                      className="text-[13px] font-black tracking-normal uppercase"
+                      style={{ color: 'var(--cl-text-deep)' }}
+                    >
+                      NAYA
+                    </span>
+                    <span
+                      className="text-[9px] font-medium tracking-normal font-serif italic"
+                      style={{ color: 'var(--cl-text-mid)' }}
+                    >
+                      Lumière Cosmetics
+                    </span>
+                  </div>
+                </motion.div>
             </Link>
 
             {/* Right: Actions */}

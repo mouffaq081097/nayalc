@@ -100,7 +100,7 @@ function MobileBottomNav() {
           WebkitBackdropFilter: 'blur(20px)',
           background: 'rgba(253,248,255,0.88)',
           border: '1px solid var(--cl-glass-border)',
-          boxShadow: 'var(--cl-shadow-card)',
+          boxShadow: '0 4px 20px rgba(147,51,234,0.08), 0 1px 6px rgba(196,167,254,0.15)',
           borderTop: '1px solid rgba(216,180,254,0.5)',
         }}
       >
@@ -123,7 +123,7 @@ function MobileBottomNav() {
                   'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200',
                   isActive ? 'text-white shadow-md' : 'bg-transparent'
                 )}
-              style={isActive ? { background: 'var(--cl-gradient)' } : {}}
+              style={isActive ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
               >
                 {item.id === 'account' && user ? (
                   <span
@@ -135,7 +135,7 @@ function MobileBottomNav() {
                     )}
                     style={isActive
                       ? { background: 'rgba(255,255,255,0.25)' }
-                      : { background: 'var(--cl-gradient)' }
+                      : { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }
                     }
                   >
                     {(user.name || user.first_name || 'U').charAt(0).toUpperCase()}
@@ -149,7 +149,7 @@ function MobileBottomNav() {
                   'max-w-[4.25rem] truncate text-center leading-tight',
                   isActive ? 'font-bold' : 'font-semibold text-gray-400'
                 )}
-              style={isActive ? { color: 'var(--cl-purple)' } : {}}
+              style={isActive ? { color: 'rgb(126,105,230)' } : {}}
               >
                 {item.label}
               </span>

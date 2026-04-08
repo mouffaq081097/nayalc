@@ -49,8 +49,8 @@ export const EditorialShowcase = () => {
                 className="space-y-5"
             >
                 <div className="flex items-center gap-3">
-                    <span className="w-10 h-px" style={{ background: 'var(--cl-gradient)' }}></span>
-                    <span className="text-[12px] font-black tracking-tight flex items-center gap-2" style={{ color: 'var(--cl-text-soft)' }}>
+                    <span className="w-10 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
+                    <span className="text-[12px] font-black tracking-tight flex items-center gap-2" style={{ color: 'rgb(147,104,236)' }}>
                         <Sparkles size={10} />
                         Editorial Spotlight
                     </span>
@@ -89,7 +89,11 @@ export const EditorialShowcase = () => {
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
             >
-                <Link href="/all-products" className="inline-flex items-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-full text-[12px] font-bold tracking-tight hover:bg-brand-pink transition-all duration-500 shadow-sm group">
+                <Link
+                    href="/all-products"
+                    className="inline-flex rounded-full items-center gap-3 px-10 py-4 text-[12px] font-bold tracking-widest text-white transition-all duration-300 hover:shadow-[0_8px_28px_rgba(168,85,247,0.42)] group"
+                    style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))', boxShadow: '0 4px 16px rgba(168,85,247,0.28)' }}
+                >
                     Explore the Science
                     <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </Link>

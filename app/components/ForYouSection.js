@@ -12,33 +12,40 @@ export const ForYouSection = () => {
   const forYouProducts = products.slice(0, 8);
 
   return (
-    <section className="pt-6 pb-16 bg-[#fff0f8] relative overflow-hidden border-t border-gray-100">
+    <section className="pt-10 pb-20 bg-[var(--cl-bg)] relative overflow-hidden border-t border-[var(--cl-glass-border)]/50">
       {/* Tactile Paper Texture */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
       
-      {/* Soft Background Auras */}
+      {/* Cloud Luxe aura orbs */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-brand-blue/[0.02] rounded-full blur-[120px]"></div>
+        <div className="cl-aura cl-aura-purple" style={{ width: 400, height: 400, top: '-10%', right: '-10%', opacity: 0.1 }} />
+        <div className="cl-aura cl-aura-rose" style={{ width: 300, height: 300, bottom: '-10%', left: '-10%', opacity: 0.15 }} />
       </div>
 
       <Container className="relative z-10">
         {/* Section Header */}
-        <div className="mb-8 space-y-3">
+        <div className="mb-10 space-y-3">
           <div className="flex items-center gap-3">
-             <span className="w-8 h-px bg-brand-pink/30"></span>
-             <span className="text-[12px] font-black tracking-tight text-brand-pink flex items-center gap-2">
+             <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
+             <span className="text-[10px] font-black tracking-[0.3em] uppercase flex items-center gap-2" style={{ color: 'rgb(147,104,236)' }}>
                 <Sparkles size={10} />
                 Tailored Experience
              </span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-serif text-gray-900 italic">
-            Just for <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">You</span>
+          <h2 className="text-3xl md:text-5xl font-serif text-cl-deep italic leading-tight">
+            Just for{' '}
+            <span
+              className="font-sans not-italic font-black"
+              style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+            >
+              You
+            </span>
           </h2>
         </div>
 
-        <div className="flex md:grid overflow-x-auto md:overflow-x-visible snap-x md:snap-none no-scrollbar gap-4 md:gap-4 -mx-2 px-2 md:mx-0 md:px-0 md:grid-cols-4">
+        <div className="flex md:grid overflow-x-auto md:overflow-x-visible snap-x md:snap-none no-scrollbar gap-4 md:gap-6 -mx-2 px-2 md:mx-0 md:px-0 md:grid-cols-4">
           {forYouProducts.map((product) => (
-            <div key={product.id} className="min-w-[85%] md:min-w-0 snap-center md:snap-align-none h-full">
+            <div key={product.id} className="min-w-[85%] md:min-w-0 snap-center md:snap-align-none h-full p-1">
                 <ProductCard
                     id={product.id}
                     name={product.name}

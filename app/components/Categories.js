@@ -53,12 +53,18 @@ export function Categories() {
         {/* Section Header */}
         <div className="mb-6 text-center space-y-3">
             <div className="flex items-center justify-center gap-3">
-                <span className="w-8 h-px" style={{ background: 'var(--cl-gradient)' }}></span>
-                <span className="text-[10px] font-black tracking-[0.3em] uppercase" style={{ color: 'var(--cl-text-soft)' }}>Our Departments</span>
-                <span className="w-8 h-px" style={{ background: 'var(--cl-gradient)' }}></span>
+                <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(216,180,254), rgb(196,167,254))' }}></span>
+                <span className="text-[10px] font-black tracking-[0.3em] uppercase" style={{ color: 'rgb(147,104,236)' }}>Our Departments</span>
+                <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-serif italic text-gray-900">
-                Curated <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-700 to-gray-500">Universes</span>
+            <h2 className="text-3xl md:text-5xl font-serif italic text-cl-deep leading-tight">
+                Curated{' '}
+                <span
+                  className="font-sans not-italic font-black"
+                  style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+                >
+                  Universes
+                </span>
             </h2>
         </div>
 
@@ -74,7 +80,17 @@ export function Categories() {
             {categories.map((category) => (
               <CarouselItem key={category.id} className="pl-4 basis-[85%] md:basis-1/3 lg:basis-1/4">
                 <Link href={category.slug ? `/collections/${category.slug}` : `/collections/${category.id}`} className="block h-full group">
-                  <div className="relative h-[350px] w-full rounded-[2rem] overflow-hidden transition-all duration-500 cl-glass-card hover:shadow-cl-card-hover">
+                  <div
+                    className="relative h-[350px] w-full overflow-hidden transition-all duration-500"
+                    style={{
+                      borderRadius: '2rem',
+                      background: 'var(--cl-glass)',
+                      backdropFilter: 'blur(14px)',
+                      WebkitBackdropFilter: 'blur(14px)',
+                      border: '1px solid var(--cl-glass-border)',
+                      boxShadow: '0 4px 20px rgba(147,51,234,0.07), 0 1px 4px rgba(147,51,234,0.04)',
+                    }}
+                  >
                     
                     {/* Image Container */}
                     <div className="absolute inset-0 p-4">
@@ -86,7 +102,7 @@ export function Categories() {
                                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                 className="object-cover transition-transform duration-700 group-hover:scale-110"
                             />
-                            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500"></div>
+                            <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500"></div>
                         </div>
                     </div>
 

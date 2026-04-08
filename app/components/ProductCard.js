@@ -105,12 +105,15 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative flex flex-col h-full transition-all duration-500 cl-glass-card overflow-hidden"
+        className="group relative flex flex-col h-full transition-all duration-500 overflow-hidden"
         style={{
           borderRadius: '20px',
-          transform: isHovered ? 'translateY(-6px)' : 'translateY(0)',
-          boxShadow: isHovered ? 'var(--cl-shadow-card-hover)' : 'var(--cl-shadow-card)',
-          borderColor: isHovered ? 'var(--cl-glass-border-hover)' : 'var(--cl-glass-border)',
+          background: 'var(--cl-glass)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          border: `1px solid ${isHovered ? 'rgba(196,167,254,0.55)' : 'var(--cl-glass-border)'}`,
+          boxShadow: 'none',
+          transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
         }}
       >
         {/* Image area */}
@@ -143,7 +146,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             {discount > 0 && (
               <span
                 className="text-[9px] font-bold text-white px-2 py-1 rounded-full"
-                style={{ background: 'var(--cl-gradient)' }}
+                style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
               >
                 -{discount}%
               </span>
@@ -161,7 +164,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               onClick={handleWishlistToggle}
               className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
               style={{
-                background: isWishlisted ? 'var(--cl-gradient)' : 'var(--cl-glass)',
+                background: isWishlisted ? 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' : 'var(--cl-glass)',
                 border: '1px solid var(--cl-glass-border)',
                 backdropFilter: 'blur(8px)',
               }}
@@ -226,11 +229,11 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           )}
 
           {/* Price row */}
-          <div className="flex items-end justify-between mt-auto pt-2 border-t border-gray-100/60">
+          <div className="flex items-end justify-between mt-auto pt-2 border-t border-purple-100/50">
             <div className="flex flex-col">
-              <span className="text-[9px] font-black tracking-[0.2em] text-brand-pink mb-0.5">AED</span>
+              <span className="text-[9px] font-black tracking-[0.2em] mb-0.5" style={{ color: 'var(--cl-text-soft)' }}>AED</span>
               <div className="flex items-baseline gap-1">
-                <span className="font-serif italic text-[22px] text-gray-900 leading-none">
+                <span className="font-serif italic text-[22px] text-cl-deep leading-none">
                   {Math.floor(price)}
                 </span>
                 <span className="text-[11px] font-medium text-gray-400">
@@ -244,7 +247,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               )}
             </div>
             {discount > 0 && (
-              <span className="text-[9px] font-black text-brand-pink bg-brand-pink/10 px-2 py-1 rounded-full mb-0.5">
+              <span className="text-[9px] font-black px-2 py-1 rounded-full mb-0.5" style={{ background: 'rgba(147, 51, 234, 0.1)', color: 'var(--cl-purple)' }}>
                 −{discount}%
               </span>
             )}
@@ -255,20 +258,20 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             <motion.button
               onClick={handleAddToCart}
               whileTap={{ scale: 0.97 }}
-              className={`w-full mt-2 h-10 rounded-full text-[10px] font-bold tracking-tight flex items-center justify-center gap-2 border transition-all duration-500 ${
+              className={`w-full mt-2 h-10 text-[10px] font-bold tracking-tight flex items-center justify-center gap-2 transition-all duration-300 ${
                 addedToCart
-                  ? 'bg-gray-900/5 border-gray-200 text-gray-500 cursor-default'
-                  : 'border-gray-200 text-gray-700 bg-white/60 hover:bg-gray-900 hover:text-white hover:border-gray-900 group'
+                  ? 'rounded-full bg-[rgba(147,51,234,0.06)] border border-[var(--cl-glass-border)] text-[var(--cl-text-soft)] cursor-default'
+                  : 'cl-lavender-btn group'
               }`}
             >
               {addedToCart ? (
                 <>
-                  <BadgeCheck size={13} className="text-brand-pink" strokeWidth={2} />
+                  <BadgeCheck size={13} style={{ color: 'var(--cl-purple)' }} strokeWidth={2} />
                   <span>Added to your bag</span>
                 </>
               ) : (
                 <>
-                  <ShoppingBag size={12} strokeWidth={1.75} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <ShoppingBag size={12} strokeWidth={1.75} className="opacity-60 group-hover:opacity-100 transition-opacity" />
                   <span>Add to Bag</span>
                 </>
               )}
@@ -359,7 +362,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   </div>
                   <div>
                     <h4 className="text-[15px] font-semibold leading-tight" style={{ color: 'var(--cl-text-deep)' }}>{name}</h4>
-                    <p className="text-[11px] font-medium mt-0.5 cl-gradient-text">{brandName || 'Naya Lumière Cosmetics'}</p>
+                    <p
+                      className="text-[11px] font-medium mt-0.5"
+                      style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+                    >{brandName || 'Naya Lumière Cosmetics'}</p>
                   </div>
                 </div>
 
@@ -376,7 +382,8 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 <div className="mt-6 flex flex-col items-center gap-4 pb-2">
                   <button
                     onClick={() => setIsAIModalOpen(false)}
-                    className="cl-gradient-btn px-12 py-3 text-[11px] font-semibold tracking-[0.1em] text-white"
+                    className="px-12 py-3 text-[11px] font-semibold tracking-[0.1em] text-white transition-all hover:shadow-[0_6px_20px_rgba(147,51,234,0.30)]"
+                    style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 14px rgba(147,51,234,0.20)' }}
                   >
                     Close Consultation
                   </button>
@@ -406,8 +413,8 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <Image src={image || '/placeholder-image.jpg'} alt={seoAlt} fill className="object-contain" />
             </motion.div>
             <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
-              {isNew && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--cl-gradient)' }}>New</Badge>}
-              {isBestseller && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--cl-gradient-soft)' }}>Bestseller</Badge>}
+              {isNew && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}>New</Badge>}
+              {isBestseller && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(167,139,250))' }}>Bestseller</Badge>}
             </div>
           </div>
 
@@ -418,16 +425,19 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 className="text-[9px] font-bold tracking-[0.35em] uppercase mb-4 flex items-center gap-3"
                 style={{ color: 'var(--cl-text-soft)' }}
               >
-                <span className="w-8 h-px" style={{ background: 'var(--cl-gradient)' }} />
+                <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }} />
                 {brandName || 'Naya Lumière Cosmetics'}
               </p>
               <h2 className="font-serif text-4xl font-light italic leading-[1.1] mb-6" style={{ color: 'var(--cl-text-deep)' }}>{name}</h2>
 
               <div className="flex items-baseline gap-4 mb-8 pb-8" style={{ borderBottom: '1px solid var(--cl-glass-border)' }}>
-                <span className="text-4xl font-bold cl-gradient-text">AED {price}</span>
+                <span
+                  className="text-4xl font-bold"
+                  style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+                >AED {price}</span>
                 {originalPrice && <span className="text-xl line-through" style={{ color: 'var(--cl-text-muted)' }}>AED {originalPrice}</span>}
                 {discount > 0 && (
-                  <span className="text-[10px] font-bold text-white px-3 py-1 rounded-full" style={{ background: 'var(--cl-gradient)' }}>
+                  <span className="text-[10px] font-bold text-white px-3 py-1 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}>
                     -{discount}%
                   </span>
                 )}
@@ -464,7 +474,8 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 <button
                   onClick={handleAddToCart}
                   disabled={!stock_quantity || stock_quantity <= 0}
-                  className="flex-1 h-14 rounded-xl text-[11px] font-semibold text-white transition-all active:scale-95 cl-gradient-btn"
+                  className="flex-1 h-14 rounded-xl text-[11px] font-semibold text-white transition-all active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 16px rgba(147,51,234,0.22)' }}
                 >
                   {addedToCart ? (
                     <span className="flex items-center justify-center gap-2"><Check size={16} /> Added</span>

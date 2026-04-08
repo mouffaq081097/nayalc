@@ -20,7 +20,7 @@ const buttonVariants = cva(
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         pillPrimary:
-          "rounded-full border border-transparent bg-gray-900 text-white shadow-md shadow-black/10 hover:bg-brand-pink active:scale-[0.98] focus-visible:ring-brand-pink/35",
+          "rounded-full border border-[rgba(167,139,250,0.40)] bg-[rgba(147,51,234,0.07)] text-[var(--cl-text-mid)] shadow-sm hover:bg-[rgba(147,51,234,0.13)] hover:border-[var(--cl-purple)] hover:text-[var(--cl-purple)] hover:shadow-[0_4px_20px_rgba(147,51,234,0.18)] active:scale-[0.97] transition-all duration-300 focus-visible:ring-[var(--cl-purple)]/30",
         pillSecondary:
           "rounded-full border border-black/10 bg-white/95 text-[#1d1d1f] shadow-sm hover:bg-gray-50 active:scale-[0.98] focus-visible:ring-black/15",
         pillGlass:
