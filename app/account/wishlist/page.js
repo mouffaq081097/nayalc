@@ -4,59 +4,87 @@ import React from 'react';
 import { AccountMobileTopBar } from '../_components/AccountMobileTopBar';
 import { useAccountData } from '../_components/useAccountData';
 import { AccountSectionTitle } from '../_components/AccountSectionTitle';
-import { Heart } from 'lucide-react';
+import { Heart, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
+import { useCart } from '../../context/CartContext';
+
+const glass = {
+  background: 'rgba(255,255,255,0.72)',
+  border: '1px solid rgba(216,180,254,0.35)',
+  backdropFilter: 'blur(20px)',
+  boxShadow: '0 2px 16px rgba(147,51,234,0.06)',
+};
 
 export default function AccountWishlistPage() {
   const { wishlistItems } = useAccountData();
+  const { addToCart } = useCart();
 
   return (
     <>
       <AccountMobileTopBar title="Wishlist" />
-      <div className="px-4 pb-28 pt-6 md:px-6 md:pt-12 md:pb-32">
-        <div className="mx-auto max-w-2xl md:max-w-[1400px]">
+      <div className="px-4 pb-28 pt-6">
+        <div className="mx-auto max-w-2xl">
           <AccountSectionTitle
             eyebrow="Account"
             title="Wishlist"
-            subtitle="Saved pieces you might return to."
+            subtitle="Saved pieces you love."
           />
 
           {wishlistItems.length === 0 ? (
-            <div className="rounded-[var(--radius-card)] border border-black/[0.06] bg-white/80 p-10 text-center shadow-sm backdrop-blur-xl">
-              <Heart size={40} strokeWidth={1.25} className="mx-auto text-black/20" />
-              <p className="mt-4 text-sm font-semibold text-[#1d1d1f]">No saved items.</p>
-              <p className="mt-2 text-sm text-neutral-600">
-                Tap the heart on a product to save it here.
+            <div className="rounded-3xl p-10 text-center" style={{ ...glass, border: '1.5px dashed rgba(216,180,254,0.5)' }}>
+              <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: 'rgba(196,167,254,0.18)' }}>
+                <Heart size={24} strokeWidth={1.5} style={{ color: 'rgba(147,51,234,0.4)' }} />
+              </div>
+              <p className="text-base font-bold mb-1" style={{ color: '#3b0764' }}>Wishlist is empty</p>
+              <p className="text-sm" style={{ color: 'rgba(59,7,100,0.45)' }}>
+                Tap the heart on any product to save it here.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3">
               {wishlistItems.map((item, index) => (
                 <div
                   key={item.id || `wish-${index}`}
-                  className="overflow-hidden rounded-[var(--radius-card)] border border-black/[0.06] bg-white/85 shadow-sm backdrop-blur-xl"
+                  className="overflow-hidden rounded-2xl"
+                  style={glass}
                 >
-                  <div className="relative aspect-square bg-black/[0.02] p-6">
+                  {/* Image */}
+                  <div className="relative aspect-square p-4" style={{ background: 'var(--cl-bg-lavender)' }}>
                     {item.imageUrl ? (
                       <Image
                         src={item.imageUrl}
                         alt={item.name || 'Wishlist item'}
                         fill
-                        className="object-contain"
-                        sizes="(max-width: 640px) 92vw, 320px"
+                        className="object-contain p-2"
+                        sizes="(max-width: 640px) 45vw, 200px"
                       />
-                    ) : null}
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Heart size={32} strokeWidth={1} style={{ color: 'rgba(196,167,254,0.5)' }} />
+                      </div>
+                    )}
                   </div>
-                  <div className="p-5">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-pink">
+
+                  {/* Info */}
+                  <div className="p-4 space-y-2">
+                    <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'rgb(147,51,234)' }}>
                       {item.brandName || 'Naya Lumière'}
                     </p>
-                    <p className="mt-1 line-clamp-2 text-[13px] font-semibold tracking-tight text-[#1d1d1f]">
+                    <p className="text-[12px] font-bold leading-snug line-clamp-2" style={{ color: '#3b0764' }}>
                       {item.name}
                     </p>
-                    <p className="mt-3 text-[13px] font-semibold text-[#1d1d1f]">
-                      AED {item.price}
-                    </p>
+                    <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid rgba(216,180,254,0.3)' }}>
+                      <p className="text-[13px] font-black" style={{ color: '#3b0764' }}>
+                        AED {item.price}
+                      </p>
+                      <button
+                        onClick={() => addToCart(item, 1)}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white"
+                        style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' }}
+                      >
+                        <ShoppingBag size={13} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -67,4 +95,3 @@ export default function AccountWishlistPage() {
     </>
   );
 }
-

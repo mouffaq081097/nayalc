@@ -1,14 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Checkbox } from '../components/ui/checkbox';
-import { Separator } from '../components/ui/separator';
-import { Badge } from '../components/ui/badge';
-import { Card } from '../components/ui/card';
-import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, Tag, Info, Trash2, Pencil, Star, Sparkles, ChevronRight, RotateCcw, ShieldCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, ShieldCheck, Loader2, Pencil, Trash2, Plus, Sparkles, RotateCcw } from 'lucide-react';
 import { FaPlus } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
@@ -24,6 +17,15 @@ import CheckoutForm from './CheckoutForm';
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
 const AddressInputForm = dynamic(() => import('../components/AddressInputForm'), { ssr: false });
 
+const glass = {
+  background: 'rgba(255,255,255,0.72)',
+  border: '1px solid rgba(216,180,254,0.35)',
+  backdropFilter: 'blur(20px)',
+  boxShadow: '0 2px 24px rgba(147,51,234,0.07)',
+};
+
+const lavGradient = 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))';
+
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
   const { user, logout } = useAuth();
@@ -34,20 +36,14 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState(selectedShippingAddressId);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
-  const [couponCode, setCouponCode] = useState('');
   const [stripePromise, setStripePromise] = useState(null);
   const [clientSecret, setClientSecret] = useState('');
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [usePoints, setUsePoints] = useState(false);
   const [paymentAuthorized, setPaymentAuthorization] = useState(false);
   const [authorizedPaymentIntentId, setAuthorizedPaymentIntentId] = useState(null);
-
-  const [formData, setFormData] = useState({
-    paymentMethod: 'cashOnDelivery',
-    giftWrap: false,
-    giftMessage: '',
-    newsletter: false
-  });
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [formData, setFormData] = useState({ paymentMethod: 'cashOnDelivery', giftWrap: false, giftMessage: '', newsletter: false });
 
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
   const shipping = subtotal > 200 ? 0 : 30;
@@ -57,33 +53,29 @@ export default function CheckoutPage() {
   const total = Math.max(0, finalTotal + shipping + tax + giftWrapFee - pointsDiscount);
 
   const fetchShippingAddresses = useCallback(async () => {
-    if (!user || !user.id) return;
+    if (!user?.id) return;
     try {
-      const response = await fetchWithAuth(`/api/users/${user.id}/addresses`);
-      const data = await response.json();
+      const res = await fetchWithAuth(`/api/users/${user.id}/addresses`);
+      const data = await res.json();
       setShippingAddresses(data);
       if (data.length > 0 && !selectedShippingAddressId) {
-        const defaultAddress = data.find(addr => addr.isDefault);
-        setSelectedAddressId(defaultAddress ? defaultAddress.id : data[0].id);
+        const def = data.find(a => a.isDefault);
+        setSelectedAddressId(def ? def.id : data[0].id);
       }
-    } catch (error) {
-      console.error("Error fetching shipping addresses:", error);
-    }
+    } catch {}
   }, [user, selectedShippingAddressId, fetchWithAuth]);
 
   useEffect(() => {
     if (user) {
       fetchShippingAddresses();
       fetchWithAuth(`/api/users/${user.id}/loyalty`)
-        .then(res => res.json())
-        .then(data => setLoyaltyPoints(data.stats?.points || 0))
-        .catch(err => console.error('Failed to fetch points:', err));
+        .then(r => r.json())
+        .then(d => setLoyaltyPoints(d.stats?.points || 0))
+        .catch(() => {});
     }
   }, [user, fetchShippingAddresses, fetchWithAuth]);
 
-  useEffect(() => {
-    setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY));
-  }, []);
+  useEffect(() => { setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)); }, []);
 
   useEffect(() => {
     if (formData.paymentMethod === 'card' && total > 0) {
@@ -91,26 +83,14 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: Math.round(total * 100), currency: 'aed' }),
-      })
-      .then((res) => res.json())
-      .then((data) => setClientSecret(data.clientSecret))
-      .catch(error => console.error('Payment intent error:', error));
+      }).then(r => r.json()).then(d => setClientSecret(d.clientSecret)).catch(() => {});
     }
   }, [formData.paymentMethod, total]);
 
-  useEffect(() => {
-    setSelectedShippingAddressId(selectedAddressId);
-  }, [selectedAddressId, setSelectedShippingAddressId]);
+  useEffect(() => { setSelectedShippingAddressId(selectedAddressId); }, [selectedAddressId, setSelectedShippingAddressId]);
 
-  const openAddressModal = (address) => {
-    setEditingAddress(address);
-    setIsAddressModalOpen(true);
-  };
-
-  const closeAddressModal = () => {
-    setEditingAddress(null);
-    setIsAddressModalOpen(false);
-  };
+  const openAddressModal = (addr) => { setEditingAddress(addr); setIsAddressModalOpen(true); };
+  const closeAddressModal = () => { setEditingAddress(null); setIsAddressModalOpen(false); };
 
   const handleCheckoutAddressSave = async (addressData) => {
     if (!user) return;
@@ -118,79 +98,55 @@ export default function CheckoutPage() {
     const endpoint = editingAddress
       ? `/api/users/${user.id}/addresses/${editingAddress.id}`
       : `/api/users/${user.id}/addresses`;
-
     try {
-      const payload = {
-        address_line1: addressData.addressLine1,
-        address_line2: addressData.apartment || addressData.addressLine2,
-        city: addressData.city,
-        zip_code: addressData.zipCode || '0000',
-        country: addressData.country || 'United Arab Emirates',
-        state: addressData.state || '',
-        customer_phone: addressData.customerPhone,
-        customer_email: user.email,
-        address_label: addressData.addressLabel || addressData.addressLine1,
-        is_default: addressData.isDefault || false,
-        latitude: addressData.latitude,
-        longitude: addressData.longitude
-      };
-      await fetchWithAuth(endpoint, { method, body: JSON.stringify(payload) });
+      await fetchWithAuth(endpoint, {
+        method,
+        body: JSON.stringify({
+          address_line1: addressData.addressLine1,
+          address_line2: addressData.apartment || addressData.addressLine2,
+          city: addressData.city, zip_code: addressData.zipCode || '0000',
+          country: addressData.country || 'United Arab Emirates',
+          state: addressData.state || '',
+          customer_phone: addressData.customerPhone,
+          customer_email: user.email,
+          address_label: addressData.addressLabel || addressData.addressLine1,
+          is_default: addressData.isDefault || false,
+          latitude: addressData.latitude, longitude: addressData.longitude,
+        }),
+      });
       closeAddressModal();
       fetchShippingAddresses();
-      toast.success(`Address ${editingAddress ? 'updated' : 'saved'} successfully!`);
-    } catch (error) {
-      toast.error('An error occurred while saving the address.');
-    }
+      toast.success(`Address ${editingAddress ? 'updated' : 'saved'}!`);
+    } catch { toast.error('Error saving address.'); }
   };
 
-  const handleDeleteAddress = async (addressId) => {
+  const handleDeleteAddress = async (id) => {
     if (!window.confirm('Delete this address?')) return;
     try {
-      await fetchWithAuth(`/api/users/${user.id}/addresses/${addressId}`, { method: 'DELETE' });
+      await fetchWithAuth(`/api/users/${user.id}/addresses/${id}`, { method: 'DELETE' });
       fetchShippingAddresses();
-      if (selectedAddressId === addressId) setSelectedAddressId(null);
-    } catch (error) {
-      toast.error('Error deleting address.');
-    }
+      if (selectedAddressId === id) setSelectedAddressId(null);
+    } catch { toast.error('Error deleting address.'); }
   };
-
-  const steps = [
-    { id: 1, title: 'Shipping', icon: Truck },
-    { id: 2, title: 'Payment', icon: CreditCard },
-    { id: 3, title: 'Review', icon: Check }
-  ];
 
   const handleNextStep = () => {
-    if (currentStep === 1 && !selectedAddressId) {
-      toast.error('Please select a shipping address.');
-      return;
-    }
-    if (currentStep === 2 && formData.paymentMethod === 'card' && !paymentAuthorized) {
-        toast.error('Please complete the secure card authorization below before reviewing your order.');
-        return;
-    }
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
+    if (currentStep === 1 && !selectedAddressId) { toast.error('Please select a shipping address.'); return; }
+    if (currentStep === 2 && formData.paymentMethod === 'card' && !paymentAuthorized) { toast.error('Please complete card authorization.'); return; }
+    if (currentStep < 3) setCurrentStep(s => s + 1);
   };
 
-  const handlePreviousStep = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
-
-  const handleAuthorizedCardPayment = (paymentIntentId) => {
-    setAuthorizedPaymentIntentId(paymentIntentId);
+  const handleAuthorizedCardPayment = (piId) => {
+    setAuthorizedPaymentIntentId(piId);
     setPaymentAuthorization(true);
     setCurrentStep(3);
-    toast.success('Payment Authorized Successfully');
+    toast.success('Payment Authorized!');
   };
-
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   const handlePlaceOrder = async () => {
     if (!user || !selectedAddressId) return;
     setIsPlacingOrder(true);
     const shippingDate = new Date();
     shippingDate.setDate(shippingDate.getDate() + 7);
-
     const orderData = {
       user_address_id: selectedAddressId,
       payment_method: formData.paymentMethod,
@@ -199,7 +155,7 @@ export default function CheckoutPage() {
       total_amount: parseFloat(total.toFixed(2)),
       shipping_scheduled_date: shippingDate.toISOString(),
       user_id: user.id,
-      items: cartItems.map(item => ({ productId: item.id, quantity: item.quantity, price: item.price })),
+      items: cartItems.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price })),
       taxAmount: tax,
       applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
       discount_amount: discountAmount,
@@ -209,361 +165,393 @@ export default function CheckoutPage() {
       gift_wrap_cost: giftWrapFee,
       stripe_payment_intent_id: authorizedPaymentIntentId,
     };
-
     try {
-      const response = await fetchWithAuth('/api/orders', { method: 'POST', body: JSON.stringify(orderData) });
-      const result = await response.json();
-      toast.success('Order Placed Successfully!');
+      const res = await fetchWithAuth('/api/orders', { method: 'POST', body: JSON.stringify(orderData) });
+      const result = await res.json();
+      toast.success('Order Placed!');
       clearCart();
       router.push(`/orders/${result.orderId}`);
-    } catch (error) {
-      toast.error('Error placing order.');
-      setIsPlacingOrder(false);
-    }
+    } catch { toast.error('Error placing order.'); setIsPlacingOrder(false); }
   };
 
-  const handleApplyCoupon = () => {
-    if (couponCode.trim()) {
-      applyCoupon(couponCode.trim());
-    }
-  };
+  const steps = [
+    { id: 1, label: 'Shipping', Icon: Truck },
+    { id: 2, label: 'Payment', Icon: CreditCard },
+    { id: 3, label: 'Review',   Icon: Check },
+  ];
+
+  const btnLabel = isPlacingOrder ? 'Processing…'
+    : currentStep === 3 ? `Finalize · AED ${total.toFixed(2)}`
+    : formData.paymentMethod === 'card' && currentStep === 2 ? 'Authorize Card'
+    : 'Continue';
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] font-sans text-gray-900 pb-24 lg:pb-0">
+    <div className="min-h-screen pb-28 lg:pb-12" style={{ background: '#fdf8ff' }}>
+      {/* Auras */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-pink/[0.03] rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-blue/[0.02] rounded-full blur-[100px]"></div>
+        <div className="absolute top-[-15%] left-[-8%] w-[45%] h-[45%] rounded-full blur-[120px]" style={{ background: 'rgba(196,167,254,0.15)' }} />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full blur-[100px]" style={{ background: 'rgba(216,180,254,0.1)' }} />
       </div>
 
-      <div className="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <button onClick={() => router.push('/cart')} className="flex items-center gap-2 text-gray-400 hover:text-gray-900 transition-colors text-[13px] font-medium tracking-tight group">
-              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-              Return to Cart
-            </button>
-            <div className="text-center">
-              <h1 className="text-[17px] font-semibold tracking-tight text-gray-900 uppercase tracking-[0.2em]">Acquisition</h1>
-              <p className="text-[11px] text-gray-400 font-medium tracking-tight">Step {currentStep} of 3</p>
-            </div>
-            <div className="w-[120px] hidden sm:block"></div>
+      {/* Header */}
+      <div className="sticky top-0 z-50 backdrop-blur-2xl" style={{ background: 'rgba(253,248,255,0.88)', borderBottom: '1px solid rgba(216,180,254,0.25)' }}>
+        <div className="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
+          <button onClick={() => router.push('/cart')} className="flex items-center gap-2 text-[13px] font-semibold transition-all group" style={{ color: 'rgba(59,7,100,0.55)' }}>
+            <ArrowLeft size={15} className="group-hover:-translate-x-1 transition-transform" /> Return to Cart
+          </button>
+          <div className="text-center">
+            <h1 className="text-[16px] font-bold tracking-tight" style={{ color: '#3b0764' }}>Checkout</h1>
+            <p className="text-[11px] font-medium" style={{ color: 'rgba(59,7,100,0.4)' }}>Step {currentStep} of 3</p>
           </div>
+          <div className="w-[120px] hidden sm:block" />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-20 py-6 lg:py-12 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          <div className="lg:col-span-8 space-y-6 lg:space-y-8">
-            <div className="bg-white/60 backdrop-blur-md rounded-2xl lg:rounded-[2rem] p-4 lg:p-8 border border-gray-100 shadow-sm overflow-hidden text-center">
-              <div className="flex items-center justify-between max-w-2xl mx-auto relative">
-                {steps.map((step, index) => (
-                  <div key={step.id} className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 relative z-10">
-                    <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
-                      currentStep >= step.id ? 'bg-gray-900 text-white shadow-lg' : 'bg-gray-100 text-gray-300'
-                    }`}>
-                      <step.icon size={14} className="lg:hidden" />
-                      <step.icon size={18} className="hidden lg:block" strokeWidth={currentStep === step.id ? 2.5 : 1.5} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+          {/* Left column */}
+          <div className="lg:col-span-8 space-y-6">
+
+            {/* Step progress */}
+            <div className="rounded-2xl p-5 overflow-hidden" style={glass}>
+              <div className="flex items-center justify-between max-w-sm mx-auto relative">
+                {steps.map((step, idx) => (
+                  <div key={step.id} className="flex flex-col items-center gap-1.5 relative z-10">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-500"
+                      style={currentStep >= step.id
+                        ? { background: lavGradient, color: '#fff', boxShadow: '0 4px 16px rgba(147,51,234,0.25)' }
+                        : { background: 'rgba(196,167,254,0.15)', color: 'rgba(196,167,254,0.5)' }}
+                    >
+                      <step.Icon size={15} strokeWidth={currentStep === step.id ? 2.5 : 1.5} />
                     </div>
-                    <span className={`text-[10px] lg:text-[12px] font-semibold tracking-tight transition-colors ${
-                      currentStep >= step.id ? 'text-gray-900' : 'text-gray-300'
-                    }`}>
-                      {step.title}
+                    <span className="text-[10px] font-semibold" style={{ color: currentStep >= step.id ? '#3b0764' : 'rgba(59,7,100,0.3)' }}>
+                      {step.label}
                     </span>
-                    {index < steps.length - 1 && (
-                      <div className={`hidden lg:block w-8 lg:w-16 h-px mx-2 ${currentStep > step.id ? 'bg-brand-pink/40' : 'bg-gray-100'}`} />
+                    {idx < steps.length - 1 && (
+                      <div className="absolute left-[calc(50%+22px)] right-[calc(-50%+22px)] top-4 h-px" style={{ background: currentStep > step.id ? 'rgba(196,167,254,0.6)' : 'rgba(216,180,254,0.25)' }} />
                     )}
                   </div>
                 ))}
-                <div className="absolute top-4 left-4 right-4 h-[1px] bg-gray-100 lg:hidden -z-0">
-                    <motion.div 
-                        animate={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
-                        className="h-full bg-brand-pink/40"
-                    />
-                </div>
               </div>
             </div>
 
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl lg:rounded-[2.5rem] border border-gray-100 shadow-sm p-6 lg:p-12 min-h-[400px] lg:min-h-[500px] flex flex-col"
-            >
-              {currentStep === 1 && (
-                <div className="space-y-8 flex-grow">
-                  <div className="space-y-1">
-                    <h2 className="text-2xl lg:text-3xl font-serif italic text-gray-900 leading-tight">Destination</h2>
-                    <p className="text-[12px] lg:text-[13px] text-gray-400 font-normal">Where should your selection be delivered?</p>
-                  </div>
+            {/* Step content */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-3xl p-6 lg:p-10 min-h-[420px] flex flex-col"
+                style={glass}
+              >
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-                    {shippingAddresses.map((address) => (
-                      <motion.div
-                        layout
-                        key={address.id}
-                        onClick={() => setSelectedAddressId(address.id)}
-                        className={`relative p-5 lg:p-6 cursor-pointer rounded-2xl lg:rounded-[2rem] border transition-all duration-500 group ${
-                          selectedAddressId === address.id 
-                          ? 'border-brand-pink bg-brand-pink/[0.02] shadow-lg lg:shadow-xl shadow-brand-pink/5' 
-                          : 'border-gray-100 bg-white hover:border-gray-200 shadow-sm'
-                        }`}
-                      >
-                        {selectedAddressId === address.id && (
-                          <div className="absolute top-4 right-4 w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-brand-pink text-white flex items-center justify-center shadow-lg">
-                            <Check size={12} strokeWidth={3} className="lg:hidden" />
-                            <Check size={14} strokeWidth={3} className="hidden lg:block" />
-                          </div>
-                        )}
-                        <div className="space-y-3 lg:space-y-4">
-                          <div className="flex items-center gap-3">
-                            <h3 className="text-[14px] lg:text-[15px] font-semibold text-gray-900 tracking-tight text-left">
-                              {address.customerName || user?.name}
-                            </h3>
-                            {address.isDefault && <Badge className="bg-gray-900 text-white text-[7px] font-bold uppercase tracking-widest px-2 py-0.5 border-none">Default</Badge>}
-                          </div>
-                          <div className="text-[12px] lg:text-[13px] text-gray-500 leading-relaxed font-normal space-y-1 text-left">
-                            <p className="truncate">{address.shipping_address || address.addressLine1}</p>
-                            <p className="text-gray-400 text-[10px] lg:text-[11px] font-medium tracking-tight pt-1 flex items-center gap-2">
-                                <MapPin size={10} /> {address.city}, {address.country}
-                            </p>
-                          </div>
-                          <div className="pt-1 flex items-center gap-4 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={(e) => { e.stopPropagation(); openAddressModal(address); }} className="text-[10px] lg:text-[11px] font-semibold text-gray-400 hover:text-gray-900 flex items-center gap-1.5 py-1">
-                                <Pencil size={10} /> Edit
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); handleDeleteAddress(address.id); }} className="text-[10px] lg:text-[11px] font-semibold text-gray-400 hover:text-red-500 flex items-center gap-1.5 py-1">
-                                <Trash2 size={10} /> Remove
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                    <button 
-                        onClick={() => openAddressModal(null)}
-                        className="h-full min-h-[140px] rounded-2xl lg:rounded-[2rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-3 text-gray-300 hover:border-brand-pink/30 hover:text-brand-pink transition-all group p-6 text-center"
-                    >
-                        <FaPlus className="text-lg lg:text-base" />
-                        <span className="text-[11px] lg:text-[12px] font-semibold tracking-tight uppercase tracking-widest">New Address</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+                {/* Step 1 — Shipping */}
+                {currentStep === 1 && (
+                  <div className="space-y-7 flex-grow">
+                    <div>
+                      <h2 className="text-2xl font-bold tracking-tight" style={{ color: '#3b0764' }}>Destination</h2>
+                      <p className="text-[13px] mt-1" style={{ color: 'rgba(59,7,100,0.45)' }}>Where should your selection be delivered?</p>
+                    </div>
 
-              {currentStep === 2 && (
-                <div className="space-y-8 lg:space-y-10 flex-grow">
-                  <div className="space-y-1">
-                    <h2 className="text-2xl lg:text-3xl font-serif italic text-gray-900 leading-tight text-left">Payment</h2>
-                    <p className="text-[12px] lg:text-[13px] text-gray-400 font-normal text-left">Secure your acquisition with your preferred method.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3 lg:gap-4">
-                    {[
-                        { id: 'card', title: 'Secured Credit Card', icon: CreditCard, desc: 'Visa, Mastercard, American Express' },
-                        { id: 'cashOnDelivery', title: 'Boutique Concierge COD', icon: Truck, desc: 'Payment upon delivery' }
-                    ].map((method) => (
-                        <div
-                            key={method.id}
-                            onClick={() => setFormData(prev => ({ ...prev, paymentMethod: method.id }))}
-                            className={`p-5 lg:p-6 rounded-2xl lg:rounded-[2rem] border transition-all duration-500 cursor-pointer flex items-center justify-between group overflow-hidden relative ${
-                                formData.paymentMethod === method.id 
-                                ? 'border-gray-900 bg-gray-900 text-white shadow-xl' 
-                                : 'border-gray-100 bg-white hover:border-gray-200'
-                            }`}
-                        >
-                            <div className="flex items-center gap-4 lg:gap-6 relative z-10 text-left">
-                                <div className={`w-10 h-10 lg:w-14 lg:h-14 rounded-xl lg:rounded-2xl flex items-center justify-center transition-colors ${
-                                    formData.paymentMethod === method.id ? 'bg-white/10 text-white' : 'bg-gray-50 text-gray-400'
-                                }`}>
-                                    <method.icon size={20} strokeWidth={1.5} className="lg:hidden" />
-                                    <method.icon size={24} strokeWidth={1.5} className="hidden lg:block" />
-                                </div>
-                                <div>
-                                    <h3 className="text-[14px] lg:text-[16px] font-semibold tracking-tight leading-none">{method.title}</h3>
-                                    <p className={`text-[10px] lg:text-[11px] font-medium mt-1 lg:mt-1.5 uppercase tracking-widest ${formData.paymentMethod === method.id ? 'text-white/60' : 'text-gray-400'}`}>{method.desc}</p>
-                                </div>
-                            </div>
-                            <div className={`w-5 h-5 lg:w-6 lg:h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                formData.paymentMethod === method.id ? 'border-white bg-white text-gray-900' : 'border-gray-100'
-                            }`}>
-                                {formData.paymentMethod === method.id && (
-                                    <>
-                                        <Check size={12} strokeWidth={4} className="lg:hidden" />
-                                        <Check size={14} strokeWidth={4} className="hidden lg:block" />
-                                    </>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {shippingAddresses.map((addr) => {
+                        const isSelected = selectedAddressId === addr.id;
+                        return (
+                          <motion.div
+                            layout
+                            key={addr.id}
+                            onClick={() => setSelectedAddressId(addr.id)}
+                            className="relative p-5 cursor-pointer rounded-2xl transition-all duration-400 group"
+                            style={isSelected
+                              ? { border: '1.5px solid rgba(196,167,254,0.7)', background: 'rgba(196,167,254,0.1)', boxShadow: '0 4px 20px rgba(147,51,234,0.12)' }
+                              : { border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.5)' }}
+                          >
+                            {isSelected && (
+                              <div className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: lavGradient }}>
+                                <Check size={11} strokeWidth={3} color="#fff" />
+                              </div>
+                            )}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-[14px] font-bold tracking-tight" style={{ color: '#3b0764' }}>
+                                  {addr.addressLabel || addr.customerName || user?.name}
+                                </h3>
+                                {addr.isDefault && (
+                                  <span className="text-[8px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full text-white" style={{ background: lavGradient }}>Primary</span>
                                 )}
+                              </div>
+                              <div className="text-[12px] leading-relaxed space-y-0.5" style={{ color: 'rgba(59,7,100,0.55)' }}>
+                                <p className="truncate">{addr.shipping_address || addr.addressLine1}</p>
+                                <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'rgba(59,7,100,0.4)' }}>
+                                  <MapPin size={10} /> {addr.city}, {addr.country}
+                                </p>
+                              </div>
+                              <div className="pt-1.5 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={(e) => { e.stopPropagation(); openAddressModal(addr); }} className="text-[10px] font-semibold flex items-center gap-1" style={{ color: 'rgb(126,105,230)' }}>
+                                  <Pencil size={10} /> Edit
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }} className="text-[10px] font-semibold flex items-center gap-1 text-red-400 hover:text-red-600">
+                                  <Trash2 size={10} /> Remove
+                                </button>
+                              </div>
                             </div>
-                        </div>
-                    ))}
-                  </div>
+                          </motion.div>
+                        );
+                      })}
 
-                  <AnimatePresence mode="wait">
-                    {formData.paymentMethod === 'card' && (
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.98 }} 
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            className="space-y-6"
-                        >
-                            <div className="p-6 lg:p-10 bg-[#0a0a0a] rounded-3xl lg:rounded-[2.5rem] text-white relative overflow-hidden shadow-2xl border border-white/5">
-                                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:20px_20px] lg:bg-[size:40px_40px] opacity-20"></div>
-                                <div className="relative z-10 space-y-6 lg:space-y-8">
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-1 text-left">
-                                            <h3 className="text-lg lg:text-xl font-serif italic text-white leading-none">Payment Vault</h3>
-                                            <p className="text-[8px] lg:text-[10px] text-white/40 uppercase tracking-[0.3em] font-bold">Encrypted Selection</p>
-                                        </div>
-                                        <div className="flex gap-1.5 lg:gap-2 opacity-40">
-                                            <ShieldCheck size={16} />
-                                            <Lock size={16} />
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-[#F5F5F7] rounded-2xl lg:rounded-[2rem] p-4 lg:p-8 text-gray-900 shadow-inner">
-                                        {clientSecret && stripePromise ? (
-                                            <Elements stripe={stripePromise} options={{ clientSecret }}>
-                                                <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" amount={Math.round(total * 100)} clientSecret={clientSecret} />
-                                            </Elements>
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center py-8 lg:py-10 gap-4 text-center">
-                                                <Loader2 className="animate-spin text-gray-400 size-6" />
-                                                <p className="text-[10px] lg:text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Initializing Secure<br/>Gateways...</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <p className="text-[9px] text-white/30 text-center italic">Professional-grade security protocols active.</p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <div className="p-6 lg:p-8 bg-white rounded-2xl lg:rounded-[2rem] border border-gray-100 space-y-6 shadow-sm">
-                    <div className="flex items-center gap-4">
-                      <Checkbox
-                        id="giftWrap"
-                        checked={formData.giftWrap}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, giftWrap: checked }))}
-                        className="rounded-full w-5 h-5"
-                      />
-                      <Label htmlFor="giftWrap" className="flex items-center gap-3 text-gray-700 cursor-pointer group text-left">
-                        <div className="w-10 h-10 rounded-xl bg-brand-rose flex items-center justify-center text-brand-pink group-hover:scale-110 transition-transform shadow-sm">
-                            <Gift className="h-5 w-5" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[13px] lg:text-[14px] font-semibold text-gray-900 leading-none mb-1">Gift Wrap Selection</span>
-                            <span className="text-[10px] lg:text-[11px] text-gray-400 font-medium">+100 AED · Naya Signature</span>
-                        </div>
-                      </Label>
+                      {/* Add address */}
+                      <button
+                        onClick={() => openAddressModal(null)}
+                        className="min-h-[130px] rounded-2xl flex flex-col items-center justify-center gap-2.5 transition-all"
+                        style={{ border: '1.5px dashed rgba(216,180,254,0.4)', color: 'rgba(196,167,254,0.7)' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(196,167,254,0.7)'; e.currentTarget.style.color = 'rgb(126,105,230)'; e.currentTarget.style.background = 'rgba(196,167,254,0.06)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(216,180,254,0.4)'; e.currentTarget.style.color = 'rgba(196,167,254,0.7)'; e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <FaPlus size={14} />
+                        <span className="text-[11px] font-bold uppercase tracking-[0.12em]">New Address</span>
+                      </button>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {currentStep === 3 && (
-                <div className="space-y-8 flex-grow">
-                  <div className="space-y-1">
-                    <h2 className="text-2xl lg:text-3xl font-serif italic text-gray-900 leading-tight text-left">Review</h2>
-                    <p className="text-[12px] lg:text-[13px] text-gray-400 font-normal text-left">Final inspection of your bespoke ritual selection.</p>
+                {/* Step 2 — Payment */}
+                {currentStep === 2 && (
+                  <div className="space-y-7 flex-grow">
+                    <div>
+                      <h2 className="text-2xl font-bold tracking-tight" style={{ color: '#3b0764' }}>Payment</h2>
+                      <p className="text-[13px] mt-1" style={{ color: 'rgba(59,7,100,0.45)' }}>Secure your acquisition with your preferred method.</p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {[
+                        { id: 'card',          label: 'Credit Card',        Icon: CreditCard, desc: 'Visa, Mastercard, Amex' },
+                        { id: 'cashOnDelivery', label: 'Cash on Delivery',   Icon: Truck,      desc: 'Payment upon delivery' },
+                      ].map(({ id, label, Icon, desc }) => {
+                        const sel = formData.paymentMethod === id;
+                        return (
+                          <div
+                            key={id}
+                            onClick={() => setFormData(p => ({ ...p, paymentMethod: id }))}
+                            className="flex items-center justify-between p-5 rounded-2xl cursor-pointer transition-all duration-400"
+                            style={sel
+                              ? { border: '1.5px solid rgba(196,167,254,0.7)', background: 'rgba(196,167,254,0.1)', boxShadow: '0 4px 20px rgba(147,51,234,0.1)' }
+                              : { border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.5)' }}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: sel ? 'rgba(196,167,254,0.2)' : 'rgba(196,167,254,0.1)', color: 'rgb(126,105,230)' }}>
+                                <Icon size={20} strokeWidth={1.5} />
+                              </div>
+                              <div>
+                                <p className="text-[14px] font-bold" style={{ color: '#3b0764' }}>{label}</p>
+                                <p className="text-[11px] uppercase tracking-[0.1em]" style={{ color: 'rgba(59,7,100,0.4)' }}>{desc}</p>
+                              </div>
+                            </div>
+                            <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all" style={sel ? { borderColor: 'rgb(126,105,230)', background: lavGradient } : { borderColor: 'rgba(216,180,254,0.5)' }}>
+                              {sel && <Check size={11} strokeWidth={3} color="#fff" />}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Stripe card form */}
+                    <AnimatePresence mode="wait">
+                      {formData.paymentMethod === 'card' && (
+                        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+                          <div className="rounded-3xl p-6 lg:p-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: '0 12px 40px rgba(147,51,234,0.3)' }}>
+                            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[70px]" style={{ background: 'rgba(249,168,212,0.2)' }} />
+                            <div className="relative z-10 space-y-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h3 className="text-lg font-bold text-white">Secure Payment</h3>
+                                  <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] font-bold mt-0.5">Encrypted</p>
+                                </div>
+                                <div className="flex gap-2 opacity-50">
+                                  <ShieldCheck size={16} color="#fff" />
+                                  <Lock size={16} color="#fff" />
+                                </div>
+                              </div>
+                              <div className="rounded-2xl p-5 lg:p-7" style={{ background: 'rgba(248,240,255,0.95)' }}>
+                                {clientSecret && stripePromise ? (
+                                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                                    <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" amount={Math.round(total * 100)} clientSecret={clientSecret} />
+                                  </Elements>
+                                ) : (
+                                  <div className="flex flex-col items-center justify-center py-10 gap-4">
+                                    <Loader2 className="animate-spin" size={24} style={{ color: 'rgb(126,105,230)' }} />
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: 'rgba(59,7,100,0.4)' }}>Initializing secure gateway…</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Gift wrap */}
+                    <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.6)' }}>
+                      <label className="flex items-center gap-4 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.giftWrap}
+                          onChange={e => setFormData(p => ({ ...p, giftWrap: e.target.checked }))}
+                          className="w-4 h-4 rounded"
+                          style={{ accentColor: 'rgb(126,105,230)' }}
+                        />
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(196,167,254,0.18)', color: 'rgb(126,105,230)' }}>
+                            <Gift size={16} strokeWidth={1.75} />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-bold" style={{ color: '#3b0764' }}>Gift Wrap Selection</p>
+                            <p className="text-[11px]" style={{ color: 'rgba(59,7,100,0.45)' }}>+AED 100 · Naya Signature Packaging</p>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
                   </div>
+                )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8">
-                    <div className="p-6 lg:p-8 bg-gray-50/50 rounded-2xl lg:rounded-3xl border border-gray-100 space-y-4 text-left">
-                        <div className="flex items-center gap-3 text-gray-400">
-                            <MapPin size={14} className="lg:hidden" />
-                            <MapPin size={16} className="hidden lg:block" />
-                            <h3 className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em]">Shipping Address</h3>
+                {/* Step 3 — Review */}
+                {currentStep === 3 && (
+                  <div className="space-y-6 flex-grow">
+                    <div>
+                      <h2 className="text-2xl font-bold tracking-tight" style={{ color: '#3b0764' }}>Review</h2>
+                      <p className="text-[13px] mt-1" style={{ color: 'rgba(59,7,100,0.45)' }}>Final check before we finalize your order.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Shipping */}
+                      <div className="rounded-2xl p-5 space-y-3" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.6)' }}>
+                        <div className="flex items-center gap-2">
+                          <MapPin size={13} style={{ color: 'rgb(196,167,254)' }} />
+                          <h3 className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgba(59,7,100,0.45)' }}>Shipping Address</h3>
                         </div>
                         {(() => {
-                            const addr = shippingAddresses.find(a => a.id === selectedAddressId);
-                            return addr ? (
-                                <div className="text-[13px] lg:text-[14px] text-gray-700 leading-relaxed font-normal">
-                                    <p className="font-semibold text-gray-900">{addr.customerName || user?.name}</p>
-                                    <p className="truncate">{addr.shipping_address || addr.addressLine1}</p>
-                                    <p>{addr.city}, {addr.country}</p>
-                                </div>
-                            ) : null;
+                          const addr = shippingAddresses.find(a => a.id === selectedAddressId);
+                          return addr ? (
+                            <div className="text-[13px] leading-relaxed space-y-0.5">
+                              <p className="font-bold" style={{ color: '#3b0764' }}>{addr.customerName || user?.name}</p>
+                              <p style={{ color: 'rgba(59,7,100,0.55)' }}>{addr.shipping_address || addr.addressLine1}</p>
+                              <p style={{ color: 'rgba(59,7,100,0.45)' }}>{addr.city}, {addr.country}</p>
+                            </div>
+                          ) : null;
                         })()}
-                    </div>
+                      </div>
 
-                    <div className="p-6 lg:p-8 bg-gray-50/50 rounded-2xl lg:rounded-3xl border border-gray-100 space-y-4 text-left">
-                        <div className="flex items-center gap-3 text-gray-400">
-                            <CreditCard size={14} className="lg:hidden" />
-                            <CreditCard size={16} className="hidden lg:block" />
-                            <h3 className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em]">Payment</h3>
+                      {/* Payment */}
+                      <div className="rounded-2xl p-5 space-y-3" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.6)' }}>
+                        <div className="flex items-center gap-2">
+                          <CreditCard size={13} style={{ color: 'rgb(196,167,254)' }} />
+                          <h3 className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgba(59,7,100,0.45)' }}>Payment</h3>
                         </div>
-                        <p className="text-[13px] lg:text-[14px] font-semibold text-gray-900 uppercase tracking-widest">
-                            {formData.paymentMethod === 'card' ? 'Authorized Card' : 'Cash on Delivery'}
+                        <p className="text-[13px] font-bold" style={{ color: '#3b0764' }}>
+                          {formData.paymentMethod === 'card' ? 'Authorized Credit Card' : 'Cash on Delivery'}
                         </p>
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                            <ShieldCheck size={12} className="text-green-500" /> Secure Protocol
+                        <div className="flex items-center gap-2 text-[11px]" style={{ color: 'rgba(59,7,100,0.4)' }}>
+                          <ShieldCheck size={12} className="text-green-500" /> Secure Protocol Active
                         </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div className="hidden lg:flex items-center justify-between mt-12 pt-8 border-t border-gray-50">
-                <button onClick={handlePreviousStep} disabled={currentStep === 1} className="text-[13px] font-semibold text-gray-400 hover:text-gray-900 transition-colors disabled:opacity-0">
-                  Back
-                </button>
-                <Button 
-                    onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()} 
-                    className="bg-gray-900 text-white hover:bg-brand-pink px-12 h-14 rounded-full text-[11px] font-black uppercase tracking-[0.3em] shadow-xl transition-all disabled:opacity-50"
+                {/* Desktop navigation */}
+                <div className="hidden lg:flex items-center justify-between mt-10 pt-7" style={{ borderTop: '1px solid rgba(216,180,254,0.2)' }}>
+                  <button
+                    onClick={() => currentStep > 1 && setCurrentStep(s => s - 1)}
+                    disabled={currentStep === 1}
+                    className="text-[13px] font-semibold transition-colors disabled:opacity-0"
+                    style={{ color: 'rgba(59,7,100,0.5)' }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()}
                     disabled={isPlacingOrder || hasStockIssues}
-                >
-                    {isPlacingOrder ? 'Processing...' : currentStep === 3 ? 'Finalize Acquisition' : formData.paymentMethod === 'card' && currentStep === 2 ? 'Complete Authorization' : 'Continue'}
-                </Button>
-              </div>
-            </motion.div>
+                    className="px-12 py-4 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
+                    style={{ background: lavGradient, boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
+                  >
+                    {btnLabel}
+                  </button>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
+          {/* Right: Order summary */}
           <div className="lg:col-span-4">
-            <div className="lg:sticky lg:top-32 space-y-6">
-              <div className="bg-white rounded-3xl lg:rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/20 p-6 lg:p-8">
-                <div className="flex items-center justify-between mb-6 lg:mb-8">
-                    <h3 className="text-[16px] lg:text-lg font-semibold tracking-tight text-gray-900 text-left">Summary</h3>
-                    <Sparkles size={16} className="text-brand-pink/20" />
+            <div className="lg:sticky lg:top-28 space-y-4">
+              <div className="rounded-3xl p-6" style={glass}>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-[16px] font-bold tracking-tight" style={{ color: '#3b0764' }}>Summary</h3>
+                  <Sparkles size={15} strokeWidth={1.5} style={{ color: 'rgba(196,167,254,0.6)' }} />
                 </div>
 
-                <div className="max-h-[200px] lg:max-h-[300px] overflow-y-auto pr-2 custom-scrollbar mb-6 lg:mb-8 space-y-4 lg:space-y-6 text-left">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="flex gap-4 group">
-                      <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-xl bg-gray-50 border border-gray-100 p-2 overflow-hidden flex-shrink-0">
-                        <ImageWithFallback src={item.image} alt={item.name} className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110" />
+                {/* Items */}
+                <div className="max-h-[220px] overflow-y-auto pr-1 no-scrollbar mb-6 space-y-4">
+                  {cartItems.map(item => (
+                    <div key={item.id} className="flex gap-3 group">
+                      <div className="w-13 h-13 rounded-xl overflow-hidden flex-shrink-0 p-1.5" style={{ background: 'rgba(248,240,255,0.8)', border: '1px solid rgba(216,180,254,0.25)', width: 48, height: 48 }}>
+                        <ImageWithFallback src={item.image} alt={item.name} className="w-full h-full object-contain mix-blend-multiply" />
                       </div>
-                      <div className="min-w-0 flex-1 py-0.5 text-left">
-                        <h4 className="text-[12px] lg:text-[13px] font-medium text-gray-900 truncate tracking-tight">{item.name}</h4>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-bold truncate" style={{ color: '#3b0764' }}>{item.name}</p>
                         <div className="flex items-center justify-between mt-0.5">
-                            <p className="text-[10px] text-gray-400 font-medium">Qty: {item.quantity}</p>
-                            <p className="text-[11px] lg:text-[12px] font-semibold text-gray-900 tracking-tight">AED {(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-[10px]" style={{ color: 'rgba(59,7,100,0.4)' }}>Qty: {item.quantity}</p>
+                          <p className="text-[12px] font-bold" style={{ color: '#3b0764' }}>AED {(item.price * item.quantity).toFixed(2)}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="space-y-3 text-[13px] lg:text-[14px] font-medium text-gray-500 mb-6 lg:mb-8 px-1 text-left">
-                  <div className="flex justify-between"><span>Subtotal</span><span className="text-gray-900 font-semibold text-right">AED {subtotal.toFixed(2)}</span></div>
-                  <div className="flex justify-between"><span>Shipping</span><span className={shipping === 0 ? 'text-green-600 font-semibold text-right' : 'text-gray-900 font-semibold text-right'}>{shipping === 0 ? 'Complimentary' : `AED ${shipping.toFixed(2)}`}</span></div>
-                  <div className="flex justify-between"><span>Tax (5%)</span><span className="text-gray-900 font-semibold text-right">AED {tax.toFixed(2)}</span></div>
-                  <div className="pt-4 border-t border-gray-100 mt-4 flex justify-between items-baseline">
-                    <span className="text-gray-900 font-semibold">Total</span>
-                    <div className="text-right">
-                        <p className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tighter tabular-nums">AED {total.toFixed(2)}</p>
+                {/* Breakdown */}
+                <div className="space-y-2.5 text-[13px] mb-6">
+                  <div className="flex justify-between" style={{ color: 'rgba(59,7,100,0.55)' }}>
+                    <span>Subtotal</span><span className="font-semibold" style={{ color: '#3b0764' }}>AED {subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between" style={{ color: 'rgba(59,7,100,0.55)' }}>
+                    <span>Shipping</span>
+                    <span className={shipping === 0 ? 'text-green-600 font-semibold' : 'font-semibold'} style={shipping !== 0 ? { color: '#3b0764' } : {}}>
+                      {shipping === 0 ? 'Free' : `AED ${shipping.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between" style={{ color: 'rgba(59,7,100,0.55)' }}>
+                    <span>Tax (5%)</span><span className="font-semibold" style={{ color: '#3b0764' }}>AED {tax.toFixed(2)}</span>
+                  </div>
+                  {giftWrapFee > 0 && (
+                    <div className="flex justify-between" style={{ color: 'rgba(59,7,100,0.55)' }}>
+                      <span>Gift Wrap</span><span className="font-semibold" style={{ color: '#3b0764' }}>AED {giftWrapFee.toFixed(2)}</span>
                     </div>
+                  )}
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between font-semibold text-green-600">
+                      <span>Discount</span><span>−AED {discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-baseline pt-4" style={{ borderTop: '1px solid rgba(216,180,254,0.25)' }}>
+                    <span className="text-[15px] font-bold" style={{ color: '#3b0764' }}>Total</span>
+                    <p className="text-2xl font-black tabular-nums" style={{ color: '#3b0764' }}>AED {total.toFixed(2)}</p>
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-4 border-t border-gray-50 px-1 hidden lg:block text-left">
-                    {[
-                        { icon: Lock, text: "Secured Transaction", color: "text-green-600" },
-                        { icon: ShieldCheck, text: "Authentic Selection", color: "text-blue-500" }
-                    ].map((feat, i) => (
-                        <div key={feat.text} className="flex items-center gap-3 text-[10px] font-medium text-gray-400">
-                            <feat.icon size={12} className={feat.color} />
-                            {feat.text}
-                        </div>
-                    ))}
+                {/* Trust */}
+                <div className="pt-5 space-y-3" style={{ borderTop: '1px solid rgba(216,180,254,0.2)' }}>
+                  {[
+                    { Icon: Lock,       text: 'Secured Transaction',  color: 'text-green-500' },
+                    { Icon: ShieldCheck, text: 'Authentic Selection',  color: 'text-blue-400' },
+                    { Icon: RotateCcw,  text: '30-day Returns',        color: 'text-purple-400' },
+                  ].map(({ Icon, text, color }) => (
+                    <div key={text} className="flex items-center gap-2.5 text-[11px]" style={{ color: 'rgba(59,7,100,0.45)' }}>
+                      <Icon size={12} className={color} /> {text}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -571,21 +559,31 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-2xl border-t border-gray-100 p-4 lg:hidden safe-area-bottom">
-        <div className="flex items-center gap-4">
-            <button onClick={handlePreviousStep} disabled={currentStep === 1 || isPlacingOrder} className="w-12 h-12 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 disabled:opacity-0 transition-all active:bg-gray-50">
-                <ArrowLeft size={18} />
-            </button>
-            <Button onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()} className="flex-1 bg-gray-900 text-white h-14 rounded-full text-[11px] font-black uppercase tracking-[0.3em] shadow-xl active:scale-95 disabled:opacity-50" disabled={isPlacingOrder || hasStockIssues || (currentStep === 1 && !selectedAddressId) || (currentStep === 2 && formData.paymentMethod === 'card' && !paymentAuthorized)}>
-                {isPlacingOrder ? 'Processing...' : currentStep === 3 ? `Finalize · AED ${total.toFixed(2)}` : formData.paymentMethod === 'card' && currentStep === 2 ? 'Authorize Card' : 'Continue'}
-            </Button>
+      {/* Mobile sticky CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden backdrop-blur-2xl p-4" style={{ background: 'rgba(253,248,255,0.92)', borderTop: '1px solid rgba(216,180,254,0.3)' }}>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => currentStep > 1 && setCurrentStep(s => s - 1)}
+            disabled={currentStep === 1}
+            className="w-12 h-12 rounded-full flex items-center justify-center disabled:opacity-0 transition-all"
+            style={{ border: '1px solid rgba(216,180,254,0.45)', color: 'rgb(126,105,230)' }}
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <button
+            onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()}
+            disabled={isPlacingOrder || hasStockIssues}
+            className="flex-1 h-14 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
+            style={{ background: lavGradient, boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
+          >
+            {btnLabel}
+          </button>
         </div>
       </div>
 
-      <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title="">
-        <div className="p-4">
-            <AddressInputForm initialData={editingAddress} onSave={handleCheckoutAddressSave} onCancel={closeAddressModal} />
-        </div>
+      {/* Address modal */}
+      <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit Address' : 'New Address'} size="max-w-3xl">
+        <AddressInputForm initialData={editingAddress} onSave={handleCheckoutAddressSave} onCancel={closeAddressModal} />
       </Modal>
     </div>
   );

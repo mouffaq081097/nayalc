@@ -6,15 +6,21 @@ export function AccountSectionTitle({ eyebrow, title, subtitle }) {
   return (
     <div className="mb-6">
       {eyebrow ? (
-        <p className="app-mobile-label mb-2 text-brand-pink">{eyebrow}</p>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="w-5 h-px" style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' }} />
+          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgb(147,51,234)' }}>
+            {eyebrow}
+          </p>
+        </div>
       ) : null}
-      <h1 className="font-serif text-[30px] font-light leading-[1.05] tracking-tight text-[#1d1d1f] md:text-4xl">
+      <h1 className="text-[28px] font-bold leading-tight tracking-tight md:text-[36px]" style={{ color: '#3b0764' }}>
         {title}
       </h1>
       {subtitle ? (
-        <p className="mt-3 text-sm text-neutral-600 md:text-base">{subtitle}</p>
+        <p className="mt-2 text-sm leading-relaxed md:text-base" style={{ color: 'rgba(59,7,100,0.50)' }}>
+          {subtitle}
+        </p>
       ) : null}
     </div>
   );
 }
-

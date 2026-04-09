@@ -10,12 +10,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import {
   Package, Heart, MapPin,
-  LogOut, ChevronRight, Star, Sparkles, Plus, Settings, Bell, Lock, ShieldCheck, ShoppingBag, CreditCard, ArrowRight, Camera, Crown
+  LogOut, ChevronRight, Star, Sparkles, Plus, Settings, Bell, Lock, ShieldCheck, ShoppingBag, CreditCard, ArrowRight, Camera, Crown, Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import { useUser } from '../context/UserContext';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Modal from '../components/Modal';
 import AddressInputForm from '../components/AddressInputForm';
 import Image from 'next/image';
@@ -27,10 +28,10 @@ const stripePromise = getStripe();
 const CL = {
   glass:      'rgba(255,255,255,0.72)',
   glassBorder:'rgba(216,180,254,0.35)',
-  gradient:   'linear-gradient(135deg,#9333ea,#db2777)',
-  gradientSoft:'linear-gradient(135deg,rgba(196,167,254,0.25),rgba(249,168,212,0.18))',
-  purple:     'rgb(147,51,234)',
-  purpleMid:  'rgb(126,105,230)',
+  gradient:   'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+  gradientSoft:'linear-gradient(135deg,rgba(196,167,254,0.25),rgba(167,139,250,0.18))',
+  purple:     'rgb(126,105,230)',
+  purpleMid:  'rgb(147,104,236)',
   purpleLight:'rgba(196,167,254,0.18)',
   bgPage:     'var(--cl-bg)',
   bgLav:      'var(--cl-bg-lavender)',
@@ -52,11 +53,11 @@ const glassCard = {
 // ── Section title ────────────────────────────────────────────────────────────
 const SectionTitle = ({ title, subtitle }) => (
   <div className="mb-8">
-    <div className="flex items-center gap-3 mb-2">
-      <span className="w-8 h-px" style={{ background: CL.gradient }}></span>
-      <p className="text-[10px] font-black uppercase tracking-[0.4em]" style={{ color: CL.purple }}>{subtitle}</p>
+    <div className="flex items-center gap-2 mb-2">
+      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
+      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>{subtitle}</p>
     </div>
-    <h2 className="text-[32px] md:text-[40px] font-bold tracking-tight leading-tight" style={{ color: CL.textDeep }}>
+    <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight leading-tight" style={{ color: CL.textDeep }}>
       {title}
     </h2>
   </div>
@@ -188,12 +189,11 @@ const AccountPageContent = () => {
                     style={{ background: CL.glass, border: `1px solid ${CL.glassBorder}`, color: CL.purple }}>
                     <Camera size={12} />
                   </button>
-                  {/* Glow ring */}
                   <div className="absolute inset-0 rounded-full -z-10" style={{ boxShadow: CL.glowShadow, opacity: 0.3 }} />
                 </div>
                 <div>
                   <h3 className="text-base font-bold tracking-tight" style={{ color: CL.textDeep }}>{user.first_name} {user.last_name}</h3>
-                  <p className="text-[9px] font-black uppercase tracking-[0.3em] mt-0.5" style={{ color: CL.purple }}>{loyaltyData.stats.tier} Member</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.12em] mt-0.5" style={{ color: CL.purple }}>{loyaltyData.stats.tier} Member</p>
                 </div>
               </div>
 
@@ -207,12 +207,12 @@ const AccountPageContent = () => {
                       onClick={() => router.push(`/account?tab=${item.id}`)}
                       className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300"
                       style={active
-                        ? { background: CL.gradient, color: '#fff', boxShadow: '0 4px 16px rgba(147,51,234,0.28)' }
-                        : { color: 'rgba(59,7,100,0.55)' }
+                        ? { background: 'rgba(196,167,254,0.22)', color: 'rgb(126,105,230)', border: '1px solid rgba(196,167,254,0.45)', boxShadow: '0 2px 12px rgba(147,51,234,0.12)' }
+                        : { color: 'rgba(59,7,100,0.50)' }
                       }
                     >
                       <div className="flex items-center gap-3">
-                        <item.icon size={16} strokeWidth={active ? 2.5 : 1.5} />
+                        <item.icon size={16} strokeWidth={active ? 2 : 1.5} />
                         <span className="text-[13px] font-semibold tracking-tight">{item.label}</span>
                       </div>
                       {active && <ChevronRight size={13} />}
@@ -241,7 +241,7 @@ const AccountPageContent = () => {
               <div className="relative z-10 space-y-4">
                 <div className="flex items-center gap-2">
                   <Star size={14} className="fill-yellow-300 text-yellow-300" />
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-white/60">Loyalty Points</span>
+                  <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/60">Loyalty Points</span>
                 </div>
                 <p className="text-4xl font-black text-white">{loyaltyData.stats.points.toLocaleString()}</p>
                 <div>
@@ -387,7 +387,7 @@ const AccountPageContent = () => {
                   <SectionTitle title="Order History" subtitle="Your Acquisitions" />
                   <div className="space-y-3">
                     {orders.map((order, i) => (
-                      <div key={order.id || i} className="rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all" style={glassCard}>
+                      <Link key={order.id || i} href={`/account/orders/${order.id}`} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl p-6 transition-all hover:-translate-y-0.5" style={glassCard}>
                         <div className="flex items-center gap-5">
                           <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: CL.purpleLight }}>
                             <Package size={22} strokeWidth={1.5} style={{ color: CL.purple }} />
@@ -395,22 +395,22 @@ const AccountPageContent = () => {
                           <div className="space-y-1">
                             <p className="text-base font-bold" style={{ color: CL.textDeep }}>Order #{order.id}</p>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{new Date(order.createdAt).toLocaleDateString()}</span>
+                              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.1em]">{new Date(order.createdAt).toLocaleDateString()}</span>
                               <span className="w-1 h-1 rounded-full bg-gray-300 inline-block" />
-                              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: CL.purple }}>{order.status}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: CL.purple }}>{order.status}</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center justify-between md:justify-end gap-8 pt-4 md:pt-0" style={{ borderTop: '1px solid transparent' }}>
                           <div className="text-left md:text-right">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-1">Total</p>
                             <p className="text-xl font-black" style={{ color: CL.textDeep }}>AED {Number(order.totalAmount).toFixed(2)}</p>
                           </div>
-                          <button className="w-11 h-11 rounded-full flex items-center justify-center transition-all" style={{ background: CL.purpleLight, color: CL.purple }}>
+                          <div className="w-11 h-11 rounded-full flex items-center justify-center transition-all" style={{ background: CL.purpleLight, color: CL.purple }}>
                             <ArrowRight size={16} />
-                          </button>
+                          </div>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                     {orders.length === 0 && (
                       <div className="py-28 text-center rounded-3xl border border-dashed" style={{ borderColor: CL.glassBorder, background: CL.purpleLight }}>
@@ -476,17 +476,30 @@ const AccountPageContent = () => {
                   </div>
                   <div className="grid md:grid-cols-2 gap-5">
                     {shippingAddresses.map((addr, i) => (
-                      <div key={addr.id || i} className="rounded-3xl p-7 flex flex-col justify-between transition-all hover:-translate-y-0.5" style={glassCard}>
+                      <div 
+                        key={addr.id || i} 
+                        onClick={() => openAddressModal(addr)}
+                        className="rounded-3xl p-7 flex flex-col justify-between transition-all hover:-translate-y-0.5 cursor-pointer group/card" 
+                        style={glassCard}
+                      >
                         <div className="space-y-5">
                           <div className="flex items-center justify-between">
                             <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: CL.purpleLight }}>
                               <MapPin size={20} strokeWidth={1.5} style={{ color: CL.purple }} />
                             </div>
-                            {addr.isDefault && (
-                              <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full text-white" style={{ background: CL.gradient }}>
-                                Primary
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {addr.isDefault && (
+                                <span className="text-[9px] font-black uppercase tracking-[0.1em] px-3 py-1 rounded-full text-white" style={{ background: CL.gradient }}>
+                                  Primary
+                                </span>
+                              )}
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }} 
+                                className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-gray-400 hover:text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
                           </div>
                           <div className="space-y-1">
                             <h4 className="text-lg font-bold tracking-tight" style={{ color: CL.textDeep }}>{addr.addressLabel || 'Address'}</h4>
@@ -495,13 +508,8 @@ const AccountPageContent = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-6 pt-6 mt-6" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
-                          <button onClick={() => openAddressModal(addr)} className="text-[10px] font-black uppercase tracking-widest transition-all" style={{ color: CL.purple }}>
-                            Edit
-                          </button>
-                          <button onClick={() => handleDeleteAddress(addr.id)} className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 transition-all">
-                            Remove
-                          </button>
+                        <div className="pt-4 mt-4 opacity-0 group-hover/card:opacity-100 transition-opacity" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
+                          <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: CL.purple }}>Click to edit address</p>
                         </div>
                       </div>
                     ))}
@@ -560,6 +568,7 @@ const AccountPageContent = () => {
         isOpen={isAddressModalOpen}
         onClose={() => { setIsAddressModalOpen(false); setEditingAddress(null); }}
         title={editingAddress ? 'Edit Address' : 'Add New Address'}
+        size="max-w-3xl"
       >
         <AddressInputForm
           initialData={editingAddress}
