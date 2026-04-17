@@ -13,7 +13,12 @@
       "WebSearch",
       "Bash(python skills/ui-ux-pro-max/scripts/search.py \"luxury beauty cosmetics ecommerce UAE elegant glassmorphism\" --design-system -p \"Naya Lumière Cosmetics\")",
       "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py \"luxury beauty cosmetics ecommerce UAE elegant glassmorphism\" --design-system -p \"Naya Lumière Cosmetics\")",
-      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"luxury beauty cosmetics ecommerce UAE elegant\" --design-system -p \"Naya Lumière\")"
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"luxury beauty cosmetics ecommerce UAE elegant\" --design-system -p \"Naya Lumière\")",
+      "Bash(xargs grep *)",
+      "Bash(ls *)",
+      "Bash(cat \"E:/programming/nayalc-main/.superpowers/brainstorm/\"*/state/server-info)",
+      "Bash(ffmpeg -version)",
+      "Bash(where ffmpeg *)"
     ]
   }
 }

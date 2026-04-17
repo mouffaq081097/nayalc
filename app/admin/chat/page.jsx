@@ -43,7 +43,7 @@ function getStatusBadge(status) {
 
 function getInitials(name) {
     if (!name) return '?';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name.split(' ').map(n => n[0]).join('').to().slice(0, 2);
 }
 
 const AdminChatPage = () => {
@@ -155,7 +155,7 @@ const AdminChatPage = () => {
     if (isLoading) {
         return (
             <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
-                <div className="w-10 h-10 border-[3px] border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                <div className="w-10 h-10 border-[3px] border-cl-purple border-t-transparent rounded-full animate-spin" />
                 <p className="text-sm font-medium text-gray-400">Loading conversations...</p>
             </div>
         );
@@ -166,7 +166,7 @@ const AdminChatPage = () => {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Inbox</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 ">Inbox</h2>
                     <p className="text-sm text-gray-400 mt-0.5">
                         {tabCounts.pending > 0
                             ? `${tabCounts.pending} conversation${tabCounts.pending > 1 ? 's' : ''} need${tabCounts.pending === 1 ? 's' : ''} a reply`
@@ -180,7 +180,7 @@ const AdminChatPage = () => {
                         placeholder="Search by name or email..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cl-purple/20 focus:border-indigo-400 transition-all"
                     />
                 </div>
             </div>
@@ -201,7 +201,7 @@ const AdminChatPage = () => {
                         {tabCounts[tab.id] > 0 && (
                             <span className={`text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 ${
                                 activeTab === tab.id
-                                    ? tab.id === 'pending' ? 'bg-red-500 text-white' : 'bg-indigo-600 text-white'
+                                    ? tab.id === 'pending' ? 'bg-red-500 text-white' : 'bg-cl-purple text-white'
                                     : 'bg-gray-300 text-gray-600'
                             }`}>
                                 {tabCounts[tab.id]}
@@ -311,7 +311,7 @@ const AdminChatPage = () => {
                                         </div>
                                         <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Link href={`/admin/chat/${conv.id}`}>
-                                                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                                                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-cl-purple text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
                                                     Open <ArrowRight size={12} />
                                                 </button>
                                             </Link>

@@ -17,7 +17,7 @@ const CancelledOrdersPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <Link href="/admin/orders" className="inline-flex items-center text-indigo-600 hover:text-indigo-800 mb-4">
+            <Link href="/admin/orders" className="inline-flex items-center text-cl-purple hover:text-indigo-800 mb-4">
                 <ChevronLeft className="h-5 w-5 mr-1" />
                 Back to All Orders
             </Link>
@@ -28,20 +28,20 @@ const CancelledOrdersPage = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Info</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cancelled At</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shipping Address</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  ">Order ID</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  ">Customer Info</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  ">Cancelled At</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  ">Items</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  ">Shipping Address</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500  ">Total</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500  ">Status</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {cancelledOrders.orders.map((order) => ( // Corrected: Access orders array
                                 <tr key={order.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        <Link href={`/admin/orders/${order.id}`} className="text-indigo-600 hover:text-indigo-900">
+                                        <Link href={`/admin/orders/${order.id}`} className="text-cl-purple hover:text-indigo-900">
                                             {order.id}
                                         </Link>
                                     </td>

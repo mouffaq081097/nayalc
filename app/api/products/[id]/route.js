@@ -222,6 +222,23 @@ export async function PUT(request, context) {
         client.release();
     }
 }
+export async function PATCH(request, context) {
+    const params = await context.params;
+    const { id } = params;
+    try {
+        const { is_active } = await request.json();
+        const { rowCount } = await db.query(
+            'UPDATE products SET is_active = $1 WHERE id = $2',
+            [is_active, id]
+        );
+        if (rowCount === 0) return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+        return NextResponse.json({ message: 'Product status updated', is_active });
+    } catch (error) {
+        console.error(`Error toggling product ${id}:`, error);
+        return NextResponse.json({ message: 'Error updating product status', error: error.message }, { status: 500 });
+    }
+}
+
 export async function DELETE(request, { params }) {
     const { id } = params;
     const client = await db.connect();

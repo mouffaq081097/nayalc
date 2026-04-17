@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import { Search, Tag, Calendar, Percent, DollarSign, Edit, Trash2, PlusCircle, Loader2, MoreHorizontal, Ticket, ShieldCheck, Zap, Info, Clock, ArrowRight } from 'lucide-react';
+import { Search, Tag, Calendar, Percent, DollarSign, Edit, Trash2, PlusCircle, Loader2, MoreHorizontal, Ticket, ShieldCheck, Zap, Info, Clock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Modal from '@/app/components/Modal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +35,12 @@ const CouponsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // New state variables for the orders modal
+  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
+  const [selectedCouponOrders, setSelectedCouponOrders] = useState([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [selectedCouponCode, setSelectedCouponCode] = useState('');
 
   const fetchCoupons = useCallback(async () => {
     try {
@@ -142,6 +148,39 @@ const CouponsPage = () => {
       }
     }
   };
+
+  const handleToggleActive = async (coupon) => {
+    try {
+      const response = await fetch(`/api/coupons/${coupon.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !coupon.is_active }),
+      });
+      if (!response.ok) throw new Error('Failed to toggle coupon status');
+      await fetchCoupons();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleViewOrders = async (coupon) => {
+    setIsOrdersModalOpen(true);
+    setIsLoadingOrders(true);
+    setSelectedCouponCode(coupon.code);
+    try {
+      const response = await fetch(`/api/coupons/${coupon.id}/orders`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders for coupon');
+      }
+      const data = await response.json();
+      setSelectedCouponOrders(data);
+    } catch (err) {
+      console.error(err);
+      setSelectedCouponOrders([]);
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
   
   const filteredCoupons = coupons.filter(coupon =>
     coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
@@ -150,8 +189,8 @@ const CouponsPage = () => {
   if (isLoading) {
     return (
         <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Validating Privileges...</p>
+            <div className="w-12 h-12 border-4 border-cl-purple border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm font-medium text-gray-400  ">Validating Privileges...</p>
         </div>
     );
   }
@@ -161,7 +200,7 @@ const CouponsPage = () => {
         {/* Header Actions */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
             <div>
-                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Privilege Registry</h2>
+                <h2 className="text-2xl font-bold text-gray-900 ">Privilege Registry</h2>
                 <p className="text-sm text-gray-400 mt-1">Managing {coupons.length} promotional vectors for the Naya Lumière market</p>
             </div>
             
@@ -171,7 +210,7 @@ const CouponsPage = () => {
                     <input
                         type="text"
                         placeholder="Search by code..."
-                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
+                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-cl-purple/20 focus:border-cl-purple transition-all text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -179,7 +218,7 @@ const CouponsPage = () => {
                 
                 <Button 
                     onClick={() => setIsModalOpen(true)} 
-                    className="bg-gray-900 hover:bg-indigo-600 text-white rounded-xl px-6 py-6 text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                    className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-6 py-6 text-[11px] font-black   shadow-lg active:scale-95 transition-all"
                 >
                     <PlusCircle className="mr-2 h-4 w-4" /> Issue New Privilege
                 </Button>
@@ -206,11 +245,11 @@ const CouponsPage = () => {
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full ${coupon.is_active ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        <p className="text-[10px] font-black text-gray-400  ">
                                             {coupon.is_active ? 'Active Privilege' : 'Deactivated'}
                                         </p>
                                     </div>
-                                    <h3 className="text-3xl font-black text-gray-900 tracking-tighter uppercase">{coupon.code}</h3>
+                                    <h3 className="text-3xl font-black text-gray-900 er ">{coupon.code}</h3>
                                 </div>
                                 
                                 <DropdownMenu>
@@ -221,20 +260,30 @@ const CouponsPage = () => {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="rounded-xl shadow-2xl border-gray-100 p-2">
                                         <DropdownMenuItem onClick={() => handleEdit(coupon)} className="rounded-lg px-4 py-3 text-sm font-medium gap-3">
-                                            <Edit size={16} className="text-indigo-600" /> Refine Parameters
+                                            <Edit size={16} className="text-cl-purple" /> Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleToggleActive(coupon)} className="rounded-lg px-4 py-3 text-sm font-medium gap-3">
+                                            {coupon.is_active ? (
+                                                <><EyeOff size={16} className="text-orange-500" /> Deactivate</>
+                                            ) : (
+                                                <><Eye size={16} className="text-green-500" /> Activate</>
+                                            )}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleViewOrders(coupon)} className="rounded-lg px-4 py-3 text-sm font-medium gap-3">
+                                            <Ticket size={16} className="text-gray-600" /> View Orders
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleDelete(coupon.id)} className="rounded-lg px-4 py-3 text-sm font-medium gap-3 text-red-600">
-                                            <Trash2 size={16} /> Revoke Privilege
+                                            <Trash2 size={16} /> Delete
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
 
                             <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-black text-indigo-600 tracking-tighter">
+                                <span className="text-4xl font-black text-cl-purple er">
                                     {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `AED ${coupon.discount_value}`}
                                 </span>
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reduction</span>
+                                <span className="text-[10px] font-black text-gray-400  ">Reduction</span>
                             </div>
 
                             <div className="space-y-3 pt-6 border-t border-gray-50">
@@ -250,23 +299,29 @@ const CouponsPage = () => {
                                         Min. Order: {coupon.minimum_purchase_amount ? `AED ${coupon.minimum_purchase_amount}` : 'No minimum'}
                                     </span>
                                 </div>
+                                <div className="flex items-center gap-3">
+                                    <Ticket size={14} className="text-cl-purple-light" />
+                                    <span className="text-xs font-bold text-cl-purple italic">
+                                        Orders Used: {coupon.actual_order_count || 0}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
                         <div className="mt-auto bg-gray-50/50 p-6 border-t border-gray-50 flex items-center justify-between">
                             <div className="space-y-1">
-                                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Usage Quota</p>
+                                <p className="text-[9px] font-black text-gray-300  ">Usage Quota</p>
                                 <div className="flex items-center gap-2">
                                     <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
                                         <div 
-                                            className="h-full bg-indigo-500 rounded-full" 
-                                            style={{ width: coupon.usage_limit ? `${(coupon.usage_count / coupon.usage_limit) * 100}%` : '5%' }}
+                                            className="h-full bg-cl-purple rounded-full" 
+                                            style={{ width: coupon.usage_limit ? `${((coupon.actual_order_count || 0) / coupon.usage_limit) * 100}%` : '5%' }}
                                         ></div>
                                     </div>
-                                    <span className="text-xs font-bold text-gray-900">{coupon.usage_count} / {coupon.usage_limit || '∞'}</span>
+                                    <span className="text-xs font-bold text-gray-900">{coupon.actual_order_count || 0} / {coupon.usage_limit || '∞'}</span>
                                 </div>
                             </div>
-                            <button onClick={() => handleEdit(coupon)} className="p-2 text-gray-300 hover:text-indigo-600 transition-colors">
+                            <button onClick={() => handleEdit(coupon)} className="p-2 text-gray-300 hover:text-cl-purple transition-colors">
                                 <ArrowRight size={20} />
                             </button>
                         </div>
@@ -293,24 +348,24 @@ const CouponsPage = () => {
             <form onSubmit={handleSubmit} className="p-10 lg:p-14">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                         <section className="space-y-8">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 mb-2 flex items-center gap-3">
-                                <span className="w-10 h-px bg-indigo-600/20"></span>
+                            <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
+                                <span className="w-10 h-px bg-cl-purple/20"></span>
                                 Core Registry
                             </h3>
                             
                             <div className="group">
-                                <label htmlFor="code" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3 transition-colors group-focus-within:text-indigo-600">Privilege Code</label>
+                                <label htmlFor="code" className="block text-[11px] font-black text-gray-400   mb-3 transition-colors group-focus-within:text-cl-purple">Privilege Code</label>
                                 <input 
                                     id="code" name="code" value={currentCoupon.code} onChange={handleInputChange} 
                                     placeholder="e.g., ROYALTY2025"
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-black text-gray-900 focus:bg-white transition-all text-xl uppercase tracking-tighter shadow-inner"
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-black text-gray-900 focus:bg-white transition-all text-xl  er shadow-inner"
                                     required disabled={isSubmitting} 
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="group">
-                                    <label htmlFor="discount_type" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Reduction Mechanism</label>
+                                    <label htmlFor="discount_type" className="block text-[11px] font-black text-gray-400   mb-3">Reduction Mechanism</label>
                                     <Select name="discount_type" value={currentCoupon.discount_type} onValueChange={(value) => handleSelectChange('discount_type', value)}>
                                         <SelectTrigger className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 h-auto font-bold text-gray-900 focus:bg-white transition-all">
                                             <SelectValue placeholder="Mechanism" />
@@ -322,7 +377,7 @@ const CouponsPage = () => {
                                     </Select>
                                 </div>
                                 <div className="group">
-                                    <label htmlFor="discount_value" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Quantum Value</label>
+                                    <label htmlFor="discount_value" className="block text-[11px] font-black text-gray-400   mb-3">Quantum Value</label>
                                     <input
                                         id="discount_value" name="discount_value" type="number" step="0.01" value={currentCoupon.discount_value} onChange={handleInputChange}
                                         placeholder={currentCoupon.discount_type === 'percentage' ? 'e.g., 15' : 'e.g., 50'}
@@ -332,10 +387,10 @@ const CouponsPage = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-indigo-50/50 rounded-3xl p-8 border border-indigo-100/30">
-                                <div className="flex items-center gap-3 mb-4 text-indigo-600">
+                            <div className="bg-cl-bg-lavender/50 rounded-3xl p-8 border border-indigo-100/30">
+                                <div className="flex items-center gap-3 mb-4 text-cl-purple">
                                     <ShieldCheck size={18} />
-                                    <span className="text-[11px] font-black uppercase tracking-widest">Protocol Verification</span>
+                                    <span className="text-[11px] font-black  ">Protocol Verification</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <p className="text-[11px] text-gray-500 font-medium italic">Is this privilege currently active in the ecosystem?</p>
@@ -343,22 +398,22 @@ const CouponsPage = () => {
                                         <Checkbox 
                                             id="is_active" checked={currentCoupon.is_active} 
                                             onCheckedChange={(checked) => handleSelectChange('is_active', checked)} 
-                                            className="w-6 h-6 rounded-lg border-2 border-indigo-200 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                                            className="w-6 h-6 rounded-lg border-2 border-indigo-200 data-[state=checked]:bg-cl-purple data-[state=checked]:border-cl-purple"
                                         />
-                                        <Label htmlFor="is_active" className="text-[11px] font-black uppercase tracking-widest text-gray-900 cursor-pointer">Active</Label>
+                                        <Label htmlFor="is_active" className="text-[11px] font-black   text-gray-900 cursor-pointer">Active</Label>
                                     </div>
                                 </div>
                             </div>
                         </section>
 
                         <section className="space-y-8">
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 mb-2 flex items-center gap-3">
-                                <span className="w-10 h-px bg-indigo-600/20"></span>
+                            <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
+                                <span className="w-10 h-px bg-cl-purple/20"></span>
                                 Logistics & Scope
                             </h3>
                             
                             <div className="group">
-                                <label htmlFor="expiration_date" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Void Threshold (Expiration)</label>
+                                <label htmlFor="expiration_date" className="block text-[11px] font-black text-gray-400   mb-3">Void Threshold (Expiration)</label>
                                 <div className="relative">
                                     <Clock className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                                     <input 
@@ -370,7 +425,7 @@ const CouponsPage = () => {
                             </div>
 
                             <div className="group">
-                                <label htmlFor="usage_limit" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Activation Quota (Usage Limit)</label>
+                                <label htmlFor="usage_limit" className="block text-[11px] font-black text-gray-400   mb-3">Activation Quota (Usage Limit)</label>
                                 <input 
                                     id="usage_limit" name="usage_limit" type="number" value={currentCoupon.usage_limit} onChange={handleInputChange} 
                                     placeholder="Indefinite activation if blank"
@@ -380,7 +435,7 @@ const CouponsPage = () => {
                             </div>
 
                             <div className="group">
-                                <label htmlFor="minimum_purchase_amount" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Transaction Minimum (AED)</label>
+                                <label htmlFor="minimum_purchase_amount" className="block text-[11px] font-black text-gray-400   mb-3">Transaction Minimum (AED)</label>
                                 <div className="relative">
                                     <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                                     <input 
@@ -398,7 +453,7 @@ const CouponsPage = () => {
                         <button 
                             type="button" 
                             onClick={resetForm} 
-                            className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
+                            className="px-8 py-4 text-[10px] font-black   text-gray-400 hover:text-gray-900 transition-colors"
                             disabled={isSubmitting}
                         >
                             Retract Request
@@ -406,7 +461,7 @@ const CouponsPage = () => {
                         <Button 
                             type="submit" 
                             disabled={isSubmitting} 
-                            className="px-10 py-6 bg-indigo-600 hover:bg-gray-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                            className="px-10 py-6 bg-cl-purple hover:bg-cl-purple-deep text-white rounded-xl text-[11px] font-black   shadow-xl active:scale-95 transition-all"
                         >
                             {isSubmitting ? (
                                 <>
@@ -419,6 +474,69 @@ const CouponsPage = () => {
                         </Button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Orders Modal */}
+            <Modal
+                isOpen={isOrdersModalOpen}
+                onClose={() => setIsOrdersModalOpen(false)}
+                title={`Orders using ${selectedCouponCode}`}
+                size="max-w-4xl"
+            >
+                <div className="p-6">
+                    {isLoadingOrders ? (
+                        <div className="flex justify-center py-12">
+                            <div className="w-8 h-8 border-4 border-cl-purple border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : selectedCouponOrders.length > 0 ? (
+                        <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-gray-50 text-xs  font-black text-gray-500 ">
+                                    <tr>
+                                        <th className="px-6 py-4">Order ID</th>
+                                        <th className="px-6 py-4">Customer</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4">Date</th>
+                                        <th className="px-6 py-4 text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 bg-white">
+                                    {selectedCouponOrders.map((order) => (
+                                        <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-[120px]">
+                                                {order.id}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-gray-900 font-medium">{order.user_name || 'Guest'}</div>
+                                                <div className="text-gray-500 text-xs">{order.user_email}</div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black   ${
+                                                    order.order_status?.toLowerCase() === 'delivered' ? 'bg-green-100 text-green-700' :
+                                                    order.order_status?.toLowerCase() === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                    'bg-amber-100 text-amber-700'
+                                                }`}>
+                                                    {order.order_status || 'Pending'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-500">
+                                                {new Date(order.created_at).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-bold text-gray-900">
+                                                AED {parseFloat(order.total_amount).toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                            <Ticket size={48} className="mb-4 opacity-20" />
+                            <p>No orders have used this privilege code yet.</p>
+                        </div>
+                    )}
+                </div>
             </Modal>
         </div>
     );

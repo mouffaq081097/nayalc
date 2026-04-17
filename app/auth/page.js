@@ -250,7 +250,8 @@ function Register() {
     setError(null);
     setIsLoading(true);
     try {
-      await register(username, email, password, firstName, lastName);
+      const autoUsername = `${firstName.toLowerCase()}${lastName.toLowerCase()}${Math.floor(1000 + Math.random() * 9000)}`;
+      await register(autoUsername, email, password, firstName, lastName);
       router.push('/');
     } catch (err) {
       setError(err.message);

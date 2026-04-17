@@ -279,8 +279,13 @@ export async function POST(request) {
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
 
+        let couponCode = null;
         if (applied_coupon_id) {
             await client.query('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = $1', [applied_coupon_id]);
+            const { rows: couponRows } = await client.query('SELECT code FROM coupons WHERE id = $1', [applied_coupon_id]);
+            if (couponRows.length > 0) {
+                couponCode = couponRows[0].code;
+            }
         }
 
         const { rows: userRows } = await client.query('SELECT email, first_name FROM users WHERE id = $1', [user_id]);
@@ -331,7 +336,7 @@ export async function POST(request) {
             });
 
             // Send order confirmation email to customer using Nodemailer
-            await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, subtotal, shipping_cost, itemsWithDetails, shippingAddress, gift_wrap_cost);
+            await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, subtotal, shipping_cost, itemsWithDetails, shippingAddress, gift_wrap_cost, couponCode);
 
             // Execute Python script for sending email to administrator
             const adminEmail = process.env.ADMIN_EMAIL;

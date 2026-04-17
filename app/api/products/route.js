@@ -10,6 +10,7 @@ export async function GET(request) {
   const isNew = searchParams.get('isNew');
   const brandId = searchParams.get('brandId');
   const searchQuery = searchParams.get('search');
+  const isAdmin = searchParams.get('admin') === 'true';
 
   try {
     let sql;
@@ -31,7 +32,7 @@ export async function GET(request) {
                 brands b ON p.brand_id = b.id
               LEFT JOIN
                 reviews r ON p.id = r.product_id
-              WHERE p.id IS NOT NULL
+              WHERE p.id IS NOT NULL${isAdmin ? '' : " AND p.is_active = true AND (p.status = 'active' OR p.status IS NULL)"}
               GROUP BY p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.comparedprice, p.ingredients, p.brand_id, b.name
               ORDER BY p.id DESC
             `;    } else {
@@ -59,6 +60,11 @@ export async function GET(request) {
           reviews r ON p.id = r.product_id
       `;
       let whereClauses = [];
+
+      if (!isAdmin) {
+        whereClauses.push('p.is_active = true');
+        whereClauses.push("(p.status = 'active' OR p.status IS NULL)");
+      }
 
       if (categoryIdsParam) {
         const ids = categoryIdsParam.split(',').map(id => parseInt(id.trim()));

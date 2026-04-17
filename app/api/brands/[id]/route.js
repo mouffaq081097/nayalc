@@ -126,6 +126,22 @@ export async function PUT(request, context) {
  *       500:
  *         description: Server error.
  */
+export async function PATCH(request, context) {
+  const id = context.params.id;
+  try {
+    const { is_active } = await request.json();
+    const { rowCount } = await db.query(
+      'UPDATE brands SET is_active = $1 WHERE id = $2',
+      [is_active, id]
+    );
+    if (rowCount === 0) return NextResponse.json({ message: 'Brand not found' }, { status: 404 });
+    return NextResponse.json({ message: 'Brand status updated', is_active });
+  } catch (error) {
+    console.error(`Error toggling brand ${id}:`, error);
+    return NextResponse.json({ message: 'Error updating brand status', error: error.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request, context) {
   const id = context.params.id;
   try {

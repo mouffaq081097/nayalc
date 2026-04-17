@@ -14,6 +14,7 @@ export async function GET(request) {
                 b.name as brand
             FROM products p
             JOIN brands b ON p.brand_id = b.id
+            WHERE p.is_active = true AND (p.status = 'active' OR p.status IS NULL)
             ORDER BY RANDOM()
             LIMIT $1;
         `;

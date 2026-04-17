@@ -4,7 +4,20 @@ import db from '@/lib/db';
 export async function GET(request, { params }) {
   const { id } = params;
   try {
-    const { rows } = await db.query('SELECT * FROM coupons WHERE id = $1', [id]);
+    const { rows } = await db.query(`
+      SELECT c.*, 
+             (
+               SELECT COUNT(*) FROM (
+                 SELECT id FROM orders WHERE applied_coupon_id = c.id
+                 UNION ALL
+                 SELECT id FROM delivered_orders WHERE applied_coupon_id = c.id
+                 UNION ALL
+                 SELECT id FROM cancelled_orders WHERE applied_coupon_id = c.id
+               ) combined
+             ) as actual_order_count
+      FROM coupons c
+      WHERE c.id = $1
+    `, [id]);
     if (rows.length === 0) {
       return NextResponse.json({ message: 'Coupon not found' }, { status: 404 });
     }
@@ -53,6 +66,22 @@ export async function PUT(request, { params }) {
     } finally {
         client.release();
     }
+}
+
+export async function PATCH(request, { params }) {
+  const { id } = params;
+  try {
+    const { is_active } = await request.json();
+    const { rowCount } = await db.query(
+      'UPDATE coupons SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [is_active, id]
+    );
+    if (rowCount === 0) return NextResponse.json({ message: 'Coupon not found' }, { status: 404 });
+    return NextResponse.json({ message: 'Coupon status updated', is_active });
+  } catch (error) {
+    console.error(`Error toggling coupon ${id}:`, error);
+    return NextResponse.json({ message: 'Error updating coupon status', error: error.message }, { status: 500 });
+  }
 }
 
 export async function DELETE(request, { params }) {

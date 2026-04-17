@@ -2,191 +2,154 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAppContext } from '../../context/AppContext';
-import { Package, CheckCircle, Clock, XCircle, DollarSign, List, Search, Filter, ArrowUpRight, ChevronLeft, ChevronRight, MoreHorizontal, Eye } from 'lucide-react';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '@/app/components/ui/button';
+import {
+    Package, CheckCircle, Clock, XCircle, List,
+    Search, Filter, ArrowUpRight, ChevronLeft, ChevronRight, Eye
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const OrderStatus = {
-    Pending: 'Pending',
-    Processing: 'Processing',
-    Shipped: 'Shipped',
-    Delivered: 'Delivered',
-    Cancelled: 'Cancelled',
+const STATUS_STYLES = {
+    pending:    'bg-orange-50 text-orange-700 border-orange-200',
+    processing: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    shipped:    'bg-blue-50 text-blue-700 border-blue-200',
+    delivered:  'bg-green-50 text-green-700 border-green-200',
+    cancelled:  'bg-red-50 text-red-700 border-red-200',
 };
 
-const StatCard = ({ title, value, icon, color, href }) => {
-    const Card = (
-        <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-6 rounded-[2rem] bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group cursor-pointer h-full`}
+const StatCard = ({ title, value, icon: Icon, accent, href }) => {
+    const inner = (
+        <motion.div
+            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl border p-6 hover:shadow-lg transition-all duration-300 group cursor-pointer h-full"
+            style={{ borderColor: 'rgba(216,180,254,0.35)' }}
         >
             <div className="flex items-center justify-between mb-4">
-                <div className={`p-4 rounded-2xl ${color} bg-opacity-10 transition-transform duration-500 group-hover:scale-110`}>
-                    {React.createElement(icon, { className: `w-6 h-6 ${color.replace('bg-', 'text-')}` })}
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: accent + '18' }}>
+                    <Icon size={19} style={{ color: accent }} />
                 </div>
-                <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-600 transition-colors" />
+                <ArrowUpRight size={14} className="text-gray-300 group-hover:text-purple-400 transition-colors" />
             </div>
-            <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">{title}</p>
-                <p className="text-3xl font-bold text-gray-900 tracking-tight">{value}</p>
-            </div>
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{title}</p>
+            <p className="text-3xl font-black" style={{ color: '#3b0764' }}>{value}</p>
         </motion.div>
     );
-
-    return href ? <Link href={href}>{Card}</Link> : Card;
+    return href ? <Link href={href} className="h-full block">{inner}</Link> : inner;
 };
 
 const ManageOrders = () => {
-    const { allOrders, fetchAllOrders, updateOrderStatus, deliveredOrders, fetchDeliveredOrders, cancelledOrders, fetchCancelledOrders } = useAppContext();
-    const [searchTerm, setSearchTerm] = useState('');
+    const { allOrders, fetchAllOrders, deliveredOrders, fetchDeliveredOrders, cancelledOrders, fetchCancelledOrders } = useAppContext();
+    const [searchTerm,   setSearchTerm]   = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
-    const [isLoading, setIsLoading] = useState(true);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [ordersPerPage] = useState(10);
+    const [isLoading,    setIsLoading]    = useState(true);
+    const [currentPage,  setCurrentPage]  = useState(1);
+    const ordersPerPage = 10;
 
     useEffect(() => {
-        const loadData = async () => {
+        const load = async () => {
             setIsLoading(true);
             await Promise.all([
                 fetchAllOrders(currentPage, ordersPerPage),
                 fetchDeliveredOrders(currentPage, ordersPerPage),
-                fetchCancelledOrders(currentPage, ordersPerPage)
+                fetchCancelledOrders(currentPage, ordersPerPage),
             ]);
             setIsLoading(false);
         };
-        loadData();
+        load();
     }, [fetchAllOrders, fetchDeliveredOrders, fetchCancelledOrders, currentPage, ordersPerPage]);
 
-    const getStatusStyles = (status) => {
-        switch (status.toLowerCase()) {
-            case 'pending': return 'bg-orange-50 text-orange-700 border-orange-100';
-            case 'processing': return 'bg-yellow-50 text-yellow-700 border-yellow-100';
-            case 'shipped': return 'bg-blue-50 text-blue-700 border-blue-100';
-            case 'delivered': return 'bg-green-50 text-green-700 border-green-100';
-            case 'cancelled': return 'bg-red-50 text-red-700 border-red-100';
-            default: return 'bg-gray-50 text-gray-700 border-gray-100';
-        }
-    };
-
     const filteredOrders = useMemo(() => {
-        let filtered = allOrders.orders || [];
-        if (filterStatus !== 'All') {
-            filtered = filtered.filter(order => order.status.toLowerCase() === filterStatus.toLowerCase());
-        }
-        if (searchTerm) {
-            filtered = filtered.filter(order =>
-                order.id.toString().includes(searchTerm.toLowerCase()) ||
-                order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-        return filtered;
+        let list = allOrders.orders || [];
+        if (filterStatus !== 'All') list = list.filter(o => o.status.toLowerCase() === filterStatus.toLowerCase());
+        if (searchTerm) list = list.filter(o =>
+            o.id.toString().includes(searchTerm) || o.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        return list;
     }, [allOrders.orders, filterStatus, searchTerm]);
 
-    const totalOrdersCount = (allOrders.totalCount || 0) + (deliveredOrders.totalCount || 0) + (cancelledOrders.totalCount || 0);
-    const pendingCount = (allOrders.orders || []).filter(order => order.status.toLowerCase() === 'pending').length;
+    const totalCount   = (allOrders.totalCount || 0) + (deliveredOrders.totalCount || 0) + (cancelledOrders.totalCount || 0);
+    const pendingCount = (allOrders.orders || []).filter(o => o.status.toLowerCase() === 'pending').length;
+    const totalPages   = Math.max(1, Math.ceil((allOrders.totalCount || 0) / ordersPerPage));
 
-    if (isLoading) {
-        return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Retrieving Acquisitions...</p>
-            </div>
-        );
-    }
+    if (isLoading) return (
+        <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
+            <div className="w-10 h-10 border-4 border-purple-100 border-t-[#9333ea] rounded-full animate-spin" />
+            <p className="text-sm text-gray-400">Loading…</p>
+        </div>
+    );
 
     return (
-        <div className="space-y-10 pb-20">
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Volume" value={totalOrdersCount} icon={List} color="bg-indigo-500" />
-                <StatCard title="Successful" value={deliveredOrders.totalCount} icon={CheckCircle} color="bg-green-500" href="/admin/orders/delivered" />
-                <StatCard title="Pending Review" value={pendingCount} icon={Clock} color="bg-orange-500" />
-                <StatCard title="Voided" value={cancelledOrders.totalCount} icon={XCircle} color="bg-red-500" href="/admin/orders/cancelled" />
+        <div className="space-y-6 pb-8">
+
+            {/* Stat cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <StatCard title="Total Orders"  value={totalCount}                   icon={List}         accent="#9333ea" />
+                <StatCard title="Delivered"     value={deliveredOrders.totalCount}   icon={CheckCircle}  accent="#22c55e" href="/admin/orders/delivered" />
+                <StatCard title="Pending"       value={pendingCount}                 icon={Clock}        accent="#f97316" />
+                <StatCard title="Cancelled"     value={cancelledOrders.totalCount}   icon={XCircle}      accent="#ef4444" href="/admin/orders/cancelled" />
             </div>
 
-            {/* Main Orders Table */}
-            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
-                <div className="p-8 border-b border-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    <div className="relative flex-grow max-w-xl">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            {/* Table */}
+            <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(216,180,254,0.35)' }}>
+
+                {/* Toolbar */}
+                <div className="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ borderColor: 'rgba(216,180,254,0.25)' }}>
+                    <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
                         <input
-                            type="text"
-                            placeholder="Track by Order ID or Client Email..."
-                            className="w-full pl-12 pr-6 py-3.5 bg-gray-50/50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            type="text" placeholder="Search by order ID or email…"
+                            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400 transition-all"
+                            style={{ borderColor: 'rgba(216,180,254,0.4)' }}
+                            value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
-                            <Filter size={14} className="text-gray-400" />
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="bg-transparent text-[11px] font-black uppercase tracking-widest text-gray-600 focus:outline-none cursor-pointer"
-                            >
-                                <option value="All">All Transactions</option>
-                                {Object.values(OrderStatus).map(status => (
-                                    <option key={status} value={status}>{status}</option>
-                                ))}
-                            </select>
-                        </div>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border rounded-xl" style={{ borderColor: 'rgba(216,180,254,0.4)' }}>
+                        <Filter size={13} className="text-gray-400" />
+                        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+                            className="bg-transparent text-[12px] font-semibold text-gray-600 focus:outline-none cursor-pointer">
+                            <option value="All">All Orders</option>
+                            {['Pending','Processing','Shipped','Delivered','Cancelled'].map(s => (
+                                <option key={s} value={s}>{s}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-gray-50">
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Transaction ID</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Client Identity</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Timestamp</th>
-                                <th className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">State</th>
-                                <th className="px-8 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Market Value</th>
-                                <th className="px-8 py-5"></th>
+                            <tr style={{ background: 'rgba(248,240,255,0.6)' }}>
+                                {['Order ID','Customer','Date','Status','Total',''].map((h, i) => (
+                                    <th key={i} className={`px-6 py-4 text-[10px] font-black uppercase tracking-wider text-purple-400 ${i>=4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                                ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-50">
+                        <tbody className="divide-y divide-purple-50">
                             <AnimatePresence>
-                                {filteredOrders.map((order) => (
-                                    <motion.tr 
-                                        key={order.id}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        className="group hover:bg-gray-50/50 transition-colors"
-                                    >
-                                        <td className="px-8 py-6">
-                                            <Link href={`/admin/orders/${order.id}`} className="text-sm font-bold text-indigo-600 hover:text-indigo-900 flex items-center gap-2">
+                                {filteredOrders.map(order => (
+                                    <motion.tr key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                        className="group hover:bg-purple-50/20 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <Link href={`/admin/orders/${order.id}`} className="text-sm font-bold hover:text-purple-700 transition-colors flex items-center gap-1.5" style={{ color: '#9333ea' }}>
                                                 #{order.id}
-                                                <ArrowUpRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <ArrowUpRight size={11} className="opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </Link>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium text-gray-900">{order.customerEmail}</span>
-                                                <span className="text-[10px] text-gray-400 uppercase tracking-tighter">Verified Acquisition</span>
-                                            </div>
+                                        <td className="px-6 py-4 text-sm text-gray-700">{order.customerEmail}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-400">
+                                            {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <span className="text-sm text-gray-500 font-medium">
-                                                {new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border ${getStatusStyles(order.status)}`}>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border ${STATUS_STYLES[order.status.toLowerCase()] || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
                                                 {order.status}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <span className="text-sm font-black text-gray-900">AED {order.totalAmount.toFixed(2)}</span>
+                                        <td className="px-6 py-4 text-right text-sm font-bold text-gray-900">
+                                            AED {Number(order.totalAmount).toFixed(2)}
                                         </td>
-                                        <td className="px-8 py-6 text-right">
+                                        <td className="px-6 py-4 text-right">
                                             <Link href={`/admin/orders/${order.id}`}>
-                                                <button className="p-2.5 rounded-xl hover:bg-white hover:shadow-md border border-transparent hover:border-gray-100 text-gray-400 hover:text-indigo-600 transition-all">
-                                                    <Eye size={18} />
+                                                <button className="p-2 rounded-lg border border-transparent hover:border-purple-200 hover:bg-purple-50 text-gray-300 hover:text-purple-500 transition-all">
+                                                    <Eye size={16} />
                                                 </button>
                                             </Link>
                                         </td>
@@ -197,46 +160,41 @@ const ManageOrders = () => {
                     </table>
                 </div>
 
-                {/* Pagination Controls - Redesigned */}
-                <div className="px-8 py-6 border-t border-gray-50 flex flex-col md:flex-row justify-between items-center gap-6 bg-gray-50/20">
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
-                        Displaying <span className="text-gray-900">{filteredOrders.length}</span> of <span className="text-gray-900">{allOrders.totalCount}</span> Transactions
+                {/* Pagination */}
+                <div className="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'rgba(216,180,254,0.2)', background: 'rgba(248,240,255,0.3)' }}>
+                    <p className="text-xs text-gray-400">
+                        Showing <span className="font-bold text-gray-700">{filteredOrders.length}</span> of <span className="font-bold text-gray-700">{allOrders.totalCount || 0}</span> orders
                     </p>
-                    
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
                         <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1 || isLoading}
-                            className="w-10 h-10 rounded-xl border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-white hover:text-indigo-600 disabled:opacity-30 transition-all shadow-sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="w-9 h-9 rounded-lg border flex items-center justify-center text-gray-400 hover:text-purple-500 hover:border-purple-300 disabled:opacity-30 transition-all"
+                            style={{ borderColor: 'rgba(216,180,254,0.4)' }}
                         >
-                            <ChevronLeft size={18} />
+                            <ChevronLeft size={16} />
                         </button>
-                        
-                        <div className="flex items-center gap-2">
-                            <span className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-500/20">
-                                {currentPage}
-                            </span>
-                            <span className="text-gray-300 text-xs font-bold">of</span>
-                            <span className="px-4 py-2 bg-white text-gray-600 rounded-xl text-xs font-black border border-gray-100">
-                                {Math.ceil(allOrders.totalCount / ordersPerPage)}
-                            </span>
+                        <div className="flex items-center gap-1.5 text-xs font-bold">
+                            <span className="px-3 py-1.5 rounded-lg text-white" style={{ background: '#9333ea' }}>{currentPage}</span>
+                            <span className="text-gray-300">of</span>
+                            <span className="px-3 py-1.5 rounded-lg bg-white border text-gray-600" style={{ borderColor: 'rgba(216,180,254,0.4)' }}>{totalPages}</span>
                         </div>
-
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(allOrders.totalCount / ordersPerPage), prev + 1))}
-                            disabled={currentPage === Math.ceil(allOrders.totalCount / ordersPerPage) || isLoading}
-                            className="w-10 h-10 rounded-xl border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-white hover:text-indigo-600 disabled:opacity-30 transition-all shadow-sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="w-9 h-9 rounded-lg border flex items-center justify-center text-gray-400 hover:text-purple-500 hover:border-purple-300 disabled:opacity-30 transition-all"
+                            style={{ borderColor: 'rgba(216,180,254,0.4)' }}
                         >
-                            <ChevronRight size={18} />
+                            <ChevronRight size={16} />
                         </button>
                     </div>
                 </div>
             </div>
-            
-            {filteredOrders.length === 0 && (
-                <div className="min-h-[300px] bg-white rounded-[2.5rem] border border-dashed border-gray-200 flex flex-col items-center justify-center gap-4">
-                    <Package size={40} className="text-gray-200" />
-                    <p className="text-lg font-medium text-gray-400 italic">No transaction records match your parameters.</p>
+
+            {filteredOrders.length === 0 && !isLoading && (
+                <div className="min-h-[240px] bg-white rounded-2xl border border-dashed flex flex-col items-center justify-center gap-3" style={{ borderColor: 'rgba(216,180,254,0.5)' }}>
+                    <Package size={36} className="text-purple-200" />
+                    <p className="text-gray-400 font-medium">No orders found</p>
                 </div>
             )}
         </div>

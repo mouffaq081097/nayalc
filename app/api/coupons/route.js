@@ -3,7 +3,23 @@ import db from '@/lib/db';
 
 export async function GET(request) {
   try {
-    const { rows } = await db.query('SELECT * FROM coupons ORDER BY created_at DESC');
+    const { rows } = await db.query(`
+      SELECT c.*, 
+             COALESCE(o.order_count, 0) as actual_order_count
+      FROM coupons c
+      LEFT JOIN (
+        SELECT applied_coupon_id, COUNT(*) as order_count
+        FROM (
+          SELECT applied_coupon_id FROM orders WHERE applied_coupon_id IS NOT NULL
+          UNION ALL
+          SELECT applied_coupon_id FROM delivered_orders WHERE applied_coupon_id IS NOT NULL
+          UNION ALL
+          SELECT applied_coupon_id FROM cancelled_orders WHERE applied_coupon_id IS NOT NULL
+        ) all_applied
+        GROUP BY applied_coupon_id
+      ) o ON c.id = o.applied_coupon_id
+      ORDER BY c.created_at DESC
+    `);
     return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching coupons:', error);

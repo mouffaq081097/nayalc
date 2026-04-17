@@ -14,21 +14,24 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
  *       500:
  *         description: Server error.
  */
-export async function GET() {
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const isAdmin = searchParams.get('admin') === 'true';
   try {
-    // Attempt query with new columns
+    const activeFilter = isAdmin ? '' : 'WHERE c.is_active = true';
     const sql = `
-      SELECT c.id, c.name, c.slug, c.description, c.image_url as "imageUrl", c.banner_url as "bannerUrl", c.parent_id as "parentId", COUNT(cp.product_id) as "productsCount"
+      SELECT c.id, c.name, c.slug, c.description, c.image_url as "imageUrl", c.banner_url as "bannerUrl", c.parent_id as "parentId", c.is_active as "isActive", COUNT(cp.product_id) as "productsCount"
       FROM categories c
       LEFT JOIN category_products cp ON c.id = cp.category_id
-      GROUP BY c.id, c.name, c.slug, c.description, c.image_url, c.banner_url, c.parent_id
+      ${activeFilter}
+      GROUP BY c.id, c.name, c.slug, c.description, c.image_url, c.banner_url, c.parent_id, c.is_active
       ORDER BY c.name ASC
     `;
     const { rows } = await db.query(sql);
     return NextResponse.json(rows);
   } catch (error) {
     // If it fails (likely missing columns), fallback to basic query
-    if (error.message.includes('column') || error.message.includes('banner_url')) {
+    if (error.message.includes('column') || error.message.includes('banner_url') || error.message.includes('is_active')) {
       try {
         const fallbackSql = `
           SELECT c.id, c.name, c.slug, c.image_url as "imageUrl", COUNT(cp.product_id) as "productsCount"
@@ -38,8 +41,7 @@ export async function GET() {
           ORDER BY c.name ASC
         `;
         const { rows } = await db.query(fallbackSql);
-        // Map null values for missing columns so frontend doesn't crash
-        return NextResponse.json(rows.map(r => ({ ...r, description: '', bannerUrl: null, parentId: null })));
+        return NextResponse.json(rows.map(r => ({ ...r, description: '', bannerUrl: null, parentId: null, isActive: true })));
       } catch (fallbackError) {
         console.error('Fallback fetch error:', fallbackError);
       }

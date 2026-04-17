@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import { useUser } from '../context/UserContext';
+import { User, Phone, AtSign } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Modal from '../components/Modal';
@@ -75,7 +76,7 @@ const StatBadge = ({ label, value, icon: Icon }) => (
 const AccountPageContent = () => {
   const { user, logout } = useAuth();
   const { fetchWithAuth } = useAppContext();
-  const { shippingAddresses, addShippingAddress, updateShippingAddress, deleteShippingAddress } = useUser();
+  const { shippingAddresses, addShippingAddress, updateShippingAddress, deleteShippingAddress, contactInfo } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
@@ -528,6 +529,32 @@ const AccountPageContent = () => {
               {activeTab === 'settings' && (
                 <motion.div key="settings" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-6">
                   <SectionTitle title="Account Settings" subtitle="Preferences" />
+
+                  {/* Profile info card */}
+                  <div className="rounded-3xl p-7" style={glassCard}>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Profile Information</p>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {[
+                        { label: 'Username',      icon: AtSign, value: user.username || '—' },
+                        { label: 'Email Address', icon: User,   value: user.email    || '—' },
+                        { label: 'Phone Number',  icon: Phone,  value: contactInfo?.phone || '—' },
+                      ].map(({ label, icon: Icon, value }) => (
+                        <div key={label} className="flex items-center gap-4 rounded-2xl px-5 py-4" style={{ background: CL.purpleLight, border: `1px solid ${CL.glassBorder}` }}>
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: CL.glass, color: CL.purple }}>
+                            <Icon size={16} strokeWidth={1.5} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black uppercase tracking-widest mb-0.5" style={{ color: CL.textSoft }}>{label}</p>
+                            <p className="text-sm font-semibold truncate" style={{ color: CL.textDeep }}>{value}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="rounded-3xl overflow-hidden" style={glassCard}>
                     <div>
                       {[

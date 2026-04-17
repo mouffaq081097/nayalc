@@ -27,10 +27,14 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
  *       500:
  *         description: Server error while fetching brands.
  */
-export async function GET() {
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const isAdmin = searchParams.get('admin') === 'true';
   try {
-    // Note: In Postgres, column names with capitals might need to be quoted.
-    const { rows } = await db.query('SELECT id, name, imageurl FROM brands');
+    const sql = isAdmin
+      ? 'SELECT id, name, imageurl, is_active FROM brands ORDER BY name ASC'
+      : 'SELECT id, name, imageurl FROM brands WHERE is_active = true ORDER BY name ASC';
+    const { rows } = await db.query(sql);
     return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching brands:', error);

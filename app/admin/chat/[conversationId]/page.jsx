@@ -273,7 +273,7 @@ const AdminConversationPage = () => {
     if (isLoading && !initialLoadComplete) {
         return (
             <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-cl-purple border-t-transparent rounded-full animate-spin"></div>
                 <p className="text-sm font-medium text-gray-400">Opening Secure Portal...</p>
             </div>
         );
@@ -287,13 +287,13 @@ const AdminConversationPage = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-6">
                     <Link href="/admin/chat">
-                        <button className="w-12 h-12 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:shadow-lg transition-all">
+                        <button className="w-12 h-12 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-cl-purple hover:shadow-lg transition-all">
                             <ArrowLeft size={20} />
                         </button>
                     </Link>
                     <div>
                         <div className="flex items-center gap-3 mb-1">
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tighter">Concierge Portal</h1>
+                            <h1 className="text-2xl font-black text-gray-900 ">Concierge Portal</h1>
                             <span className={`px-3 py-1 text-[9px] font-black rounded-full border ${getStatusStyles(conversation.status)}`}>
                                 {conversation.status?.replace(/_/g, ' ')}
                             </span>
@@ -312,7 +312,7 @@ const AdminConversationPage = () => {
                 <div className="lg:col-span-8 flex flex-col h-[70vh] bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
                     <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/20">
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                            <div className="w-10 h-10 rounded-xl bg-cl-purple flex items-center justify-center text-white shadow-lg shadow-indigo-200">
                                 <MessageCircle size={20} />
                             </div>
                             <div>
@@ -328,7 +328,7 @@ const AdminConversationPage = () => {
                             <button
                                 onClick={() => fetchMessages(true)}
                                 disabled={isLoadingMore}
-                                className="w-full py-4 text-[9px] font-black text-gray-300 hover:text-indigo-600 transition-all flex items-center justify-center gap-2"
+                                className="w-full py-4 text-[9px] font-black text-gray-300 hover:text-cl-purple transition-all flex items-center justify-center gap-2"
                             >
                                 {isLoadingMore ? <Loader2 size={14} className="animate-spin" /> : <ChevronUp size={14} />}
                                 Load Historical Transmissions
@@ -354,7 +354,7 @@ const AdminConversationPage = () => {
                                             )}
                                             <div className={`px-6 py-4 rounded-[2rem] text-sm font-medium shadow-sm ${
                                                 isAdmin
-                                                    ? 'bg-indigo-600 text-white rounded-br-none'
+                                                    ? 'bg-cl-purple text-white rounded-br-none'
                                                     : isAi
                                                         ? 'bg-purple-50 border-l-4 border-purple-400 text-gray-700 rounded-bl-none italic'
                                                         : 'bg-white border border-gray-100 text-gray-700 rounded-bl-none'
@@ -362,7 +362,7 @@ const AdminConversationPage = () => {
                                                 {msg.messageText || msg.message_text}
                                             </div>
                                             <div className={`flex items-center gap-2 px-2 ${isAdmin ? 'flex-row-reverse' : ''}`}>
-                                                <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">
+                                                <p className="text-[9px] font-black text-gray-300  ">
                                                     {isAdmin ? 'You' : isAi ? 'AI Specialist' : conversation.customerName || 'Client'}
                                                 </p>
                                                 <span className="w-1 h-1 rounded-full bg-gray-100" />
@@ -389,7 +389,7 @@ const AdminConversationPage = () => {
                                     className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line overflow-hidden"
                                 >
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-purple-500 flex items-center gap-1.5">
+                                        <span className="text-[9px] font-black   text-purple-500 flex items-center gap-1.5">
                                             <Sparkles size={10} /> AI Summary
                                         </span>
                                         <button onClick={() => setAiSummary('')} className="text-gray-300 hover:text-gray-500 text-xs">✕</button>
@@ -404,7 +404,7 @@ const AdminConversationPage = () => {
                             <button
                                 onClick={handleAiDraft}
                                 disabled={isAiDrafting}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 border border-purple-100 text-purple-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-100 transition-all disabled:opacity-50"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 border border-purple-100 text-purple-600 rounded-xl text-[10px] font-black   hover:bg-purple-100 transition-all disabled:opacity-50"
                             >
                                 {isAiDrafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                                 AI Draft Reply
@@ -412,7 +412,7 @@ const AdminConversationPage = () => {
                             <button
                                 onClick={handleAiSummary}
                                 disabled={isAiSummarizing}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-100 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all disabled:opacity-50"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-100 text-gray-500 rounded-xl text-[10px] font-black   hover:bg-gray-100 transition-all disabled:opacity-50"
                             >
                                 {isAiSummarizing ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
                                 Summarize
@@ -420,7 +420,7 @@ const AdminConversationPage = () => {
                             {conversation.status === 'ai_handling' && (
                                 <button
                                     onClick={handleTakeOver}
-                                    className="ml-auto flex items-center gap-1.5 px-3 py-2 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all"
+                                    className="ml-auto flex items-center gap-1.5 px-3 py-2 bg-cl-bg-lavender border border-indigo-100 text-cl-purple rounded-xl text-[10px] font-black   hover:bg-cl-purple-light transition-all"
                                 >
                                     <UserCheck size={12} /> Take Over Chat
                                 </button>
@@ -438,13 +438,13 @@ const AdminConversationPage = () => {
                                     }
                                 }}
                                 placeholder="Compose response..."
-                                className="flex-1 min-h-[60px] max-h-[200px] bg-gray-50/50 border-gray-100 rounded-3xl px-6 py-4 focus:bg-white focus:ring-4 focus:ring-indigo-500/5 transition-all text-sm font-medium resize-none no-scrollbar"
+                                className="flex-1 min-h-[60px] max-h-[200px] bg-gray-50/50 border-gray-100 rounded-3xl px-6 py-4 focus:bg-white focus:ring-4 focus:ring-cl-purple/5 transition-all text-sm font-medium resize-none no-scrollbar"
                                 disabled={isSending}
                             />
                             <button
                                 onClick={handleSendMessage}
                                 disabled={isSending || !newMessage.trim()}
-                                className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-200 hover:bg-gray-900 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+                                className="w-14 h-14 rounded-2xl bg-cl-purple flex items-center justify-center text-white shadow-xl shadow-indigo-200 hover:bg-gray-900 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
                             >
                                 {isSending ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} />}
                             </button>
@@ -456,20 +456,20 @@ const AdminConversationPage = () => {
                 <div className="lg:col-span-4 space-y-6">
                     {/* Client Identity */}
                     <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-900 mb-6 border-b border-gray-50 pb-4 flex justify-between items-center">
+                        <h3 className="text-[10px] font-black  tracking-[0.3em] text-gray-900 mb-6 border-b border-gray-50 pb-4 flex justify-between items-center">
                             Client Identity
                             <User size={14} className="text-gray-300" />
                         </h3>
                         <div className="space-y-5">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner shrink-0">
+                                <div className="w-12 h-12 rounded-2xl bg-cl-bg-lavender flex items-center justify-center text-cl-purple shadow-inner shrink-0">
                                     <User size={24} strokeWidth={1.5} />
                                 </div>
                                 <div>
                                     <p className="text-base font-bold text-gray-900 leading-tight">{conversation.customerName || 'Verified Client'}</p>
                                     <div className="flex items-center gap-1.5 mt-0.5">
                                         <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active</p>
+                                        <p className="text-[9px] font-black text-gray-400  ">Active</p>
                                     </div>
                                 </div>
                             </div>
@@ -489,7 +489,7 @@ const AdminConversationPage = () => {
                                 <div className="pt-4 border-t border-gray-50 space-y-3">
                                     {customerContext.loyaltyTier && (
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                                            <span className="text-[10px] font-black text-gray-400   flex items-center gap-1.5">
                                                 <Star size={10} /> Loyalty
                                             </span>
                                             <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getTierColor(customerContext.loyaltyTier)}`}>
@@ -499,7 +499,7 @@ const AdminConversationPage = () => {
                                     )}
                                     {customerContext.lastOrder && (
                                         <div className="bg-gray-50 rounded-xl p-3 space-y-1">
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                                            <p className="text-[10px] font-black text-gray-400   flex items-center gap-1.5">
                                                 <ShoppingBag size={10} /> Last Order
                                             </p>
                                             <p className="text-xs font-semibold text-gray-700">#{customerContext.lastOrder.id} · AED {parseFloat(customerContext.lastOrder.totalAmount || 0).toFixed(2)}</p>
@@ -513,13 +513,13 @@ const AdminConversationPage = () => {
 
                     {/* Protocol Control */}
                     <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-900 mb-6 border-b border-gray-50 pb-4 flex justify-between items-center">
+                        <h3 className="text-[10px] font-black  tracking-[0.3em] text-gray-900 mb-6 border-b border-gray-50 pb-4 flex justify-between items-center">
                             Protocol Control
                             <ShieldCheck size={14} />
                         </h3>
                         <div className="space-y-5">
                             <div className="space-y-3">
-                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Transmission State</Label>
+                                <Label className="text-[10px] font-black text-gray-400  ">Transmission State</Label>
                                 <Select value={newStatus} onValueChange={setNewStatus}>
                                     <SelectTrigger className="w-full h-12 rounded-xl bg-gray-50 border-gray-100 font-bold">
                                         <SelectValue placeholder="Transition Protocol" />
@@ -533,16 +533,16 @@ const AdminConversationPage = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button onClick={handleUpdateStatus} className="w-full py-6 bg-gray-900 hover:bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            <Button onClick={handleUpdateStatus} className="w-full py-6 bg-gray-900 hover:bg-cl-purple text-white rounded-xl text-[10px] font-black   transition-all">
                                 Update Protocol State
                             </Button>
                         </div>
                     </section>
 
-                    <div className="p-6 bg-indigo-50/50 rounded-[2rem] border border-indigo-100/30">
-                        <div className="flex items-center gap-3 mb-3 text-indigo-600">
+                    <div className="p-6 bg-cl-bg-lavender/50 rounded-[2rem] border border-indigo-100/30">
+                        <div className="flex items-center gap-3 mb-3 text-cl-purple">
                             <Zap size={16} />
-                            <span className="text-[11px] font-black uppercase tracking-widest">Concierge Efficiency</span>
+                            <span className="text-[11px] font-black  ">Concierge Efficiency</span>
                         </div>
                         <p className="text-[11px] text-gray-500 font-medium italic leading-relaxed">
                             Maintain Naya Lumière standards by responding within 15 minutes of client transmission.

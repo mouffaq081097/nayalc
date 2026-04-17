@@ -68,7 +68,7 @@ export async function GET(request, { params }) {
           JOIN brands b ON p.brand_id = b.id
           LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
           LEFT JOIN reviews r ON p.id = r.product_id
-          WHERE cp.category_id = $1
+          WHERE cp.category_id = $1 AND p.is_active = true
           GROUP BY p.id, p.name, p.slug, p.description, p.price, b.name, pi.image_url
         `;
         const { rows: productRows } = await db.query(productsSql, [id]);    
@@ -205,6 +205,23 @@ export async function PUT(request, { params }) {
  *       500:
  *         description: Server error.
  */
+export async function PATCH(request, { params }) {
+  const resolvedParams = await Promise.resolve(params);
+  const id = resolvedParams.id;
+  try {
+    const { is_active } = await request.json();
+    const { rowCount } = await db.query(
+      'UPDATE categories SET is_active = $1 WHERE id = $2',
+      [is_active, id]
+    );
+    if (rowCount === 0) return NextResponse.json({ message: 'Category not found' }, { status: 404 });
+    return NextResponse.json({ message: 'Category status updated', is_active });
+  } catch (error) {
+    console.error(`Error toggling category ${id}:`, error);
+    return NextResponse.json({ message: 'Error updating category status', error: error.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request, { params }) {
   const { id } = params;
   try {

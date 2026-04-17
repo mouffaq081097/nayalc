@@ -35,11 +35,11 @@ const SeoAnalyticsPage = () => {
         return (
             <div className="min-h-[600px] flex flex-col items-center justify-center gap-6">
                 <div className="relative">
-                    <div className="w-20 h-20 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <Globe className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-indigo-600 animate-pulse" size={32} />
+                    <div className="w-20 h-20 border-4 border-cl-purple/20 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <Globe className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cl-purple animate-pulse" size={32} />
                 </div>
                 <div className="text-center space-y-2">
-                    <p className="text-sm font-black uppercase tracking-[0.4em] text-gray-900">Scanning Global Index</p>
+                    <p className="text-sm font-black   text-gray-900">Scanning Global Index</p>
                     <p className="text-xs text-gray-400 italic">AI Strategist is calculating neural rankings...</p>
                 </div>
             </div>
@@ -53,10 +53,10 @@ const SeoAnalyticsPage = () => {
                     <AlertTriangle size={32} />
                 </div>
                 <div className="space-y-2">
-                    <p className="text-sm font-black uppercase tracking-[0.4em] text-gray-900">Audit Protocol Terminated</p>
+                    <p className="text-sm font-black   text-gray-900">Audit Protocol Terminated</p>
                     <p className="text-xs text-red-400 font-medium italic">Reason: {error || 'Neural connection timed out.'}</p>
                 </div>
-                <Button onClick={runAudit} className="mt-4 bg-gray-900 text-white rounded-xl px-8 py-4 text-[10px] font-black uppercase tracking-widest">
+                <Button onClick={runAudit} className="mt-4 bg-gray-900 text-white rounded-xl px-8 py-4 text-[10px] font-black  ">
                     Retry Neutral Scan
                 </Button>
             </div>
@@ -70,10 +70,10 @@ const SeoAnalyticsPage = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900 tracking-tight">AI SEO Command Center</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 ">AI SEO Command Center</h2>
                     <p className="text-sm text-gray-400 mt-1">Real-time neural analysis of your visibility in global search engines</p>
                 </div>
-                <Button onClick={runAudit} className="bg-gray-900 hover:bg-indigo-600 text-white rounded-xl px-8 py-6 text-[11px] font-black uppercase tracking-widest shadow-xl transition-all">
+                <Button onClick={runAudit} className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-8 py-6 text-[11px] font-black   shadow-xl transition-all">
                     <Zap size={14} className="mr-2" /> Run Fresh Audit
                 </Button>
             </div>
@@ -97,12 +97,12 @@ const SeoAnalyticsPage = () => {
                                     initial={{ strokeDashoffset: 440 }}
                                     animate={{ strokeDashoffset: 440 - (440 * (analysis?.score || 0)) / 100 }}
                                     transition={{ duration: 2, ease: "easeOut" }}
-                                    className="text-indigo-600"
+                                    className="text-cl-purple"
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-5xl font-black text-gray-900 tracking-tighter">{analysis?.score || 0}</span>
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Global Health</span>
+                                <span className="text-5xl font-black text-gray-900 er">{analysis?.score || 0}</span>
+                                <span className="text-[10px] font-black text-gray-400  ">Global Health</span>
                             </div>
                         </div>
                         <div>
@@ -115,7 +115,7 @@ const SeoAnalyticsPage = () => {
                 {/* Technical Audit Grid */}
                 <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[
-                        { title: "Catalog Optimization", val: audit.missingSlugs === 0 ? "Optimal" : `${audit.missingSlugs} Pending`, icon: Target, color: "text-indigo-600", bg: "bg-indigo-50", desc: "Product path structures and slug health" },
+                        { title: "Catalog Optimization", val: audit.missingSlugs === 0 ? "Optimal" : `${audit.missingSlugs} Pending`, icon: Target, color: "text-cl-purple", bg: "bg-cl-bg-lavender", desc: "Product path structures and slug health" },
                         { title: "Meta Descriptions", val: audit.shortDescriptions === 0 ? "Excellent" : `${audit.shortDescriptions} Short`, icon: BarChart3, color: "text-amber-600", bg: "bg-amber-50", desc: "Short-form catalog descriptions" },
                         { title: "Dossier Depth", val: audit.missingLongDescriptions === 0 ? "Complete" : `${audit.missingLongDescriptions} Sparse`, icon: ShieldCheck, color: "text-blue-600", bg: "bg-blue-50", desc: "Luxury product storytelling health" },
                         { title: "Visual Accessibility", val: audit.missingAltTexts === 0 ? "Perfect" : `${audit.missingAltTexts} Missing`, icon: Globe, color: audit.missingAltTexts > 0 ? "text-red-600" : "text-green-600", bg: audit.missingAltTexts > 0 ? "bg-red-50" : "bg-green-50", desc: "Image alt-text and SEO crawlability" }
@@ -128,7 +128,7 @@ const SeoAnalyticsPage = () => {
                                 <item.icon size={24} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{item.title}</p>
+                                <p className="text-[10px] font-black text-gray-400   mb-1">{item.title}</p>
                                 <h4 className="text-lg font-bold text-gray-900 leading-none mb-2">{item.val}</h4>
                                 <p className="text-xs text-gray-400 font-medium italic leading-relaxed">{item.desc}</p>
                             </div>
@@ -140,11 +140,11 @@ const SeoAnalyticsPage = () => {
             {/* AI Strategic Roadmap */}
             <section className="space-y-8">
                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                    <div className="w-10 h-10 rounded-xl bg-cl-purple flex items-center justify-center text-white shadow-lg shadow-indigo-200">
                         <Sparkles size={20} />
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-gray-900 tracking-tight">AI Strategic Roadmap</h3>
+                        <h3 className="text-xl font-bold text-gray-900 ">AI Strategic Roadmap</h3>
                         <p className="text-xs text-gray-400 mt-0.5">High-impact actions generated by the Naya Lumière Neural Network</p>
                     </div>
                 </div>
@@ -156,7 +156,7 @@ const SeoAnalyticsPage = () => {
                             className="bg-white rounded-[2.5rem] border border-gray-100 p-10 shadow-sm relative overflow-hidden flex flex-col group hover:border-indigo-200 transition-all duration-500"
                         >
                             <div className="absolute top-0 right-0 p-6">
-                                <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                                <span className={`px-3 py-1 rounded-full text-[8px] font-black   border ${
                                     rec.impact === 'High' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
                                 }`}>
                                     {rec.impact} Impact
@@ -164,13 +164,13 @@ const SeoAnalyticsPage = () => {
                             </div>
                             
                             <div className="flex-grow space-y-4">
-                                <h4 className="text-lg font-bold text-gray-900 pr-12 group-hover:text-indigo-600 transition-colors">{rec.title}</h4>
+                                <h4 className="text-lg font-bold text-gray-900 pr-12 group-hover:text-cl-purple transition-colors">{rec.title}</h4>
                                 <p className="text-sm text-gray-500 leading-relaxed font-medium italic opacity-80">"{rec.action}"</p>
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
-                                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Execute Protocol</span>
-                                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                <span className="text-[9px] font-black text-cl-purple  ">Execute Protocol</span>
+                                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-cl-purple group-hover:text-white transition-all">
                                     <ArrowRight size={14} />
                                 </div>
                             </div>
@@ -190,10 +190,10 @@ const SeoAnalyticsPage = () => {
                 <div className="relative z-10 grid lg:grid-cols-12 gap-12 items-center">
                     <div className="lg:col-span-4 space-y-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center shadow-lg"><Globe size={16} /></div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Market Intelligence</span>
+                            <div className="w-8 h-8 rounded-lg bg-cl-purple-light flex items-center justify-center shadow-lg"><Globe size={16} /></div>
+                            <span className="text-[10px] font-black   text-cl-purple-light">Market Intelligence</span>
                         </div>
-                        <h2 className="text-3xl font-serif italic tracking-tight">Competitive Landscape <br/> Analysis</h2>
+                        <h2 className="text-3xl font-serif italic ">Competitive Landscape <br/> Analysis</h2>
                     </div>
                     <div className="lg:col-span-8 bg-white/5 backdrop-blur-xl rounded-[2rem] p-10 border border-white/10">
                         <p className="text-lg font-medium leading-[1.8] text-gray-300 italic">

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, Trash2, Search, Loader2, Tag, MoreHorizontal, LayoutGrid, Package, ArrowRight, ExternalLink, Image as ImageIcon, CheckCircle2, Edit } from 'lucide-react';
+import { Plus, Trash2, Search, Loader2, Tag, MoreHorizontal, LayoutGrid, Package, ArrowRight, ExternalLink, Image as ImageIcon, CheckCircle2, Edit, Eye, EyeOff } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { Button } from '@/app/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
 const ManageCategories = () => {
-    const { categories, addCategory, updateCategory, deleteCategory, loading: isDataLoading } = useAppContext();
+    const { adminCategories: categories, addCategory, updateCategory, deleteCategory, toggleCategoryStatus, loading: isDataLoading } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
@@ -117,8 +117,8 @@ const ManageCategories = () => {
     if (isDataLoading) {
         return (
             <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm font-medium text-gray-400 uppercase tracking-widest">Organizing Universes...</p>
+                <div className="w-12 h-12 border-4 border-cl-purple border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm font-medium text-gray-400  ">Organizing Universes...</p>
             </div>
         );
     }
@@ -132,7 +132,7 @@ const ManageCategories = () => {
                     <input
                         type="text"
                         placeholder="Search category universes..."
-                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
+                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-cl-purple/20 focus:border-cl-purple transition-all text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -140,7 +140,7 @@ const ManageCategories = () => {
                 
                 <Button 
                     onClick={handleOpenAddModal} 
-                    className="bg-gray-900 hover:bg-indigo-600 text-white rounded-xl px-6 py-6 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/10 active:scale-95 transition-all"
+                    className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-6 py-6 text-[11px] font-black   shadow-lg shadow-indigo-500/10 active:scale-95 transition-all"
                 >
                     <Plus className="mr-2 h-4 w-4" /> Create New Universe
                 </Button>
@@ -154,9 +154,9 @@ const ManageCategories = () => {
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                 >
                     {filteredCategories.map(category => (
-                        <div 
-                            key={category.id} 
-                            className="group relative bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col"
+                        <div
+                            key={category.id}
+                            className={`group relative bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col ${category.isActive === false ? 'opacity-60' : ''}`}
                         >
                             <div 
                                 className="relative aspect-[4/3] w-full p-6 bg-gray-50/50 cursor-pointer group-hover:bg-white transition-colors duration-500"
@@ -172,7 +172,7 @@ const ManageCategories = () => {
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center text-gray-200 gap-3 bg-white rounded-2xl border border-gray-50">
                                         <ImageIcon size={40} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">No Portrait</span>
+                                        <span className="text-[10px] font-black  ">No Portrait</span>
                                     </div>
                                 )}
                             </div>
@@ -180,7 +180,7 @@ const ManageCategories = () => {
                             <div className="p-8 flex flex-col flex-grow">
                                 <div className="flex-grow space-y-1">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-xl font-bold text-gray-900 tracking-tight leading-tight group-hover:text-indigo-600 transition-colors">
+                                        <h3 className="text-xl font-bold text-gray-900  leading-tight group-hover:text-cl-purple transition-colors">
                                             {category.name}
                                         </h3>
                                         <DropdownMenu>
@@ -191,16 +191,26 @@ const ManageCategories = () => {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="rounded-xl shadow-2xl border-gray-100 p-2">
                                                 <DropdownMenuItem onClick={() => handleOpenEditModal(category)} className="rounded-lg px-3 py-2 text-sm font-medium gap-2">
-                                                    <Edit size={14} className="text-indigo-600" /> Refine
+                                                    <Edit size={14} className="text-cl-purple" /> Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => toggleCategoryStatus(category.id, category.isActive === false)}
+                                                    className="rounded-lg px-3 py-2 text-sm font-medium gap-2"
+                                                >
+                                                    {category.isActive === false ? (
+                                                        <><Eye size={14} className="text-green-500" /> Activate</>
+                                                    ) : (
+                                                        <><EyeOff size={14} className="text-orange-500" /> Deactivate</>
+                                                    )}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handleDelete(category.id)} className="rounded-lg px-3 py-2 text-sm font-medium gap-2 text-red-600">
-                                                    <Trash2 size={14} /> Dissolve
+                                                    <Trash2 size={14} /> Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
-                                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Package size={10} className="text-indigo-600/40" />
+                                    <p className="text-[10px] font-black text-gray-300   flex items-center gap-2">
+                                        <Package size={10} className="text-cl-purple/40" />
                                         {category.productsCount || 0} Products Cataloged
                                     </p>
                                 </div>
@@ -208,7 +218,7 @@ const ManageCategories = () => {
                                 <div className="mt-8 pt-6 border-t border-gray-50">
                                     <button 
                                         onClick={() => handleOpenEditModal(category)}
-                                        className="w-full py-3 bg-gray-50 hover:bg-indigo-600 hover:text-white text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-3"
+                                        className="w-full py-3 bg-gray-50 hover:bg-cl-purple hover:text-white text-gray-400 text-[10px] font-black   rounded-xl transition-all flex items-center justify-center gap-3"
                                     >
                                         Manage Assets
                                         <ArrowRight size={14} />
@@ -237,12 +247,12 @@ const ManageCategories = () => {
                 <form onSubmit={handleSubmit} className="p-10 lg:p-14 space-y-12">
                     <section className="grid grid-cols-1 md:grid-cols-2 gap-12">
                             <div className="space-y-8">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 mb-2 flex items-center gap-3">
-                                    <span className="w-10 h-px bg-indigo-600/20"></span>
+                                <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
+                                    <span className="w-10 h-px bg-cl-purple/20"></span>
                                     Identity
                                 </h3>
                                 <div>
-                                    <label htmlFor="categoryName" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Classification Name</label>
+                                    <label htmlFor="categoryName" className="block text-[11px] font-black text-gray-400   mb-3">Classification Name</label>
                                     <input
                                         type="text" id="categoryName" value={categoryName} onChange={(e) => setCategoryName(e.target.value)}
                                         placeholder="e.g., Cellular Regimes"
@@ -251,7 +261,7 @@ const ManageCategories = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="parentCategory" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Ancestry (Parent Category)</label>
+                                    <label htmlFor="parentCategory" className="block text-[11px] font-black text-gray-400   mb-3">Ancestry (Parent Category)</label>
                                     <select
                                         id="parentCategory" value={parentCategoryId} onChange={(e) => setParentCategoryId(e.target.value)}
                                         className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white transition-all text-sm shadow-inner appearance-none"
@@ -264,7 +274,7 @@ const ManageCategories = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label htmlFor="categoryDescription" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Lore & Philosophy (Description)</label>
+                                    <label htmlFor="categoryDescription" className="block text-[11px] font-black text-gray-400   mb-3">Lore & Philosophy (Description)</label>
                                     <textarea
                                         id="categoryDescription" value={categoryDescription} onChange={(e) => setCategoryDescription(e.target.value)}
                                         placeholder="Describe the essence of this collection..."
@@ -273,20 +283,20 @@ const ManageCategories = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label htmlFor="categorySlug" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">URL Path (Slug)</label>
+                                    <label htmlFor="categorySlug" className="block text-[11px] font-black text-gray-400   mb-3">URL Path (Slug)</label>
                                     <div className="relative">
                                         <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 font-bold">/</span>
                                         <input
                                             type="text" id="categorySlug" value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)}
                                             placeholder="skincare-regimes"
-                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-10 pr-6 py-4 font-medium text-indigo-600 focus:bg-white transition-all text-sm shadow-inner"
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-10 pr-6 py-4 font-medium text-cl-purple focus:bg-white transition-all text-sm shadow-inner"
                                             disabled={isSubmitting}
                                         />
                                     </div>
                                     <p className="mt-2 text-[9px] text-gray-400 italic">Leave blank to automatically derive from name.</p>
                                 </div>
                                 <div>
-                                    <label htmlFor="image" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Visual Anchor (Portrait)</label>
+                                    <label htmlFor="image" className="block text-[11px] font-black text-gray-400   mb-3">Visual Anchor (Portrait)</label>
                                     <div className="relative group/img aspect-[16/9] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-6 transition-all hover:bg-gray-100/50">
                                         {imageFile ? (
                                             <Image src={URL.createObjectURL(imageFile)} alt="Preview" fill className="object-cover p-2 rounded-xl" />
@@ -295,7 +305,7 @@ const ManageCategories = () => {
                                         ) : (
                                             <div className="text-gray-200 flex flex-col items-center gap-2">
                                                 <ImageIcon size={32} />
-                                                <span className="text-[9px] font-black uppercase tracking-widest">Select Image</span>
+                                                <span className="text-[9px] font-black  ">Select Image</span>
                                             </div>
                                         )}
                                         <input type="file" onChange={(e) => setImageFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isSubmitting} />
@@ -303,7 +313,7 @@ const ManageCategories = () => {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="banner" className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Cinematic Header (Banner)</label>
+                                    <label htmlFor="banner" className="block text-[11px] font-black text-gray-400   mb-3">Cinematic Header (Banner)</label>
                                     <div className="relative group/banner aspect-[21/9] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-4 transition-all hover:bg-gray-100/50">
                                         {bannerFile ? (
                                             <Image src={URL.createObjectURL(bannerFile)} alt="Banner Preview" fill className="object-cover rounded-xl" />
@@ -312,7 +322,7 @@ const ManageCategories = () => {
                                         ) : (
                                             <div className="text-gray-200 flex flex-col items-center gap-2">
                                                 <ImageIcon size={32} />
-                                                <span className="text-[9px] font-black uppercase tracking-widest">Select Banner</span>
+                                                <span className="text-[9px] font-black  ">Select Banner</span>
                                             </div>
                                         )}
                                         <input type="file" onChange={(e) => setBannerFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isSubmitting} />
@@ -322,14 +332,14 @@ const ManageCategories = () => {
                             </div>
 
                             <div className="space-y-8">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600 mb-2 flex items-center gap-3">
-                                    <span className="w-10 h-px bg-indigo-600/20"></span>
+                                <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
+                                    <span className="w-10 h-px bg-cl-purple/20"></span>
                                     Linked Assets
                                 </h3>
                                 <div className="bg-gray-50/50 rounded-3xl border border-gray-100 p-8">
                                     {editingCategory ? (
                                         <div className="space-y-6">
-                                            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Active Masterpieces in Universe</p>
+                                            <p className="text-[11px] font-black text-gray-400  ">Active Masterpieces in Universe</p>
                                             {categoryProducts.length > 0 ? (
                                                 <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
                                                     {categoryProducts.map(product => (
@@ -339,7 +349,7 @@ const ManageCategories = () => {
                                                             </div>
                                                             <div className="flex-grow">
                                                                 <p className="text-xs font-bold text-gray-900 truncate max-w-[200px]">{product.name}</p>
-                                                                <p className="text-[9px] text-indigo-600 font-medium tracking-tighter">Verified Inclusion</p>
+                                                                <p className="text-[9px] text-cl-purple font-medium er">Verified Inclusion</p>
                                                             </div>
                                                             <CheckCircle2 size={14} className="text-green-500" />
                                                         </div>
@@ -348,7 +358,7 @@ const ManageCategories = () => {
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center py-10 text-gray-300 gap-3">
                                                     <Package size={32} strokeWidth={1} />
-                                                    <p className="text-[10px] font-black uppercase tracking-widest italic text-center">No products currently <br/>assigned to this universe.</p>
+                                                    <p className="text-[10px] font-black   italic text-center">No products currently <br/>assigned to this universe.</p>
                                                 </div>
                                             )}
                                         </div>
@@ -366,14 +376,14 @@ const ManageCategories = () => {
                             <button 
                                 type="button" 
                                 onClick={handleCloseModal} 
-                                className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
+                                className="px-8 py-4 text-[10px] font-black   text-gray-400 hover:text-gray-900 transition-colors"
                                 disabled={isSubmitting}
                             >
                                 Cancel Operation
                             </button>
                             <Button 
                                 type="submit" 
-                                className="px-10 py-6 bg-indigo-600 hover:bg-gray-900 text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all" 
+                                className="px-10 py-6 bg-cl-purple hover:bg-gray-900 text-white rounded-xl text-[11px] font-black   shadow-xl active:scale-95 transition-all" 
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? <Loader2 className="animate-spin" /> : editingCategory ? 'Update Architecture' : 'Incept Universe'}
