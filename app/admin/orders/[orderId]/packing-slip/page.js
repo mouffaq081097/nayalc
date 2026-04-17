@@ -197,39 +197,6 @@ const css = `
   .item-name { font-weight: 600; color: #1a1a1a; }
   .item-brand { font-size: 10px; color: #9333ea; font-weight: 500; margin-top: 3px; }
 
-  /* Summary */
-  .summary-wrapper { display: flex; justify-content: flex-end; margin-bottom: 40px; }
-
-  .summary-box {
-    background: #f8f0ff;
-    border: 1px solid rgba(216,180,254,0.35);
-    border-radius: 10px;
-    padding: 16px 20px;
-    min-width: 270px;
-  }
-
-  .summary-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    margin-bottom: 7px;
-    color: rgba(59,7,100,0.65);
-  }
-
-  .summary-row span:last-child { font-weight: 600; color: #3b0764; }
-  .summary-row .discount { color: #16a34a; }
-
-  .summary-total {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 10px;
-    border-top: 1px solid rgba(216,180,254,0.5);
-    margin-top: 6px;
-    font-weight: 700;
-    font-size: 16px;
-    color: #3b0764;
-  }
-
   /* Footer */
   .slip-footer {
     border-top: 1px solid #e9d5ff;
@@ -281,13 +248,6 @@ export default async function PackingSlipPage({ params }) {
       </>
     );
   }
-
-  const totalAmount    = parseFloat(order.totalAmount)    || 0;
-  const discountAmount = parseFloat(order.discountAmount) || 0;
-  const shippingCost   = parseFloat(order.shippingCost)   || 0;
-  const giftWrapCost   = parseFloat(order.giftWrapCost)   || 0;
-  const subtotal = parseFloat(order.subtotal) ||
-    order.items.reduce((s, i) => s + parseFloat(i.price) * i.quantity, 0);
 
   const placedDate = new Date(order.createdAt).toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -356,55 +316,18 @@ export default async function PackingSlipPage({ params }) {
                 <th>Product</th>
                 <th>Brand</th>
                 <th className="center">Qty</th>
-                <th className="right">Unit price</th>
-                <th className="right">Line total</th>
               </tr>
             </thead>
             <tbody>
-              {order.items.map((item, idx) => {
-                const unitPrice = parseFloat(item.price);
-                return (
-                  <tr key={idx}>
-                    <td><div className="item-name">{item.name}</div></td>
-                    <td><div className="item-brand">{item.brandName || 'Naya Lumière'}</div></td>
-                    <td className="center">{item.quantity}</td>
-                    <td className="right">AED {unitPrice.toFixed(2)}</td>
-                    <td className="right">AED {(unitPrice * item.quantity).toFixed(2)}</td>
-                  </tr>
-                );
-              })}
+              {order.items.map((item, idx) => (
+                <tr key={idx}>
+                  <td><div className="item-name">{item.name}</div></td>
+                  <td><div className="item-brand">{item.brandName || 'Naya Lumière'}</div></td>
+                  <td className="center">{item.quantity}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
-
-          {/* Summary */}
-          <div className="summary-wrapper">
-            <div className="summary-box">
-              <div className="summary-row">
-                <span>Subtotal</span>
-                <span>AED {subtotal.toFixed(2)}</span>
-              </div>
-              {discountAmount > 0 && (
-                <div className="summary-row">
-                  <span>Discount</span>
-                  <span className="discount">− AED {discountAmount.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="summary-row">
-                <span>Shipping</span>
-                <span>AED {shippingCost.toFixed(2)}</span>
-              </div>
-              {giftWrapCost > 0 && (
-                <div className="summary-row">
-                  <span>Gift wrap</span>
-                  <span>AED {giftWrapCost.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="summary-total">
-                <span>Total</span>
-                <span>AED {totalAmount.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
 
           {/* Footer */}
           <div className="slip-footer">
