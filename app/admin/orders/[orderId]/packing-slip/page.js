@@ -15,7 +15,7 @@ async function fetchOrder(orderId) {
         o.id, o.order_status AS status, o.created_at AS "createdAt",
         o.total_amount AS "totalAmount", o.discount_amount AS "discountAmount",
         o.shipping_cost AS "shippingCost", o.gift_wrap_cost AS "giftWrapCost",
-        o.subtotal, o.payment_method AS "paymentMethod",
+        o.subtotal,
         COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') AS "customerName",
         COALESCE(u.email, '') AS "customerEmail",
         ua.customer_phone AS "customerPhone",
@@ -57,9 +57,9 @@ async function fetchOrder(orderId) {
 }
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,400;1,600&family=Montserrat:wght@400;500;600;700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap');
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  #packing-slip * { box-sizing: border-box; margin: 0; padding: 0; }
 
   #packing-slip {
     position: fixed;
@@ -255,20 +255,24 @@ const css = `
 export default async function PackingSlipPage({ params }) {
   const { orderId } = await params;
 
+  const numericId = parseInt(orderId, 10);
+  if (isNaN(numericId)) redirect('/admin/orders');
+
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'admin') {
     redirect('/auth');
   }
 
-  const order = await fetchOrder(orderId);
+  const order = await fetchOrder(numericId);
 
   if (!order) {
     return (
       <>
         <style dangerouslySetInnerHTML={{ __html: css }} />
         <div id="packing-slip">
-          <div className="slip-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <p style={{ color: '#9333ea', fontWeight: 600 }}>Order #{orderId} not found.</p>
+          <div className="slip-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+            <p style={{ color: '#9333ea', fontWeight: 600 }}>Order #{numericId} not found.</p>
+            <a href="/admin/orders" style={{ fontSize: '12px', color: '#6b21a8', textDecoration: 'underline' }}>← Back to orders</a>
           </div>
         </div>
       </>
@@ -309,6 +313,13 @@ export default async function PackingSlipPage({ params }) {
               <div className="slip-date">Placed {placedDate}</div>
             </div>
           </div>
+
+          {/* Cancelled warning */}
+          {order.status === 'Cancelled' && (
+            <div style={{ marginBottom: '20px', padding: '10px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626', fontSize: '12px', fontWeight: 700, textAlign: 'center', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              ⚠ This order was cancelled
+            </div>
+          )}
 
           {/* Info row */}
           <div className="info-row">
