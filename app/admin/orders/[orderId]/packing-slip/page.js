@@ -21,7 +21,8 @@ async function fetchOrder(orderId) {
         ua.customer_phone AS "customerPhone",
         ua.address_line1 AS "addressLine1",
         ua.address_line2 AS "addressLine2",
-        ua.city, ua.country, ua.zip_code AS "zipCode"
+        ua.city, ua.country, ua.zip_code AS "zipCode",
+        o.payment_method AS "paymentMethod"
       FROM ${table} o
       LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
@@ -57,8 +58,6 @@ async function fetchOrder(orderId) {
 }
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap');
-
   #packing-slip * { box-sizing: border-box; margin: 0; padding: 0; }
 
   #packing-slip {
@@ -268,6 +267,10 @@ export default async function PackingSlipPage({ params }) {
   if (!order) {
     return (
       <>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap"
+        />
         <style dangerouslySetInnerHTML={{ __html: css }} />
         <div id="packing-slip">
           <div className="slip-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
@@ -292,6 +295,10 @@ export default async function PackingSlipPage({ params }) {
 
   return (
     <>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap"
+      />
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div id="packing-slip">
         <div className="slip-inner">
@@ -315,7 +322,7 @@ export default async function PackingSlipPage({ params }) {
           </div>
 
           {/* Cancelled warning */}
-          {order.status === 'Cancelled' && (
+          {order.status?.toLowerCase() === 'cancelled' && (
             <div style={{ marginBottom: '20px', padding: '10px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626', fontSize: '12px', fontWeight: 700, textAlign: 'center', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
               ⚠ This order was cancelled
             </div>
@@ -336,6 +343,9 @@ export default async function PackingSlipPage({ params }) {
               <p className="info-name">{order.customerName}</p>
               <p>{order.customerEmail}</p>
               {order.customerPhone && <p>{order.customerPhone}</p>}
+              {order.paymentMethod && (
+                <p>Payment: {order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Paid online'}</p>
+              )}
             </div>
           </div>
 
