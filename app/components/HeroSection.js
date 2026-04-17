@@ -23,7 +23,7 @@ const heroSlides = [
     imagePosition: 'object-center',
     textPosition: 'left',   // products are center-right
     ctaStyle: 'solid-dark', // dark CTA on light background
-    scrimDirection: 'none',
+    scrimDirection: 'left-light',
     textTheme: 'dark',
   },
   {
@@ -60,10 +60,11 @@ const heroSlides = [
 
 // ─── Design maps ─────────────────────────────────────────────────────────────
 const SCRIM_CLASS = {
-  left:   'absolute inset-0 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none',
-  right:  'absolute inset-0 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none',
-  bottom: 'absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none',
-  none:   null,
+  left:        'absolute inset-0 bg-gradient-to-r from-black/40 via-black/15 to-transparent pointer-events-none',
+  right:       'absolute inset-0 bg-gradient-to-l from-black/40 via-black/15 to-transparent pointer-events-none',
+  bottom:      'absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent pointer-events-none',
+  'left-light':'absolute inset-0 bg-gradient-to-r from-white/35 via-white/12 to-transparent pointer-events-none',
+  none:        null,
 };
 
 const TEXT_POS_CLASS = {
@@ -74,7 +75,7 @@ const TEXT_POS_CLASS = {
 
 const CTA_CLASS = {
   'outlined':      'border border-white text-white hover:bg-white hover:text-black',
-  'solid-dark':    'bg-gray-900 text-white hover:bg-gray-700',
+  'solid-dark':    'bg-[#3b0764] text-white hover:bg-[#6b21a8]',
   'outlined-dark': 'border border-gray-800 text-gray-800 hover:bg-gray-900 hover:text-white',
   'solid-white':   'bg-white text-black hover:bg-black hover:text-white',
 };
@@ -183,15 +184,20 @@ function SlideBackground({ slide, reduceMotion }) {
 
 function SlideText({ slide, variants, isMobile = false }) {
   const isLight = slide.textTheme === 'light';
+  const useGlass = !isMobile && !isLight;
 
-  const eyebrowCls  = isMobile ? 'text-white/75'  : isLight ? 'text-white/80'  : 'text-gray-500';
-  const headlineCls = isMobile ? 'text-white'      : isLight ? 'text-white'     : 'text-gray-900';
-  const bodyCls     = isMobile ? 'text-white/80'   : isLight ? 'text-white/85'  : 'text-gray-600';
+  const eyebrowCls  = isMobile ? 'text-white/75'  : isLight ? 'text-white/80'  : 'text-[#3b0764]';
+  const headlineCls = isMobile ? 'text-white'      : isLight ? 'text-white'     : 'text-[#3b0764]';
+  const bodyCls     = isMobile ? 'text-white/80'   : isLight ? 'text-white/85'  : 'text-[rgba(59,7,100,0.88)]';
   const ctaCls      = isMobile ? CTA_CLASS['outlined'] : CTA_CLASS[slide.ctaStyle];
 
   const headlineSize = isMobile
     ? 'text-[1.85rem] leading-[1.05]'
     : 'text-4xl lg:text-5xl xl:text-6xl leading-[1.05]';
+
+  const glassPanel = useGlass
+    ? 'bg-[rgba(253,248,255,0.55)] backdrop-blur-xl border border-[rgba(216,180,254,0.45)] rounded-2xl shadow-[0_20px_60px_-20px_rgba(59,7,100,0.35)] p-7 lg:p-8'
+    : '';
 
   return (
     <motion.div
@@ -199,7 +205,7 @@ function SlideText({ slide, variants, isMobile = false }) {
       className={
         isMobile
           ? 'absolute bottom-0 left-0 right-0 p-6 pb-16 z-10 md:hidden'
-          : `${TEXT_POS_CLASS[slide.textPosition]} z-10 hidden md:block`
+          : `${TEXT_POS_CLASS[slide.textPosition]} z-10 hidden md:block ${glassPanel}`
       }
       variants={variants.container}
       initial="hidden"
