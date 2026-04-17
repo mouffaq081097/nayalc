@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/app/components/ui/button';
-import { Loader2, ArrowLeft, Package, Truck, XCircle, CheckCircle, User, MapPin, CreditCard, Receipt, Info, ShieldCheck } from 'lucide-react';
+import { Loader2, ArrowLeft, Package, Truck, XCircle, CheckCircle, User, MapPin, CreditCard, Receipt, Info, ShieldCheck, Printer } from 'lucide-react';
 import Link from 'next/link';
 import {
     Select,
@@ -181,6 +181,15 @@ const OrderDetailsPage = () => {
                     <Button variant="outline" className="rounded-xl px-4 py-2 text-sm font-medium text-purple-600 border-purple-200 hover:bg-purple-50 hover:border-purple-300">
                         Export invoice
                     </Button>
+                    <a
+                        href={`/admin/orders/${orderId}/packing-slip`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-purple-600 border border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                    >
+                        <Printer size={14} />
+                        Print packing slip
+                    </a>
                     <Button className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}>
                         Message client
                     </Button>
