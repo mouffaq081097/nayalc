@@ -4,6 +4,7 @@
 export default function PrintButton() {
   return (
     <button
+      type="button"
       onClick={() => window.print()}
       style={{
         padding: '10px 28px',
