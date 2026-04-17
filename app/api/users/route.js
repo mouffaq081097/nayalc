@@ -11,6 +11,7 @@ export async function GET(request) {
                 u.last_name,
                 u.email,
                 u.phone_number,
+                u.created_at,
                 COALESCE(
                     json_agg(
                         json_build_object(
@@ -35,7 +36,7 @@ export async function GET(request) {
             LEFT JOIN
                 user_addresses a ON u.id = a.user_id
             GROUP BY
-                u.id, u.first_name, u.last_name, u.email, u.phone_number
+                u.id, u.first_name, u.last_name, u.email, u.phone_number, u.created_at
             ORDER BY
                 u.created_at DESC;
         `;

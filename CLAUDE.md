@@ -149,6 +149,18 @@ Active development phases include: chat UI modernization, admin portal improveme
   - Fixed 3 inline color references: discount text, chat quote border-left, order status color
   - `generateInvoiceHtml()`: fully lavender-themed invoice — accent bar, two-line brand header, lavender table headers, lavender totals row
 
+### Cloud Luxe Lavender Theme — Admin Portal
+- **`app/admin/orders/[orderId]/page.js`**: Full rewrite — lavender card borders (`border-purple-100`), lavender section headers (`text-purple-700` on `bg-purple-50/40`), lavender ghost button for "Export invoice", gradient primary button (`linear-gradient(135deg,#9333ea,#db2777)`), plain readable labels (no `tracking-[0.4em]`), sentence-case text throughout.
+
+#### Admin Page Design Standards (apply to ALL admin pages)
+- **No extreme tracking**: Never use `tracking-[0.3em]` or `tracking-[0.4em]` — use `tracking-wide` at most.
+- **Sentence case only**: Labels, section titles, and button text use sentence case (first letter capital, rest lowercase). No ALL CAPS.
+- **Lavender cards**: Admin cards use `border-purple-100`, section headers use `bg-purple-50/40` with `text-purple-700`.
+- **Buttons**: Primary action = `linear-gradient(135deg,#9333ea,#db2777)` white text. Secondary/outline = `border-purple-200 text-purple-600 hover:bg-purple-50`. No invisible gray buttons.
+- **Labels**: Use `text-xs font-medium text-purple-400` for field labels — never `text-gray-300` (too faint).
+- **Plain terminology**: Use plain English — "Order items" not "Acquired Masterpieces", "Shipping address" not "Logistics Hub", "Order summary" not "Market Analysis", "Email" not "Direct Portal", "Save status" not "Commit State Update".
+- **Reduced spacing**: `space-y-5` or `space-y-6` for sections, `p-6` for card padding — not `space-y-10` or `p-10`.
+
 ### Known Gotchas
 - `fetchWithAuth` must come from `useAppContext()` — do NOT import from `lib/api.js` (that file exports `createFetchWithAuth` factory, not a ready-to-use function).
 - `addToCart(product, quantity)` takes two separate args — NOT a single `{ product, quantity }` object.

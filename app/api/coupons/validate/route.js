@@ -9,7 +9,7 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Coupon code is required.' }, { status: 400 });
     }
 
-    const { rows } = await db.query('SELECT * FROM coupons WHERE code = $1', [code]);
+    const { rows } = await db.query('SELECT * FROM coupons WHERE UPPER(code) = UPPER($1)', [code]);
 
     if (rows.length === 0) {
       return NextResponse.json({ message: 'Invalid coupon code.' }, { status: 404 });

@@ -142,7 +142,7 @@ const AllUsersPage = () => {
                                         </div>
                                         <div className="ml-4">
                                             <p className="text-[10px] font-black text-gray-300  ">Member Since</p>
-                                            <p className="text-sm font-medium text-gray-900">Oct 2025</p>
+                                            <p className="text-sm font-medium text-gray-900">{user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'}</p>
                                         </div>
                                     </div>
                                 </div>

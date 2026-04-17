@@ -66,13 +66,13 @@ export const CartProvider = ({ children }) => {
         }
 
         try {
-            console.log('Attempting to save cart to backend for user:', user.id, 'Cart:', currentCart);
             await fetchWithAuth(`/api/users/${user.id}/cart`, {
                 method: 'PUT',
                 body: JSON.stringify({ cart: currentCart }),
             });
         } catch (error) {
             console.error('Error saving cart to backend:', error);
+            toast.error('Could not save your cart. Please check your connection and try again.');
         }
     }, [isAuthenticated, user, fetchWithAuth]);
 

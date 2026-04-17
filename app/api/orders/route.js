@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail'; // Import the new functions
+import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Helper function to fetch order items for a given order ID and item table name
 const fetchOrderItems = async (orderId, itemTableName, client) => {
@@ -41,10 +44,10 @@ const selectOrderFields = (tableName) => `
         o.updated_at as "updatedAt",
         o.user_id as "userId",
         o.user_address_id as "userAddressId",
-        ${tableName === 'orders' || tableName === 'delivered_orders' ? 'o.subtotal,' : 'NULL as subtotal,'}
-        ${tableName === 'orders' || tableName === 'delivered_orders' ? 'o.shipping_cost,' : 'NULL as shipping_cost,'}
-        ${tableName === 'orders' ? 'o.gift_wrap,' : 'NULL as gift_wrap,'}
-        ${tableName === 'orders' ? 'o.gift_wrap_cost,' : 'NULL as gift_wrap_cost,'}
+        o.subtotal,
+        o.shipping_cost,
+        o.gift_wrap,
+        o.gift_wrap_cost,
         o.discount_amount as "discountAmount",
         o.applied_coupon_id as "appliedCouponId",
         ${tableName === 'cancelled_orders' ? 'o.cancellation_reason as "cancellationReason",' : 'NULL as "cancellationReason",'}
@@ -174,19 +177,34 @@ export async function GET(request) {
 
         const { rows: orders } = await client.query(fullQuery, fullSelectQueryParams);
 
-        const ordersWithItems = await Promise.all(orders.map(async (order) => {
-            // Determine the correct item table based on order status
-            let itemTable;
-            if (order.status === 'Delivered') {
-                itemTable = 'delivered_order_items';
-            } else if (order.status === 'Cancelled') {
-                itemTable = 'cancelled_order_items';
-            } else { // Default to 'order_items' for 'Pending' or other statuses
-                itemTable = 'order_items';
+        // Batch item fetching: group order IDs by source table, then do at most 3 queries
+        const idsByTable = { order_items: [], delivered_order_items: [], cancelled_order_items: [] };
+        for (const order of orders) {
+            if (order.status === 'Delivered') idsByTable.delivered_order_items.push(order.id);
+            else if (order.status === 'Cancelled') idsByTable.cancelled_order_items.push(order.id);
+            else idsByTable.order_items.push(order.id);
+        }
+
+        const itemsByOrderId = {};
+        for (const [table, ids] of Object.entries(idsByTable)) {
+            if (ids.length === 0) continue;
+            const { rows: itemRows } = await client.query(
+                `SELECT oi.order_id, oi.product_id as "productId", oi.quantity, oi.price,
+                        p.name, b.name as "brandName", pi.image_url as "imageUrl"
+                 FROM ${table} oi
+                 JOIN products p ON oi.product_id = p.id
+                 LEFT JOIN brands b ON p.brand_id = b.id
+                 LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
+                 WHERE oi.order_id = ANY($1)`,
+                [ids]
+            );
+            for (const item of itemRows) {
+                if (!itemsByOrderId[item.order_id]) itemsByOrderId[item.order_id] = [];
+                itemsByOrderId[item.order_id].push({ ...item, price: parseFloat(item.price) });
             }
-            const items = await fetchOrderItems(order.id, itemTable, client);
-            return { ...order, items };
-        }));
+        }
+
+        const ordersWithItems = orders.map(order => ({ ...order, items: itemsByOrderId[order.id] || [] }));
 
         return NextResponse.json({
             orders: ordersWithItems,
@@ -274,8 +292,28 @@ export async function POST(request) {
         }
         // --- End Stock Validation ---
 
-        const insertOrderSql = "INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id;";
-        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id];
+        // --- Stripe Payment Verification ---
+        if (payment_method === 'card') {
+            if (!stripe_payment_intent_id) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: 'Card payment requires a payment intent.' }, { status: 400 });
+            }
+            try {
+                const paymentIntent = await stripe.paymentIntents.retrieve(stripe_payment_intent_id);
+                if (paymentIntent.status !== 'succeeded') {
+                    await client.query('ROLLBACK');
+                    return NextResponse.json({ message: 'Payment has not been confirmed. Please complete payment before placing the order.' }, { status: 402 });
+                }
+            } catch (stripeErr) {
+                await client.query('ROLLBACK');
+                console.error('Stripe verification error:', stripeErr);
+                return NextResponse.json({ message: 'Unable to verify payment. Please try again.' }, { status: 402 });
+            }
+        }
+        // --- End Stripe Payment Verification ---
+
+        const insertOrderSql = "INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id, redeemed_points) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id;";
+        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id, redeemed_points || 0];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
 
@@ -293,9 +331,12 @@ export async function POST(request) {
         const firstName = userRows.length > 0 ? userRows[0].first_name : 'Customer';
         
 
-        const itemValues = items.map(item => `(${orderId}, ${item.productId}, ${item.quantity}, ${item.price})`).join(',');
-        const insertItemsSql = "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES " + itemValues + ";";
-        await client.query(insertItemsSql);
+        for (const item of items) {
+            await client.query(
+                "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)",
+                [orderId, item.productId, item.quantity, item.price]
+            );
+        }
 
         // Deduct inventory for each item
         for (const item of items) {

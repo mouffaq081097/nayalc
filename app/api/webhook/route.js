@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import db from '@/lib/db';
+import { sendOrderStatusUpdateEmail } from '@/lib/mail';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -53,6 +54,32 @@ export async function POST(req) {
       case 'payment_intent.payment_failed':
         const paymentFailed = event.data.object;
         console.log(`Payment failed for ${paymentFailed.id}`);
+        try {
+            const failedOrderResult = await db.query(
+                `UPDATE orders SET order_status = 'Payment Failed', updated_at = NOW()
+                 WHERE stripe_payment_intent_id = $1
+                 RETURNING id, user_id`,
+                [paymentFailed.id]
+            );
+            if (failedOrderResult.rowCount > 0) {
+                const failedOrder = failedOrderResult.rows[0];
+                const userResult = await db.query(
+                    'SELECT email, first_name FROM users WHERE id = $1',
+                    [failedOrder.user_id]
+                );
+                if (userResult.rows.length > 0) {
+                    const { email, first_name } = userResult.rows[0];
+                    await sendOrderStatusUpdateEmail(
+                        email, first_name, failedOrder.id,
+                        'Payment Failed',
+                        'Your payment could not be processed. Please try again or use a different payment method.',
+                        null, null, null, null, null, [], null, null, null, null, null
+                    );
+                }
+            }
+        } catch (err) {
+            console.error('Error handling payment_failed webhook:', err);
+        }
         break;
         
       default:

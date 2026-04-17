@@ -60,7 +60,7 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0
 
     setIsProcessing(true);
 
-    const { error: submitError } = await stripe.confirmPayment({
+    const { error: submitError, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
         return_url: `${window.location.origin}/order-confirmation`,
@@ -74,7 +74,7 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0
       setIsProcessing(false);
     } else {
       toast.success('Payment authorized!');
-      onSuccessfulPayment();
+      onSuccessfulPayment(paymentIntent?.id);
     }
     setIsProcessing(false);
   };

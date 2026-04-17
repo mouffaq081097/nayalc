@@ -201,7 +201,10 @@ export async function PUT(request, context) {
     const client = await db.connect();
 
     try {
-        const { status, cancellationReason, trackingNumber, shippingCompany, shippingLink } = await request.json();
+        const { status, cancellationReason, trackingNumber, courierName, courierWebsite, shippingCompany, shippingLink } = await request.json();
+        // Accept both legacy (shippingCompany/shippingLink) and current (courierName/courierWebsite) field names
+        const resolvedCourierName = courierName ?? shippingCompany ?? null;
+        const resolvedCourierWebsite = courierWebsite ?? shippingLink ?? null;
 
         if (!status) {
             return NextResponse.json({ message: 'Status is required' }, { status: 400 });
@@ -211,11 +214,12 @@ export async function PUT(request, context) {
 
         // Fetch current order details before potential move or update, including fields for email
         const currentOrderResult = await client.query(
-            `SELECT 
+            `SELECT
                 o.id, o.user_address_id, o.payment_method, o.total_amount, o.tax_amount, o.discount_amount,
                 o.order_status, o.shipping_scheduled_date, o.payment_confirmed, o.user_id, o.applied_coupon_id,
-                o.tracking_number, o.shipping_company, o.shipping_link, o.created_at, o.updated_at,
+                o.tracking_number, o.courier_name, o.courier_website, o.created_at, o.updated_at,
                 o.subtotal, o.shipping_cost, o.stripe_payment_intent_id, o.gift_wrap, o.gift_wrap_cost,
+                COALESCE(o.redeemed_points, 0) as redeemed_points,
                 ua.customer_email, ua.customer_phone, ua.shipping_address, ua.city, ua.zip_code, ua.country,
                 u.first_name
             FROM orders o
@@ -282,8 +286,8 @@ export async function PUT(request, context) {
                 currentOrder.user_id,
                 currentOrder.applied_coupon_id,
                 trackingNumber || currentOrder.tracking_number,
-                shippingCompany || currentOrder.shipping_company,
-                shippingLink || currentOrder.shipping_link,
+                resolvedCourierName ?? currentOrder.courier_name,
+                resolvedCourierWebsite ?? currentOrder.courier_website,
                 currentOrder.created_at,
                 currentOrder.updated_at,
                 currentOrder.subtotal,
@@ -294,99 +298,122 @@ export async function PUT(request, context) {
             ];
             await client.query(deliveredOrderSql, deliveredOrderValues);
 
-            // Move order items and update inventory
+            // Move order items (inventory already decremented at order creation — do not decrement again)
             for (const item of currentOrder.items) {
-                const insertDeliveredItemSql = "INSERT INTO delivered_order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)";
                 await client.query(
-                    insertDeliveredItemSql,
+                    "INSERT INTO delivered_order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)",
                     [currentOrder.id, item.productId, item.quantity, item.price]
-                );
-                // Update product inventory
-                await client.query(
-                    `UPDATE products SET stock_quantity = stock_quantity - $1 WHERE id = $2`,
-                    [item.quantity, item.productId]
                 );
             }
 
             await client.query('DELETE FROM order_items WHERE order_id = $1', [orderId]);
             await client.query('DELETE FROM orders WHERE id = $1', [orderId]);
 
-            // --- LOYALTY SYSTEM: Earn Points ---
-            try {
-                // 1. Get user's current loyalty status
-                const userLoyaltyRes = await client.query(
-                    'SELECT loyalty_points, lifetime_spend, loyalty_tier FROM users WHERE id = $1',
-                    [currentOrder.user_id]
+            // --- LOYALTY SYSTEM: Earn Points (inside transaction — failure rolls back delivery) ---
+            const userLoyaltyRes = await client.query(
+                'SELECT loyalty_points, lifetime_spend, loyalty_tier FROM users WHERE id = $1',
+                [currentOrder.user_id]
+            );
+
+            if (userLoyaltyRes.rows.length > 0) {
+                const userLoyalty = userLoyaltyRes.rows[0];
+                const tierMultiplier = userLoyalty.loyalty_tier === 'Platinum' ? 2 : (userLoyalty.loyalty_tier === 'Gold' ? 1.5 : 1);
+                const pointsEarned = Math.floor(currentOrder.total_amount * tierMultiplier);
+
+                await client.query(
+                    'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
+                    [currentOrder.user_id, 'earn', pointsEarned, `Earned from Order #${orderId}`, orderId]
                 );
-                
-                if (userLoyaltyRes.rows.length > 0) {
-                    const userLoyalty = userLoyaltyRes.rows[0];
-                    const tierMultiplier = userLoyalty.loyalty_tier === 'Platinum' ? 2 : (userLoyalty.loyalty_tier === 'Gold' ? 1.5 : 1);
-                    const pointsEarned = Math.floor(currentOrder.total_amount * tierMultiplier);
-                    
-                    // 2. Record transaction
-                    await client.query(
-                        'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
-                        [currentOrder.user_id, 'earn', pointsEarned, `Earned from Order #${orderId}`, orderId]
-                    );
 
-                    // 3. Update User: Add points and lifetime spend
-                    const newLifetimeSpend = parseFloat(userLoyalty.lifetime_spend) + currentOrder.total_amount;
-                    
-                    // 4. Calculate New Tier
-                    let newTier = 'Silver';
-                    if (newLifetimeSpend >= 5000) newTier = 'Platinum';
-                    else if (newLifetimeSpend >= 2000) newTier = 'Gold';
+                const newLifetimeSpend = parseFloat(userLoyalty.lifetime_spend) + currentOrder.total_amount;
+                let newTier = 'Silver';
+                if (newLifetimeSpend >= 5000) newTier = 'Platinum';
+                else if (newLifetimeSpend >= 2000) newTier = 'Gold';
 
-                    await client.query(
-                        'UPDATE users SET loyalty_points = loyalty_points + $1, lifetime_spend = $2, loyalty_tier = $3 WHERE id = $4',
-                        [pointsEarned, newLifetimeSpend, newTier, currentOrder.user_id]
-                    );
-                    
-                    console.log(`Loyalty: User ${currentOrder.user_id} earned ${pointsEarned} points. New Tier: ${newTier}`);
-                }
-            } catch (loyaltyError) {
-                console.error('Failed to process loyalty points:', loyaltyError);
-                // We don't rollback the whole order update if loyalty fails, just log it.
+                await client.query(
+                    'UPDATE users SET loyalty_points = loyalty_points + $1, lifetime_spend = $2, loyalty_tier = $3 WHERE id = $4',
+                    [pointsEarned, newLifetimeSpend, newTier, currentOrder.user_id]
+                );
+
+                console.log(`Loyalty: User ${currentOrder.user_id} earned ${pointsEarned} points. New Tier: ${newTier}`);
             }
             // --- END LOYALTY SYSTEM ---
 
         } else if (status === 'Cancelled') {
-            const cancelledOrderSql = "INSERT INTO cancelled_orders (\n" +
-                "    id, user_address_id, payment_method, total_amount, tax_amount, discount_amount,\n" +
-                "    order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id,\n" +
-                "    tracking_number, courier_name, courier_website, created_at, updated_at, cancelled_at, cancellation_reason, stripe_payment_intent_id, gift_wrap, gift_wrap_cost\n" +
-                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20);";
-            const cancelledOrderValues = [
-                currentOrder.id,
-                currentOrder.user_address_id,
-                currentOrder.payment_method,
-                currentOrder.total_amount,
-                currentOrder.tax_amount,
-                currentOrder.discount_amount,
-                status, // new status
-                currentOrder.shipping_scheduled_date,
-                currentOrder.payment_confirmed,
-                currentOrder.user_id,
-                currentOrder.applied_coupon_id,
-                trackingNumber || currentOrder.tracking_number,
-                shippingCompany || currentOrder.shipping_company,
-                shippingLink || currentOrder.shipping_link,
-                currentOrder.created_at,
-                currentOrder.updated_at,
-                cancellationReason,
-                currentOrder.stripe_payment_intent_id,
-                currentOrder.gift_wrap,
-                currentOrder.gift_wrap_cost,
-            ];
-            await client.query(cancelledOrderSql, cancelledOrderValues);
+            // Issue Stripe refund for card payments
+            if (currentOrder.payment_method === 'card' && currentOrder.stripe_payment_intent_id) {
+                try {
+                    await stripe.refunds.create({ payment_intent: currentOrder.stripe_payment_intent_id });
+                } catch (stripeErr) {
+                    console.error(`Stripe refund failed for order ${orderId}:`, stripeErr.message);
+                    // Do not abort — admin can manually refund in Stripe dashboard
+                }
+            }
 
-            // Move order items
-            for (const item of currentOrder.items) {
-                const insertSql = "INSERT INTO cancelled_order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)";
+            // Restore redeemed loyalty points
+            if (currentOrder.redeemed_points > 0) {
                 await client.query(
-                    insertSql,
+                    'UPDATE users SET loyalty_points = loyalty_points + $1 WHERE id = $2',
+                    [currentOrder.redeemed_points, currentOrder.user_id]
+                );
+                await client.query(
+                    'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
+                    [currentOrder.user_id, 'refund', currentOrder.redeemed_points, `Points refunded for cancelled Order #${orderId}`, orderId]
+                );
+            }
+
+            // Reverse coupon usage count
+            if (currentOrder.applied_coupon_id) {
+                await client.query(
+                    'UPDATE coupons SET usage_count = GREATEST(0, usage_count - 1) WHERE id = $1',
+                    [currentOrder.applied_coupon_id]
+                );
+            }
+
+            await client.query(
+                `INSERT INTO cancelled_orders (
+                    id, user_address_id, payment_method, total_amount, tax_amount, discount_amount,
+                    order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id,
+                    tracking_number, courier_name, courier_website, created_at, updated_at, cancelled_at,
+                    cancellation_reason, stripe_payment_intent_id, gift_wrap, gift_wrap_cost,
+                    subtotal, shipping_cost, redeemed_points
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW(),$17,$18,$19,$20,$21,$22,$23)`,
+                [
+                    currentOrder.id,
+                    currentOrder.user_address_id,
+                    currentOrder.payment_method,
+                    currentOrder.total_amount,
+                    currentOrder.tax_amount,
+                    currentOrder.discount_amount,
+                    status,
+                    currentOrder.shipping_scheduled_date,
+                    currentOrder.payment_confirmed,
+                    currentOrder.user_id,
+                    currentOrder.applied_coupon_id,
+                    trackingNumber || currentOrder.tracking_number,
+                    resolvedCourierName ?? currentOrder.courier_name,
+                    resolvedCourierWebsite ?? currentOrder.courier_website,
+                    currentOrder.created_at,
+                    currentOrder.updated_at,
+                    cancellationReason,
+                    currentOrder.stripe_payment_intent_id,
+                    currentOrder.gift_wrap,
+                    currentOrder.gift_wrap_cost,
+                    currentOrder.subtotal,
+                    currentOrder.shipping_cost,
+                    currentOrder.redeemed_points,
+                ]
+            );
+
+            // Move order items and restore inventory
+            for (const item of currentOrder.items) {
+                await client.query(
+                    'INSERT INTO cancelled_order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
                     [currentOrder.id, item.productId, item.quantity, item.price]
+                );
+                await client.query(
+                    'UPDATE products SET stock_quantity = stock_quantity + $1 WHERE id = $2',
+                    [item.quantity, item.productId]
                 );
             }
             await client.query('DELETE FROM order_items WHERE order_id = $1', [orderId]);
@@ -398,8 +425,8 @@ export async function PUT(request, context) {
                 "SET \n" +
                 "    order_status = $1,\n" +
                 "    tracking_number = $2,\n" +
-                "    shipping_company = $3,\n" +
-                "    shipping_link = $4,\n" +
+                "    courier_name = $3,\n" +
+                "    courier_website = $4,\n" +
                 "    cancellation_reason = $5,\n" +
                 "    updated_at = NOW()\n" +
                 "WHERE id = $6";
@@ -407,15 +434,17 @@ export async function PUT(request, context) {
             const updateOrderValues = [
                 status,
                 trackingNumber,
-                shippingCompany,
-                shippingLink,
+                resolvedCourierName,
+                resolvedCourierWebsite,
                 cancellationReason,
                 orderId,
             ];
             await client.query(updateOrderSql, updateOrderValues);
         }
 
-        // Send email notification after successful status update/move
+        await client.query('COMMIT');
+
+        // Send email after commit so DB state is consistent if email fails
         await sendOrderStatusUpdateEmail(
             currentOrder.customer_email,
             currentOrder.first_name,
@@ -435,8 +464,8 @@ export async function PUT(request, context) {
             })),
             currentOrder.shippingAddressDetails,
             trackingNumber || currentOrder.tracking_number,
-            shippingCompany || currentOrder.shipping_company,
-            shippingLink || currentOrder.shipping_link,
+            resolvedCourierName ?? currentOrder.courier_name,
+            resolvedCourierWebsite ?? currentOrder.courier_website,
             { // Simplified orderDetails for invoice generation
                 id: currentOrder.id,
                 createdAt: currentOrder.created_at,
@@ -458,7 +487,6 @@ export async function PUT(request, context) {
             }
         );
 
-        await client.query('COMMIT');
         // Determine response based on whether the order was moved or just updated
         const responseData = (status === 'Delivered' || status === 'Cancelled')
             ? { message: "Order " + orderId + " updated to " + status + " and moved", moved: true }
