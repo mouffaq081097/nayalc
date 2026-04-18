@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AccountMobileTopBar } from '../_components/AccountMobileTopBar';
 import { AccountSectionTitle } from '../_components/AccountSectionTitle';
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
-import { User, Phone, Mail, CheckCircle } from 'lucide-react';
+import { User, Phone, Mail } from 'lucide-react';
 
 const glass = {
   background: 'rgba(255,255,255,0.72)',
@@ -39,7 +38,6 @@ const labelStyle = {
 export default function ProfilePage() {
   const { user } = useAuth();
   const { fetchWithAuth } = useAppContext();
-  const router = useRouter();
 
   const [form, setForm] = useState({ first_name: '', last_name: '', phone_number: '' });
   const [loading, setLoading] = useState(true);
@@ -60,7 +58,7 @@ export default function ProfilePage() {
       })
       .catch(() => setError('Failed to load profile.'))
       .finally(() => setLoading(false));
-  }, [user?.id]);
+  }, [user?.id, fetchWithAuth]);
 
   const handleChange = (field) => (e) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
