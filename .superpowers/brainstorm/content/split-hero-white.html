@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — Split Hero (White Panel)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1025; color: #e2d9f3; min-height: 100vh; padding: 32px 24px 80px; }
+  h1 { font-size: 20px; font-weight: 800; color: #f0ebff; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: rgba(226,217,243,0.55); margin-bottom: 32px; line-height: 1.5; }
+
+  .tab-row { display: flex; gap: 10px; margin-bottom: 28px; }
+  .tab { padding: 7px 18px; border-radius: 50px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1.5px solid rgba(196,167,254,0.25); color: rgba(226,217,243,0.5); background: transparent; transition: all 0.2s; }
+  .tab.active { background: linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230)); color: #fff; border-color: transparent; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ─── DESKTOP MOCKUP ─── */
+  .desktop-shell { background: #fdf8ff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25); max-width: 860px; margin: 0 auto; }
+  .desktop-topbar { background: rgba(255,255,255,0.9); border-bottom: 1px solid rgba(216,180,254,0.3); padding: 10px 20px; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .topbar-title { font-size: 11px; color: rgba(59,7,100,0.4); font-weight: 600; margin-left: auto; margin-right: auto; letter-spacing: 0.05em; }
+  .desktop-body { display: flex; min-height: 520px; }
+
+  /* Left white panel */
+  .left-panel { width: 260px; flex-shrink: 0; background: rgba(255,255,255,0.95); border-right: 1px solid rgba(216,180,254,0.25); display: flex; flex-direction:column; align-items: center; padding: 36px 24px 28px; gap: 0; }
+  .av { width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230)); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; color: #fff; box-shadow: 0 8px 28px rgba(147,104,236,0.35); border: 3px solid rgba(255,255,255,1); }
+  .av-name { font-size: 17px; font-weight: 800; color: #3b0764; margin-top: 14px; letter-spacing: -0.3px; }
+  .av-email { font-size: 11px; color: rgba(59,7,100,0.45); margin-top: 3px; }
+  .tier-badge { margin-top: 12px; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(196,167,254,0.18), rgba(249,168,212,0.12)); border: 1px solid rgba(216,180,254,0.4); border-radius: 50px; padding: 4px 12px; }
+  .tier-badge span { font-size: 9.5px; font-weight: 800; color: rgb(126,105,230); letter-spacing: 0.12em; text-transform: uppercase; }
+  .divider { width: 40px; height: 1.5px; background: linear-gradient(90deg, rgb(196,167,254), rgb(249,168,212)); border-radius: 2px; margin: 20px 0; }
+  .stat-row { display: flex; gap: 20px; margin-bottom: 4px; }
+  .stat { text-align: center; }
+  .stat-val { font-size: 22px; font-weight: 900; color: rgb(126,105,230); line-height: 1; }
+  .stat-lbl { font-size: 8.5px; font-weight: 700; color: rgb(147,104,236); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
+  .quote { font-size: 11px; color: rgba(59,7,100,0.45); font-style: italic; text-align: center; line-height: 1.6; margin-top: 20px; padding: 0 4px; }
+  .nav-items { width: 100%; margin-top: 24px; display: flex; flex-direction: column; gap: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: rgba(59,7,100,0.5); cursor: pointer; transition: all 0.15s; }
+  .nav-item.active { background: rgba(196,167,254,0.15); color: rgb(126,105,230); }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  /* Right form panel */
+  .right-panel { flex: 1; padding: 36px 32px; background: #fdf8ff; overflow-y: auto; }
+  .section-eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .eyebrow-line { width: 20px; height: 1.5px; background: linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230)); border-radius: 2px; }
+  .eyebrow-text { font-size: 10px; font-weight: 800; color: rgb(126,105,230); letter-spacing: 0.15em; text-transform: uppercase; }
+  .section-title { font-size: 26px; font-weight: 800; color: #3b0764; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .section-sub { font-size: 13px; color: rgba(59,7,100,0.45); margin-bottom: 28px; }
+  .field-group { margin-bottom: 20px; }
+  .group-label { font-size: 10px; font-weight: 700; color: rgb(147,104,236); letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid rgba(216,180,254,0.3); padding-bottom: 6px; margin-bottom: 12px; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field { background: rgba(255,255,255,0.85); border: 1px solid rgba(216,180,254,0.4); border-radius: 10px; padding: 10px 14px; }
+  .field.full { grid-column: 1 / -1; }
+  .flabel { font-size: 9px; font-weight: 700; color: rgb(147,104,236); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3px; }
+  .fval { font-size: 14px; color: #3b0764; font-weight: 600; }
+  .fval.muted { color: rgba(59,7,100,0.4); font-style: italic; font-size: 12px; }
+  .btn-row { display: flex; align-items: center; gap: 12px; margin-top: 28px; }
+  .btn-primary { background: linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230)); color: #fff; font-size: 11px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; border: none; border-radius: 50px; padding: 11px 28px; cursor: pointer; box-shadow: 0 4px 16px rgba(147,104,236,0.3); }
+  .btn-ghost { background: transparent; border: 1.5px solid rgba(216,180,254,0.5); color: rgb(126,105,230); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; border-radius: 50px; padding: 10px 20px; cursor: pointer; }
+
+  /* ─── MOBILE MOCKUP ─── */
+  .mobile-shell { background: #fdf8ff; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 340px; margin: 0 auto; border: 6px solid #1a1025; position: relative; }
+  .mobile-notch { height: 28px; background: #1a1025; border-radius: 0 0 18px 18px; width: 100px; margin: 0 auto; }
+  .mobile-topbar { padding: 10px 16px 8px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.9); border-bottom: 1px solid rgba(216,180,254,0.2); }
+  .back-btn { width: 30px; height: 30px; border-radius: 50%; background: rgba(196,167,254,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; color: rgb(126,105,230); }
+  .mobile-page-title { font-size: 14px; font-weight: 700; color: #3b0764; }
+
+  /* Mobile: top identity bar (collapsed left panel) */
+  .mobile-identity { background: rgba(255,255,255,0.95); border-bottom: 1px solid rgba(216,180,254,0.25); padding: 18px 16px 16px; display: flex; align-items: center; gap: 14px; }
+  .av-sm { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230)); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #fff; box-shadow: 0 4px 14px rgba(147,104,236,0.35); border: 2px solid rgba(255,255,255,1); flex-shrink: 0; }
+  .mobile-identity-info { flex: 1; }
+  .mobile-name { font-size: 15px; font-weight: 800; color: #3b0764; }
+  .mobile-tier { font-size: 9px; font-weight: 700; color: rgb(147,104,236); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+  .mobile-pts { font-size: 11px; color: rgba(59,7,100,0.45); margin-top: 1px; font-weight: 600; }
+
+  .mobile-form { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .mob-group-label { font-size: 9px; font-weight: 700; color: rgb(147,104,236); letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid rgba(216,180,254,0.25); padding-bottom: 5px; margin-bottom: 2px; margin-top: 8px; }
+  .mob-field { background: rgba(255,255,255,0.85); border: 1px solid rgba(216,180,254,0.4); border-radius: 10px; padding: 9px 12px; }
+  .mob-field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mob-btn { background: linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230)); color: #fff; font-size: 10.5px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; border: none; border-radius: 50px; padding: 12px; width: 100%; margin-top: 8px; }
+
+  .note { margin-top: 20px; padding: 12px 16px; background: rgba(196,167,254,0.08); border: 1px solid rgba(196,167,254,0.2); border-radius: 10px; font-size: 12px; color: rgba(226,217,243,0.6); line-height: 1.5; max-width: 860px; margin-left: auto; margin-right: auto; }
+  .note strong { color: rgb(196,167,254); }
+</style>
+</head>
+<body>
+
+<h1>Option B — Split Hero, white left panel</h1>
+<p class="subtitle">Toggle between desktop and mobile views. The left panel uses a clean white glass — consistent with the existing account menu card style.</p>
+
+<div class="tab-row">
+  <button class="tab active" onclick="showView('desktop',this)">Desktop</button>
+  <button class="tab" onclick="showView('mobile',this)">Mobile</button>
+</div>
+
+<!-- DESKTOP VIEW -->
+<div class="view active" id="view-desktop">
+  <div class="desktop-shell">
+    <div class="desktop-topbar">
+      <div class="dot" style="background:#ff5f57"></div>
+      <div class="dot" style="background:#ffbd2e"></div>
+      <div class="dot" style="background:#28c840"></div>
+      <div class="topbar-title">nayalc.com / account / profile</div>
+    </div>
+    <div class="desktop-body">
+
+      <!-- White left panel -->
+      <div class="left-panel">
+        <div class="av">S</div>
+        <div class="av-name">Sarah Al-Hassan</div>
+        <div class="av-email">sarah@example.com</div>
+        <div class="tier-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgb(126,105,230)" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Gold Member</span>
+        </div>
+        <div class="divider"></div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-val">1,240</div>
+            <div class="stat-lbl">Points</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">12</div>
+            <div class="stat-lbl">Orders</div>
+          </div>
+        </div>
+        <div class="quote">"Luxury is in each detail."</div>
+        <!-- Mini nav -->
+        <div class="nav-items">
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            Dashboard
+          </div>
+          <div class="nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+            Profile
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+            Orders
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            Wishlist
+          </div>
+          <div class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            Loyalty
+          </div>
+        </div>
+      </div>
+
+      <!-- Right form panel -->
+      <div class="right-panel">
+        <div class="section-eyebrow">
+          <div class="eyebrow-line"></div>
+          <div class="eyebrow-text">My Profile</div>
+        </div>
+        <div class="section-title">Personal details</div>
+        <div class="section-sub">Update your name, email, and contact information.</div>
+
+        <div class="field-group">
+          <div class="group-label">Personal info</div>
+          <div class="field-grid">
+            <div class="field"><div class="flabel">First name</div><div class="fval">Sarah</div></div>
+            <div class="field"><div class="flabel">Last name</div><div class="fval">Al-Hassan</div></div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="group-label">Contact</div>
+          <div class="field-grid">
+            <div class="field full"><div class="flabel">Email address</div><div class="fval muted">sarah@example.com · Read only</div></div>
+            <div class="field full"><div class="flabel">Phone number</div><div class="fval">+971 50 123 4567</div></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn-primary">Save changes</button>
+          <button class="btn-ghost">Discard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE VIEW -->
+<div class="view" id="view-mobile">
+  <div class="mobile-shell">
+    <div style="height:10px;background:#fdf8ff;"></div>
+    <!-- Top bar -->
+    <div class="mobile-topbar">
+      <div class="back-btn">‹</div>
+      <div class="mobile-page-title">My Profile</div>
+    </div>
+    <!-- Identity bar (left panel collapsed horizontally on mobile) -->
+    <div class="mobile-identity">
+      <div class="av-sm">S</div>
+      <div class="mobile-identity-info">
+        <div class="mobile-name">Sarah Al-Hassan</div>
+        <div class="mobile-tier">✦ Gold Member</div>
+        <div class="mobile-pts">1,240 loyalty points</div>
+      </div>
+    </div>
+    <!-- Form -->
+    <div class="mobile-form">
+      <div class="mob-group-label" style="margin-top:2px;">Personal info</div>
+      <div class="mob-field-grid">
+        <div class="mob-field"><div class="flabel">First</div><div class="fval" style="font-size:13px;">Sarah</div></div>
+        <div class="mob-field"><div class="flabel">Last</div><div class="fval" style="font-size:13px;">Al-Hassan</div></div>
+      </div>
+      <div class="mob-group-label">Contact</div>
+      <div class="mob-field"><div class="flabel">Email</div><div class="fval muted" style="font-size:12px;">sarah@example.com</div></div>
+      <div class="mob-field"><div class="flabel">Phone</div><div class="fval" style="font-size:13px;">+971 50 123 4567</div></div>
+      <button class="mob-btn">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>No conflict with the account menu:</strong> The account sidebar (AccountMenuList) is <code>md:hidden</code> — it only appears on the account index page on mobile. The profile page's white left panel is desktop-only (hidden on mobile, replaced by a slim identity bar at top). Both use the same white glass style: <code>rgba(255,255,255,0.72–0.95)</code> + lavender border.
+</div>
+
+<script>
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

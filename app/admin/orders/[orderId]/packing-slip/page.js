@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import db from '@/lib/db';
 import PrintButton from './PrintButton';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -242,7 +243,7 @@ export default async function PackingSlipPage({ params }) {
         <div id="packing-slip">
           <div className="slip-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
             <p style={{ color: '#9333ea', fontWeight: 600 }}>Order #{numericId} not found.</p>
-            <a href="/admin/orders" style={{ fontSize: '12px', color: '#6b21a8', textDecoration: 'underline' }}>← Back to orders</a>
+            <Link href="/admin/orders" style={{ fontSize: '12px', color: '#6b21a8', textDecoration: 'underline' }}>← Back to orders</Link>
           </div>
         </div>
       </>

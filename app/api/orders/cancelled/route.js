@@ -49,10 +49,10 @@ export async function GET(request) {
                 o.user_address_id as "userAddressId",
                 o.cancelled_at as "cancelledAt"
             FROM cancelled_orders o
-            JOIN user_addresses ua ON o.user_address_id = ua.id
+            LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
         `;
         
-        let countSql = `SELECT COUNT(*) FROM cancelled_orders o JOIN user_addresses ua ON o.user_address_id = ua.id`;
+        let countSql = `SELECT COUNT(*) FROM cancelled_orders o LEFT JOIN user_addresses ua ON o.user_address_id = ua.id`;
         const params = [];
         const countParams = [];
 

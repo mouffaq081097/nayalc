@@ -9,6 +9,8 @@ import MobileBottomNav from './components/MobileBottomNav';
 import SideCart from './components/SideCart'; // Import SideCart
 import ChatWidget from './components/ChatWidget'; // Import ChatWidget
 import GlobalLoader from './components/GlobalLoader';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
@@ -43,6 +45,18 @@ export default function LayoutContent({ children }) {
         {showMobileChrome && <Footer />}
       </div>
       {showMobileChrome && <MobileBottomNav />}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </>
   );
 }

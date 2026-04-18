@@ -2,58 +2,55 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Sparkles, Package, Heart, Star } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  User, Sparkles, Package, Heart, Star, MapPin, Settings,
+  Camera, Crown, LogOut, ChevronRight,
+} from 'lucide-react';
 import { AccountMobileTopBar } from '../_components/AccountMobileTopBar';
-import { useAccountData } from '../_components/useAccountData';
 import { setAccountNavDirection } from '../_components/navDirection';
+import { useAccountData } from '../_components/useAccountData';
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
 
+// ── Design tokens (Cloud Luxe) ──────────────────────────────────────────────
+const CL = {
+  glass:       'rgba(255,255,255,0.72)',
+  glassBorder: 'rgba(216,180,254,0.35)',
+  gradient:    'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+  purple:      'rgb(126,105,230)',
+  purpleMid:   'rgb(147,104,236)',
+  purpleLight: 'rgba(196,167,254,0.18)',
+  bgPage:      'var(--cl-bg)',
+  bgLav:       'var(--cl-bg-lavender)',
+  textDeep:    'var(--cl-text-deep)',
+  textMid:     'var(--cl-text-mid)',
+  textSoft:    'var(--cl-text-soft)',
+  cardShadow:  '0 4px 32px rgba(147,51,234,0.07), 0 1px 4px rgba(0,0,0,0.04)',
+  glowShadow:  '0 8px 32px rgba(147,51,234,0.18)',
+};
+
+const glassCard = {
+  background:     CL.glass,
+  border:         `1px solid ${CL.glassBorder}`,
+  backdropFilter: 'blur(20px)',
+  boxShadow:      CL.cardShadow,
+};
+
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', href: '/account/dashboard', Icon: Sparkles },
-  { id: 'profile',   label: 'Profile',   href: '/account/profile',   Icon: User    },
-  { id: 'orders',    label: 'Orders',    href: '/account/orders',    Icon: Package },
-  { id: 'wishlist',  label: 'Wishlist',  href: '/account/wishlist',  Icon: Heart   },
-  { id: 'loyalty',   label: 'Loyalty',   href: '/account/loyalty',   Icon: Star    },
+  { id: 'dashboard', label: 'Dashboard', href: '/account',            Icon: Sparkles },
+  { id: 'profile',   label: 'Profile',   href: '/account/profile',    Icon: User     },
+  { id: 'orders',    label: 'Orders',    href: '/account/orders',     Icon: Package  },
+  { id: 'wishlist',  label: 'Wishlist',  href: '/account/wishlist',   Icon: Heart    },
+  { id: 'loyalty',   label: 'Loyalty',   href: '/account/loyalty',    Icon: Star     },
+  { id: 'addresses', label: 'Addresses', href: '/account/addresses',  Icon: MapPin   },
+  { id: 'settings',  label: 'Settings',  href: '/account/settings',   Icon: Settings },
 ];
-
-const inputStyle = {
-  width: '100%',
-  padding: '11px 14px',
-  borderRadius: '10px',
-  border: '1px solid rgba(216,180,254,0.4)',
-  background: 'rgba(255,255,255,0.85)',
-  color: '#3b0764',
-  fontSize: '14px',
-  outline: 'none',
-};
-
-const labelStyle = {
-  display: 'block',
-  fontSize: '9.5px',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  color: 'rgb(147,104,236)',
-  marginBottom: '5px',
-};
-
-const groupLabelStyle = {
-  fontSize: 10,
-  fontWeight: 700,
-  color: 'rgb(147,104,236)',
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase',
-  borderBottom: '1px solid rgba(216,180,254,0.3)',
-  paddingBottom: 6,
-  marginBottom: 12,
-};
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { fetchWithAuth } = useAppContext();
-  const { orders, loyaltyData } = useAccountData();
+  const { user, logout } = useAuth();
+  const { loyaltyData } = useAccountData();
 
   const [form, setForm] = useState({ first_name: '', last_name: '', phone_number: '' });
   const [fetched, setFetched] = useState({ first_name: '', last_name: '', phone_number: '' });
@@ -61,6 +58,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
+
+  const { fetchWithAuth } = useAppContext();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -70,8 +69,8 @@ export default function ProfilePage() {
       .then(data => {
         if (cancelled) return;
         const vals = {
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
+          first_name:   data.first_name   || '',
+          last_name:    data.last_name    || '',
           phone_number: data.phone_number || '',
         };
         setForm(vals);
@@ -87,10 +86,7 @@ export default function ProfilePage() {
     setSaved(false);
   };
 
-  const handleDiscard = () => {
-    setForm(fetched);
-    setError(null);
-  };
+  const handleDiscard = () => { setForm(fetched); setError(null); };
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -115,261 +111,264 @@ export default function ProfilePage() {
     }
   };
 
-  const initials = (user?.first_name?.[0] || '?').toUpperCase();
-  const tier = loyaltyData?.stats?.tier || 'Silver';
-  const points = loyaltyData?.stats?.points ?? 0;
-  const orderCount = orders?.length ?? 0;
+  const tier   = loyaltyData?.stats?.tier        || 'Silver';
+  const points = loyaltyData?.stats?.points       ?? 0;
+  const nextPt = loyaltyData?.stats?.nextTierPoints ?? 2000;
+  const loyaltyPct = Math.min(100, Math.round((points / nextPt) * 100));
 
   return (
     <>
-      {/* Mobile sticky top bar */}
       <AccountMobileTopBar title="My Profile" />
 
-      {/* Mobile identity bar — hidden on md+ */}
-      <div className="md:hidden" style={{
-        background: 'rgba(255,255,255,0.95)',
-        borderBottom: '1px solid rgba(216,180,254,0.25)',
-        padding: '14px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-      }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: '50%',
-          background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 18, fontWeight: 900, color: '#fff',
-          boxShadow: '0 4px 14px rgba(147,104,236,0.35)',
-          border: '2px solid rgba(255,255,255,1)',
-          flexShrink: 0,
-        }}>{initials}</div>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#3b0764' }}>
-            {user?.first_name} {user?.last_name}
-          </div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: 'rgb(147,104,236)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>
-            ✦ {tier} Member
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(59,7,100,0.45)', marginTop: 1, fontWeight: 600 }}>
-            {points.toLocaleString()} loyalty points
-          </div>
-        </div>
-      </div>
+      <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
 
-      {/* Page body */}
-      <div className="flex" style={{ minHeight: '100vh', background: 'var(--cl-bg)' }}>
-
-        {/* ── Left panel — desktop only ── */}
-        <div className="hidden md:flex" style={{
-          width: 260,
-          flexShrink: 0,
-          background: 'rgba(255,255,255,0.95)',
-          borderRight: '1px solid rgba(216,180,254,0.25)',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '40px 24px 32px',
-          position: 'sticky',
-          top: 0,
-          height: '100vh',
-          overflowY: 'auto',
-        }}>
-          {/* Avatar */}
-          <div style={{
-            width: 84, height: 84, borderRadius: '50%',
-            background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 32, fontWeight: 900, color: '#fff',
-            boxShadow: '0 8px 28px rgba(147,104,236,0.35)',
-            border: '3px solid rgba(255,255,255,1)',
-          }}>{initials}</div>
-
-          {/* Name + email */}
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#3b0764', marginTop: 14, letterSpacing: '-0.3px', textAlign: 'center' }}>
-            {user?.first_name} {user?.last_name}
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(59,7,100,0.45)', marginTop: 3, textAlign: 'center' }}>
-            {user?.email}
-          </div>
-
-          {/* Tier badge */}
-          <div style={{
-            marginTop: 12,
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            background: 'linear-gradient(135deg, rgba(196,167,254,0.18), rgba(249,168,212,0.12))',
-            border: '1px solid rgba(216,180,254,0.4)',
-            borderRadius: 50, padding: '4px 12px',
-          }}>
-            <Star size={10} style={{ color: 'rgb(126,105,230)' }} strokeWidth={2.5} />
-            <span style={{ fontSize: 9.5, fontWeight: 800, color: 'rgb(126,105,230)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              {tier} Member
-            </span>
-          </div>
-
-          {/* Divider */}
-          <div style={{ width: 40, height: 1.5, background: 'linear-gradient(90deg, rgb(196,167,254), rgb(249,168,212))', borderRadius: 2, margin: '20px 0' }} />
-
-          {/* Stats */}
-          <div style={{ display: 'flex', gap: 24 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: 'rgb(126,105,230)', lineHeight: 1 }}>
-                {points.toLocaleString()}
-              </div>
-              <div style={{ fontSize: 8.5, fontWeight: 700, color: 'rgb(147,104,236)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 3 }}>Points</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: 'rgb(126,105,230)', lineHeight: 1 }}>
-                {orderCount}
-              </div>
-              <div style={{ fontSize: 8.5, fontWeight: 700, color: 'rgb(147,104,236)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 3 }}>Orders</div>
-            </div>
-          </div>
-
-          {/* Brand quote */}
-          <div style={{ fontSize: 11, color: 'rgba(59,7,100,0.45)', fontStyle: 'italic', textAlign: 'center', lineHeight: 1.6, marginTop: 20, padding: '0 4px' }}>
-            "Luxury is in each detail."
-          </div>
-
-          {/* Mini nav */}
-          <div style={{ width: '100%', marginTop: 28, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {NAV_ITEMS.map(({ id, label, href, Icon }) => {
-              const isActive = id === 'profile';
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => { setAccountNavDirection(1); router.push(href); }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 12px', borderRadius: 10, width: '100%',
-                    background: isActive ? 'rgba(196,167,254,0.15)' : 'transparent',
-                    border: 'none', cursor: 'pointer', textAlign: 'left',
-                    color: isActive ? 'rgb(126,105,230)' : 'rgba(59,7,100,0.5)',
-                    fontSize: 13, fontWeight: 600, transition: 'all 0.15s',
-                  }}
-                >
-                  <Icon size={15} strokeWidth={1.75} />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+        {/* Aura background */}
+        <div className="fixed inset-0 pointer-events-none z-0">
+          <div className="absolute top-[-15%] right-[-10%] w-[55%] h-[55%] rounded-full blur-[140px]" style={{ background: 'rgba(196,167,254,0.18)' }} />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px]" style={{ background: 'rgba(249,168,212,0.12)' }} />
+          <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] rounded-full blur-[100px]" style={{ background: 'rgba(216,180,254,0.10)' }} />
         </div>
 
-        {/* ── Right panel (form) ── */}
-        <div className="px-4 py-8 md:px-10 md:py-10" style={{ flex: 1, background: 'var(--cl-bg)', overflowY: 'auto' }}>
+        <div className="max-w-[1400px] mx-auto px-6 pt-10 pb-28 relative z-10">
+          <div className="grid lg:grid-cols-12 gap-8">
 
-          {/* Heading */}
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 20, height: 1.5, background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderRadius: 2 }} />
-              <span style={{ fontSize: 10, fontWeight: 800, color: 'rgb(126,105,230)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>My Profile</span>
-            </div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, color: '#3b0764', letterSpacing: '-0.5px', lineHeight: 1.2 }}>
-              Personal details
-            </h1>
-            <p style={{ fontSize: 13, color: 'rgba(59,7,100,0.45)', marginTop: 4 }}>
-              Update your name and contact information.
-            </p>
-          </div>
+            {/* ── Sidebar ── */}
+            <aside className="hidden md:block lg:col-span-3 space-y-5 self-start sticky top-24">
 
-          {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
-              <div className="animate-spin" style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(196,167,254,0.3)', borderTopColor: 'rgb(147,104,236)' }} />
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} style={{ maxWidth: 560 }}>
-
-              {/* Personal info group */}
-              <div style={{ marginBottom: 20 }}>
-                <div style={groupLabelStyle}>Personal info</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 10 }}>
-                  <div>
-                    <label style={labelStyle}>First name</label>
-                    <input
-                      type="text"
-                      value={form.first_name}
-                      onChange={handleChange('first_name')}
-                      placeholder="First name"
-                      style={inputStyle}
-                    />
+              {/* Profile card */}
+              <div className="rounded-3xl p-7" style={glassCard}>
+                <div className="flex flex-col items-center text-center gap-3 mb-7">
+                  <div className="relative">
+                    <div
+                      className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black shadow-lg"
+                      style={{ background: CL.gradient }}
+                    >
+                      {user?.first_name?.[0]}{user?.last_name?.[0]}
+                    </div>
+                    <button
+                      className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-colors"
+                      style={{ background: CL.glass, border: `1px solid ${CL.glassBorder}`, color: CL.purple }}
+                    >
+                      <Camera size={12} />
+                    </button>
+                    <div className="absolute inset-0 rounded-full -z-10" style={{ boxShadow: CL.glowShadow, opacity: 0.3 }} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Last name</label>
-                    <input
-                      type="text"
-                      value={form.last_name}
-                      onChange={handleChange('last_name')}
-                      placeholder="Last name"
-                      style={inputStyle}
-                    />
+                    <h3 className="text-base font-bold tracking-tight" style={{ color: CL.textDeep }}>
+                      {user?.first_name} {user?.last_name}
+                    </h3>
+                    <p className="text-[9px] font-black uppercase tracking-[0.12em] mt-0.5" style={{ color: CL.purple }}>
+                      {tier} Member
+                    </p>
+                  </div>
+                </div>
+
+                <nav className="space-y-1">
+                  {NAV_ITEMS.map(({ id, label, href, Icon }) => {
+                    const active = id === 'profile';
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => { setAccountNavDirection(active ? 0 : 1); router.push(href); }}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300"
+                        style={active
+                          ? { background: 'rgba(196,167,254,0.22)', color: 'rgb(126,105,230)', border: '1px solid rgba(196,167,254,0.45)', boxShadow: '0 2px 12px rgba(147,51,234,0.12)' }
+                          : { color: 'rgba(59,7,100,0.50)' }
+                        }
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon size={16} strokeWidth={active ? 2 : 1.5} />
+                          <span className="text-[13px] font-semibold tracking-tight">{label}</span>
+                        </div>
+                        {active && <ChevronRight size={13} />}
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
+                  <button
+                    onClick={() => { logout(); router.push('/'); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-red-400 hover:text-red-600 hover:bg-red-50/60"
+                  >
+                    <LogOut size={16} strokeWidth={1.5} />
+                    <span className="text-[13px] font-semibold">Sign Out</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Loyalty card */}
+              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: CL.glowShadow }}>
+                <div className="absolute top-0 right-0 w-36 h-36 rounded-full blur-[60px]" style={{ background: 'rgba(249,168,212,0.25)' }} />
+                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-[50px]" style={{ background: 'rgba(196,167,254,0.2)' }} />
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Star size={14} className="fill-yellow-300 text-yellow-300" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/60">Loyalty Points</span>
+                  </div>
+                  <p className="text-4xl font-black text-white">{points.toLocaleString()}</p>
+                  <div>
+                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${loyaltyPct}%` }}
+                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                        className="h-full rounded-full"
+                        style={{ background: 'linear-gradient(90deg, rgba(249,168,212,0.9), rgba(253,224,71,0.9))' }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-white/40 font-medium uppercase tracking-widest mt-2">
+                      {nextPt - points} pts to next tier
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Crown size={12} style={{ color: 'rgba(253,224,71,0.8)' }} />
+                    <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{tier} Prestige</span>
                   </div>
                 </div>
               </div>
 
-              {/* Contact group */}
-              <div style={{ marginBottom: 28 }}>
-                <div style={groupLabelStyle}>Contact</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div>
-                    <label style={labelStyle}>Email address</label>
-                    <input
-                      type="email"
-                      value={user?.email || ''}
-                      readOnly
-                      style={{ ...inputStyle, opacity: 0.55, cursor: 'not-allowed' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>Phone number</label>
-                    <input
-                      type="tel"
-                      value={form.phone_number}
-                      onChange={handleChange('phone_number')}
-                      placeholder="+971 50 000 0000"
-                      style={inputStyle}
-                    />
-                  </div>
-                </div>
-              </div>
+            </aside>
 
-              {error && (
-                <p style={{ fontSize: 12, fontWeight: 500, color: 'rgba(239,68,68,0.85)', marginBottom: 16 }}>
-                  {error}
-                </p>
-              )}
+            {/* ── Main content ── */}
+            <main className="lg:col-span-9">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key="profile"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -16 }}
+                  className="space-y-6"
+                >
+                  {/* Section title */}
+                  <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>My Account</p>
+                    </div>
+                    <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight leading-tight" style={{ color: CL.textDeep }}>
+                      Personal Details
+                    </h2>
+                  </div>
 
-              {/* Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="font-black uppercase tracking-widest"
-                  style={{
-                    background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))',
-                    color: '#fff', fontSize: 11, border: 'none',
-                    borderRadius: 50, padding: '11px 28px', cursor: 'pointer',
-                    boxShadow: '0 4px 16px rgba(147,104,236,0.3)',
-                    opacity: saving ? 0.6 : 1,
-                  }}
-                >
-                  {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDiscard}
-                  className="font-bold"
-                  style={{
-                    background: 'transparent',
-                    border: '1.5px solid rgba(216,180,254,0.5)',
-                    color: 'rgb(126,105,230)', fontSize: 11,
-                    borderRadius: 50, padding: '10px 20px', cursor: 'pointer',
-                  }}
-                >
-                  Discard
-                </button>
-              </div>
-            </form>
-          )}
+                  {loading ? (
+                    <div className="rounded-3xl p-16 flex items-center justify-center" style={glassCard}>
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-10 h-10 border-2 rounded-full animate-spin" style={{ borderColor: CL.purpleLight, borderTopColor: CL.purple }}></div>
+                        <p className="text-[10px] font-bold tracking-[0.4em] uppercase animate-pulse" style={{ color: CL.textSoft }}>Loading profile</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmit}>
+                      {/* Personal info card */}
+                      <div className="rounded-3xl p-8 mb-5" style={glassCard}>
+                        <div className="flex items-center gap-2 mb-6">
+                          <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Personal info</p>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-5">
+                          {[
+                            { field: 'first_name', label: 'First name', placeholder: 'First name', type: 'text' },
+                            { field: 'last_name',  label: 'Last name',  placeholder: 'Last name',  type: 'text' },
+                          ].map(({ field, label, placeholder, type }) => (
+                            <div key={field}>
+                              <label className="block text-[9.5px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: CL.purple }}>{label}</label>
+                              <input
+                                type={type}
+                                value={form[field]}
+                                onChange={handleChange(field)}
+                                placeholder={placeholder}
+                                className="w-full rounded-xl px-4 py-3 text-sm font-medium transition-all outline-none focus:ring-2"
+                                style={{
+                                  background:  'rgba(255,255,255,0.85)',
+                                  border:      `1px solid ${CL.glassBorder}`,
+                                  color:       CL.textDeep,
+                                  focusRingColor: CL.purple,
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Contact card */}
+                      <div className="rounded-3xl p-8 mb-5" style={glassCard}>
+                        <div className="flex items-center gap-2 mb-6">
+                          <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
+                          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Contact</p>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-5">
+                          <div>
+                            <label className="block text-[9.5px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: CL.purple }}>Email address</label>
+                            <input
+                              type="email"
+                              value={user?.email || ''}
+                              readOnly
+                              className="w-full rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
+                              style={{
+                                background: 'rgba(255,255,255,0.85)',
+                                border:     `1px solid ${CL.glassBorder}`,
+                                color:      CL.textDeep,
+                                opacity:    0.55,
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9.5px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: CL.purple }}>Phone number</label>
+                            <input
+                              type="tel"
+                              value={form.phone_number}
+                              onChange={handleChange('phone_number')}
+                              placeholder="+971 50 000 0000"
+                              className="w-full rounded-xl px-4 py-3 text-sm font-medium transition-all outline-none"
+                              style={{
+                                background: 'rgba(255,255,255,0.85)',
+                                border:     `1px solid ${CL.glassBorder}`,
+                                color:      CL.textDeep,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {error && (
+                        <p className="text-xs font-medium mb-4" style={{ color: 'rgba(239,68,68,0.85)' }}>{error}</p>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="submit"
+                          disabled={saving}
+                          className="px-8 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-full transition-all"
+                          style={{
+                            background:  CL.gradient,
+                            boxShadow:   '0 4px 16px rgba(147,51,234,0.3)',
+                            opacity:     saving ? 0.6 : 1,
+                          }}
+                        >
+                          {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDiscard}
+                          className="px-7 py-3 text-[11px] font-bold uppercase tracking-widest rounded-full border transition-all"
+                          style={{
+                            border:     `1px solid ${CL.glassBorder}`,
+                            color:      CL.textMid,
+                            background: CL.glass,
+                          }}
+                        >
+                          Discard
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </main>
+
+          </div>
         </div>
       </div>
     </>

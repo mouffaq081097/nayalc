@@ -35,8 +35,8 @@ export async function POST(request, { params }) {
                     ua.zip_code,
                     ua.country
                 FROM ${orderTable} o
-                JOIN users u ON o.user_id = u.id
-                JOIN user_addresses ua ON o.user_address_id = ua.id
+                LEFT JOIN users u ON o.user_id = u.id
+                LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
                 WHERE o.id = $1
             `, [orderId]);
 

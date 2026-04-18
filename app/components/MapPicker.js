@@ -2,6 +2,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, StandaloneSearchBox } from '@react-google-maps/api';
+import { LocateFixed } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const containerStyle = {
   width: '100%',
@@ -27,6 +29,7 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
   const [map, setMap] = useState(null);
   const [markerPosition, setMarkerPosition] = useState(initialAddress?.location || defaultCenter);
   const [searchBox, setSearchBox] = useState(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   // We need to keep a reference to the advanced marker we create manually
   const [markerInstance, setMarkerInstance] = useState(null);
@@ -52,7 +55,7 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
 
       setMarkerInstance(newMarker);
     }
-  }, [markerPosition]);
+  }, [markerPosition, getAddressFromLatLng]);
 
   const onUnmount = useCallback(() => {
     if (markerInstance) {
@@ -106,6 +109,41 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
     getAddressFromLatLng({ lat, lng });
   }, [getAddressFromLatLng]);
 
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const newPosition = { lat, lng };
+        
+        setMarkerPosition(newPosition);
+        if (map) {
+          map.panTo(newPosition);
+          map.setZoom(16);
+        }
+        getAddressFromLatLng(newPosition);
+        setIsLocating(false);
+        toast.success('Location updated!');
+      },
+      (error) => {
+        console.error('Error fetching location:', error);
+        setIsLocating(false);
+        let errorMsg = 'Could not fetch your location.';
+        if (error.code === 1) errorMsg = 'Location access denied. Please enable it in your browser settings.';
+        else if (error.code === 2) errorMsg = 'Location unavailable.';
+        else if (error.code === 3) errorMsg = 'Location request timed out.';
+        toast.error(errorMsg);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const onSearchBoxLoad = useCallback((ref) => setSearchBox(ref), []);
 
   const onPlacesChanged = useCallback(() => {
@@ -147,18 +185,31 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
   return (
     <div className="flex flex-col h-full">
       {/* Search — StandaloneSearchBox */}
-      <div className="mb-4 w-full" style={{ position: 'relative', zIndex: 9999 }}>
-        <StandaloneSearchBox
-          onLoad={onSearchBoxLoad}
-          onPlacesChanged={onPlacesChanged}
-          options={{ componentRestrictions: { country: 'ae' } }}
+      <div className="mb-4 flex gap-2 w-full" style={{ position: 'relative', zIndex: 9999 }}>
+        <div className="flex-1">
+          <StandaloneSearchBox
+            onLoad={onSearchBoxLoad}
+            onPlacesChanged={onPlacesChanged}
+            options={{ componentRestrictions: { country: 'ae' } }}
+          >
+            <input
+              type="text"
+              placeholder="Search for a location in UAE"
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--cl-purple)]"
+            />
+          </StandaloneSearchBox>
+        </div>
+        <button
+          type="button"
+          onClick={handleGetCurrentLocation}
+          disabled={isLocating}
+          className={`px-3 py-2 rounded-md shadow-sm border border-gray-300 flex items-center justify-center transition-all ${
+            isLocating ? 'bg-gray-100' : 'bg-white hover:bg-gray-50 active:scale-95'
+          }`}
+          title="Use Current Location"
         >
-          <input
-            type="text"
-            placeholder="Search for a location in UAE"
-            className="w-full p-2 border border-gray-300 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-[var(--cl-purple)]"
-          />
-        </StandaloneSearchBox>
+          <LocateFixed size={18} className={`${isLocating ? 'animate-pulse text-blue-500' : 'text-gray-600'}`} />
+        </button>
       </div>
 
       <div className="flex-grow h-[55vh] relative">

@@ -35,8 +35,8 @@ const selectOrderFields = (tableName) => `
         ua.city,
         ua.zip_code as "zipCode",
         o.payment_method as "paymentMethod",
-        o.total_amount as "totalAmount",
-        o.tax_amount as "taxAmount",
+        o.total_amount::numeric as "totalAmount",
+        o.tax_amount::numeric as "taxAmount",
         o.order_status as "status",
         o.shipping_scheduled_date as "shippingScheduledDate",
         o.payment_confirmed as "paymentConfirmed",
@@ -44,19 +44,19 @@ const selectOrderFields = (tableName) => `
         o.updated_at as "updatedAt",
         o.user_id as "userId",
         o.user_address_id as "userAddressId",
-        o.subtotal,
-        o.shipping_cost,
+        o.subtotal::numeric as subtotal,
+        o.shipping_cost::numeric as shipping_cost,
         o.gift_wrap,
-        o.gift_wrap_cost,
-        o.discount_amount as "discountAmount",
+        o.gift_wrap_cost::numeric as gift_wrap_cost,
+        o.discount_amount::numeric as "discountAmount",
         o.applied_coupon_id as "appliedCouponId",
-        ${tableName === 'cancelled_orders' ? 'o.cancellation_reason as "cancellationReason",' : 'NULL as "cancellationReason",'}
-        ${tableName === 'delivered_orders' ? 'o.delivered_at as "deliveredAt",' : 'NULL as "deliveredAt",'}
+        ${tableName === 'cancelled_orders' ? 'o.cancellation_reason::text' : 'NULL::text'} as "cancellationReason",
+        ${tableName === 'delivered_orders' ? 'o.delivered_at::timestamptz' : 'NULL::timestamptz'} as "deliveredAt",
         o.tracking_number as "trackingNumber",
         o.courier_name as "courierName",
         o.courier_website as "courierWebsite"
     FROM ${tableName} o
-    JOIN user_addresses ua ON o.user_address_id = ua.id
+    LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
 `;
 
 
@@ -126,7 +126,7 @@ export async function GET(request) {
 
         for (const config of orderTableConfig) {
             let currentSelectSql = selectOrderFields(config.name);
-            let currentCountSql = `SELECT COUNT(*) FROM ${config.name} o JOIN user_addresses ua ON o.user_address_id = ua.id`;
+            let currentCountSql = `SELECT COUNT(*) FROM ${config.name} o LEFT JOIN user_addresses ua ON o.user_address_id = ua.id`;
             let whereClause = '';
 
             // Add userId filter if present

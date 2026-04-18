@@ -38,6 +38,17 @@ export async function POST(request) {
                 name: '005_redeemed_points_on_orders',
                 sql: `ALTER TABLE orders ADD COLUMN IF NOT EXISTS redeemed_points INTEGER DEFAULT 0;`
             },
+            {
+                name: '006_delivered_orders_missing_financial_columns',
+                sql: `
+                    ALTER TABLE delivered_orders ADD COLUMN IF NOT EXISTS subtotal        NUMERIC(10,2);
+                    ALTER TABLE delivered_orders ADD COLUMN IF NOT EXISTS shipping_cost   NUMERIC(10,2);
+                    ALTER TABLE delivered_orders ADD COLUMN IF NOT EXISTS gift_wrap       BOOLEAN DEFAULT FALSE;
+                    ALTER TABLE delivered_orders ADD COLUMN IF NOT EXISTS gift_wrap_cost  NUMERIC(10,2) DEFAULT 0;
+                    ALTER TABLE delivered_orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10,2) DEFAULT 0;
+                    ALTER TABLE cancelled_orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10,2) DEFAULT 0;
+                `
+            },
         ];
 
         for (const migration of migrations) {

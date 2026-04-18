@@ -14,18 +14,18 @@ export async function GET(request, context) {
 
         // Try to find in orders table
         orderResult = await client.query(`
-            SELECT 
-                o.*, 
-                o.order_status as status, 
-                o.total_amount as "totalAmount", 
+            SELECT
+                o.*,
+                o.order_status as status,
+                o.total_amount as "totalAmount",
                 o.created_at as "createdAt",
                 o.tax_amount as "taxAmount",
                 o.discount_amount as "discountAmount",
                 o.shipping_cost as "shippingCost",
                 o.gift_wrap_cost as "giftWrapCost",
                 o.stripe_payment_intent_id as "stripePaymentIntentId",
-                u.first_name || ' ' || u.last_name as "customerName",
-                u.email as "customerEmail",
+                COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as "customerName",
+                COALESCE(u.email, '') as "customerEmail",
                 ua.customer_phone as "customerPhone",
                 ua.address_line1 as "shippingAddress",
                 ua.address_line2 as "addressLine2",
@@ -34,8 +34,8 @@ export async function GET(request, context) {
                 ua.country,
                 ua.zip_code as "zipCode"
             FROM orders o
-            JOIN users u ON o.user_id = u.id
-            JOIN user_addresses ua ON o.user_address_id = ua.id
+            LEFT JOIN users u ON o.user_id = u.id
+            LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
             WHERE o.id = $1
         `, [orderId]);
 
@@ -51,19 +51,18 @@ export async function GET(request, context) {
         } else {
             // Try to find in delivered_orders table
             orderResult = await client.query(`
-                SELECT 
-                    o.*, 
-                    o.order_status as status, 
-                    o.total_amount as "totalAmount", 
+                SELECT
+                    o.*,
+                    o.order_status as status,
+                    o.total_amount as "totalAmount",
                     o.created_at as "createdAt",
                     o.tax_amount as "taxAmount",
                     o.discount_amount as "discountAmount",
                     o.shipping_cost as "shippingCost",
-                    o.shipping_cost as "shippingCost",
                     o.gift_wrap_cost as "giftWrapCost",
                     o.stripe_payment_intent_id as "stripePaymentIntentId",
-                    u.first_name || ' ' || u.last_name as "customerName",
-                    u.email as "customerEmail",
+                    COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as "customerName",
+                    COALESCE(u.email, '') as "customerEmail",
                     ua.customer_phone as "customerPhone",
                     ua.address_line1 as "shippingAddress",
                     ua.address_line2 as "addressLine2",
@@ -72,8 +71,8 @@ export async function GET(request, context) {
                     ua.country,
                     ua.zip_code as "zipCode"
                 FROM delivered_orders o
-                JOIN users u ON o.user_id = u.id
-                JOIN user_addresses ua ON o.user_address_id = ua.id
+                LEFT JOIN users u ON o.user_id = u.id
+                LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
                 WHERE o.id = $1
             `, [orderId]);
 
@@ -89,20 +88,19 @@ export async function GET(request, context) {
             } else {
                 // Try to find in cancelled_orders table
                 orderResult = await client.query(`
-                    SELECT 
-                        o.*, 
-                        o.order_status as status, 
-                        o.total_amount as "totalAmount", 
+                    SELECT
+                        o.*,
+                        o.order_status as status,
+                        o.total_amount as "totalAmount",
                         o.created_at as "createdAt",
                         o.cancellation_reason as "cancellationReason",
                         o.tax_amount as "taxAmount",
                         o.discount_amount as "discountAmount",
                         o.shipping_cost as "shippingCost",
-                        o.shipping_cost as "shippingCost",
                         o.gift_wrap_cost as "giftWrapCost",
                         o.stripe_payment_intent_id as "stripePaymentIntentId",
-                        u.first_name || ' ' || u.last_name as "customerName",
-                        u.email as "customerEmail",
+                        COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as "customerName",
+                        COALESCE(u.email, '') as "customerEmail",
                         ua.customer_phone as "customerPhone",
                         ua.address_line1 as "shippingAddress",
                         ua.address_line2 as "addressLine2",
@@ -111,8 +109,8 @@ export async function GET(request, context) {
                         ua.country,
                         ua.zip_code as "zipCode"
                     FROM cancelled_orders o
-                    JOIN users u ON o.user_id = u.id
-                    JOIN user_addresses ua ON o.user_address_id = ua.id
+                    LEFT JOIN users u ON o.user_id = u.id
+                    LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
                     WHERE o.id = $1
                 `, [orderId]);
                 if (orderResult.rows.length > 0) {
@@ -135,12 +133,12 @@ export async function GET(request, context) {
         const order = orderResult.rows[0];
 
         // Common processing for the found order
-        order.totalAmount = parseFloat(order.totalAmount);
-        order.taxAmount = parseFloat(order.taxAmount);
-        order.discountAmount = parseFloat(order.discountAmount);
-        order.shippingCost = parseFloat(order.shippingCost);
-        order.giftWrapCost = parseFloat(order.giftWrapCost);
-        order.subtotal = parseFloat(order.subtotal); // Ensure subtotal is parsed
+        order.totalAmount    = parseFloat(order.totalAmount)    || 0;
+        order.taxAmount      = parseFloat(order.taxAmount)      || 0;
+        order.discountAmount = parseFloat(order.discountAmount) || 0;
+        order.shippingCost   = parseFloat(order.shippingCost)   || 0;
+        order.giftWrapCost   = parseFloat(order.giftWrapCost)   || 0;
+        order.subtotal       = parseFloat(order.subtotal)       || 0;
 
         // If payment method is card, fetch Stripe details for display
         if (order.paymentMethod === 'card' && order.stripePaymentIntentId) {
@@ -166,14 +164,13 @@ export async function GET(request, context) {
             }
         }
 
-        // Structure the address details as expected across the app
         order.shippingAddressDetails = {
-            addressLine1: order.shippingAddress,
-            addressLine2: order.addressLine2,
-            city: order.city,
-            state: order.state,
-            postalCode: order.zipCode,
-            country: order.country
+            addressLine1: order.shippingAddress || '',
+            addressLine2: order.addressLine2    || '',
+            city:         order.city            || '',
+            state:        order.state           || '',
+            postalCode:   order.zipCode         || '',
+            country:      order.country         || '',
         };
 
         order.items = items.map(item => ({
@@ -220,11 +217,16 @@ export async function PUT(request, context) {
                 o.tracking_number, o.courier_name, o.courier_website, o.created_at, o.updated_at,
                 o.subtotal, o.shipping_cost, o.stripe_payment_intent_id, o.gift_wrap, o.gift_wrap_cost,
                 COALESCE(o.redeemed_points, 0) as redeemed_points,
-                ua.customer_email, ua.customer_phone, ua.shipping_address, ua.city, ua.zip_code, ua.country,
-                u.first_name
+                COALESCE(ua.customer_email, u.email, '') as customer_email,
+                ua.customer_phone,
+                COALESCE(ua.shipping_address, '') as shipping_address,
+                COALESCE(ua.city, '') as city,
+                COALESCE(ua.zip_code, '') as zip_code,
+                COALESCE(ua.country, '') as country,
+                COALESCE(u.first_name, 'Customer') as first_name
             FROM orders o
-            JOIN user_addresses ua ON o.user_address_id = ua.id
-            JOIN users u ON o.user_id = u.id
+            LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
+            LEFT JOIN users u ON o.user_id = u.id
             WHERE o.id = $1`,
             [orderId]
         );

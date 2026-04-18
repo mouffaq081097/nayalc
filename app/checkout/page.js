@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, ShieldCheck, Loader2, Pencil, Trash2, Plus, Sparkles, RotateCcw } from 'lucide-react';
 import { FaPlus } from 'react-icons/fa';
@@ -44,6 +44,8 @@ export default function CheckoutPage() {
   const [authorizedPaymentIntentId, setAuthorizedPaymentIntentId] = useState(null);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [formData, setFormData] = useState({ paymentMethod: 'cashOnDelivery', giftWrap: false, giftMessage: '', newsletter: false });
+  const [loyaltyLoaded, setLoyaltyLoaded] = useState(false);
+  const piCreatedRef = useRef(false); // prevents duplicate PI creation during re-renders
 
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
   const shipping = subtotal > 200 ? 0 : 30;
@@ -70,24 +72,68 @@ export default function CheckoutPage() {
       fetchShippingAddresses();
       fetchWithAuth(`/api/users/${user.id}/loyalty`)
         .then(r => r.json())
-        .then(d => setLoyaltyPoints(d.stats?.points || 0))
-        .catch(() => {});
+        .then(d => { setLoyaltyPoints(d.stats?.points || 0); setLoyaltyLoaded(true); })
+        .catch(() => { setLoyaltyLoaded(true); }); // mark loaded even on failure so checkout isn't blocked
     }
   }, [user, fetchShippingAddresses, fetchWithAuth]);
 
   useEffect(() => { setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)); }, []);
 
+  // Create the payment intent only once, after ALL async data (loyalty points, cart) has
+  // finished loading. Using a ref guard prevents duplicate PIs when total re-renders.
   useEffect(() => {
-    if (formData.paymentMethod === 'card' && total > 0) {
-      fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: Math.round(total * 100), currency: 'aed' }),
-      }).then(r => r.json()).then(d => setClientSecret(d.clientSecret)).catch(() => {});
-    }
-  }, [formData.paymentMethod, total]);
+    if (
+      formData.paymentMethod !== 'card' ||
+      total <= 0 ||
+      !loyaltyLoaded ||
+      piCreatedRef.current
+    ) return;
+
+    piCreatedRef.current = true;
+    fetch('/api/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: Math.round(total * 100), currency: 'aed' }),
+    })
+      .then(r => r.json())
+      .then(d => setClientSecret(d.clientSecret))
+      .catch(() => { piCreatedRef.current = false; }); // allow retry on network error
+  }, [formData.paymentMethod, total, loyaltyLoaded]);
+
+  // When anything that changes the total is toggled AFTER a PI was already created,
+  // reset so a fresh PI is created with the correct new amount.
+  useEffect(() => {
+    piCreatedRef.current = false;
+    setClientSecret('');
+  }, [formData.giftWrap, usePoints, appliedCoupon]);
 
   useEffect(() => { setSelectedShippingAddressId(selectedAddressId); }, [selectedAddressId, setSelectedShippingAddressId]);
+
+  // Persist order payload to sessionStorage so the /order-confirmation redirect handler
+  // can create the order after a 3D-Secure redirect (when React state is lost).
+  useEffect(() => {
+    if (formData.paymentMethod !== 'card' || !selectedAddressId || !user?.id || cartItems.length === 0) return;
+    const shippingDate = new Date();
+    shippingDate.setDate(shippingDate.getDate() + 7);
+    const pendingOrderData = {
+      user_address_id: selectedAddressId,
+      payment_method: 'card',
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      shipping_cost: parseFloat(shipping.toFixed(2)),
+      total_amount: parseFloat(total.toFixed(2)),
+      shipping_scheduled_date: shippingDate.toISOString(),
+      user_id: user.id,
+      items: cartItems.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price })),
+      taxAmount: parseFloat(tax.toFixed(2)),
+      applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
+      discount_amount: parseFloat((discountAmount || 0).toFixed(2)),
+      redeemed_points: usePoints ? Math.floor(loyaltyPoints / 100) * 100 : 0,
+      points_discount: pointsDiscount,
+      gift_wrap: formData.giftWrap,
+      gift_wrap_cost: giftWrapFee,
+    };
+    sessionStorage.setItem('pendingCardOrder', JSON.stringify(pendingOrderData));
+  }, [formData.paymentMethod, formData.giftWrap, selectedAddressId, user, subtotal, total, cartItems, discountAmount, usePoints, loyaltyPoints, appliedCoupon, giftWrapFee, pointsDiscount, shipping, tax]);
 
   const openAddressModal = (addr) => { setEditingAddress(addr); setIsAddressModalOpen(true); };
   const closeAddressModal = () => { setEditingAddress(null); setIsAddressModalOpen(false); };

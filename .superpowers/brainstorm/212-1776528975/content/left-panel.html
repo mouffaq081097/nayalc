@@ -1,0 +1,74 @@
+<h2>Left Panel — What Goes There?</h2>
+<p class="subtitle">The current page has two staggered product image columns. Here are two directions for the lavender redesign.</p>
+
+<div class="cards">
+
+  <!-- Option A: Keep two-column stagger -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(135deg,#fdf8ff,#f0e6ff);padding:16px;min-height:260px;display:flex;gap:8px;border-radius:12px 12px 0 0;align-items:center;">
+      <!-- Col 1 -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+        <div style="height:130px;border-radius:20px;background:linear-gradient(160deg,rgba(216,180,254,0.4),rgba(249,168,212,0.3));border:1px solid rgba(216,180,254,0.3);display:flex;align-items:flex-end;padding:10px;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(59,7,100,0.45),transparent);"></div>
+          <span style="font-size:8px;font-family:Georgia,serif;font-style:italic;color:white;z-index:1;line-height:1.4;">The radiance<br/>ritual</span>
+        </div>
+        <div style="height:72px;border-radius:16px;background:rgba(255,255,255,0.75);border:1px solid rgba(216,180,254,0.3);padding:10px;backdrop-filter:blur(12px);">
+          <div style="font-size:7px;font-weight:800;color:#3b0764;margin-bottom:4px;">Member Benefits</div>
+          <div style="font-size:6px;color:#9333ea;line-height:1.6;">✦ Ai Skincare Analysis<br/>✦ Early Launch Access<br/>✦ Exclusive Curation</div>
+        </div>
+      </div>
+      <!-- Col 2 offset -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding-top:28px;">
+        <div style="height:72px;border-radius:16px;background:#1a0533;padding:12px;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:-10px;right:-10px;width:50px;height:50px;background:rgba(216,180,254,0.2);border-radius:50%;filter:blur(20px);"></div>
+          <div style="font-size:7px;font-family:Georgia,serif;font-style:italic;color:rgba(255,255,255,0.85);line-height:1.5;position:relative;z-index:1;">"A commitment<br/>to luminosity"</div>
+          <div style="font-size:6px;color:rgba(216,180,254,0.5);margin-top:4px;position:relative;z-index:1;">— Geneva Lab</div>
+        </div>
+        <div style="height:130px;border-radius:20px;background:linear-gradient(200deg,rgba(126,105,230,0.35),rgba(249,168,212,0.25));border:1px solid rgba(216,180,254,0.3);display:flex;align-items:flex-end;padding:10px;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(59,7,100,0.45),transparent);"></div>
+          <span style="font-size:8px;font-family:Georgia,serif;font-style:italic;color:white;z-index:1;line-height:1.4;">The curated<br/>collection</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Two Staggered Columns (Current Structure)</h3>
+      <p>Keep the two-column offset layout. Images, a dark quote card, and a member benefits card. Lavender-tinted image overlays replace the current neutral tones. Rich and editorial.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Single large image + info overlay -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:linear-gradient(135deg,#fdf8ff,#f0e6ff);padding:16px;min-height:260px;display:flex;border-radius:12px 12px 0 0;align-items:center;justify-content:center;">
+      <div style="width:80%;height:220px;border-radius:24px;background:linear-gradient(160deg,rgba(216,180,254,0.45),rgba(126,105,230,0.3),rgba(249,168,212,0.25));border:1px solid rgba(216,180,254,0.35);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:16px;">
+        <!-- Top badge -->
+        <div style="display:flex;gap:5px;align-items:center;">
+          <div style="width:5px;height:5px;border-radius:50%;background:rgb(216,180,254);animation:pulse 2s infinite;"></div>
+          <span style="font-size:7px;font-weight:800;color:#6b21a8;letter-spacing:0;">Naya Lumière</span>
+        </div>
+        <!-- Center quote -->
+        <div style="text-align:center;">
+          <div style="font-size:11px;font-family:Georgia,serif;font-style:italic;color:#3b0764;line-height:1.6;">"The art of<br/>botanical precision<br/>meets luxury care"</div>
+        </div>
+        <!-- Bottom member strip -->
+        <div style="background:rgba(255,255,255,0.55);border-radius:14px;padding:8px 12px;backdrop-filter:blur(10px);border:1px solid rgba(216,180,254,0.4);">
+          <div style="font-size:7px;font-weight:700;color:#3b0764;margin-bottom:3px;">Member Privileges</div>
+          <div style="display:flex;gap:8px;">
+            <span style="font-size:6px;color:#9333ea;">✦ Ai Analysis</span>
+            <span style="font-size:6px;color:#9333ea;">✦ Early Access</span>
+            <span style="font-size:6px;color:#9333ea;">✦ Exclusive</span>
+          </div>
+        </div>
+        <!-- Aura blobs -->
+        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(216,180,254,0.4);border-radius:50%;filter:blur(35px);"></div>
+        <div style="position:absolute;bottom:-20px;left:-10px;width:60px;height:60px;background:rgba(249,168,212,0.3);border-radius:50%;filter:blur(28px);"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Single Large Lavender Panel</h3>
+      <p>One full-height lavender gradient panel with aura orbs, a brand quote, and the member benefits strip at the bottom. No product images — purely atmospheric. Simpler, very polished.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Click your pick or tell me in the terminal.</p>

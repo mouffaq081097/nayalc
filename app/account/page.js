@@ -154,6 +154,7 @@ const AccountPageContent = () => {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard',  icon: Sparkles },
+    { id: 'profile',   label: 'Profile',    icon: User,    href: '/account/profile' },
     { id: 'orders',    label: 'Orders',     icon: Package  },
     { id: 'wishlist',  label: 'Wishlist',   icon: Heart    },
     { id: 'addresses', label: 'Addresses',  icon: MapPin   },
@@ -163,7 +164,7 @@ const AccountPageContent = () => {
   const loyaltyPct = Math.min(100, Math.round((loyaltyData.stats.points / loyaltyData.stats.nextTierPoints) * 100));
 
   return (
-    <div className="min-h-screen font-sans antialiased relative overflow-hidden" style={{ background: CL.bgPage }}>
+    <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
 
       {/* Aura background */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -176,7 +177,7 @@ const AccountPageContent = () => {
         <div className="grid lg:grid-cols-12 gap-8">
 
           {/* ── Sidebar ── */}
-          <aside className="lg:col-span-3 space-y-5">
+          <aside className="lg:col-span-3 space-y-5 self-start sticky top-24">
 
             {/* Profile card */}
             <div className="rounded-3xl p-7" style={glassCard}>
@@ -205,7 +206,7 @@ const AccountPageContent = () => {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => router.push(`/account?tab=${item.id}`)}
+                      onClick={() => router.push(item.href ?? `/account?tab=${item.id}`)}
                       className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300"
                       style={active
                         ? { background: 'rgba(196,167,254,0.22)', color: 'rgb(126,105,230)', border: '1px solid rgba(196,167,254,0.45)', boxShadow: '0 2px 12px rgba(147,51,234,0.12)' }

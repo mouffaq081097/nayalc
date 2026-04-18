@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Auth Page — Full Design Preview</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:#e8dff5;padding:24px;min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:24px;}
+  h1{font-size:14px;font-weight:700;color:#6b21a8;text-align:center;letter-spacing:0;}
+  .subtitle{font-size:12px;color:#9333ea;text-align:center;}
+
+  /* ─── Page Shell ─── */
+  .page{
+    width:100%;max-width:1100px;min-height:620px;
+    background:#fdf8ff;
+    border-radius:28px;
+    overflow:hidden;
+    display:flex;
+    box-shadow:0 30px 80px rgba(147,51,234,0.12);
+    border:1px solid rgba(216,180,254,0.3);
+  }
+
+  /* ─── Left Panel ─── */
+  .left{
+    flex:1.1;
+    background:linear-gradient(145deg,#f3e8ff 0%,#fdf4ff 40%,#fce7f3 100%);
+    position:relative;
+    overflow:hidden;
+    padding:40px 36px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+  .aura-1{position:absolute;top:-60px;left:-40px;width:300px;height:300px;background:rgba(216,180,254,0.45);border-radius:50%;filter:blur(80px);pointer-events:none;}
+  .aura-2{position:absolute;bottom:-60px;right:-40px;width:250px;height:250px;background:rgba(249,168,212,0.3);border-radius:50%;filter:blur(70px);pointer-events:none;}
+  .aura-3{position:absolute;top:40%;left:30%;width:160px;height:160px;background:rgba(196,167,254,0.2);border-radius:50%;filter:blur(50px);pointer-events:none;}
+
+  .left-top{display:flex;align-items:center;gap:8px;position:relative;z-index:2;}
+  .brand-dot{width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,rgb(216,180,254),rgb(126,105,230));box-shadow:0 0 10px rgba(147,51,234,0.4);}
+  .brand-name{font-size:10px;font-weight:800;color:#3b0764;}
+
+  .left-center{position:relative;z-index:2;text-align:center;padding:20px 0;}
+  .quote-sparkle{font-size:18px;color:rgba(196,167,254,0.8);margin-bottom:12px;}
+  .quote-text{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:22px;line-height:1.5;color:#3b0764;margin-bottom:16px;}
+  .quote-attr{display:flex;align-items:center;justify-content:center;gap:8px;}
+  .quote-line{width:24px;height:1px;background:rgba(147,51,234,0.25);}
+  .quote-source{font-size:9px;color:rgba(107,33,168,0.5);font-weight:600;}
+
+  .left-bottom{position:relative;z-index:2;}
+  .benefits-card{
+    background:rgba(255,255,255,0.6);
+    backdrop-filter:blur(16px);
+    border:1px solid rgba(216,180,254,0.4);
+    border-radius:20px;
+    padding:18px 20px;
+  }
+  .benefits-title{font-size:10px;font-weight:800;color:#3b0764;margin-bottom:10px;}
+  .benefits-list{display:flex;flex-direction:column;gap:7px;}
+  .benefit-item{display:flex;align-items:center;gap:8px;}
+  .benefit-dot{width:5px;height:5px;border-radius:50%;background:linear-gradient(135deg,rgb(216,180,254),rgb(126,105,230));flex-shrink:0;}
+  .benefit-text{font-size:10px;color:#6b21a8;font-weight:500;}
+
+  /* ─── Right Panel (Form) ─── */
+  .right{
+    flex:1;
+    background:rgba(255,255,255,0.82);
+    backdrop-filter:blur(24px);
+    padding:40px 44px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:0;
+    border-left:1px solid rgba(216,180,254,0.25);
+    position:relative;
+  }
+
+  /* Tab bar */
+  .tabs{
+    display:flex;
+    background:rgba(248,240,255,0.7);
+    border:1px solid rgba(216,180,254,0.25);
+    border-radius:999px;
+    padding:4px;
+    margin-bottom:28px;
+  }
+  .tab{
+    flex:1;padding:10px;border-radius:999px;font-size:11px;font-weight:700;text-align:center;color:rgba(107,33,168,0.45);cursor:pointer;
+  }
+  .tab.active{
+    background:linear-gradient(135deg,rgb(216,180,254),rgb(126,105,230));
+    color:white;
+    box-shadow:0 4px 16px rgba(126,105,230,0.35);
+  }
+
+  /* Eyebrow */
+  .eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .eyebrow-line{width:20px;height:1px;background:rgba(216,180,254,0.6);}
+  .eyebrow-text{font-size:9px;font-weight:700;color:rgba(147,51,234,0.6);}
+
+  /* Heading */
+  .form-heading{font-family:Georgia,serif;font-style:italic;font-size:26px;line-height:1.3;color:#3b0764;margin-bottom:6px;}
+  .form-heading strong{font-style:normal;font-weight:900;background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .form-sub{font-size:12px;color:rgba(59,7,100,0.45);font-weight:500;margin-bottom:26px;line-height:1.6;}
+
+  /* Fields */
+  .field{margin-bottom:14px;}
+  .field-label{font-size:10px;font-weight:700;color:rgba(107,33,168,0.55);margin-bottom:5px;display:block;}
+  .field-wrap{position:relative;}
+  .field-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:rgba(196,167,254,0.7);font-size:11px;}
+  .mock-input{
+    width:100%;height:46px;
+    padding:0 14px 0 38px;
+    border-radius:14px;
+    border:1.5px solid rgba(216,180,254,0.35);
+    background:rgba(248,240,255,0.5);
+    font-size:12px;color:#3b0764;font-weight:500;
+    outline:none;
+  }
+  .mock-input.focus{
+    border-color:rgba(147,51,234,0.5);
+    background:rgba(255,255,255,0.9);
+    box-shadow:0 0 0 4px rgba(196,167,254,0.15);
+  }
+  .mock-input.no-icon{padding-left:14px;}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+
+  /* Forgot link */
+  .forgot{font-size:9px;font-weight:700;color:rgba(147,51,234,0.55);text-align:right;margin-top:-8px;margin-bottom:14px;}
+
+  /* Remember me */
+  .remember{display:flex;align-items:center;gap:7px;margin-bottom:20px;}
+  .mock-check{width:13px;height:13px;border-radius:4px;border:1.5px solid rgba(196,167,254,0.5);background:rgba(248,240,255,0.5);flex-shrink:0;}
+  .remember span{font-size:10px;color:rgba(59,7,100,0.45);font-weight:500;}
+
+  /* Primary button */
+  .btn-primary{
+    width:100%;height:50px;
+    border-radius:999px;
+    background:linear-gradient(135deg,rgb(216,180,254),rgb(126,105,230));
+    color:white;font-size:11px;font-weight:900;text-transform:uppercase;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    box-shadow:0 8px 24px rgba(126,105,230,0.35);
+    cursor:pointer;border:none;
+    margin-bottom:20px;
+  }
+  .btn-icon{font-size:12px;}
+
+  /* Divider */
+  .divider{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .divider-line{flex:1;height:1px;background:rgba(216,180,254,0.25);}
+  .divider-text{font-size:9px;color:rgba(147,51,234,0.35);font-weight:600;}
+
+  /* Social buttons */
+  .socials{display:flex;gap:10px;}
+  .btn-social{
+    flex:1;height:40px;
+    border-radius:12px;
+    border:1.5px solid rgba(216,180,254,0.3);
+    background:rgba(248,240,255,0.4);
+    font-size:10px;font-weight:700;color:#6b21a8;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    cursor:pointer;
+  }
+  .social-icon{font-size:13px;}
+
+  /* Footer */
+  .page-footer{font-size:10px;color:rgba(107,33,168,0.35);text-align:center;font-weight:500;}
+
+  /* Nav bar */
+  .nav{width:100%;max-width:1100px;display:flex;justify-content:space-between;align-items:center;padding:0 4px;}
+  .nav-back{font-size:10px;font-weight:700;color:rgba(107,33,168,0.5);display:flex;align-items:center;gap:5px;}
+  .nav-badge{
+    padding:6px 16px;border-radius:999px;
+    background:rgba(255,255,255,0.75);
+    border:1px solid rgba(216,180,254,0.3);
+    backdrop-filter:blur(12px);
+    display:flex;align-items:center;gap:6px;
+  }
+  .nav-badge-dot{width:5px;height:5px;border-radius:50%;background:rgb(196,167,254);}
+  .nav-badge-text{font-size:9px;font-weight:800;color:#3b0764;}
+
+  /* Tabs toggle for preview */
+  .tab-content{display:none;}
+  .tab-content.show{display:block;}
+  .tab:hover{cursor:pointer;}
+</style>
+</head>
+<body>
+
+<h1>Auth Page — Full Design Preview (Cloud Luxe Lavender)</h1>
+<p class="subtitle">Title Case throughout · No letter spacing · Soft lavender gradient buttons · Click tabs to switch between Sign In and Register</p>
+
+<!-- Top nav preview -->
+<div class="nav">
+  <div class="nav-back">← Back To Store</div>
+  <div class="nav-badge">
+    <div class="nav-badge-dot"></div>
+    <span class="nav-badge-text">Naya Lumière Cosmetics</span>
+  </div>
+</div>
+
+<!-- Page -->
+<div class="page">
+
+  <!-- LEFT PANEL -->
+  <div class="left">
+    <div class="aura-1"></div>
+    <div class="aura-2"></div>
+    <div class="aura-3"></div>
+
+    <!-- Top brand indicator -->
+    <div class="left-top">
+      <div class="brand-dot"></div>
+      <span class="brand-name">Naya Lumière Cosmetics</span>
+    </div>
+
+    <!-- Center quote -->
+    <div class="left-center">
+      <div class="quote-sparkle">✦</div>
+      <div class="quote-text">"A commitment<br/>to the purity<br/>of light."</div>
+      <div class="quote-attr">
+        <div class="quote-line"></div>
+        <span class="quote-source">Geneva Laboratory</span>
+        <div class="quote-line"></div>
+      </div>
+    </div>
+
+    <!-- Bottom member benefits -->
+    <div class="left-bottom">
+      <div class="benefits-card">
+        <div class="benefits-title">Member Privileges</div>
+        <div class="benefits-list">
+          <div class="benefit-item">
+            <div class="benefit-dot"></div>
+            <span class="benefit-text">Bespoke Ai Skincare Analysis</span>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-dot"></div>
+            <span class="benefit-text">Avant-Première Launch Access</span>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-dot"></div>
+            <span class="benefit-text">Boutique Exclusive Curation</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right">
+
+    <!-- Tab switcher -->
+    <div class="tabs" id="tabs">
+      <div class="tab active" onclick="switchTab('login')">Sign In</div>
+      <div class="tab" onclick="switchTab('register')">Register</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="tab-content show" id="login-panel">
+      <div class="eyebrow">
+        <div class="eyebrow-line"></div>
+        <span class="eyebrow-text">Secure Access</span>
+      </div>
+      <div class="form-heading">Welcome Back <br/><strong>To Your Sanctuary</strong></div>
+      <div class="form-sub">Continue your clinical botanical journey with Naya Lumière.</div>
+
+      <div class="field">
+        <label class="field-label">Email Address</label>
+        <div class="field-wrap">
+          <span class="field-icon">✉</span>
+          <input class="mock-input" placeholder="Enter your email" readonly/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Password</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input class="mock-input focus" type="password" placeholder="••••••••" readonly/>
+        </div>
+      </div>
+
+      <div class="forgot">Forgot Password?</div>
+
+      <div class="remember">
+        <div class="mock-check"></div>
+        <span>Remember Me</span>
+      </div>
+
+      <button class="btn-primary">
+        Sign In <span class="btn-icon">→</span>
+      </button>
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">Or Continue With</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <div class="socials">
+        <button class="btn-social"><span class="social-icon">G</span> Google</button>
+        <button class="btn-social"><span class="social-icon">f</span> Facebook</button>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="tab-content" id="register-panel">
+      <div class="eyebrow">
+        <div class="eyebrow-line"></div>
+        <span class="eyebrow-text">New Account</span>
+      </div>
+      <div class="form-heading">Create Your <br/><strong>Personal Account</strong></div>
+      <div class="form-sub">Join the world of clinical botanical precision.</div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">First Name</label>
+          <input class="mock-input no-icon" placeholder="e.g. Jean" readonly/>
+        </div>
+        <div class="field">
+          <label class="field-label">Last Name</label>
+          <input class="mock-input no-icon" placeholder="e.g. Dupont" readonly/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Email Address</label>
+        <div class="field-wrap">
+          <span class="field-icon">✉</span>
+          <input class="mock-input" placeholder="name@example.com" readonly/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Create Password</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔒</span>
+          <input class="mock-input" type="password" placeholder="At least 8 characters" readonly/>
+        </div>
+      </div>
+
+      <button class="btn-primary" style="margin-top:8px;">
+        Create Account <span class="btn-icon">→</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="page-footer">Est. 2026 — Naya Atelier Privé &nbsp;·&nbsp; 🔒 &nbsp;✦</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1));
+  });
+  document.getElementById('login-panel').classList.toggle('show', tab==='login');
+  document.getElementById('register-panel').classList.toggle('show', tab==='register');
+}
+</script>
+</body>
+</html>
