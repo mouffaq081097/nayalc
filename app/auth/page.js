@@ -347,6 +347,7 @@ function Register() {
               id="register-password"
               type={showPassword ? 'text' : 'password'}
               placeholder="At Least 8 Characters"
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
