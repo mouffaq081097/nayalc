@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Package, Heart, MapPin, Settings, Star, ChevronRight, LogOut } from 'lucide-react';
+import { Sparkles, Package, Heart, MapPin, Settings, Star, ChevronRight, LogOut, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { setAccountNavDirection } from './navDirection';
 import { useAuth } from '../../context/AuthContext';
 
 const sections = [
   { id: 'dashboard', label: 'Dashboard',  href: '/account/dashboard',  icon: Sparkles },
+  { id: 'profile',   label: 'Profile',    href: '/account/profile',    icon: User     },
   { id: 'orders',    label: 'Orders',     href: '/account/orders',     icon: Package  },
   { id: 'wishlist',  label: 'Wishlist',   href: '/account/wishlist',   icon: Heart    },
   { id: 'addresses', label: 'Addresses',  href: '/account/addresses',  icon: MapPin   },
