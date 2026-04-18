@@ -41,60 +41,62 @@ function ForgotPassword({ onBack }) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 md:space-y-8"
+      className="space-y-6"
     >
-      <div className="text-left space-y-1.5">
-        <button onClick={onBack} className="flex items-center gap-2 text-[10px] font-bold text-gray-400 hover:text-brand-pink transition-colors mb-4">
-          <ArrowLeft size={12} /> Back to Sign in
+      <div className="space-y-2">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-[9px] font-bold text-[rgba(107,33,168,0.5)] hover:text-[#9333ea] transition-colors mb-4"
+        >
+          <ArrowLeft size={11} /> Back To Sign In
         </button>
-        <h3 className="font-serif text-3xl md:text-4xl italic text-gray-900 leading-tight">Restore Access</h3>
-        <p className="text-[13px] md:text-sm text-gray-400 font-medium leading-relaxed">Enter your email and we'll send you a secure link to reset your password.</p>
+        <h3 className="font-serif italic text-[26px] leading-snug text-[#3b0764]">
+          Restore <strong className="not-italic font-black cl-gradient-text">Access</strong>
+        </h3>
+        <p className="text-[12px] text-[rgba(59,7,100,0.45)] font-medium leading-relaxed">
+          Enter your email and we'll send you a secure link to reset your password.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold text-gray-400 ml-1" htmlFor="forgot-email">Email address</label>
+          <label className="text-[10px] font-bold text-[rgba(107,33,168,0.55)]">Email Address</label>
           <div className="relative group">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-brand-pink transition-colors" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
-              id="forgot-email"
               type="email"
-              placeholder="Enter your registered email"
+              placeholder="Enter Your Registered Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-12 md:h-14 pl-12 pr-6 rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/30 focus:bg-white focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/5 transition-all duration-500 outline-none text-sm font-medium"
+              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#3b0764]"
             />
           </div>
         </div>
 
         {message && (
-          <p className="text-green-600 text-[11px] font-bold text-center bg-green-50 py-3 rounded-xl border border-green-100">
+          <p className="text-green-700 text-[11px] font-bold text-center bg-[rgba(240,253,244,0.8)] py-3 rounded-xl border border-[rgba(187,247,208,0.5)]">
             {message}
           </p>
         )}
-
         {error && (
-          <p className="text-red-500 text-[11px] font-bold text-center bg-red-50 py-3 rounded-xl border border-red-100">
+          <p className="text-red-600 text-[11px] font-bold text-center bg-[rgba(254,242,242,0.8)] py-3 rounded-xl border border-[rgba(254,202,202,0.5)]">
             {error}
           </p>
         )}
 
-        <button 
-          type="submit" 
-          disabled={isLoading} 
-          className="w-full h-14 md:h-16 bg-black text-white rounded-full font-bold text-[13px] md:text-[14px] hover:bg-brand-pink shadow-xl transition-all duration-500 flex items-center justify-center gap-4 mt-2"
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full h-12 rounded-full bg-gradient-to-r from-[rgb(216,180,254)] to-[rgb(126,105,230)] text-white text-[11px] font-black uppercase shadow-[0_8px_24px_rgba(126,105,230,0.35)] hover:shadow-[0_12px_32px_rgba(126,105,230,0.45)] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 mt-2"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <>
-              Send Reset Link
-              <ArrowRight size={16} />
-            </>
+            <>Send Reset Link <ArrowRight size={14} /></>
           )}
         </button>
       </form>
