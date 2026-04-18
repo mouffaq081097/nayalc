@@ -3,12 +3,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Mail, Lock, Eye, ArrowLeft, Sparkles, UserPlus, LogIn, Chrome, Facebook, ShieldCheck, Check, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Lock, Eye, ArrowLeft, Sparkles, ShieldCheck, ArrowRight, Chrome, Facebook } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 function ForgotPassword({ onBack }) {
   const [email, setEmail] = useState('');
@@ -390,117 +387,103 @@ export default function AuthPage() {
   const [authMode, setAuthMode] = useState('login');
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] relative overflow-hidden flex flex-col font-sans">
-      {/* Tactile Texture Overlay */}
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply z-0"></div>
-      
-      {/* Background Auras */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
-        <div className="absolute top-[-10%] -right-[10%] w-[60%] h-[60%] bg-brand-pink/[0.03] rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] -left-[10%] w-[60%] h-[60%] bg-brand-blue/[0.03] rounded-full blur-[120px]"></div>
+    <div className="min-h-screen bg-[#fdf8ff] relative overflow-hidden flex flex-col font-sans">
+      {/* Page background auras */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] -right-[10%] w-[50%] h-[50%] bg-[rgba(216,180,254,0.2)] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] -left-[10%] w-[45%] h-[45%] bg-[rgba(249,168,212,0.15)] rounded-full blur-[100px]" />
       </div>
 
+      {/* Nav */}
       <div className="container mx-auto px-6 pt-6 pb-0 relative z-10">
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-3 text-[11px] font-semibold text-gray-400 hover:text-brand-pink transition-all group"
+            className="flex items-center gap-3 text-[10px] font-bold text-[rgba(107,33,168,0.5)] hover:text-[#6b21a8] transition-all group"
           >
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            Back to store
+            Back To Store
           </button>
-
-          <div className="flex items-center gap-3 px-5 py-2 rounded-full bg-white shadow-sm border border-gray-100">
-             <div className="w-1.5 h-1.5 rounded-full bg-brand-pink animate-pulse"></div>
-             <span className="text-[10px] font-bold tracking-wider text-gray-900">NAYA LUMIÈRE</span>
+          <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/75 shadow-sm border border-[rgba(216,180,254,0.3)] backdrop-blur-xl">
+            <div className="w-1.5 h-1.5 rounded-full bg-[rgb(196,167,254)] shadow-[0_0_8px_rgba(147,51,234,0.4)]" />
+            <span className="text-[9px] font-black text-[#3b0764]">Naya Lumière Cosmetics</span>
           </div>
         </div>
       </div>
 
+      {/* Main */}
       <main className="flex-grow container mx-auto px-6 py-6 md:py-8 relative z-10 flex items-center justify-center">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-20 items-center w-full">
-          
-          {/* Left Side: Product Showcase Narrative */}
-          <div className="hidden lg:block lg:col-span-7 relative h-full">
-            <div className="grid grid-cols-2 gap-6 h-full items-center">
-                <motion.div 
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1.2, delay: 0.2 }}
-                    className="space-y-6"
-                >
-                    <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden border border-white shadow-2xl">
-                        <Image src="/Argini+MyMyoso_2x3.jpg" alt="Botanical Science" fill className="object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                        <div className="absolute bottom-8 left-8">
-                            <span className="text-[10px] font-bold text-white/60 mb-1 block">Protocols</span>
-                            <p className="text-xl font-serif italic text-white">The radiance <br/>molecular ritual</p>
-                        </div>
-                    </div>
-                    <div className="bg-white/60 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white shadow-sm">
-                        <div className="w-10 h-10 rounded-full bg-brand-pink/5 flex items-center justify-center text-brand-pink mb-4">
-                            <ShieldCheck size={20} strokeWidth={1.5} />
-                        </div>
-                        <h4 className="text-[13px] font-bold text-gray-900 mb-2">Member privileges</h4>
-                        <ul className="space-y-2">
-                            {[
-                                "Bespoke AI skincare analysis",
-                                "Avant-première launch access",
-                                "Boutique exclusive curation"
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-center gap-2 text-xs text-gray-500 font-medium">
-                                    <div className="w-1 h-1 rounded-full bg-brand-pink"></div>
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </motion.div>
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-stretch w-full">
 
-                <motion.div 
-                    initial={{ opacity: 0, y: -40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1.2, delay: 0.4 }}
-                    className="space-y-6 pt-24"
-                >
-                    <div className="bg-gray-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-pink/20 blur-[60px] group-hover:bg-brand-pink/40 transition-colors duration-1000"></div>
-                        <Sparkles className="text-brand-pink mb-6" size={28} strokeWidth={1.5} />
-                        <h4 className="text-2xl font-serif italic leading-tight mb-4">"A commitment <br/>to the purity <br/>of light."</h4>
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-px bg-white/20"></div>
-                            <span className="text-[10px] font-medium text-white/40 tracking-wider">Geneva Laboratory</span>
-                        </div>
-                    </div>
-                    <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden border border-white shadow-2xl">
-                        <Image src="/GerLift_3_4x5 copie.jpg" alt="Atelier Selection" fill className="object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                        <div className="absolute bottom-8 left-8">
-                            <span className="text-[10px] font-bold text-white/60 mb-1 block">Artisanal</span>
-                            <p className="text-xl font-serif italic text-white">The collection <br/>of curated art</p>
-                        </div>
-                    </div>
-                </motion.div>
+          {/* Left — atmospheric lavender panel */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, delay: 0.1 }}
+            className="hidden lg:flex lg:col-span-5 flex-col justify-between relative rounded-[2.5rem] overflow-hidden p-10 border border-[rgba(216,180,254,0.25)]"
+            style={{ minHeight: '580px', background: 'linear-gradient(145deg,#f3e8ff 0%,#fdf4ff 40%,#fce7f3 100%)' }}
+          >
+            {/* Aura orbs */}
+            <div className="absolute top-[-60px] left-[-40px] w-72 h-72 bg-[rgba(216,180,254,0.45)] rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute bottom-[-60px] right-[-40px] w-60 h-60 bg-[rgba(249,168,212,0.3)] rounded-full blur-[70px] pointer-events-none" />
+            <div className="absolute top-[40%] left-[30%] w-40 h-40 bg-[rgba(196,167,254,0.2)] rounded-full blur-[50px] pointer-events-none" />
+
+            {/* Brand indicator */}
+            <div className="flex items-center gap-2 relative z-10">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[rgb(216,180,254)] to-[rgb(126,105,230)] shadow-[0_0_10px_rgba(147,51,234,0.4)]" />
+              <span className="text-[10px] font-black text-[#3b0764]">Naya Lumière Cosmetics</span>
             </div>
-          </div>
 
-          {/* Right Side: Auth Architecture */}
-          <div className="lg:col-span-5 w-full max-w-lg mx-auto">
-            <div className="bg-white/80 backdrop-blur-3xl rounded-[2.5rem] md:rounded-[3.5rem] p-6 md:p-14 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.1)] border border-white relative overflow-hidden">
-               {/* Subtle Grain in White Card */}
-               <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
+            {/* Quote */}
+            <div className="text-center relative z-10 py-8">
+              <Sparkles className="mx-auto text-[rgba(196,167,254,0.8)] mb-4" size={20} strokeWidth={1.5} />
+              <p className="font-serif italic text-[22px] leading-relaxed text-[#3b0764] mb-5">
+                "A commitment<br />to the purity<br />of light."
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-6 h-px bg-[rgba(147,51,234,0.25)]" />
+                <span className="text-[9px] font-semibold text-[rgba(107,33,168,0.5)]">Geneva Laboratory</span>
+                <div className="w-6 h-px bg-[rgba(147,51,234,0.25)]" />
+              </div>
+            </div>
 
-              <Tabs value={authMode === 'forgot-password' ? 'login' : authMode} onValueChange={setAuthMode} className="w-full relative z-10">
-                <TabsList className="flex bg-gray-50/50 p-1 rounded-full mb-8 md:mb-12 border border-gray-100/50 backdrop-blur-sm">
-                  <TabsTrigger 
-                    value="login" 
-                    className="flex-1 py-3 md:py-4 rounded-full text-[11px] font-bold tracking-wider transition-all data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-gray-900 text-gray-400"
+            {/* Member benefits */}
+            <div className="bg-white/60 backdrop-blur-2xl border border-[rgba(216,180,254,0.4)] rounded-2xl p-5 relative z-10">
+              <p className="text-[10px] font-black text-[#3b0764] mb-3">Member Privileges</p>
+              <ul className="space-y-2">
+                {[
+                  'Bespoke Ai Skincare Analysis',
+                  'Avant-Première Launch Access',
+                  'Boutique Exclusive Curation',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[rgb(216,180,254)] to-[rgb(126,105,230)] flex-shrink-0" />
+                    <span className="text-[10px] font-medium text-[#6b21a8]">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+
+          {/* Right — form */}
+          <div className="lg:col-span-7 w-full max-w-lg mx-auto lg:mx-0">
+            <div className="bg-white/[0.82] backdrop-blur-3xl rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 shadow-[0_30px_80px_-30px_rgba(147,51,234,0.12)] border border-[rgba(216,180,254,0.25)] relative overflow-hidden">
+
+              <Tabs
+                value={authMode === 'forgot-password' ? 'login' : authMode}
+                onValueChange={setAuthMode}
+                className="w-full"
+              >
+                <TabsList className="flex bg-[rgba(248,240,255,0.7)] border border-[rgba(216,180,254,0.25)] rounded-full p-1 mb-8">
+                  <TabsTrigger
+                    value="login"
+                    className="flex-1 py-3 rounded-full text-[11px] font-bold transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[rgb(216,180,254)] data-[state=active]:to-[rgb(126,105,230)] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_16px_rgba(126,105,230,0.35)] text-[rgba(107,33,168,0.45)]"
                   >
-                    Sign in
+                    Sign In
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="register" 
-                    className="flex-1 py-3 md:py-4 rounded-full text-[11px] font-bold tracking-wider transition-all data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-gray-900 text-gray-400"
+                  <TabsTrigger
+                    value="register"
+                    className="flex-1 py-3 rounded-full text-[11px] font-bold transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-[rgb(216,180,254)] data-[state=active]:to-[rgb(126,105,230)] data-[state=active]:text-white data-[state=active]:shadow-[0_4px_16px_rgba(126,105,230,0.35)] text-[rgba(107,33,168,0.45)]"
                   >
                     Register
                   </TabsTrigger>
@@ -518,18 +501,18 @@ export default function AuthPage() {
                 </TabsContent>
               </Tabs>
             </div>
-            
-            {/* Footer Detail */}
-            <div className="mt-8 md:mt-12 text-center space-y-4">
-              <div className="flex items-center justify-center gap-4 opacity-30">
-                <div className="w-8 md:w-12 h-px bg-gray-400"></div>
-                <p className="text-[10px] font-medium text-gray-500 whitespace-nowrap tracking-widest uppercase">EST. 2026 — NAYA ATELIER PRIVÉ</p>
-                <div className="w-8 md:w-12 h-px bg-gray-400"></div>
+
+            {/* Footer */}
+            <div className="mt-8 text-center space-y-3">
+              <div className="flex items-center justify-center gap-4 opacity-40">
+                <div className="w-10 h-px bg-[rgba(147,51,234,0.4)]" />
+                <p className="text-[9px] font-medium text-[rgba(107,33,168,0.5)]">Est. 2026 — Naya Atelier Privé</p>
+                <div className="w-10 h-px bg-[rgba(147,51,234,0.4)]" />
               </div>
-              <div className="flex items-center justify-center gap-6 text-gray-400">
-                <ShieldCheck size={14} />
-                <Lock size={14} />
-                <Sparkles size={14} />
+              <div className="flex items-center justify-center gap-5 text-[rgba(196,167,254,0.5)]">
+                <ShieldCheck size={13} />
+                <Lock size={13} />
+                <Sparkles size={13} />
               </div>
             </div>
           </div>
