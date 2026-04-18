@@ -250,7 +250,6 @@ function Login({ onForgotClick }) {
 }
 
 function Register() {
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -277,77 +276,86 @@ function Register() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 md:space-y-8"
+      className="space-y-5"
     >
-      <div className="text-left space-y-1.5">
-        <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-6 h-px bg-brand-pink/30"></span>
-            <span className="text-[10px] font-bold tracking-wider text-brand-pink">New account</span>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-5 h-px bg-[rgba(216,180,254,0.6)]" />
+          <span className="text-[9px] font-bold text-[rgba(147,51,234,0.6)]">New Account</span>
         </div>
-        <h3 className="font-serif text-3xl md:text-4xl italic text-gray-900 leading-tight">Create your <br className="hidden md:block"/>personal account</h3>
-        <p className="text-[13px] md:text-sm text-gray-400 font-medium leading-relaxed">Join the world of clinical botanical precision.</p>
+        <h3 className="font-serif italic text-[26px] leading-snug text-[#3b0764]">
+          Create Your <br />
+          <strong className="not-italic font-black cl-gradient-text">Personal Account</strong>
+        </h3>
+        <p className="text-[12px] text-[rgba(59,7,100,0.45)] font-medium leading-relaxed">
+          Join the world of clinical botanical precision.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
-        <div className="grid grid-cols-2 gap-3 md:gap-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold text-gray-400 ml-1">First name</label>
+            <label htmlFor="register-firstname" className="text-[10px] font-bold text-[rgba(107,33,168,0.55)]">First Name</label>
             <input
+              id="register-firstname"
               type="text"
               placeholder="e.g. Jean"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              className="w-full h-12 md:h-14 px-4 md:px-6 rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/30 focus:bg-white focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/5 transition-all outline-none text-sm font-medium"
+              className="w-full h-12 px-4 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#3b0764]"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold text-gray-400 ml-1">Last name</label>
+            <label htmlFor="register-lastname" className="text-[10px] font-bold text-[rgba(107,33,168,0.55)]">Last Name</label>
             <input
+              id="register-lastname"
               type="text"
               placeholder="e.g. Dupont"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
-              className="w-full h-12 md:h-14 px-4 md:px-6 rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/30 focus:bg-white focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/5 transition-all outline-none text-sm font-medium"
+              className="w-full h-12 px-4 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#3b0764]"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold text-gray-400 ml-1">Email address</label>
+          <label htmlFor="register-email" className="text-[10px] font-bold text-[rgba(107,33,168,0.55)]">Email Address</label>
           <div className="relative group">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-brand-pink transition-colors" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
+              id="register-email"
               type="email"
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-12 md:h-14 pl-12 pr-6 rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/30 focus:bg-white focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/5 transition-all outline-none text-sm font-medium"
+              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#3b0764]"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold text-gray-400 ml-1">Create password</label>
+          <label htmlFor="register-password" className="text-[10px] font-bold text-[rgba(107,33,168,0.55)]">Create Password</label>
           <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-brand-pink transition-colors" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
+              id="register-password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="At least 8 characters"
+              placeholder="At Least 8 Characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-12 md:h-14 pl-12 pr-12 rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/30 focus:bg-white focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/5 transition-all outline-none text-sm font-medium"
+              className="w-full h-12 pl-12 pr-12 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#3b0764]"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgba(196,167,254,0.7)] hover:text-[#9333ea] transition-colors"
             >
               <Eye className="h-4 w-4" />
             </button>
@@ -355,23 +363,20 @@ function Register() {
         </div>
 
         {error && (
-          <p className="text-red-500 text-[11px] font-bold text-center bg-red-50 py-3 rounded-xl border border-red-100">
+          <p className="text-red-600 text-[11px] font-bold text-center bg-[rgba(254,242,242,0.8)] py-3 rounded-xl border border-[rgba(254,202,202,0.5)]">
             {error}
           </p>
         )}
 
-        <button 
-          type="submit" 
-          disabled={isLoading} 
-          className="w-full h-14 md:h-16 bg-black text-white rounded-full font-bold text-[13px] md:text-[14px] hover:bg-brand-pink shadow-xl shadow-black/10 hover:shadow-brand-pink/20 transition-all duration-500 active:scale-95 flex items-center justify-center gap-4 mt-2"
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full h-12 rounded-full bg-gradient-to-r from-[rgb(216,180,254)] to-[rgb(126,105,230)] text-white text-[11px] font-black uppercase shadow-[0_8px_24px_rgba(126,105,230,0.35)] hover:shadow-[0_12px_32px_rgba(126,105,230,0.45)] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 mt-1"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <>
-              Create account
-              <ArrowRight size={16} />
-            </>
+            <>Create Account <ArrowRight size={14} /></>
           )}
         </button>
       </form>
