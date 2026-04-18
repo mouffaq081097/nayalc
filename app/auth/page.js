@@ -128,44 +128,55 @@ function Login({ onForgotClick }) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 md:space-y-8"
+      className="space-y-5"
     >
-      <div className="text-left space-y-1.5">
-        <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-6 h-px bg-brand-pink/30"></span>
-            <span className="text-[10px] font-bold tracking-wider text-brand-pink">Secure access</span>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-5 h-px bg-[rgba(216,180,254,0.6)]" />
+          <span className="text-[9px] font-bold text-[rgba(147,51,234,0.6)]">Secure Access</span>
         </div>
-        <h3 className="font-serif text-3xl md:text-4xl italic text-gray-900 leading-tight">Welcome back <br className="hidden md:block"/>to your sanctuary</h3>
-        <p className="text-[13px] md:text-sm text-gray-400 font-medium leading-relaxed max-w-[280px]">Continue your clinical botanical journey with Naya Lumière.</p>
+        <h3 className="font-serif italic text-[26px] leading-snug text-[#3b0764]">
+          Welcome Back <br />
+          <strong className="not-italic font-black cl-gradient-text">To Your Sanctuary</strong>
+        </h3>
+        <p className="text-[12px] text-[rgba(59,7,100,0.45)] font-medium leading-relaxed">
+          Continue your clinical botanical journey with Naya Lumière.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold text-gray-400 ml-1" htmlFor="signin-email">Email address</label>
+          <label htmlFor="signin-email" className="text-[10px] font-bold text-[rgba(107,33,168,0.55)]">Email Address</label>
           <div className="relative group">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-brand-pink transition-colors" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
               id="signin-email"
               type="email"
-              placeholder="Enter your email"
+              placeholder="Enter Your Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-12 md:h-14 pl-12 pr-6 rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/30 focus:bg-white focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/5 transition-all duration-500 outline-none text-sm font-medium"
+              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#3b0764]"
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between px-1">
-            <label className="text-[11px] font-semibold text-gray-400" htmlFor="signin-password">Password</label>
-            <button type="button" onClick={onForgotClick} className="text-[10px] font-bold text-brand-pink/60 hover:text-brand-pink transition-colors">Forgot?</button>
+          <div className="flex items-center justify-between">
+            <label htmlFor="signin-password" className="text-[10px] font-bold text-[rgba(107,33,168,0.55)]">Password</label>
+            <button
+              type="button"
+              onClick={onForgotClick}
+              className="text-[9px] font-bold text-[rgba(147,51,234,0.55)] hover:text-[#9333ea] transition-colors"
+            >
+              Forgot Password?
+            </button>
           </div>
           <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-brand-pink transition-colors" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
               id="signin-password"
               type={showPassword ? 'text' : 'password'}
@@ -173,62 +184,65 @@ function Login({ onForgotClick }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-12 md:h-14 pl-12 pr-12 rounded-xl md:rounded-2xl border border-gray-100 bg-gray-50/30 focus:bg-white focus:border-brand-pink focus:ring-4 focus:ring-brand-pink/5 transition-all duration-500 outline-none text-sm font-medium"
+              className="w-full h-12 pl-12 pr-12 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#3b0764]"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600 transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgba(196,167,254,0.7)] hover:text-[#9333ea] transition-colors"
             >
               <Eye className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 cursor-pointer group px-1">
-            <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-200 text-brand-pink focus:ring-brand-pink/20 transition-all cursor-pointer" />
-            <span className="text-[11px] font-medium text-gray-400 group-hover:text-gray-600 transition-colors">Remember me</span>
+        <div className="flex items-center gap-2 cursor-pointer group">
+          <input
+            type="checkbox"
+            className="w-3.5 h-3.5 rounded border-[rgba(196,167,254,0.5)] bg-[rgba(248,240,255,0.5)] text-[#9333ea] focus:ring-[rgba(196,167,254,0.2)] cursor-pointer"
+          />
+          <span className="text-[10px] font-medium text-[rgba(59,7,100,0.45)] group-hover:text-[#6b21a8] transition-colors">
+            Remember Me
+          </span>
         </div>
 
         {error && (
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-red-500 text-[11px] font-bold text-center bg-red-50 py-3 rounded-xl border border-red-100"
+            className="text-red-600 text-[11px] font-bold text-center bg-[rgba(254,242,242,0.8)] py-3 rounded-xl border border-[rgba(254,202,202,0.5)]"
           >
             {error}
           </motion.p>
         )}
 
-        <button 
-          type="submit" 
-          disabled={isLoading} 
-          className="w-full h-14 md:h-16 bg-black text-white rounded-full font-bold text-[13px] md:text-[14px] hover:bg-brand-pink shadow-xl shadow-black/10 hover:shadow-brand-pink/20 transition-all duration-500 active:scale-95 flex items-center justify-center gap-4 mt-2"
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full h-12 rounded-full bg-gradient-to-r from-[rgb(216,180,254)] to-[rgb(126,105,230)] text-white text-[11px] font-black uppercase shadow-[0_8px_24px_rgba(126,105,230,0.35)] hover:shadow-[0_12px_32px_rgba(126,105,230,0.45)] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <>
-              Sign in
-              <ArrowRight size={16} />
-            </>
+            <>Sign In <ArrowRight size={14} /></>
           )}
         </button>
       </form>
 
-      <div className="relative py-1">
-        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100"></div></div>
-        <div className="relative flex justify-center text-[10px] font-medium text-gray-300"><span className="bg-white px-4 tracking-wider">Or continue with</span></div>
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-[rgba(216,180,254,0.25)]" />
+        <span className="text-[9px] font-semibold text-[rgba(147,51,234,0.35)]">Or Continue With</span>
+        <div className="flex-1 h-px bg-[rgba(216,180,254,0.25)]" />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4">
-        <button className="h-12 md:h-14 flex items-center justify-center gap-3 rounded-xl md:rounded-2xl border border-gray-100 hover:bg-gray-50 transition-all duration-500 group">
-          <Chrome size={16} className="text-gray-400 group-hover:text-red-500 transition-colors" />
-          <span className="text-[11px] font-semibold text-gray-500">Google</span>
+      <div className="grid grid-cols-2 gap-3">
+        <button className="h-10 flex items-center justify-center gap-2 rounded-xl border-[1.5px] border-[rgba(216,180,254,0.3)] bg-[rgba(248,240,255,0.4)] text-[10px] font-bold text-[#6b21a8] hover:bg-[rgba(248,240,255,0.8)] transition-all group">
+          <Chrome size={14} className="text-[rgba(196,167,254,0.7)] group-hover:text-[#9333ea] transition-colors" />
+          Google
         </button>
-        <button className="h-12 md:h-14 flex items-center justify-center gap-3 rounded-xl md:rounded-2xl border border-gray-100 hover:bg-gray-50 transition-all duration-500 group">
-          <Facebook size={16} className="text-gray-400 group-hover:text-blue-600 transition-colors" />
-          <span className="text-[11px] font-semibold text-gray-500">Facebook</span>
+        <button className="h-10 flex items-center justify-center gap-2 rounded-xl border-[1.5px] border-[rgba(216,180,254,0.3)] bg-[rgba(248,240,255,0.4)] text-[10px] font-bold text-[#6b21a8] hover:bg-[rgba(248,240,255,0.8)] transition-all group">
+          <Facebook size={14} className="text-[rgba(196,167,254,0.7)] group-hover:text-[#9333ea] transition-colors" />
+          Facebook
         </button>
       </div>
     </motion.div>
