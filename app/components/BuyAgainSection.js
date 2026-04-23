@@ -70,7 +70,7 @@ export default function BuyAgainSection({ products }) {
                 <button
                   onClick={() => handleAddToCart(product)}
                   className="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-xl flex items-center justify-center text-white opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-lg"
-                  style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' }}
+                  style={{ background: 'var(--cl-gradient)' }}
                 >
                   <ShoppingBag size={14} />
                 </button>

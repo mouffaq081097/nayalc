@@ -26,7 +26,7 @@ const TypewriterText = ({ text, speed = 10 }) => {
   return <div className="whitespace-pre-wrap">{displayedText}</div>;
 };
 
-const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, variant = 'light' }) => {
+const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, size, variant = 'light' }) => {
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -39,7 +39,8 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const showComparePrice = originalPrice && originalPrice > price;
+  const discount = showComparePrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
   const productUrl = `/product/${slug || id}`;
   const seoAlt = altText || `${name} - ${brandName || 'Luxury Beauty'} | nayalc.com`;
   const displayImage = (isHovered && imageUrls.length > 1) ? imageUrls[1] : (image || (imageUrls.length > 0 ? imageUrls[0] : '/placeholder-image.jpg'));
@@ -88,7 +89,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
   const handleAddToCart = (e) => {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    addToCart({ id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity }, quantity);
+    addToCart({ id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity, size }, quantity);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
@@ -107,19 +108,19 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
         onMouseLeave={() => setIsHovered(false)}
         className="group relative flex flex-col h-full transition-all duration-500 overflow-hidden"
         style={{
-          borderRadius: '20px',
-          background: 'var(--cl-glass)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
-          border: `1px solid ${isHovered ? 'rgba(196,167,254,0.55)' : 'var(--cl-glass-border)'}`,
-          boxShadow: 'none',
-          transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+          borderRadius: '24px',
+          background: 'rgba(255, 255, 255, 0.45)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: `1px solid ${isHovered ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)'}`,
+          boxShadow: isHovered ? '0 20px 40px rgba(147,51,234,0.08)' : '0 10px 30px rgba(147,51,234,0.03)',
+          transform: isHovered ? 'translateY(-6px)' : 'translateY(0)',
         }}
       >
         {/* Image area */}
-        <div className="relative aspect-square overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--cl-bg-lavender), var(--cl-bg-rose))' }}>
+        <div className="relative aspect-square overflow-hidden rounded-t-[24px]">
           <Link href={productUrl} className="block w-full h-full relative z-0">
-            <motion.div className="w-full h-full p-4 relative" whileTap={{ scale: 0.98 }}>
+            <motion.div className="w-full h-full p-0.5 relative" whileTap={{ scale: 0.98 }}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={displayImage}
@@ -203,7 +204,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
         <div className="flex flex-col flex-1 px-4 pt-3 pb-4 gap-2.5">
           {/* Brand */}
           <span
-            className="text-[11px] font-bold tracking-tight uppercase"
+            className="text-[11px] font-bold"
             style={{ color: 'var(--cl-text-soft)' }}
           >
             {brandName || 'Naya Lumière Cosmetics'}
@@ -211,7 +212,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
           {/* Name */}
           <Link href={productUrl} className="block transition-colors duration-200" style={{ color: 'var(--cl-text-deep)' }}>
-            <span className="font-serif text-[15px] font-light italic leading-snug tracking-tight">
+            <span className="font-serif text-[15px] font-light italic leading-snug">
               {name}
             </span>
           </Link>
@@ -229,25 +230,25 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           )}
 
           {/* Price row */}
-          <div className="flex items-end justify-between mt-auto pt-2 border-t border-purple-100/50">
-            <div className="flex flex-col">
-              <span className="text-[9px] font-black tracking-[0.2em] mb-0.5" style={{ color: 'var(--cl-text-soft)' }}>AED</span>
-              <div className="flex items-baseline gap-1">
-                <span className="font-serif italic text-[22px] text-cl-deep leading-none">
-                  {Math.floor(price)}
-                </span>
-                <span className="text-[11px] font-medium text-gray-400">
-                  .{(price % 1).toFixed(2).split('.')[1]}
+          <div className="flex items-center justify-between mt-auto pt-2 border-t border-purple-100/50">
+            <div className="flex flex-col gap-0.5">
+              {size && <span className="text-[10px] text-gray-400">{size}</span>}
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[10px] font-semibold" style={{ color: 'rgb(167,139,250)' }}>AED</span>
+                <span className="text-[21px] font-bold leading-none" style={{
+                  backgroundImage: 'linear-gradient(135deg, rgb(147,104,236), rgb(196,167,254))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}>
+                  {Number(price).toFixed(2)}
                 </span>
               </div>
-              {originalPrice && (
-                <span className="text-[10px] line-through text-gray-300 font-medium mt-0.5">
-                  AED {originalPrice}
-                </span>
+              {showComparePrice && (
+                <span className="text-[10px] line-through text-gray-300 font-medium">AED {originalPrice}</span>
               )}
             </div>
             {discount > 0 && (
-              <span className="text-[9px] font-black px-2 py-1 rounded-full mb-0.5" style={{ background: 'rgba(147, 51, 234, 0.1)', color: 'var(--cl-purple)' }}>
+              <span className="text-[9px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(216,180,254,0.18)', color: 'rgb(126,105,230)' }}>
                 −{discount}%
               </span>
             )}
@@ -258,10 +259,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             <motion.button
               onClick={handleAddToCart}
               whileTap={{ scale: 0.97 }}
-              className={`w-full mt-2 h-10 text-[10px] font-bold tracking-tight flex items-center justify-center gap-2 transition-all duration-300 ${
+              className={`w-full mt-2 h-11 text-[11px] font-bold flex items-center justify-center gap-2 rounded-[1rem] transition-all duration-500 ${
                 addedToCart
-                  ? 'rounded-full bg-[rgba(147,51,234,0.06)] border border-[var(--cl-glass-border)] text-[var(--cl-text-soft)] cursor-default'
-                  : 'cl-lavender-btn group'
+                  ? 'bg-white/60 border border-white/80 text-gray-500 cursor-default shadow-inner'
+                  : 'bg-white/50 backdrop-blur-md border border-white/80 text-cl-deep hover:bg-[linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))] hover:text-white hover:border-transparent group shadow-sm hover:shadow-lg hover:shadow-purple-200/50'
               }`}
             >
               {addedToCart ? (
@@ -277,7 +278,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               )}
             </motion.button>
           ) : (
-            <div className="w-full mt-2 h-10 flex items-center justify-center text-[10px] font-medium text-gray-300 rounded-full border border-gray-100 bg-white/40 tracking-tight">
+            <div className="w-full mt-2 h-10 flex items-center justify-center text-[10px] font-medium text-gray-300 rounded-full border border-gray-100 bg-white/40">
               Sold Out
             </div>
           )}
@@ -382,8 +383,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 <div className="mt-6 flex flex-col items-center gap-4 pb-2">
                   <button
                     onClick={() => setIsAIModalOpen(false)}
-                    className="px-12 py-3 text-[11px] font-semibold tracking-[0.1em] text-white transition-all hover:shadow-[0_6px_20px_rgba(147,51,234,0.30)]"
-                    style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 14px rgba(147,51,234,0.20)' }}
+                    className="cl-gradient-btn px-12 py-3 text-[11px] font-semibold"
                   >
                     Close Consultation
                   </button>
@@ -408,7 +408,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="relative w-full h-full p-14"
+              className="relative w-full h-full p-6"
             >
               <Image src={image || '/placeholder-image.jpg'} alt={seoAlt} fill className="object-contain" />
             </motion.div>
@@ -422,7 +422,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           <div className="p-10 md:p-14 flex flex-col justify-center" style={{ background: 'var(--cl-bg)' }}>
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
               <p
-                className="text-[9px] font-bold tracking-[0.35em] uppercase mb-4 flex items-center gap-3"
+                className="text-[9px] font-bold mb-4 flex items-center gap-3"
                 style={{ color: 'var(--cl-text-soft)' }}
               >
                 <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }} />
@@ -432,10 +432,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
               <div className="flex items-baseline gap-4 mb-8 pb-8" style={{ borderBottom: '1px solid var(--cl-glass-border)' }}>
                 <span
-                  className="text-4xl font-bold"
+                  className="text-3xl font-bold"
                   style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
-                >AED {price}</span>
-                {originalPrice && <span className="text-xl line-through" style={{ color: 'var(--cl-text-muted)' }}>AED {originalPrice}</span>}
+                >AED {price}</span>                {showComparePrice && <span className="text-lg line-through" style={{ color: 'var(--cl-text-muted)' }}>AED {originalPrice}</span>}
                 {discount > 0 && (
                   <span className="text-[10px] font-bold text-white px-3 py-1 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}>
                     -{discount}%
@@ -474,8 +473,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 <button
                   onClick={handleAddToCart}
                   disabled={!stock_quantity || stock_quantity <= 0}
-                  className="flex-1 h-14 rounded-xl text-[11px] font-semibold text-white transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 16px rgba(147,51,234,0.22)' }}
+                  className="cl-gradient-btn flex-1 h-14 text-[11px] font-semibold"
                 >
                   {addedToCart ? (
                     <span className="flex items-center justify-center gap-2"><Check size={16} /> Added</span>
@@ -488,8 +486,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <Link
                 href={productUrl}
                 onClick={() => setIsQuickViewOpen(false)}
-                className="flex items-center justify-center gap-2 text-[10px] font-semibold transition-all group"
-                style={{ color: 'var(--cl-text-soft)' }}
+                className="cl-gradient-btn flex items-center justify-center gap-2 py-3 text-[10px] font-semibold group"
               >
                 View Full Details
                 <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />

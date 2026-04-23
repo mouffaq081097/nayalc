@@ -100,7 +100,7 @@ export default function CartPage() {
           </button>
           <div className="text-center">
             <h1 className="text-[16px] font-bold tracking-tight" style={{ color: '#3b0764' }}>Your Selection</h1>
-            <p className="text-[11px] font-medium" style={{ color: 'rgba(59,7,100,0.4)' }}>{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}</p>
+            <p className="text-[11px] font-medium" style={{ color: 'rgba(59,7,100,0.45)' }}>{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}</p>
           </div>
           <div className="w-[120px] hidden sm:block" />
         </div>
@@ -121,7 +121,7 @@ export default function CartPage() {
             <button
               onClick={() => router.push('/all-products')}
               className="px-10 py-4 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98]"
-              style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))', boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
+              style={{ background: 'var(--cl-gradient)', boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
             >
               Explore Collection
             </button>
@@ -155,7 +155,7 @@ export default function CartPage() {
                       className="overflow-hidden"
                     >
                       <div className="px-7 py-6 flex gap-4 items-start">
-                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-md" style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))', color: 'white' }}>
+                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-md" style={{ background: 'var(--cl-gradient)', color: 'white' }}>
                           <Sparkles size={16} strokeWidth={1.5} />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -310,7 +310,7 @@ export default function CartPage() {
                     ) : (
                       <div className="space-y-2">
                         <div className="flex justify-between text-[11px]">
-                          <span style={{ color: 'rgba(59,7,100,0.5)' }}>Add AED {(FREE_SHIPPING - subtotal).toFixed(2)} for free shipping</span>
+                          <span style={{ color: 'rgba(59,7,100,0.55)' }}>Add AED {(FREE_SHIPPING - subtotal).toFixed(2)} for free shipping</span>
                           <span className="font-bold" style={{ color: 'rgb(126,105,230)' }}>{((subtotal / FREE_SHIPPING) * 100).toFixed(0)}%</span>
                         </div>
                         <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(216,180,254,0.3)' }}>
@@ -327,7 +327,7 @@ export default function CartPage() {
 
                   {/* Loyalty Balance */}
                   {isAuthenticated && loyaltyPoints > 0 && (
-                    <div className="mb-6 rounded-2xl p-5 flex items-center justify-between relative overflow-hidden" style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))', boxShadow: '0 4px 20px rgba(147,51,234,0.15)' }}>
+                    <div className="mb-6 rounded-2xl p-5 flex items-center justify-between relative overflow-hidden" style={{ background: 'var(--cl-gradient)', boxShadow: '0 4px 20px rgba(147,51,234,0.15)' }}>
                       <div className="absolute right-0 top-0 w-24 h-24 bg-white/10 rounded-full blur-[20px] -mr-10 -mt-10 pointer-events-none" />
                       <div className="relative z-10">
                         <div className="flex items-center gap-1.5 mb-1 text-white/90">
@@ -366,7 +366,7 @@ export default function CartPage() {
                         onClick={() => couponCode.trim() && applyCoupon(couponCode.trim())}
                         disabled={!!appliedCoupon || !couponCode.trim()}
                         className="px-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-all disabled:opacity-30"
-                        style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' }}
+                        style={{ background: 'var(--cl-gradient)' }}
                       >
                         Apply
                       </button>
@@ -385,7 +385,7 @@ export default function CartPage() {
                     <span className="text-[15px] font-bold" style={{ color: '#3b0764' }}>Total</span>
                     <div className="text-right">
                       <p className="text-2xl font-black tabular-nums" style={{ color: '#3b0764' }}>AED {total.toFixed(2)}</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: 'rgba(59,7,100,0.4)' }}>VAT included where applicable</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'rgba(59,7,100,0.45)' }}>VAT included where applicable</p>
                     </div>
                   </div>
 
@@ -394,7 +394,7 @@ export default function CartPage() {
                     onClick={() => router.push('/checkout')}
                     disabled={hasStockIssues}
                     className="w-full py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50 mb-3"
-                    style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))', boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
+                    style={{ background: 'var(--cl-gradient)', boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
                   >
                     Proceed to Checkout
                   </button>
@@ -417,7 +417,7 @@ export default function CartPage() {
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(196,167,254,0.15)', color: 'rgb(126,105,230)' }}>
                           <Icon size={13} strokeWidth={1.75} />
                         </div>
-                        <span className="text-[11px] font-medium" style={{ color: 'rgba(59,7,100,0.5)' }}>{text}</span>
+                        <span className="text-[11px] font-medium" style={{ color: 'rgba(59,7,100,0.55)' }}>{text}</span>
                       </div>
                     ))}
                   </div>

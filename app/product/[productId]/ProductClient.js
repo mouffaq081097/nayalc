@@ -4,23 +4,26 @@ import { useState, useEffect, use, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useUser } from '../../context/UserContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Separator } from '../../components/ui/separator';
-import { Heart, Star, Plus, Minus, Check, ChevronRight, Info, ArrowRight, Sparkles, Zap, Maximize2, Loader2, Clock, ShieldCheck, Quote, FlaskConical, Droplets, Microscope, Waves, Truck, RotateCcw, X, ShoppingBag } from 'lucide-react';
+import { Heart, Star, Plus, Minus, Check, ChevronRight, Sparkles, Maximize2, ShieldCheck, FlaskConical, Droplets, Waves, Truck, RotateCcw, X, ShoppingBag, Lock } from 'lucide-react';
 import Reviews from '../../components/Reviews';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
 import ProductCard from '../../components/ProductCard';
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '../../components/ui/carousel';
 
 export default function ProductClient({ params, initialProduct }) {
   const resolvedParams = use(params);
   const { productId } = resolvedParams;
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const { shippingAddresses, fetchShippingAddresses } = useUser();
   const { products: allProducts } = useAppContext();
   const router = useRouter();
   
@@ -41,6 +44,10 @@ export default function ProductClient({ params, initialProduct }) {
   const [showStickyBar, setShowStickyBar] = useState(false);
 
   const buyButtonRef = useRef(null);
+
+  const primaryAddress = useMemo(() => {
+    return shippingAddresses?.find((addr) => addr.is_primary) || shippingAddresses?.[0] || null;
+  }, [shippingAddresses]);
 
   const ingredients = useMemo(() => {
     if (!product?.description) return [];
@@ -120,7 +127,7 @@ export default function ProductClient({ params, initialProduct }) {
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--cl-bg)' }}>
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(196,167,254,0.25)', borderTopColor: 'rgb(147,104,236)' }}></div>
-        <span className="text-[10px] tracking-[0.4em] text-gray-400 font-bold">Synchronizing Vault</span>
+        <span className="text-[10px] tracking-[0.4em] text-black/80 font-bold font-bold">Synchronizing Vault</span>
       </div>
     </div>
   );
@@ -128,7 +135,7 @@ export default function ProductClient({ params, initialProduct }) {
   if (error || !product) return (
     <div className="min-h-screen bg-white flex items-center justify-center p-6 text-center">
       <div className="max-w-md space-y-6">
-        <h2 className="text-3xl font-serif italic text-gray-900">Selection Offline</h2>
+        <h2 className="text-3xl font-serif italic text-black font-black">Selection Offline</h2>
         <Button onClick={() => router.push('/all-products')} className="bg-black text-white px-10 py-6 rounded-full text-[11px] font-black tracking-[0.3em] transition-all">
           Return to Boutique
         </Button>
@@ -137,7 +144,7 @@ export default function ProductClient({ params, initialProduct }) {
   );
 
   return (
-    <div className="min-h-screen font-sans text-[#1d1d1f] antialiased selection:bg-purple-100/40" style={{ background: 'var(--cl-bg)' }}>
+    <div className="min-h-screen font-sans text-[#1d1d1f] antialiased selection:bg-purple-100/40 bg-white">
 
       {/* Sticky Buy Bar — appears when main Add to Bag scrolls out of view */}
       <AnimatePresence>
@@ -155,14 +162,21 @@ export default function ProductClient({ params, initialProduct }) {
                 style={{ background: 'rgba(253,248,255,0.96)', borderColor: 'rgba(216,180,254,0.40)', boxShadow: '0 4px 24px rgba(147,51,234,0.10)' }}
               >
                 <div>
-                  <p className="text-[10px] font-black tracking-tight text-gray-400 leading-none mb-0.5 uppercase">{product.brand || 'Naya Lumière'}</p>
-                  <h2 className="text-[13px] font-semibold tracking-tight text-gray-900 leading-none">{product.name}</h2>
+                  <p className="text-[10px] font-black tracking-tight text-black/80 font-bold leading-none mb-0.5 uppercase">{product.brand || 'Naya Lumière'}</p>
+                  <h2 className="text-[13px] font-semibold tracking-tight text-black font-black leading-none">{product.name}</h2>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-[14px] font-semibold">AED {Number(product.price).toFixed(2)}</span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[9px] font-semibold text-purple-300">AED</span>
+                    <span className="text-[15px] font-bold" style={{
+                      backgroundImage: 'linear-gradient(135deg, rgb(147,104,236), rgb(196,167,254))',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}>{Number(product.price).toFixed(2)}</span>
+                  </div>
                   <button
                     onClick={handleAddToCart}
-                    className={`flex items-center gap-2 h-8 px-5 rounded-full text-[10px] font-black tracking-tight transition-all duration-500 shadow-md text-white uppercase ${isAdded ? 'bg-green-600' : ''}`}
+                    className={`flex items-center gap-2 h-8 px-5 rounded-full text-[10px] font-black tracking-tight transition-all duration-500 shadow-md text-white uppercase ${isAdded ? 'bg-green-600' : 'lavender-glow-hover'}`}
                     style={!isAdded ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
                   >
                     {isAdded ? <><Check size={13} /> Secured</> : <><ShoppingBag size={13} /> Add to Bag</>}
@@ -227,7 +241,7 @@ export default function ProductClient({ params, initialProduct }) {
         <div className="grid lg:grid-cols-12 gap-0 lg:pt-24 pb-12">
           
           {/* Left Column: Image Gallery */}
-          <div className="lg:col-span-7 px-0 lg:px-12">
+          <div className="lg:col-span-6 px-0 lg:px-12">
             <div className="lg:sticky lg:top-32">
 
               {/* ── Gallery: vertical thumbnail rail + main image side by side ── */}
@@ -298,7 +312,7 @@ export default function ProductClient({ params, initialProduct }) {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.01 }}
                         transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] }}
-                        className="absolute inset-0 flex items-center justify-center p-8 lg:p-12 z-10"
+                        className="absolute inset-0 flex items-center justify-center p-6 lg:p-10 z-10"
                         drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
                         dragElastic={0.15}
@@ -312,11 +326,11 @@ export default function ProductClient({ params, initialProduct }) {
                         <Image
                           src={product.images ? product.images[selectedImage] : product.imageUrl}
                           alt={product.imagesData?.[selectedImage]?.alt || `${product.name} - Premium Skincare`}
-                          width={680}
-                          height={850}
+                          width={850}
+                          height={1000}
                           priority
                           className="max-w-full max-h-full object-contain drop-shadow-sm transition-transform duration-700 group-hover:scale-[1.03] pointer-events-none"
-                          style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '100%' }}
+                          style={{ width: 'auto', height: 'auto' }}
                         />
                       </motion.div>
                     </AnimatePresence>
@@ -331,7 +345,7 @@ export default function ProductClient({ params, initialProduct }) {
                     )}
 
                     {/* Zoom icon */}
-                    <button className="hidden lg:flex absolute top-5 right-5 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md items-center justify-center text-gray-400 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-sm z-30 border border-gray-100/80 hover:text-gray-700">
+                    <button className="hidden lg:flex absolute top-5 right-5 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md items-center justify-center text-black/80 font-bold opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-sm z-30 border border-gray-100/80 hover:text-black font-bold">
                       <Maximize2 size={14} />
                     </button>
 
@@ -340,8 +354,8 @@ export default function ProductClient({ params, initialProduct }) {
                       <div className="hidden lg:flex absolute bottom-5 right-5 items-center gap-1.5 px-2.5 py-1 rounded-full z-30"
                         style={{ background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)', border: '1px solid rgba(216,180,254,0.3)' }}>
                         <span className="text-[10px] font-bold tabular-nums" style={{ color: 'rgb(126,105,230)' }}>{selectedImage + 1}</span>
-                        <span className="text-[10px] text-gray-300">/</span>
-                        <span className="text-[10px] font-medium text-gray-400">{product.images.length}</span>
+                        <span className="text-[10px] text-black/60 font-bold">/</span>
+                        <span className="text-[10px] font-bold text-black/80 font-bold">{product.images.length}</span>
                       </div>
                     )}
                   </motion.div>
@@ -367,7 +381,7 @@ export default function ProductClient({ params, initialProduct }) {
           </div>
 
           {/* Right Column: Content */}
-          <div className="lg:col-span-5 px-6 lg:pr-16 lg:pl-0 mt-8 lg:mt-0 text-left">
+          <div className="lg:col-span-6 px-6 lg:pr-12 lg:pl-4 mt-8 lg:mt-0 text-left">
             <div className="space-y-8 lg:space-y-10 lg:sticky lg:top-32">
                 <div className="space-y-2 lg:space-y-3 text-left">
                     <div className="flex items-center justify-between">
@@ -375,19 +389,38 @@ export default function ProductClient({ params, initialProduct }) {
                             <span className="h-[1px] w-6 hidden lg:block" style={{ background: 'rgba(196,167,254,0.6)' }}></span>
                             <p className="text-[12px] lg:text-[13px] font-black tracking-tight uppercase" style={{ color: 'rgb(147,104,236)' }}>{product.brand || 'Naya Lumière Signature'}</p>
                         </div>
-                        {product.isNew && <Badge className="bg-gray-100 text-gray-900 border-none px-2.5 py-1 rounded-md text-[8px] font-black tracking-widest lg:hidden">New</Badge>}
+                        {product.isNew && <Badge className="bg-gray-100 text-black font-black border-none px-2.5 py-1 rounded-md text-[8px] font-black tracking-widest lg:hidden">New</Badge>}
                     </div>
-                    <h1 className="text-3xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-gray-900">{product.name}</h1>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-xl lg:text-2xl font-semibold">AED {Number(product.price).toFixed(2)}</span>
-                        {product.comparedprice > product.price && <span className="text-sm lg:text-base text-gray-400 line-through">AED {Number(product.comparedprice).toFixed(2)}</span>}
+                    <h1 className="text-3xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-black font-black">{product.name}</h1>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-5">
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-[11px] lg:text-[12px] font-semibold" style={{ color: 'rgb(167,139,250)' }}>AED</span>
+                                <span className="text-4xl lg:text-5xl font-bold" style={{
+                                  backgroundImage: 'linear-gradient(135deg, rgb(147,104,236), rgb(196,167,254))',
+                                  WebkitBackgroundClip: 'text',
+                                  WebkitTextFillColor: 'transparent',
+                                }}>
+                                  {Number(product.price).toFixed(2)}
+                                </span>
+                            </div>
+
+                            {product.comparedprice > product.price && (
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-sm text-gray-300 line-through font-medium">AED {Number(product.comparedprice).toFixed(2)}</span>
+                                    <Badge className="bg-purple-50 text-purple-400 border border-purple-100 px-2.5 py-1 rounded-full text-[9px] font-semibold w-fit">
+                                        Save {Math.round(((product.comparedprice - product.price) / product.comparedprice) * 100)}%
+                                    </Badge>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 lg:hidden">
                     <button
                       onClick={handleAddToCart}
-                      className={`flex-grow h-12 rounded-full text-[11px] font-black tracking-tight uppercase transition-all duration-500 text-white active:scale-[0.98] ${isAdded ? 'bg-green-600' : ''}`}
+                      className={`flex-grow h-12 rounded-full text-[11px] font-black tracking-tight uppercase transition-all duration-500 text-white active:scale-[0.98] ${isAdded ? 'bg-green-600' : 'lavender-glow-hover'}`}
                       style={!isAdded ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
                     >
                         {isAdded ? 'Selection Secured' : 'Add to Bag'}
@@ -399,68 +432,49 @@ export default function ProductClient({ params, initialProduct }) {
                     </button>
                 </div>
 
-                <div className="flex items-center gap-6 py-4 lg:py-5 border-y border-gray-100">
-                    <div className="flex flex-col gap-0.5 text-left">
-                        <div className="flex items-center gap-1">
-                            <span className="text-base font-bold">4.9</span>
-                            <div style={{ color: 'rgb(167,139,250)' }}>{[...Array(5)].map((_, i) => <Star key={i} size={11} fill="currentColor" />)}</div>
+                <div className="py-2">
+                    <div className="inline-flex items-center gap-4 px-5 py-3 rounded-2xl border transition-all duration-300 hover:shadow-sm" style={{ background: 'rgba(248,240,255,0.3)', borderColor: 'rgba(216,180,254,0.25)' }}>
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star 
+                                        key={star} 
+                                        size={14} 
+                                        fill={star <= Math.round(product.averageRating || 4.9) ? "rgb(147,104,236)" : "transparent"} 
+                                        className={star <= Math.round(product.averageRating || 4.9) ? "text-[rgb(147,104,236)]" : "text-gray-300"}
+                                    />
+                                ))}
+                                <span className="text-[14px] font-bold text-black ml-1">{product.averageRating || '4.9'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-black/60 tracking-wider uppercase">Customer Satisfaction</span>
+                                <span className="w-1 h-1 rounded-full bg-black/20"></span>
+                                <span className="text-[10px] font-bold text-black/40 uppercase tracking-tight">Verified Reviews</span>
+                            </div>
                         </div>
-                        <span className="text-[8px] lg:text-[9px] font-bold text-gray-400 tracking-widest">Satisfaction</span>
-                    </div>
-                    <Separator orientation="vertical" className="h-6 lg:h-8" />
-                    <div className="flex flex-col gap-0.5 text-left">
-                        <span className="text-base font-bold">100%</span>
-                        <span className="text-[8px] lg:text-[9px] font-bold text-gray-400 tracking-widest">Originality</span>
                     </div>
                 </div>
 
-                <div className="space-y-6 lg:space-y-8 text-left">
-                    <div className="space-y-2 lg:space-y-3">
-                        <h3 className="text-[10px] lg:text-[11px] font-bold tracking-widest text-gray-400">The Selection</h3>
-                        <p className="text-[14px] lg:text-[15px] text-gray-600 leading-relaxed font-normal">{product.description}</p>
-                    </div>
-
-                    {product.benefits && (
-                        <div className="space-y-2 lg:space-y-3">
-                            <h3 className="text-[10px] lg:text-[11px] font-bold tracking-widest text-gray-400">Benefits</h3>
-                            <ul className="space-y-1.5">
-                                {product.benefits.split('\n').filter(Boolean).map((b, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-[13px] lg:text-[14px] text-gray-600 leading-relaxed">
-                                        <span className="mt-1.5 w-1 h-1 rounded-full shrink-0" style={{ background: 'rgb(167,139,250)' }} />
-                                        {b.replace(/^[-•]\s*/, '')}
-                                    </li>
-                                ))}
-                            </ul>
+                <div className="space-y-4 lg:space-y-5 text-left">
+                    {product.form && (
+                        <div className="flex items-center justify-between px-1 pb-4 border-b border-gray-100">
+                            <span className="text-[12px] text-black/45 font-medium">Form</span>
+                            <span className="text-[13px] font-semibold text-black">{product.form}</span>
+                        </div>
+                    )}
+                    {product.size && (
+                        <div className="flex items-center justify-between px-1 pb-4 border-b border-gray-100">
+                            <span className="text-[12px] text-black/45 font-medium">Size / Volume</span>
+                            <span className="text-[13px] font-semibold text-black">{product.size}</span>
                         </div>
                     )}
 
-                    {product.ingredients && (
-                        <div className="space-y-2 lg:space-y-3">
-                            <h3 className="text-[10px] lg:text-[11px] font-bold tracking-widest text-gray-400">Key Ingredients</h3>
-                            <p className="text-[13px] lg:text-[14px] text-gray-500 leading-relaxed">{product.ingredients}</p>
-                        </div>
-                    )}
-
-                    {!product.ingredients && ingredients.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                            {ingredients.map((ing, i) => (
-                                <div key={i} className="px-3 py-1.5 lg:px-4 lg:py-2 bg-gray-50 rounded-full border border-gray-100 flex items-center gap-1.5">
-                                    <Sparkles size={10} style={{ color: 'rgb(167,139,250)', opacity: 0.7 }} />
-                                    <span className="text-[9px] lg:text-[10px] font-black tracking-widest text-gray-900">{ing}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    <div className="flex items-center justify-between p-4 rounded-2xl border" style={{ background: 'var(--cl-bg-lavender)', borderColor: 'var(--cl-glass-border)' }}>
-                        <div className="space-y-0.5 text-left">
-                            <span className="text-[9px] font-bold text-gray-400 tracking-widest">Quantity</span>
-                            <p className="text-[13px] font-semibold">Reserve {quantity} units</p>
-                        </div>
-                        <div className="flex items-center bg-white rounded-full p-1 shadow-sm gap-1">
-                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50"><Minus size={14} /></button>
-                            <span className="text-base font-bold w-6 text-center tabular-nums">{quantity}</span>
-                            <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50"><Plus size={14} /></button>
+                    <div className="flex items-center justify-between p-4 rounded-2xl border" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(216,180,254,0.35)' }}>
+                        <span className="text-[12px] text-black/45 font-medium">Quantity</span>
+                        <div className="flex items-center bg-white rounded-full p-1 gap-1 border" style={{ borderColor: 'rgba(216,180,254,0.3)' }}>
+                            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[var(--cl-bg-lavender)] text-black/60 hover:text-[var(--cl-purple)] transition-colors"><Minus size={13} strokeWidth={2} /></button>
+                            <span className="text-[13px] font-semibold w-6 text-center tabular-nums text-black">{quantity}</span>
+                            <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[var(--cl-bg-lavender)] text-black/60 hover:text-[var(--cl-purple)] transition-colors"><Plus size={13} strokeWidth={2} /></button>
                         </div>
                     </div>
 
@@ -468,10 +482,10 @@ export default function ProductClient({ params, initialProduct }) {
                         <div className="space-y-3" ref={buyButtonRef}>
                             <button
                               onClick={handleAddToCart}
-                              className={`w-full h-14 rounded-xl text-[13px] font-bold tracking-widest transition-all duration-500 text-white ${isAdded ? 'bg-green-600' : ''}`}
-                              style={!isAdded ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 8px 28px rgba(147,51,234,0.25)' } : {}}
+                              className={`w-full h-14 rounded-xl text-[14px] font-bold tracking-wide transition-all duration-500 text-white shadow-md hover:-translate-y-0.5 hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 ${isAdded ? 'bg-green-600' : 'lavender-glow-hover'}`}
+                              style={!isAdded ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
                             >
-                                {isAdded ? <div className="flex items-center justify-center gap-2"><Check size={18} /> Selection Secured</div> : 'Reserve for Acquisition'}
+                                {isAdded ? <><Check size={18} /> Selection Secured</> : <><ShoppingBag size={16} /> Add to Bag</>}
                             </button>
                             <button
                               onClick={handleWishlistToggle}
@@ -484,154 +498,240 @@ export default function ProductClient({ params, initialProduct }) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 lg:gap-5 pt-8 border-t border-gray-100 text-left">
-                    {[ 
-                        { icon: Truck, title: "Priority Emirates Shipping", desc: "Complimentary on acquisitions over 200 AED." },
-                        { icon: ShieldCheck, title: "Authenticity Certified", desc: "100% original masterpieces from official ateliers." },
-                        { icon: RotateCcw, title: "Boutique Return Standard", desc: "30-day elite protection on all selections." }
-                    ].map((feat, i) => (
-                        <div key={i} className="flex gap-4 group cursor-default">
-                            <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl flex items-center justify-center transition-colors group-hover:scale-105" style={{ background: 'rgba(216,180,254,0.15)', color: 'rgb(126,105,230)' }}><feat.icon size={18} strokeWidth={1.5} /></div>
-                            <div className="space-y-0.5 text-left">
-                                <h4 className="text-[11px] lg:text-[12px] font-bold tracking-tight">{feat.title}</h4>
-                                <p className="text-[11px] lg:text-[12px] text-gray-500 leading-snug">{feat.desc}</p>
+                {/* ── Editorial Guarantees Section (Letoile Inspired) Moved Here ── */}
+                <div className="pt-4 lg:pt-6">
+                    <div className="border-t border-gray-200/80 pt-6 lg:pt-8">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-8">
+                            {/* Item 1 */}
+                            <div className="flex flex-col items-start px-2 group">
+                                <div className="mb-3 text-[var(--cl-purple)] transform transition-transform duration-500 group-hover:-translate-y-1">
+                                    <Truck size={24} strokeWidth={1.5} />
+                                </div>
+                                <h4 className="text-[11px] font-bold tracking-[0.1em] uppercase text-black font-black mb-1.5">Priority Delivery</h4>
+                                <p className="text-[12px] text-black font-semibold leading-relaxed">Complimentary on orders over 200 AED. Ships within 2-3 days.</p>
+                            </div>
+                            
+                            {/* Item 2 */}
+                            <div className="flex flex-col items-start px-2 group">
+                                <div className="mb-3 text-[var(--cl-purple)] transform transition-transform duration-500 group-hover:-translate-y-1">
+                                    <ShieldCheck size={24} strokeWidth={1.5} />
+                                </div>
+                                <h4 className="text-[11px] font-bold tracking-[0.1em] uppercase text-black font-black mb-1.5">100% Authentic</h4>
+                                <p className="text-[12px] text-black font-semibold leading-relaxed">Original masterpieces sourced directly from official ateliers.</p>
+                            </div>
+                            
+                            {/* Item 3 */}
+                            <div className="flex flex-col items-start px-2 group">
+                                <div className="mb-3 text-[var(--cl-purple)] transform transition-transform duration-500 group-hover:-translate-y-1">
+                                    <RotateCcw size={24} strokeWidth={1.5} />
+                                </div>
+                                <h4 className="text-[11px] font-bold tracking-[0.1em] uppercase text-black font-black mb-1.5">Elite Returns</h4>
+                                <p className="text-[12px] text-black font-semibold leading-relaxed">30-day boutique return standard on all sealed selections.</p>
+                            </div>
+                            
+                            {/* Item 4 */}
+                            <div className="flex flex-col items-start px-2 group">
+                                <div className="mb-3 text-[var(--cl-purple)] transform transition-transform duration-500 group-hover:-translate-y-1">
+                                    <Lock size={24} strokeWidth={1.5} />
+                                </div>
+                                <h4 className="text-[11px] font-bold tracking-[0.1em] uppercase text-black font-black mb-1.5">Secure Payment</h4>
+                                <p className="text-[12px] text-black font-semibold leading-relaxed">
+                                    Encrypted checkout. Cash on delivery to <span className="font-semibold text-black font-black capitalize">{primaryAddress ? primaryAddress.city : 'your location'}</span>.
+                                </p>
                             </div>
                         </div>
-                    ))}
+                    </div>
                 </div>
+
             </div>
           </div>
         </div>
 
-        <section className="mt-20 space-y-24 px-6 lg:px-20 pb-20 relative">
-            <div className="max-w-5xl mx-auto text-center space-y-10">
-                <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
-                    <Badge className="border-none font-black text-[11px] lg:text-[12px] tracking-[0.3em] px-6 py-2.5 text-white" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(167,139,250))' }}>The Narrative</Badge>
-                    <h2 className="text-4xl lg:text-6xl font-semibold tracking-tight text-gray-900 leading-[1.1]">Designed for <br/> <span className="italic serif font-light" style={{ color: 'rgb(147,104,236)' }}>Absolute Radiance.</span></h2>
-                </motion.div>
-                <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.3 }} className="relative">
-                    <Quote className="absolute -left-12 -top-12 w-24 h-24 -scale-x-100" style={{ color: 'rgba(196,167,254,0.15)' }} />
-                    <p className="text-lg lg:text-2xl text-gray-500 leading-[1.6] font-medium max-w-3xl mx-auto italic text-center">{product.long_description || product.description}</p>
-                </motion.div>
-            </div>
+        {/* ── Product Details: Description, Benefits, Formulation & Brand ── */}
+        {(product.long_description || product.description || product.benefits || product.ingredients || product.brand) && (
+          <section className="border-t border-gray-100 px-6 lg:px-16 py-16 lg:py-20">
+            <div className="max-w-[1200px] mx-auto space-y-14">
 
-            <div className="rounded-[4rem] p-12 lg:p-20 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, var(--cl-bg-lavender), rgba(248,240,255,0.8))' }}>
-                <div className="grid lg:grid-cols-12 gap-16 relative z-10 text-left">
-                    <div className="lg:col-span-4 space-y-6">
-                        <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight leading-tight text-gray-900">Our <br/> Standards.</h2>
-                        <p className="text-gray-500 text-base leading-relaxed font-normal">Every Naya Lumière selection is held to the highest standards of clean beauty, clinical integrity, and ethical sourcing.</p>
-                    </div>
-                    <div className="lg:col-span-8 grid md:grid-cols-2 gap-x-10 gap-y-10">
-                        {[
-                            { label: 'Animal Welfare', value: 'Cruelty Free', icon: ShieldCheck },
-                            { label: 'Clinical Validation', value: 'Dermatologically Tested', icon: FlaskConical },
-                            { label: 'Formula Integrity', value: 'Vegan Formula', icon: Droplets },
-                            { label: 'Clean Chemistry', value: 'Paraben & SLS Free', icon: Zap },
-                            { label: 'Beauty Standard', value: 'Clean Beauty Certified', icon: Sparkles },
-                            { label: 'Environmental Care', value: 'Sustainable Sourcing', icon: Waves }
-                        ].map((spec, i) => (
-                            <div key={i} className="space-y-3 group">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform"><spec.icon size={12} style={{ color: 'rgb(147,104,236)' }} /></div>
-                                    <span className="text-[10px] font-bold text-gray-400 tracking-widest">{spec.label}</span>
-                                </div>
-                                <p className="text-xl font-medium border-b border-gray-200 pb-3 text-gray-900">{spec.value}</p>
-                            </div>
+              {/* Row 1: Product description — full width */}
+              {(product.long_description || product.description) && (
+                <div>
+                  <h2 className="text-[20px] font-semibold text-black mb-4">Product description</h2>
+                  <p className="text-[13px] text-black/60 leading-[1.55]">{product.long_description || product.description}</p>
+                </div>
+              )}
+
+              {/* Row 2: Benefits | Formulation + Brand — side by side */}
+              {(product.benefits || product.ingredients || ingredients.length > 0 || product.brand) && (
+                <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 pt-4 border-t border-gray-100 items-start">
+
+                  {/* Left: Benefits */}
+                  {product.benefits && (
+                    <div>
+                      <h2 className="text-[20px] font-semibold text-black mb-2">Benefits</h2>
+                      <div>
+                        {product.benefits.split('\n').filter(Boolean).map((b, i) => (
+                          <div key={i} className="flex items-start gap-4 py-1.5 border-b border-gray-100">
+                            <span className="text-[11px] font-medium tabular-nums mt-0.5 min-w-[22px] flex-shrink-0" style={{ color: 'var(--cl-purple)' }}>{String(i + 1).padStart(2, '0')}</span>
+                            <p className="text-[13px] text-black/60 leading-[1.5]">{b.replace(/^[-•]\s*/, '')}</p>
+                          </div>
                         ))}
+                      </div>
                     </div>
+                  )}
+
+                  {/* Right: Formulation + Brand stacked */}
+                  <div className="space-y-10">
+                    {(product.ingredients || ingredients.length > 0) && (
+                      <div>
+                        <h2 className="text-[20px] font-semibold text-black mb-4">Formulation</h2>
+                        {product.ingredients ? (
+                          <p className="text-[13px] text-black/60 leading-[1.55]">{product.ingredients}</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {ingredients.map((ing, i) => (
+                              <span key={i} className="px-3 py-1.5 rounded-full border text-[12px] font-medium text-black/60" style={{ borderColor: 'rgba(216,180,254,0.35)', background: 'rgba(248,240,255,0.5)' }}>
+                                {ing}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {product.brand && (
+                      <div className="pt-8 border-t border-gray-100">
+                        <h2 className="text-[20px] font-semibold text-black mb-4">Brand information</h2>
+                        <div className="flex items-start gap-5 mb-4">
+                          <div className="w-[84px] h-[84px] rounded-2xl border border-gray-100 bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
+                            {product.brandImageUrl ? (
+                              <Image src={product.brandImageUrl} alt={product.brand} width={84} height={84} className="object-contain p-2.5 w-full h-full" />
+                            ) : (
+                              <span className="text-3xl font-serif font-bold text-black/15 select-none">{product.brand.charAt(0)}</span>
+                            )}
+                          </div>
+                          <div className="pt-2">
+                            <p className="text-[11px] text-black/35 mb-1.5 font-medium">All products of the brand</p>
+                            <Link
+                              href={`/all-products?brand=${encodeURIComponent(product.brand)}`}
+                              className="text-[13px] font-semibold text-black underline underline-offset-2 decoration-black/15 hover:decoration-[var(--cl-purple)] hover:text-[var(--cl-purple)] transition-colors"
+                            >
+                              {product.brand.toUpperCase()}
+                            </Link>
+                          </div>
+                        </div>
+                        <p className="text-[13px] text-black/55 leading-[1.55]">Each creation embodies a commitment to purity, efficacy, and uncompromising beauty standards — formulated for those who demand the very best.</p>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
-                <div className="absolute right-0 bottom-0 text-[20vw] font-black text-white/40 select-none pointer-events-none -mb-16 -mr-8 italic">Soin</div>
+              )}
+
             </div>
+          </section>
+        )}
 
-            {product.how_to_use && (
-                <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 lg:gap-20 items-start text-left">
-                    <div className="space-y-8 lg:sticky lg:top-40">
-                        <div className="space-y-4">
-                            <Badge className="border-none px-6 py-2.5 rounded-full text-[11px] lg:text-[12px] font-black tracking-widest text-white" style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}>Protocol</Badge>
-                            <h2 className="text-4xl lg:text-6xl font-semibold tracking-tighter leading-tight">The Ritual.</h2>
-                        </div>
-                        <p className="text-lg text-gray-500 leading-relaxed font-medium">A precise sequence designed to synchronize our clinical formulas with your skin's natural frequency.</p>
-                        <div className="aspect-[4/5] rounded-[3rem] overflow-hidden shadow-2xl relative group bg-[#f5f5f7]">
-                            <Image 
-                                src={product.imageUrl || (product.images && product.images[0]) || '/favicon.jpeg'} 
-                                alt={`${product.name} - Ritual Application Guide`}
-                                width={600} 
-                                height={800} 
-                                className="w-full h-full object-contain p-12 mix-blend-multiply transition-transform duration-[2000ms] group-hover:scale-110" 
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-white/40 to-transparent pointer-events-none"></div>
-                            <div className="absolute bottom-10 left-10 text-gray-900">
-                                <p className="text-xs font-bold tracking-[0.2em] opacity-40">Ritual Masterpiece</p>
-                                <h4 className="text-xl font-serif italic">{product.name}</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="space-y-16 pt-8 text-left">
-                        {product.how_to_use.split('\n').map((step, i) => (
-                            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: "-100px" }} key={i} className="space-y-4 group">
-                                <span className="text-[60px] lg:text-[80px] font-black leading-none select-none block" style={{ color: 'rgba(196,167,254,0.12)' }}>0{i+1}</span>
-                                <div className="space-y-3">
-                                    <h3 className="text-xl lg:text-2xl font-semibold">Step {i+1}</h3>
-                                    <p className="text-lg lg:text-xl text-gray-500 leading-relaxed font-normal">{step}</p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </section>
+        {/* ── How to Use — cinematic video or product image beside steps ── */}
+        {(product.how_to_use || product.how_to_use_video) && (
+          <section className="border-t border-gray-100 px-6 lg:px-16 py-16 lg:py-24">
+            <div className="max-w-[1200px] mx-auto">
+              <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
 
-        <section className="py-24 border-y relative overflow-hidden" style={{ background: 'var(--cl-bg-lavender)', borderColor: 'rgba(216,180,254,0.25)' }}>
-            <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] select-none pointer-events-none"><span className="text-[20vw] font-black tracking-tighter italic">Standards</span></div>
-            <div className="max-w-7xl mx-auto px-6 lg:px-20 relative z-10 text-center">
-                <div className="mb-16 space-y-4">
-                    <div className="flex items-center justify-center gap-3">
-                        <span className="h-[1px] w-8" style={{ background: 'rgba(196,167,254,0.6)' }}></span>
-                        <span className="text-[10px] font-black tracking-[0.4em]" style={{ color: 'rgb(147,104,236)' }}>Boutique Ethics</span>
-                        <span className="h-[1px] w-8" style={{ background: 'rgba(196,167,254,0.6)' }}></span>
+                {/* Video or image container */}
+                {product.how_to_use_video && (
+                  <div className="relative rounded-[2rem] overflow-hidden group bg-black h-[350px] lg:h-[450px]" style={{ border: '1px solid rgba(216,180,254,0.2)' }}>
+                    {/* Cinematic letterbox bars */}
+                    <div className="absolute top-0 left-0 right-0 z-20 h-0 bg-black transition-all duration-700 ease-in-out group-hover:h-6 pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 right-0 z-20 h-0 bg-black transition-all duration-700 ease-in-out group-hover:h-6 pointer-events-none" />
+
+                    <video
+                      src={product.how_to_use_video}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="w-full h-full object-cover block transition-transform duration-[3s] ease-in-out group-hover:scale-[1.03]"
+                    />
+
+                    {/* Gradient overlays */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/15 pointer-events-none z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10 pointer-events-none z-10" />
+
+                    {/* Caption */}
+                    <div className="absolute bottom-6 left-6 z-30 transition-all duration-500 group-hover:bottom-10">
+                      <p className="text-[9px] font-semibold text-white/50 uppercase tracking-[0.2em] mb-1">How to use</p>
+                      <h4 className="text-sm font-medium text-white/90 leading-snug">{product.name}</h4>
                     </div>
-                    <h2 className="text-3xl lg:text-5xl font-semibold tracking-tight text-gray-900">Selection Integrity</h2>
-                </div>
-                <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-                    {[ 
-                        { icon: ShieldCheck, title: "Authenticity", desc: "Every selection is 100% original, verified by our Paris curator and protected by Naya encryption.", bg: "bg-white/80" },
-                        { icon: Droplets, title: "Pure Efficacy", desc: "Formulated without biological compromise. Clinical results driven by nature's most potent botanicals.", bg: "bg-white/80" },
-                        { icon: Sparkles, title: "Elite Privilege", desc: "Acquisition grants permanent access to our exclusive Lumière VIP journal and laboratory previews.", bg: "bg-white/80" }
-                    ].map((item, i) => (
-                        <div key={i} className="backdrop-blur-xl p-10 rounded-[3rem] border border-white/60 transition-all duration-700 flex flex-col items-center text-center space-y-6" style={{ background: 'rgba(255,255,255,0.75)', boxShadow: '0 8px 32px rgba(147,51,234,0.06)' }}>
-                            <div className="w-16 h-16 rounded-[1.5rem] border flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg" style={{ background: 'rgba(216,180,254,0.12)', borderColor: 'rgba(196,167,254,0.25)', color: 'rgb(126,105,230)' }}><item.icon size={28} strokeWidth={1.5} /></div>
-                            <div className="space-y-3">
-                                <h3 className="text-xl font-bold tracking-tight text-gray-900">{item.title}</h3>
-                                <p className="text-[15px] text-gray-500 font-medium leading-relaxed italic">"{item.desc}"</p>
-                            </div>
+
+                    {/* Subtle corner accent */}
+                    <div className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--cl-purple)' }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Steps */}
+                {product.how_to_use && (
+                  <div>
+                    <h2 className="text-[20px] font-semibold text-black mb-4">How to use</h2>
+                    <div>
+                      {product.how_to_use.split('\n').filter(Boolean).map((step, i) => (
+                        <div key={i} className="flex items-start gap-5 py-2.5 border-b border-gray-100">
+                          <span className="text-[11px] font-medium tabular-nums mt-0.5 min-w-[22px]" style={{ color: 'var(--cl-purple)' }}>{String(i + 1).padStart(2, '0')}</span>
+                          <p className="text-[13px] text-black/60 leading-relaxed">{step}</p>
                         </div>
-                    ))}
-                </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
             </div>
-        </section>
+          </section>
+        )}
 
-        <section className="py-24 px-6 lg:px-20 text-left" style={{ background: 'var(--cl-bg)' }}>
+
+
+        <section className="pt-10 pb-12 px-6 lg:px-20 text-left bg-white border-t border-gray-100">
             <div className="max-w-7xl mx-auto space-y-12">
-                <div className="flex flex-col md:flex-row items-end justify-between gap-6 border-b border-gray-100 pb-8 text-left">
-                    <div className="space-y-2">
-                        <Badge className="border-none font-bold text-[9px] tracking-widest px-3 py-1 text-white" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(167,139,250))' }}>Synergy</Badge>
-                        <h2 className="text-3xl lg:text-5xl font-semibold tracking-tight text-gray-900 leading-none">Complete the Routine.</h2>
+                <div className="flex flex-col md:flex-row items-start justify-between gap-6 border-b border-gray-100 pb-8 text-left">
+                    <div className="space-y-2 text-left">
+                        <Badge className="border-none font-bold text-[9px] tracking-widest px-3 py-1 text-white lavender-glow" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(167,139,250))' }}>Synergy</Badge>
+                        <h2 className="text-3xl lg:text-5xl font-semibold tracking-tight text-black font-black leading-none text-left">Complete the Routine.</h2>
                     </div>
-                    <Link href="/all-products" className="hover:underline flex items-center gap-1 text-base font-medium group text-left" style={{ color: 'rgb(126,105,230)' }}>
+                    <Link href="/all-products" className="hover:underline flex items-center gap-1 text-base font-bold group text-left" style={{ color: 'rgb(126,105,230)' }}>
                         Explore Collections <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </Link>
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
+                
+                <Carousel
+                  opts={{
+                    align: "start",
+                    loop: true,
+                  }}
+                  className="w-full"
+                >
+                  <CarouselContent className="-ml-4">
                     {recommendations.map((rec) => (
-                        <ProductCard key={rec.id} {...rec} image={rec.imageUrl} />
+                      <CarouselItem key={rec.id} className="pl-4 basis-full md:basis-1/3 lg:basis-1/4">
+                        <div className="h-full p-1">
+                          <ProductCard {...rec} image={rec.imageUrl} />
+                        </div>
+                      </CarouselItem>
                     ))}
-                </div>
+                  </CarouselContent>
+                  <div className="hidden md:block">
+                    <CarouselPrevious className="-left-12" />
+                    <CarouselNext className="-right-12" />
+                  </div>
+                </Carousel>
             </div>
         </section>
 
-        <div id="reviews" className="py-24 px-6 lg:px-20 border-t" style={{ background: 'var(--cl-bg-lavender)', borderColor: 'rgba(216,180,254,0.25)' }}>
-            <Reviews productId={product.id} />
-        </div>
+      </div>
+
+      <div id="reviews" className="pt-10 pb-16 px-6 lg:px-20 border-t" style={{ background: '#fff', borderColor: 'rgba(0,0,0,0.05)' }}>
+          <Reviews productId={product.id} />
       </div>
     </div>
   );

@@ -2,119 +2,120 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
-
-const FooterColumn = ({ title, links }) => (
-  <div className="flex flex-col gap-4">
-    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-cl-deep mb-2">{title}</h3>
-    <ul className="flex flex-col gap-3">
-      {links.map((link) => (
-        <li key={link.text}>
-          <Link href={link.href} className="text-[12px] font-medium text-cl-mid hover:text-cl-purple transition-colors flex items-center gap-1.5 group">
-            <ChevronRight size={10} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
-            {link.text}
-          </Link>
-        </li>
-      ))}
-    </ul>
-  </div>
-);
+import Image from 'next/image';
+import { Instagram, Twitter, Facebook, ArrowRight } from 'lucide-react';
 
 export default function Footer() {
-  const footerLinks = {
-    shop: [
-      { text: 'All Products', href: '/all-products' },
-      { text: 'New Arrivals', href: '/new-arrivals' },
-      { text: 'Skincare', href: '/SkinCare' },
-      { text: 'Fragrance', href: '/fragrance' },
-      { text: 'Sales', href: '/sales' },
-    ],
-    services: [
-      { text: 'Naya Intelligence', href: '#' },
-      { text: 'Personal Consultation', href: '#' },
-      { text: 'Gift Wrapping', href: '#' },
-      { text: 'Naya Care+', href: '#' },
-      { text: 'Order Status', href: '/orders' },
-    ],
-    account: [
-      { text: 'Manage Your ID', href: '/account' },
-      { text: 'Naya Store Account', href: '/account' },
-      { text: 'NayaCloud', href: '#' },
-    ],
-    about: [
-      { text: 'Newsroom', href: '#' },
-      { text: 'Naya Leadership', href: '#' },
-      { text: 'Career Opportunities', href: '#' },
-      { text: 'Investors', href: '#' },
-      { text: 'Ethics & Compliance', href: '#' },
-      { text: 'Events', href: '#' },
-    ],
-    values: [
-      { text: 'Accessibility', href: '#' },
-      { text: 'Environment', href: '#' },
-      { text: 'Privacy', href: '#' },
-      { text: 'Supply Chain', href: '#' },
-    ]
-  };
-
   return (
-    <footer className="cl-section-lavender text-cl-light text-[11px] font-sans border-t border-[var(--cl-glass-border)]/50 relative overflow-hidden">
-      {/* Cloud Luxe aura orbs */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="cl-aura cl-aura-purple" style={{ width: 400, height: 400, top: '-10%', left: '-10%', opacity: 0.15 }} />
-        <div className="cl-aura cl-aura-rose" style={{ width: 300, height: 300, bottom: '-10%', right: '-10%', opacity: 0.1 }} />
-      </div>
+    <footer className="bg-white border-t border-gray-100 pt-20 pb-10">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
+        
+        {/* Top Section: Newsletter & Brand */}
+        <div className="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-16 mb-20">
+          
+          {/* Brand & Newsletter */}
+          <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left">
+            <Link href="/" className="flex items-center gap-2.5 mb-6 transition-all active:scale-95 group">
+                <Image
+                  src="/Adobe Express - file (5).png"
+                  alt="Naya Lumière Cosmetics"
+                  height={40}
+                  width={130}
+                  className="h-10 w-auto object-contain shrink-0"
+                />
+                <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
+                    <div
+                      style={{ 
+                        fontSize: '18px', 
+                        fontWeight: '600', 
+                        letterSpacing: '0.05em', 
+                        color: '#3b0764', 
+                        textTransform: 'uppercase', 
+                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                      }}
+                    >
+                      NAYA
+                    </div>
+                    <div
+                      style={{ 
+                        fontSize: '12px', 
+                        fontStyle: 'italic', 
+                        fontFamily: "Georgia, 'Times New Roman', serif", 
+                        color: '#6b21a8',
+                        marginTop: '1px'
+                      }}
+                    >
+                      Lumière Cosmetics
+                    </div>
+                </div>
+            </Link>
+            <p className="text-[13px] text-gray-500 max-w-md leading-relaxed mb-8 font-medium">
+              Join our exclusive journal for early access to seasonal previews, botanical insights, and private boutique events.
+            </p>
+            
+            <form className="w-full max-w-md relative flex items-center" onSubmit={(e) => e.preventDefault()}>
+              <input 
+                type="email" 
+                placeholder="Your email address" 
+                className="w-full bg-gray-50 border border-gray-200 text-black text-[13px] rounded-full px-6 py-4 outline-none focus:border-[var(--cl-purple)] transition-colors placeholder:text-gray-400"
+              />
+              <button 
+                type="submit" 
+                className="absolute right-2 w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform hover:scale-105"
+                style={{ background: 'var(--cl-gradient)' }}
+              >
+                <ArrowRight size={16} />
+              </button>
+            </form>
+          </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-16 relative z-10">
-        {/* Links Grid - Cloud Luxe Style */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-y-12 gap-x-8 mb-16">
-            <FooterColumn title="Shop and Learn" links={footerLinks.shop} />
-            <FooterColumn title="Concierge Services" links={footerLinks.services} />
-            <div className="flex flex-col gap-10">
-                <FooterColumn title="Account" links={footerLinks.account} />
-                <FooterColumn title="Lumière Store" links={[
-                    { text: 'Find a Boutique', href: '#' },
-                    { text: 'Expert Consultation', href: '#' },
-                    { text: 'Today at Naya', href: '#' },
-                ]} />
+          {/* Essential Links */}
+          <div className="flex gap-16 sm:gap-24 text-center lg:text-left">
+            <div className="flex flex-col gap-6">
+              <h3 className="text-[11px] font-bold uppercase tracking-widest text-black">Boutique</h3>
+              <div className="flex flex-col gap-4">
+                <Link href="/all-products" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">All Products</Link>
+                <Link href="/SkinCare" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Skincare</Link>
+                <Link href="/fragrance" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Fragrance</Link>
+                <Link href="/new-arrivals" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">New Arrivals</Link>
+              </div>
             </div>
-            <div className="flex flex-col gap-10">
-                <FooterColumn title="For Professionals" links={[
-                    { text: 'Naya for Business', href: '#' },
-                    { text: 'Spa Partnerships', href: '#' },
-                ]} />
-                 <FooterColumn title="Educational" links={[
-                    { text: 'Beauty & Wellness', href: '#' },
-                    { text: 'Skincare Guide', href: '#' },
-                ]} />
+            
+            <div className="flex flex-col gap-6">
+              <h3 className="text-[11px] font-bold uppercase tracking-widest text-black">House</h3>
+              <div className="flex flex-col gap-4">
+                <Link href="#" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Our Story</Link>
+                <Link href="#" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Contact</Link>
+                <Link href="/account" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Account</Link>
+                <Link href="/orders" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Orders</Link>
+              </div>
             </div>
-            <div className="flex flex-col gap-10">
-                <FooterColumn title="Our Values" links={footerLinks.values} />
-                <FooterColumn title="About Naya" links={footerLinks.about} />
-            </div>
+          </div>
         </div>
 
         {/* Bottom Section */}
-        <div className="pt-10 border-t border-[var(--cl-glass-border)]/60">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex flex-col gap-3">
-                    <p className="text-cl-muted text-[10px] font-medium tracking-wide">Copyright © 2026 Naya Lumière Cosmetics Inc. All rights reserved.</p>
-                    <div className="flex flex-wrap gap-x-5 gap-y-2 text-cl-mid font-semibold tracking-tight">
-                        <Link href="#" className="hover:text-cl-purple transition-colors">Privacy Policy</Link>
-                        <Link href="#" className="hover:text-cl-purple transition-colors">Terms of Use</Link>
-                        <Link href="#" className="hover:text-cl-purple transition-colors">Sales Policy</Link>
-                        <Link href="#" className="hover:text-cl-purple transition-colors">Legal</Link>
-                        <Link href="#" className="hover:text-cl-purple transition-colors">Site Map</Link>
-                    </div>
-                </div>
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--cl-glass-border)] bg-white/40 text-cl-deep font-bold tracking-tight">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                        United Arab Emirates
-                    </div>
-                </div>
+        <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-6 pt-8 border-t border-gray-100">
+          <div className="flex flex-col items-center md:items-start gap-3">
+            <p className="text-[12px] text-gray-400 font-medium">© 2026 Naya Lumière Cosmetics Inc.</p>
+            <div className="flex items-center gap-6 text-[12px] text-gray-400 font-medium">
+              <Link href="#" className="hover:text-black transition-colors">Privacy Policy</Link>
+              <Link href="#" className="hover:text-black transition-colors">Terms of Service</Link>
             </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <a href="#" className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black hover:border-gray-300 hover:bg-white transition-all">
+              <Instagram size={16} />
+            </a>
+            <a href="#" className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black hover:border-gray-300 hover:bg-white transition-all">
+              <Twitter size={16} />
+            </a>
+            <a href="#" className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black hover:border-gray-300 hover:bg-white transition-all">
+              <Facebook size={16} />
+            </a>
+          </div>
         </div>
+
       </div>
     </footer>
   );

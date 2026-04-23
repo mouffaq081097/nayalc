@@ -10,8 +10,10 @@ import {
 import { AccountMobileTopBar } from '../_components/AccountMobileTopBar';
 import { setAccountNavDirection } from '../_components/navDirection';
 import { useAccountData } from '../_components/useAccountData';
+import { useSession } from 'next-auth/react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
+import { toast } from 'react-hot-toast';
 
 // ── Design tokens (Cloud Luxe) ──────────────────────────────────────────────
 const CL = {
@@ -50,6 +52,7 @@ const NAV_ITEMS = [
 export default function ProfilePage() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { update } = useSession();
   const { loyaltyData } = useAccountData();
 
   const [form, setForm] = useState({ first_name: '', last_name: '', phone_number: '' });
@@ -102,12 +105,66 @@ export default function ProfilePage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error();
+      
+      // Update session with new name
+      await update({
+        first_name: form.first_name,
+        last_name: form.last_name,
+      });
+
       setFetched({ ...form });
       setSaved(true);
+      toast.success('Profile updated successfully!');
     } catch {
       setError('Could not save changes. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB.');
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetchWithAuth(`/api/users/${user.id}/profile-image`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      
+      // Update local session immediately
+      await update({
+        profile_image: data.imageUrl
+      });
+      
+      toast.success('Profile photo updated!');
+    } catch (err) {
+      setError('Failed to upload image. Please try again.');
+      toast.error('Failed to upload image.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -138,19 +195,38 @@ export default function ProfilePage() {
               {/* Profile card */}
               <div className="rounded-3xl p-7" style={glassCard}>
                 <div className="flex flex-col items-center text-center gap-3 mb-7">
-                  <div className="relative">
+                  <div className="relative group/avatar">
+                    <input 
+                      type="file" 
+                      id="profile-upload" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
                     <div
-                      className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black shadow-lg"
+                      className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black shadow-lg overflow-hidden relative"
                       style={{ background: CL.gradient }}
                     >
-                      {user?.first_name?.[0]}{user?.last_name?.[0]}
+                      {user?.profile_image ? (
+                        <img src={user.profile_image} alt={user.first_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <>{user?.first_name?.[0]}{user?.last_name?.[0]}</>
+                      )}
+                      
+                      {uploading && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                        </div>
+                      )}
                     </div>
-                    <button
-                      className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-colors"
-                      style={{ background: CL.glass, border: `1px solid ${CL.glassBorder}`, color: CL.purple }}
+                    <label
+                      htmlFor="profile-upload"
+                      className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md cursor-pointer transition-all hover:scale-110 active:scale-95"
+                      style={{ background: 'white', border: `1px solid ${CL.glassBorder}`, color: CL.purple }}
                     >
-                      <Camera size={12} />
-                    </button>
+                      <Camera size={14} strokeWidth={2.5} />
+                    </label>
                     <div className="absolute inset-0 rounded-full -z-10" style={{ boxShadow: CL.glowShadow, opacity: 0.3 }} />
                   </div>
                   <div>

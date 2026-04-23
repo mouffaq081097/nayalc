@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
     ShoppingBag, Heart, Package, LogOut, Menu, X,
     LayoutDashboard, Tags, Ticket, Users, MessageSquare,
-    ExternalLink, ShieldCheck, Bell, Globe
+    ExternalLink, ShieldCheck, Bell, Globe, Instagram
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,6 +24,7 @@ const navItems = [
     { to: '/admin/users',      text: 'Users',       icon: Users           },
     { to: '/admin/chat',       text: 'Chat',        icon: MessageSquare   },
     { to: '/admin/seo',        text: 'SEO',         icon: Globe           },
+    { to: '/admin/social',     text: 'Social',      icon: Instagram       },
 ];
 
 const AdminLayout = ({ children }) => {
@@ -37,7 +38,7 @@ const AdminLayout = ({ children }) => {
 
     useEffect(() => {
         if (!loading && !isAuthenticated)                       router.push('/auth');
-        else if (!loading && user?.email !== 'mouffaq@nayalc.com') router.push('/');
+        else if (!loading && user?.email !== 'mouffaq.dalloul@nayalc.com') router.push('/');
     }, [user, loading, isAuthenticated, router]);
 
     useEffect(() => {
@@ -64,7 +65,7 @@ const AdminLayout = ({ children }) => {
 
             {/* Logo */}
             <div className="px-5 pt-6 pb-5" style={{ borderBottom: '1px solid rgba(216,180,254,0.35)' }}>
-                <Link href="/admin" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-2.5">
+                <Link href="/admin" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-[14px]">
                     <Image
                         src="/Adobe Express - file (5).png"
                         alt="Naya Lumière Cosmetics"
@@ -73,13 +74,30 @@ const AdminLayout = ({ children }) => {
                         className="h-9 w-auto object-contain shrink-0"
                         priority
                     />
-                    <div className="flex flex-col justify-center leading-none">
-                        <span className="text-[13px] font-black tracking-normal uppercase" style={{ color: '#3b0764' }}>
-                            NAYA
-                        </span>
-                        <span className="text-[9px] font-medium tracking-normal font-serif italic" style={{ color: '#6b21a8' }}>
-                            Lumière Cosmetics
-                        </span>
+                    <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
+                        <div
+                        style={{ 
+                            fontSize: '18px', 
+                            fontWeight: '600', 
+                            letterSpacing: '0.05em', 
+                            color: '#3b0764', 
+                            textTransform: 'uppercase', 
+                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                        }}
+                        >
+                        NAYA
+                        </div>
+                        <div
+                        style={{ 
+                            fontSize: '12px', 
+                            fontStyle: 'italic', 
+                            fontFamily: "Georgia, 'Times New Roman', serif", 
+                            color: '#6b21a8',
+                            marginTop: '1px'
+                        }}
+                        >
+                        Lumière Cosmetics
+                        </div>
                     </div>
                 </Link>
                 <p className="text-[9px] font-black tracking-[0.25em] uppercase mt-3 ml-0.5" style={{ color: 'rgba(147,51,234,0.45)' }}>

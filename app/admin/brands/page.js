@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, Edit, Trash2, Search, Loader2, Heart, MoreHorizontal, Award, Sparkles, LayoutGrid, Globe, ExternalLink, EyeOff, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Loader2, Heart, MoreHorizontal, Award, Sparkles, LayoutGrid, Globe, ExternalLink, EyeOff, Eye, Image as ImageIcon } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { Button } from '@/app/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
@@ -14,14 +14,15 @@ const ManageBrands = () => {
     const [editingBrand, setEditingBrand] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     
-    const initialFormData = useMemo(() => ({ name: '', logoUrl: '' }), []);
-    const [formData, setFormData] = useState(initialFormData);
+    const [brandName, setBrandName] = useState('');
+    const [imageFile, setImageFile] = useState(null);
 
     useEffect(() => {
         if (isModalOpen) {
-            setFormData(editingBrand ? { name: editingBrand.name, logoUrl: editingBrand.logoUrl || '' } : initialFormData);
+            setBrandName(editingBrand ? editingBrand.name : '');
+            setImageFile(null);
         }
-    }, [isModalOpen, editingBrand, initialFormData]);
+    }, [isModalOpen, editingBrand]);
 
     const handleOpenAddModal = () => {
         setEditingBrand(null);
@@ -36,6 +37,7 @@ const ManageBrands = () => {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingBrand(null);
+        setImageFile(null);
     };
     
     const handleDelete = (brandId) => {
@@ -44,20 +46,19 @@ const ManageBrands = () => {
         }
     }
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({...prev, [name]: value}));
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name.trim()) return;
+        if (!brandName.trim()) return;
 
         setIsSubmitting(true);
         
         const brandData = new FormData();
-        brandData.append('name', formData.name);
-        brandData.append('logoUrl', formData.logoUrl);
+        brandData.append('name', brandName);
+        brandData.append('status', editingBrand ? (editingBrand.is_active ? 'active' : 'inactive') : 'active');
+
+        if (imageFile) {
+            brandData.append('image', imageFile);
+        }
 
         try {
             if (editingBrand) {
@@ -127,8 +128,12 @@ const ManageBrands = () => {
                         >
                             <div className="p-8 space-y-6">
                                 <div className="flex justify-between items-start">
-                                    <div className="w-16 h-16 rounded-2xl bg-cl-bg-lavender border border-indigo-100/50 flex items-center justify-center text-cl-purple transition-colors group-hover:bg-cl-purple group-hover:text-white duration-500 shadow-inner">
-                                        <Award size={32} strokeWidth={1.5} />
+                                    <div className="w-16 h-16 rounded-2xl bg-cl-bg-lavender border border-indigo-100/50 flex items-center justify-center text-cl-purple transition-colors group-hover:bg-cl-purple group-hover:text-white duration-500 shadow-inner overflow-hidden">
+                                        {brand.imageurl ? (
+                                            <img src={brand.imageurl} alt={brand.name} className="w-full h-full object-contain p-2" />
+                                        ) : (
+                                            <Award size={32} strokeWidth={1.5} />
+                                        )}
                                     </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -195,7 +200,7 @@ const ManageBrands = () => {
                         <div className="group">
                             <label htmlFor="name" className="block text-[11px] font-black text-gray-400   mb-3 transition-colors group-focus-within:text-cl-purple">Brand Name</label>
                             <input
-                                type="text" id="name" name="name" value={formData.name} onChange={handleChange}
+                                type="text" id="name" name="name" value={brandName} onChange={(e) => setBrandName(e.target.value)}
                                 placeholder="e.g., GERnétic"
                                 className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white transition-all text-lg shadow-inner"
                                 required disabled={isSubmitting}
@@ -203,14 +208,24 @@ const ManageBrands = () => {
                         </div>
 
                         <div className="group">
-                            <label htmlFor="logoUrl" className="block text-[11px] font-black text-gray-400   mb-3">Logo URL (Optional)</label>
-                            <div className="relative">
-                                <Globe className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                                <input
-                                    type="text" id="logoUrl" name="logoUrl" value={formData.logoUrl} onChange={handleChange}
-                                    placeholder="https://example.com/logo.svg"
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-16 pr-6 py-4 font-medium text-gray-600 focus:bg-white transition-all"
-                                    disabled={isSubmitting}
+                            <label htmlFor="logo" className="block text-[11px] font-black text-gray-400   mb-3">Brand Logo</label>
+                            <div className="relative group/img aspect-video bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-6 transition-all hover:bg-gray-100/50">
+                                {imageFile ? (
+                                    <img src={URL.createObjectURL(imageFile)} alt="Preview" className="w-full h-full object-contain p-2" />
+                                ) : editingBrand?.imageurl ? (
+                                    <img src={editingBrand.imageurl} alt="Current" className="w-full h-full object-contain p-2" />
+                                ) : (
+                                    <div className="text-gray-200 flex flex-col items-center gap-2">
+                                        <ImageIcon size={32} />
+                                        <span className="text-[9px] font-black  ">Select Image</span>
+                                    </div>
+                                )}
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={(e) => setImageFile(e.target.files[0])} 
+                                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                                    disabled={isSubmitting} 
                                 />
                             </div>
                         </div>

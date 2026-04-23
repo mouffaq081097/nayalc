@@ -93,9 +93,20 @@ async function buildAiSystemPrompt(client, conversationId, conversationUserId, f
     // Fetch top 40 products
     let productList = '';
     try {
-        const productsResult = await client.query(
-            `SELECT id, name, brand, price, description FROM products WHERE is_active = true ORDER BY created_at DESC LIMIT 40`
-        );
+        let productsResult;
+        try {
+            productsResult = await client.query(
+                `SELECT id, name, brand, price, description FROM products WHERE is_active = true ORDER BY created_at DESC LIMIT 40`
+            );
+        } catch (e) {
+            if (e.message.includes('is_active')) {
+                productsResult = await client.query(
+                    `SELECT id, name, brand, price, description FROM products ORDER BY created_at DESC LIMIT 40`
+                );
+            } else {
+                throw e;
+            }
+        }
         productList = productsResult.rows.map(p =>
             `- ${p.name} by ${p.brand || 'Naya Lumière'} — AED ${parseFloat(p.price).toFixed(2)}: ${(p.description || '').slice(0, 80)}`
         ).join('\n');
@@ -165,7 +176,7 @@ export async function POST(req, context) {
         }
 
         // Validate sender_type — block customer from sending as 'admin' or 'ai'
-        const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mouffaq@nayalc.com';
+        const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mouffaq.dalloul@nayalc.com';
         if (sender_type === 'admin') {
             const { getServerSession } = await import('next-auth');
             const { authOptions } = await import('@/lib/auth');

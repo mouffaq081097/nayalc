@@ -15,7 +15,7 @@
 
 :root {
   --font-size: 16px;
-  --background: #ffffff;
+  --background: #fdfaff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;
   --card-foreground: oklch(0.145 0 0);
@@ -59,7 +59,7 @@
   --cl-purple-deep: #7e22ce;
   --cl-pink: #db2777;
   --cl-pink-light: #ec4899;
-  --cl-bg: #faf9f6;
+  --cl-bg: #fdfaff;
   --cl-bg-rose: #fff0f8;
   --cl-bg-lavender: #f4ebff;
   --cl-glass: rgba(255, 255, 255, 0.72);
@@ -77,9 +77,9 @@
   --cl-aura-1: rgba(216, 180, 254, 0.45);
   --cl-aura-2: rgba(249, 168, 212, 0.30);
   --cl-aura-3: rgba(192, 132, 252, 0.20);
-  --cl-gradient: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
-  --cl-gradient-soft: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-  --cl-gradient-bg: linear-gradient(160deg, #faf9f6 0%, #fefdf9 50%, #faf9f6 100%);
+  --cl-gradient: linear-gradient(135deg, #d8b4fe 0%, #a78bfa 100%);
+  --cl-gradient-soft: linear-gradient(135deg, #e9d5ff 0%, #c4b5fd 100%);
+  --cl-gradient-bg: linear-gradient(160deg, #fdfaff 0%, #fbf8ff 50%, #fdfaff 100%);
   --cl-shadow-card: 0 8px 32px rgba(147, 51, 234, 0.10);
   --cl-shadow-card-hover: 0 20px 48px rgba(147, 51, 234, 0.22);
   --cl-shadow-glow: 0 0 40px rgba(147, 51, 234, 0.20);
@@ -96,7 +96,6 @@
   --brand-pink-extra-light: rgba(147, 51, 234, 0.15);
   --brand-pink-dark: var(--cl-purple-deep);              /* #7e22ce */
   --brand-rose: #fef7f4;
-  --brand-cream: #fefdf9;
 
   /* Direct hex values for primary and button-bg as Tailwind uses them directly */
   --brand-primary: var(--cl-purple);
@@ -199,7 +198,6 @@
   --color-brand-blue: var(--brand-blue);
   --color-brand-pink: var(--brand-pink);
   --color-brand-rose: var(--brand-rose);
-  --color-brand-cream: var(--brand-cream);
 }
 
  @layer base {
@@ -245,12 +243,14 @@
     background: var(--cl-gradient);
     color: white;
     border-radius: 9999px;
-    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    border: none;
+    box-shadow: 0 8px 20px -4px rgba(167, 139, 250, 0.3);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .cl-gradient-btn:hover {
-    opacity: 0.92;
+    opacity: 0.95;
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(147, 51, 234, 0.30);
+    box-shadow: 0 12px 28px -4px rgba(167, 139, 250, 0.45);
   }
 
   /* Ghost button (Cloud Luxe) */
@@ -291,6 +291,19 @@
   .cl-section-rose {
     background: var(--cl-bg-rose);
   }
+
+  /* Lavender Glow Effect */
+  .lavender-glow {
+    box-shadow: 0 0 15px rgba(196, 167, 254, 0.4);
+  }
+  
+  .lavender-glow-hover:hover {
+    box-shadow: 0 0 25px rgba(196, 167, 254, 0.6);
+  }
+
+  .lavender-glow-text {
+    text-shadow: 0 0 12px rgba(196, 167, 254, 0.5);
+  }
 }
 
 /* Cloud Luxe hero background */
@@ -308,25 +321,20 @@
 /* Lavender filled button — soft Cloud Luxe lavender style */
 @layer components {
   .cl-lavender-btn {
-    background: rgba(147, 51, 234, 0.07);
-    border: 1px solid rgba(167, 139, 250, 0.40);
-    color: var(--cl-text-mid);
+    background: var(--cl-gradient);
+    color: white;
     border-radius: 9999px;
-    transition: background 0.3s cubic-bezier(0.16,1,0.3,1),
-                border-color 0.3s cubic-bezier(0.16,1,0.3,1),
-                box-shadow 0.3s cubic-bezier(0.16,1,0.3,1),
-                transform 0.2s cubic-bezier(0.16,1,0.3,1);
+    border: none;
+    box-shadow: 0 8px 20px -4px rgba(167, 139, 250, 0.3);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .cl-lavender-btn:hover {
-    background: rgba(147, 51, 234, 0.13);
-    border-color: var(--cl-purple);
-    color: var(--cl-purple);
-    box-shadow: 0 4px 20px rgba(147, 51, 234, 0.18), 0 0 0 1px rgba(147, 51, 234, 0.10);
+    opacity: 0.95;
     transform: translateY(-1px);
+    box-shadow: 0 12px 28px -4px rgba(167, 139, 250, 0.45);
   }
   .cl-lavender-btn:active {
     transform: scale(0.97);
-    box-shadow: none;
   }
 }
 

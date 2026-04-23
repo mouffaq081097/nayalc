@@ -12,19 +12,21 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { LoaderSpinner } from '../components/GlobalLoader';
+
 const SectionTitle = ({ title, subtitle }) => (
     <div className="mb-8">
-        <h2 className="text-[28px] md:text-[36px] font-semibold text-[#1d1d1f] tracking-tight leading-tight">
+        <h2 className="text-[28px] md:text-[36px] font-semibold text-[#1d1d1f] leading-tight">
             {title}
         </h2>
-        {subtitle && <p className="text-[13px] font-bold text-brand-pink uppercase tracking-[0.3em] mt-2">{subtitle}</p>}
+        {subtitle && <p className="text-[13px] font-bold text-purple-400 uppercase mt-2">{subtitle}</p>}
     </div>
 );
 
 const TransactionItem = ({ tx }) => (
     <div className="group flex items-center justify-between py-5 border-b border-gray-100 last:border-0">
         <div className="flex items-center gap-5">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${tx.points > 0 ? 'bg-green-50 text-green-600' : 'bg-rose-50 text-brand-pink'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${tx.points > 0 ? 'bg-green-50 text-green-600' : 'bg-purple-50 text-purple-500'}`}>
                 {tx.points > 0 ? <Plus size={16} /> : <Minus size={16} />}
             </div>
             <div>
@@ -35,10 +37,10 @@ const TransactionItem = ({ tx }) => (
             </div>
         </div>
         <div className="text-right">
-            <p className={`text-[17px] font-bold ${tx.points > 0 ? 'text-green-600' : 'text-brand-pink'}`}>
+            <p className={`text-[17px] font-bold ${tx.points > 0 ? 'text-green-600' : 'text-purple-500'}`}>
                 {tx.points > 0 ? '+' : ''}{tx.points}
             </p>
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Points</p>
+            <p className="text-[10px] font-black text-gray-300 uppercase">Points</p>
         </div>
     </div>
 );
@@ -46,15 +48,15 @@ const TransactionItem = ({ tx }) => (
 const EarnCard = ({ icon: Icon, title, description, points }) => (
     <motion.div 
         whileHover={{ scale: 1.02 }}
-        className="bg-white border border-gray-100 rounded-2xl p-8 flex flex-col h-full shadow-sm hover:shadow-xl hover:border-brand-pink/20 transition-all duration-300"
+        className="bg-white border border-gray-100 rounded-2xl p-8 flex flex-col h-full shadow-sm hover:shadow-xl hover:border-purple-200 transition-all duration-300"
     >
-        <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-brand-pink mb-6">
+        <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-purple-500 mb-6">
             <Icon size={24} />
         </div>
         <h3 className="text-[19px] font-bold text-gray-900 mb-2">{title}</h3>
         <p className="text-[14px] text-gray-500 font-medium leading-relaxed flex-grow">{description}</p>
         <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
-            <span className="text-[13px] font-black text-brand-pink uppercase tracking-widest">{points}</span>
+            <span className="text-[13px] font-black text-purple-400 uppercase">{points}</span>
             <ArrowRight size={16} className="text-gray-300" />
         </div>
     </motion.div>
@@ -96,10 +98,10 @@ const LoyaltyContent = () => {
     const progress = Math.min((loyaltyData.stats.points / nextTierPoints) * 100, 100);
 
     if (loading) return (
-        <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center">
+        <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
-                <div className="w-12 h-12 border-4 border-brand-pink/20 border-t-brand-pink rounded-full animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 animate-pulse">Calculating Rituals</p>
+                <LoaderSpinner size="lg" />
+                <p className="text-[14px] font-serif italic text-cl-deep animate-pulse">Calculating Rituals...</p>
             </div>
         </div>
     );
@@ -108,7 +110,7 @@ const LoyaltyContent = () => {
         <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-32 relative overflow-hidden">
             {/* Subtle Boutique Aura */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-brand-pink/[0.03] to-transparent"></div>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-purple-500/[0.03] to-transparent"></div>
             </div>
 
             {/* Tactile Paper Grain */}
@@ -122,12 +124,12 @@ const LoyaltyContent = () => {
                         <div className="space-y-6 flex-1">
                             <Link 
                                 href="/account"
-                                className="group flex items-center gap-1.5 text-[14px] font-medium text-brand-pink hover:underline mb-8 w-fit"
+                                className="group flex items-center gap-1.5 text-[14px] font-medium text-purple-500 hover:underline mb-8 w-fit"
                             >
                                 <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
                                 Account
                             </Link>
-                            <h1 className="text-[42px] md:text-[56px] font-bold tracking-tight text-gray-900 leading-none">
+                            <h1 className="text-[42px] md:text-[56px] font-bold text-gray-900 leading-none">
                                 Ritual Points.
                             </h1>
                             <p className="text-[17px] md:text-[21px] text-gray-500 font-medium max-w-xl">
@@ -135,19 +137,19 @@ const LoyaltyContent = () => {
                             </p>
                         </div>
                         
-                        <div className="bg-white border border-gray-100 rounded-[2.5rem] p-10 md:p-12 shadow-2xl shadow-pink-200/20 relative overflow-hidden shrink-0 w-full md:w-auto min-w-[320px]">
+                        <div className="bg-white border border-gray-100 rounded-[2.5rem] p-10 md:p-12 shadow-2xl shadow-purple-200/20 relative overflow-hidden shrink-0 w-full md:w-auto min-w-[320px]">
                             <div className="absolute top-0 right-0 p-8 opacity-[0.03]">
-                                <Sparkles size={120} className="text-brand-pink" />
+                                <Sparkles size={120} className="text-purple-500" />
                             </div>
                             <div className="relative z-10 text-center md:text-left">
-                                <p className="text-[11px] font-black text-brand-pink uppercase tracking-[0.3em] mb-2">Available Balance</p>
+                                <p className="text-[11px] font-bold text-purple-400 mb-2">Available Balance</p>
                                 <div className="flex items-baseline justify-center md:justify-start gap-3 mb-6">
                                     <span className="text-[64px] font-bold tracking-tighter text-gray-900 leading-none">{loyaltyData.stats.points}</span>
                                     <span className="text-[18px] font-bold text-gray-400">Pts</span>
                                 </div>
                                 
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between text-[12px] font-bold uppercase tracking-widest text-gray-400">
+                                    <div className="flex items-center justify-between text-[12px] font-bold text-gray-400">
                                         <span>{loyaltyData.stats.tier} Tier</span>
                                         <span>Next Level: {nextTierPoints}</span>
                                     </div>
@@ -155,7 +157,7 @@ const LoyaltyContent = () => {
                                         <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${progress}%` }}
-                                            className="h-full bg-brand-pink shadow-[0_0_12px_rgba(236,72,153,0.4)]"
+                                            className="h-full bg-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)]"
                                         />
                                     </div>
                                 </div>
@@ -191,16 +193,16 @@ const LoyaltyContent = () => {
 
                 {/* Benefits List */}
                 <section className="mb-24 bg-gray-900 rounded-[3rem] p-10 md:p-16 text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-brand-pink/20 to-transparent opacity-50" />
+                    <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-purple-500/20 to-transparent opacity-50" />
                     <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-16">
                         <div>
-                            <h2 className="text-[32px] font-bold tracking-tight mb-6">Redeem your light.</h2>
+                            <h2 className="text-[32px] font-bold mb-6">Redeem your light.</h2>
                             <p className="text-gray-400 text-[17px] font-medium leading-relaxed mb-10">
                                 Use your accumulated Ritual Points to illuminate your next purchase. Simply apply your balance at checkout for instant biological rewards.
                             </p>
                             <div className="flex items-center gap-3 px-6 py-3 bg-white/10 rounded-full w-fit backdrop-blur-md border border-white/10">
-                                <Info size={16} className="text-brand-pink" />
-                                <span className="text-[13px] font-bold tracking-tight">100 Points = 5 AED Discount</span>
+                                <Info size={16} className="text-purple-400" />
+                                <span className="text-[13px] font-bold">100 Points = 5 AED Discount</span>
                             </div>
                         </div>
                         <div className="space-y-8">
@@ -210,7 +212,7 @@ const LoyaltyContent = () => {
                                 { title: 'Priority Support', desc: 'Direct connection to our senior beauty consultants.' },
                             ].map((benefit, i) => (
                                 <div key={i} className="flex gap-6">
-                                    <div className="w-6 h-6 rounded-full bg-brand-pink flex-shrink-0 flex items-center justify-center">
+                                    <div className="w-6 h-6 rounded-full bg-purple-500 flex-shrink-0 flex items-center justify-center">
                                         <Check size={14} className="text-white" strokeWidth={3} />
                                     </div>
                                     <div>
@@ -248,10 +250,11 @@ const LoyaltyContent = () => {
                 {/* Guest CTA */}
                 {!isAuthenticated && (
                     <section className="text-center py-20">
-                        <h2 className="text-[32px] font-bold tracking-tight mb-8">Begin your journey.</h2>
+                        <h2 className="text-[32px] font-bold mb-8">Begin your journey.</h2>
                         <button 
                             onClick={() => router.push('/auth?mode=signup')}
-                            className="px-12 py-5 bg-gray-900 text-white rounded-2xl text-[12px] font-black uppercase tracking-[0.4em] shadow-2xl hover:bg-brand-pink transition-all active:scale-95 duration-300"
+                            className="px-12 py-5 text-white rounded-2xl text-[12px] font-bold shadow-2xl transition-all active:scale-95 duration-300"
+                            style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
                         >
                             Synchronize Now
                         </button>
@@ -261,7 +264,7 @@ const LoyaltyContent = () => {
                 {/* Footnote */}
                 <div className="mt-32 flex flex-col items-center gap-4 text-center opacity-30">
                     <div className="w-8 h-[1px] bg-gray-900" />
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-900">Naya Lumière Protocol</p>
+                    <p className="text-[10px] font-bold text-gray-900">Naya Lumière Protocol</p>
                 </div>
             </div>
         </div>
@@ -281,7 +284,11 @@ const Check = ({ size = 20, className = "" }) => (
 
 export default function LoyaltyPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center text-brand-pink font-black uppercase tracking-[0.5em]">Synchronizing Rituals...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+                <LoaderSpinner size="lg" />
+            </div>
+        }>
             <LoyaltyContent />
         </Suspense>
     );

@@ -79,10 +79,10 @@ export default function StoreCategoryNav({ onFilterClick }) {
           >
             <Link
               href="/all-products"
-              className={`flex-shrink-0 flex items-center px-5 py-2 rounded-full text-[11px] font-bold tracking-tight transition-all duration-300 ${
+              className={`flex-shrink-0 flex items-center px-8 py-3.5 rounded-[2rem] text-[13px] font-medium tracking-wide transition-all duration-500 ${
                 isAllActive
-                  ? 'text-white shadow-sm'
-                  : 'bg-white/70 border border-[var(--cl-glass-border)] text-cl-mid hover:border-[var(--cl-purple)] hover:text-[var(--cl-purple)]'
+                  ? 'text-white shadow-lg shadow-purple-200/50 scale-[1.02]'
+                  : 'bg-white/40 backdrop-blur-xl border border-white/60 text-gray-600 hover:bg-white/80 hover:-translate-y-1 hover:shadow-md hover:text-[var(--cl-purple)]'
               }`}
               style={isAllActive ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
             >
@@ -101,10 +101,10 @@ export default function StoreCategoryNav({ onFilterClick }) {
               >
                 <Link
                   href={cat.href}
-                  className={`flex-shrink-0 flex items-center gap-2.5 px-4 py-2 rounded-full text-[11px] font-semibold tracking-tight transition-all duration-300 ${
+                  className={`flex-shrink-0 flex items-center gap-3 px-6 py-3.5 rounded-[2rem] text-[13px] font-medium tracking-wide transition-all duration-500 ${
                     isActive
-                      ? 'text-white shadow-sm'
-                      : 'bg-white/70 border border-[var(--cl-glass-border)] text-cl-mid hover:border-[var(--cl-purple)] hover:text-[var(--cl-purple)]'
+                      ? 'text-white shadow-lg shadow-purple-200/50 scale-[1.02]'
+                      : 'bg-white/40 backdrop-blur-xl border border-white/60 text-gray-600 hover:bg-white/80 hover:-translate-y-1 hover:shadow-md hover:text-[var(--cl-purple)]'
                   }`}
                   style={isActive ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
                 >

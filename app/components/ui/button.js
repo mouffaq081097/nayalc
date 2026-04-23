@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-[var(--cl-gradient)] text-white hover:opacity-95 hover:shadow-[0_8px_20px_-4px_rgba(167,139,250,0.3)] rounded-full border-none",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
@@ -20,9 +20,9 @@ const buttonVariants = cva(
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         pillPrimary:
-          "rounded-full border border-[rgba(167,139,250,0.40)] bg-[rgba(147,51,234,0.07)] text-[var(--cl-text-mid)] shadow-sm hover:bg-[rgba(147,51,234,0.13)] hover:border-[var(--cl-purple)] hover:text-[var(--cl-purple)] hover:shadow-[0_4px_20px_rgba(147,51,234,0.18)] active:scale-[0.97] transition-all duration-300 focus-visible:ring-[var(--cl-purple)]/30",
+          "rounded-full border-none bg-[var(--cl-gradient)] text-white shadow-sm hover:opacity-95 hover:shadow-[0_8px_20px_-4px_rgba(167,139,250,0.4)] active:scale-[0.97] transition-all duration-300",
         pillSecondary:
-          "rounded-full border border-black/10 bg-white/95 text-[#1d1d1f] shadow-sm hover:bg-gray-50 active:scale-[0.98] focus-visible:ring-black/15",
+          "rounded-full border-none bg-[var(--cl-gradient)] text-white shadow-sm hover:opacity-95 hover:shadow-[0_8px_20px_-4px_rgba(167,139,250,0.4)] active:scale-[0.98]",
         pillGlass:
           "rounded-full border border-black/10 bg-white/70 text-[#1d1d1f] shadow-sm backdrop-blur-md hover:bg-white/90 active:scale-[0.98] focus-visible:ring-black/15 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20",
         navTab:

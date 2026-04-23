@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Mail, Lock, Eye, ArrowLeft, Sparkles, ShieldCheck, ArrowRight, Chrome, Facebook } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 function ForgotPassword({ onBack }) {
   const [email, setEmail] = useState('');
@@ -50,10 +51,10 @@ function ForgotPassword({ onBack }) {
         >
           <ArrowLeft size={11} /> Back To Sign In
         </button>
-        <h3 className="font-serif italic text-[26px] leading-snug text-[#3b0764]">
-          Restore <strong className="not-italic font-black cl-gradient-text">Access</strong>
+        <h3 className="font-serif italic text-[26px] leading-snug text-[#6b21a8]">
+          Restore <strong className="not-italic font-black text-transparent bg-clip-text bg-gradient-to-r from-[rgb(168,85,247)] to-[rgb(126,105,230)]">Access</strong>
         </h3>
-        <p className="text-[12px] text-[rgba(59,7,100,0.45)] font-medium leading-relaxed">
+        <p className="text-[12px] text-[rgba(107,33,168,0.55)] font-medium leading-relaxed">
           Enter your email and we'll send you a secure link to reset your password.
         </p>
       </div>
@@ -69,18 +70,18 @@ function ForgotPassword({ onBack }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#3b0764]"
+              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#6b21a8]"
             />
           </div>
         </div>
 
         {message && (
-          <p className="text-green-700 text-[11px] font-bold text-center bg-[rgba(240,253,244,0.8)] py-3 rounded-xl border border-[rgba(187,247,208,0.5)]">
+          <p className="text-teal-600 text-[11px] font-bold text-center bg-[rgba(240,253,250,0.8)] py-3 rounded-xl border border-[rgba(204,251,241,0.5)]">
             {message}
           </p>
         )}
         {error && (
-          <p className="text-red-600 text-[11px] font-bold text-center bg-[rgba(254,242,242,0.8)] py-3 rounded-xl border border-[rgba(254,202,202,0.5)]">
+          <p className="text-amber-600 text-[11px] font-bold text-center bg-[rgba(255,251,235,0.8)] py-3 rounded-xl border border-[rgba(253,230,138,0.5)]">
             {error}
           </p>
         )}
@@ -135,11 +136,11 @@ function Login({ onForgotClick }) {
           <span className="w-5 h-px bg-[rgba(216,180,254,0.6)]" />
           <span className="text-[9px] font-bold text-[rgba(147,51,234,0.6)]">Secure Access</span>
         </div>
-        <h3 className="font-serif italic text-[26px] leading-snug text-[#3b0764]">
+        <h3 className="font-serif italic text-[26px] leading-snug text-[#6b21a8]">
           Welcome Back <br />
-          <strong className="not-italic font-black cl-gradient-text">To Your Sanctuary</strong>
+          <strong className="not-italic font-black text-transparent bg-clip-text bg-gradient-to-r from-[rgb(168,85,247)] to-[rgb(126,105,230)]">To Your Sanctuary</strong>
         </h3>
-        <p className="text-[12px] text-[rgba(59,7,100,0.45)] font-medium leading-relaxed">
+        <p className="text-[12px] text-[rgba(107,33,168,0.55)] font-medium leading-relaxed">
           Continue your clinical botanical journey with Naya Lumière.
         </p>
       </div>
@@ -156,7 +157,7 @@ function Login({ onForgotClick }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#3b0764]"
+              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#6b21a8]"
             />
           </div>
         </div>
@@ -181,7 +182,7 @@ function Login({ onForgotClick }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-12 pl-12 pr-12 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#3b0764]"
+              className="w-full h-12 pl-12 pr-12 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all duration-300 outline-none text-sm font-medium text-[#6b21a8]"
             />
             <button
               type="button"
@@ -198,7 +199,7 @@ function Login({ onForgotClick }) {
             type="checkbox"
             className="w-3.5 h-3.5 rounded border-[rgba(196,167,254,0.5)] bg-[rgba(248,240,255,0.5)] text-[#9333ea] focus:ring-[rgba(196,167,254,0.2)] cursor-pointer"
           />
-          <span className="text-[10px] font-medium text-[rgba(59,7,100,0.45)] group-hover:text-[#6b21a8] transition-colors">
+          <span className="text-[10px] font-medium text-[rgba(107,33,168,0.55)] group-hover:text-[#6b21a8] transition-colors">
             Remember Me
           </span>
         </div>
@@ -207,7 +208,7 @@ function Login({ onForgotClick }) {
           <motion.p
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-red-600 text-[11px] font-bold text-center bg-[rgba(254,242,242,0.8)] py-3 rounded-xl border border-[rgba(254,202,202,0.5)]"
+            className="text-amber-600 text-[11px] font-bold text-center bg-[rgba(255,251,235,0.8)] py-3 rounded-xl border border-[rgba(253,230,138,0.5)]"
           >
             {error}
           </motion.p>
@@ -283,11 +284,11 @@ function Register() {
           <span className="w-5 h-px bg-[rgba(216,180,254,0.6)]" />
           <span className="text-[9px] font-bold text-[rgba(147,51,234,0.6)]">New Account</span>
         </div>
-        <h3 className="font-serif italic text-[26px] leading-snug text-[#3b0764]">
+        <h3 className="font-serif italic text-[26px] leading-snug text-[#6b21a8]">
           Create Your <br />
-          <strong className="not-italic font-black cl-gradient-text">Personal Account</strong>
+          <strong className="not-italic font-black text-transparent bg-clip-text bg-gradient-to-r from-[rgb(168,85,247)] to-[rgb(126,105,230)]">Personal Account</strong>
         </h3>
-        <p className="text-[12px] text-[rgba(59,7,100,0.45)] font-medium leading-relaxed">
+        <p className="text-[12px] text-[rgba(107,33,168,0.55)] font-medium leading-relaxed">
           Join the world of clinical botanical precision.
         </p>
       </div>
@@ -303,7 +304,7 @@ function Register() {
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              className="w-full h-12 px-4 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#3b0764]"
+              className="w-full h-12 px-4 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#6b21a8]"
             />
           </div>
           <div className="space-y-1.5">
@@ -315,7 +316,7 @@ function Register() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
-              className="w-full h-12 px-4 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#3b0764]"
+              className="w-full h-12 px-4 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#6b21a8]"
             />
           </div>
         </div>
@@ -331,7 +332,7 @@ function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#3b0764]"
+              className="w-full h-12 pl-12 pr-6 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#6b21a8]"
             />
           </div>
         </div>
@@ -348,7 +349,7 @@ function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-12 pl-12 pr-12 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#3b0764]"
+              className="w-full h-12 pl-12 pr-12 rounded-[14px] border-[1.5px] border-[rgba(216,180,254,0.35)] bg-[rgba(248,240,255,0.5)] focus:border-[rgba(147,51,234,0.5)] focus:bg-white focus:ring-4 focus:ring-[rgba(196,167,254,0.15)] transition-all outline-none text-sm font-medium text-[#6b21a8]"
             />
             <button
               type="button"
@@ -361,7 +362,7 @@ function Register() {
         </div>
 
         {error && (
-          <p className="text-red-600 text-[11px] font-bold text-center bg-[rgba(254,242,242,0.8)] py-3 rounded-xl border border-[rgba(254,202,202,0.5)]">
+          <p className="text-amber-600 text-[11px] font-bold text-center bg-[rgba(255,251,235,0.8)] py-3 rounded-xl border border-[rgba(253,230,138,0.5)]">
             {error}
           </p>
         )}
@@ -391,7 +392,7 @@ export default function AuthPage() {
       {/* Page background auras */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] -right-[10%] w-[50%] h-[50%] bg-[rgba(216,180,254,0.2)] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] -left-[10%] w-[45%] h-[45%] bg-[rgba(249,168,212,0.15)] rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] -left-[10%] w-[45%] h-[45%] bg-[rgba(167,139,250,0.15)] rounded-full blur-[100px]" />
       </div>
 
       {/* Nav */}
@@ -404,75 +405,136 @@ export default function AuthPage() {
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
             Back To Store
           </button>
-          <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/75 shadow-sm border border-[rgba(216,180,254,0.3)] backdrop-blur-xl">
-            <div className="w-1.5 h-1.5 rounded-full bg-[rgb(196,167,254)] shadow-[0_0_8px_rgba(147,51,234,0.4)]" />
-            <span className="text-[9px] font-black text-[#3b0764]">Naya Lumière Cosmetics</span>
-          </div>
         </div>
       </div>
 
       {/* Main */}
-      <main className="flex-grow container mx-auto px-6 py-6 md:py-8 relative z-10 flex items-center justify-center">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-stretch w-full">
+      <main className="flex-grow container mx-auto px-6 py-6 md:py-12 relative z-10 flex flex-col items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-5xl mx-auto"
+        >
+          <div className="bg-white/[0.85] backdrop-blur-3xl rounded-[2.5rem] shadow-[0_40px_100px_-30px_rgba(147,51,234,0.15)] border border-[rgba(216,180,254,0.35)] relative overflow-hidden flex flex-col lg:flex-row">
+            
+            {/* Left Panel - Atelier Privé Branding */}
+            <div className="hidden lg:flex w-[45%] p-12 flex-col justify-between relative border-r border-[rgba(216,180,254,0.2)] bg-gradient-to-b from-[#fdf8ff] to-[#f4ebff] overflow-hidden">
+              {/* Inner Auras */}
+              <div className="absolute top-[-10%] left-[-20%] w-72 h-72 bg-[rgba(216,180,254,0.4)] rounded-full blur-[70px] pointer-events-none" />
+              <div className="absolute bottom-[-10%] right-[-20%] w-72 h-72 bg-[rgba(167,139,250,0.3)] rounded-full blur-[70px] pointer-events-none" />
+              
+              {/* Top Branding */}
+              <div className="relative z-10">
+                <div className="mb-10 flex items-center gap-[14px]">
+                  <Image 
+                    src="/Adobe Express - file (5).png" 
+                    alt="Naya Lumière Logo" 
+                    width={140} 
+                    height={42} 
+                    className="h-9 w-auto object-contain"
+                  />
+                  <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
+                    <div
+                      style={{ 
+                        fontSize: '18px', 
+                        fontWeight: '600', 
+                        letterSpacing: '0.05em', 
+                        color: '#3b0764', 
+                        textTransform: 'uppercase', 
+                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                      }}
+                    >
+                      NAYA
+                    </div>
+                    <div
+                      style={{ 
+                        fontSize: '12px', 
+                        fontStyle: 'italic', 
+                        fontFamily: "Georgia, 'Times New Roman', serif", 
+                        color: '#6b21a8',
+                        marginTop: '1px'
+                      }}
+                    >
+                      Lumière Cosmetics
+                    </div>
+                  </div>
+                </div>
 
-          {/* Left — atmospheric lavender panel */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1, delay: 0.1 }}
-            className="hidden lg:flex lg:col-span-5 flex-col justify-between relative rounded-[2.5rem] overflow-hidden p-10 border border-[rgba(216,180,254,0.25)]"
-            style={{ minHeight: '580px', background: 'linear-gradient(145deg,#f3e8ff 0%,#fdf4ff 40%,#fce7f3 100%)' }}
-          >
-            {/* Aura orbs */}
-            <div className="absolute top-[-60px] left-[-40px] w-72 h-72 bg-[rgba(216,180,254,0.45)] rounded-full blur-[80px] pointer-events-none" />
-            <div className="absolute bottom-[-60px] right-[-40px] w-60 h-60 bg-[rgba(249,168,212,0.3)] rounded-full blur-[70px] pointer-events-none" />
-            <div className="absolute top-[40%] left-[30%] w-40 h-40 bg-[rgba(196,167,254,0.2)] rounded-full blur-[50px] pointer-events-none" />
+                <h2 className="font-serif italic text-4xl text-[#6b21a8] leading-[1.15] mb-6">
+                  Unlock the <br />
+                  <strong className="not-italic font-black text-transparent bg-clip-text bg-gradient-to-r from-[rgb(168,85,247)] to-[rgb(126,105,230)]">
+                    Radiance Vault
+                  </strong>
+                </h2>
+                <p className="text-[12px] text-[#6b21a8]/60 font-medium leading-relaxed max-w-[85%]">
+                  Step into a world of clinical precision. Members receive exclusive access to bespoke formulations, AI skin analysis, and private collections.
+                </p>
+              </div>
 
-            {/* Brand indicator */}
-            <div className="flex items-center gap-2 relative z-10">
-              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-[rgb(216,180,254)] to-[rgb(126,105,230)] shadow-[0_0_10px_rgba(147,51,234,0.4)]" />
-              <span className="text-[10px] font-black text-[#3b0764]">Naya Lumière Cosmetics</span>
-            </div>
-
-            {/* Quote */}
-            <div className="text-center relative z-10 py-8">
-              <Sparkles className="mx-auto text-[rgba(196,167,254,0.8)] mb-4" size={20} strokeWidth={1.5} />
-              <p className="font-serif italic text-[22px] leading-relaxed text-[#3b0764] mb-5">
-                "A commitment<br />to the purity<br />of light."
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-6 h-px bg-[rgba(147,51,234,0.25)]" />
-                <span className="text-[9px] font-semibold text-[rgba(107,33,168,0.5)]">Geneva Laboratory</span>
-                <div className="w-6 h-px bg-[rgba(147,51,234,0.25)]" />
+              {/* Bottom Features */}
+              <div className="relative z-10 space-y-5">
+                <div className="h-px w-12 bg-gradient-to-r from-[rgba(168,85,247,0.3)] to-transparent mb-6" />
+                
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/60 shadow-sm border border-[rgba(216,180,254,0.5)] flex items-center justify-center backdrop-blur-md">
+                    <Sparkles size={14} className="text-[#9333ea]" />
+                  </div>
+                  <span className="text-[11px] font-bold text-[#6b21a8]">Bespoke AI Consultations</span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white/60 shadow-sm border border-[rgba(216,180,254,0.5)] flex items-center justify-center backdrop-blur-md">
+                    <ShieldCheck size={14} className="text-[#9333ea]" />
+                  </div>
+                  <span className="text-[11px] font-bold text-[#6b21a8]">Clinical Grade Purity</span>
+                </div>
               </div>
             </div>
 
-            {/* Member benefits */}
-            <div className="bg-white/60 backdrop-blur-2xl border border-[rgba(216,180,254,0.4)] rounded-2xl p-5 relative z-10">
-              <p className="text-[10px] font-black text-[#3b0764] mb-3">Member Privileges</p>
-              <ul className="space-y-2">
-                {[
-                  'Bespoke Ai Skincare Analysis',
-                  'Avant-Première Launch Access',
-                  'Boutique Exclusive Curation',
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[rgb(216,180,254)] to-[rgb(126,105,230)] flex-shrink-0" />
-                    <span className="text-[10px] font-medium text-[#6b21a8]">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </motion.div>
-
-          {/* Right — form */}
-          <div className="lg:col-span-7 w-full max-w-lg mx-auto lg:mx-0">
-            <div className="bg-white/[0.82] backdrop-blur-3xl rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-12 shadow-[0_30px_80px_-30px_rgba(147,51,234,0.12)] border border-[rgba(216,180,254,0.25)] relative overflow-hidden">
+            {/* Right Panel - Form */}
+            <div className="w-full lg:w-[55%] p-8 md:p-12 relative flex flex-col justify-center">
+              
+              {/* Mobile Branding (only visible on mobile) */}
+              <div className="flex items-center justify-center mb-10 gap-[14px] lg:hidden">
+                <Image 
+                  src="/Adobe Express - file (5).png" 
+                  alt="Naya Lumière Logo" 
+                  width={140} 
+                  height={42} 
+                  className="h-8 w-auto object-contain"
+                />
+                <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
+                  <div
+                    style={{ 
+                      fontSize: '18px', 
+                      fontWeight: '600', 
+                      letterSpacing: '0.05em', 
+                      color: '#3b0764', 
+                      textTransform: 'uppercase', 
+                      fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                    }}
+                  >
+                    NAYA
+                  </div>
+                  <div
+                    style={{ 
+                      fontSize: '12px', 
+                      fontStyle: 'italic', 
+                      fontFamily: "Georgia, 'Times New Roman', serif", 
+                      color: '#6b21a8',
+                      marginTop: '1px'
+                    }}
+                  >
+                    Lumière Cosmetics
+                  </div>
+                </div>
+              </div>
 
               <Tabs
                 value={authMode === 'forgot-password' ? 'login' : authMode}
                 onValueChange={setAuthMode}
-                className="w-full"
+                className="w-full max-w-[400px] mx-auto"
               >
                 <TabsList className="flex bg-[rgba(248,240,255,0.7)] border border-[rgba(216,180,254,0.25)] rounded-full p-1 mb-8">
                   <TabsTrigger
@@ -500,24 +562,19 @@ export default function AuthPage() {
                   <Register />
                 </TabsContent>
               </Tabs>
-            </div>
 
-            {/* Footer */}
-            <div className="mt-8 text-center space-y-3">
-              <div className="flex items-center justify-center gap-4 opacity-40">
-                <div className="w-10 h-px bg-[rgba(147,51,234,0.4)]" />
-                <p className="text-[9px] font-medium text-[rgba(107,33,168,0.5)]">Est. 2026 — Naya Atelier Privé</p>
-                <div className="w-10 h-px bg-[rgba(147,51,234,0.4)]" />
+              {/* Mobile Footer */}
+              <div className="mt-10 text-center space-y-3 lg:hidden">
+                <div className="flex items-center justify-center gap-4 opacity-40">
+                  <div className="w-10 h-px bg-[rgba(147,51,234,0.4)]" />
+                  <p className="text-[9px] font-medium text-[rgba(107,33,168,0.5)]">Est. 2026 — Naya Lumière Cosmetics</p>
+                  <div className="w-10 h-px bg-[rgba(147,51,234,0.4)]" />
+                </div>
               </div>
-              <div className="flex items-center justify-center gap-5 text-[rgba(196,167,254,0.5)]">
-                <ShieldCheck size={13} />
-                <Lock size={13} />
-                <Sparkles size={13} />
-              </div>
+
             </div>
           </div>
-
-        </div>
+        </motion.div>
       </main>
     </div>
   );

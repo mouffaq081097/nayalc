@@ -166,12 +166,8 @@ const AccountPageContent = () => {
   return (
     <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
 
-      {/* Aura background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-15%] right-[-10%] w-[55%] h-[55%] rounded-full blur-[140px]" style={{ background: 'rgba(196,167,254,0.18)' }} />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px]" style={{ background: 'rgba(249,168,212,0.12)' }} />
-        <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] rounded-full blur-[100px]" style={{ background: 'rgba(216,180,254,0.10)' }} />
-      </div>
+      {/* Aura background (Now handled globally in LayoutContent.js) */}
+
 
       <div className="max-w-[1400px] mx-auto px-6 pt-10 pb-28 relative z-10">
         <div className="grid lg:grid-cols-12 gap-8">

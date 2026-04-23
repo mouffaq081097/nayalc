@@ -80,14 +80,16 @@ const Brands = () => {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/brand/2" passHref>
-                  <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive text-primary-foreground hover:bg-primary/90 h-10 rounded-md px-6 has-[&>svg]:px-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity">
+                <Link href="/brand/2" passHref className="flex-1 sm:flex-none">
+                  <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-bold tracking-widest">
                     Explore Gernétic
                   </button>
                 </Link>
-                <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-10 rounded-md px-6 has-[&>svg]:px-4 border-gray-300 text-gray-700 hover:bg-gray-50">
-                  View All Products
-                </button>
+                <Link href="/all-products" passHref className="flex-1 sm:flex-none">
+                  <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-bold tracking-widest">
+                    View All Products
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -144,14 +146,16 @@ const Brands = () => {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Link href="/brand/1" passHref>
-                    <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive text-primary-foreground hover:bg-primary/90 h-10 rounded-md px-6 has-[&>svg]:px-4 bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity">
+                  <Link href="/brand/1" passHref className="flex-1 sm:flex-none">
+                    <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-bold tracking-widest">
                       Explore Zorah Biocosmetics
                     </button>
                   </Link>
-                  <button data-slot="button" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-10 rounded-md px-6 has-[&>svg]:px-4 border-gray-300 text-gray-700 hover:bg-gray-50">
-                    View All Products
-                  </button>
+                  <Link href="/all-products" passHref className="flex-1 sm:flex-none">
+                    <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-bold tracking-widest">
+                      View All Products
+                    </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -166,7 +170,7 @@ const Brands = () => {
                 <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">Full Collection</span>
               </h3>
               <p className="text-gray-600 mb-8 max-w-2xl mx-auto">Experience the complete range of premium products from our carefully selected partners. Each brand represents decades of expertise and innovation in luxury beauty.</p>
-              <Button className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] hover:opacity-90 transition-opacity px-8">Shop All Brands</Button>
+              <Button onClick={() => router.push('/all-products')} className="cl-gradient-btn h-14 px-12 text-[12px] font-black tracking-widest">Shop All Brands</Button>
             </div>
           </div>
         </Container>

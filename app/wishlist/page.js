@@ -14,12 +14,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '../context/CartContext';
 
+import { LoaderSpinner } from '../components/GlobalLoader';
+
 const SectionTitle = ({ title, subtitle }) => (
     <div className="mb-12">
-        <h2 className="text-[32px] md:text-[42px] font-semibold text-[#1d1d1f] tracking-tight leading-tight">
+        <h2 className="text-[32px] md:text-[42px] font-semibold text-[#1d1d1f] leading-tight">
             {title}
         </h2>
-        {subtitle && <p className="text-[13px] font-bold text-brand-pink tracking-[0.3em] mt-3">{subtitle}</p>}
+        {subtitle && <p className="text-[13px] font-bold text-purple-400 mt-3">{subtitle}</p>}
     </div>
 );
 
@@ -80,7 +82,7 @@ const WishlistCard = ({ item, onRemove }) => {
                 
                 {item.stockQuantity <= 0 && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
-                        <span className="text-[10px] font-black tracking-[0.3em] text-red-500 bg-white px-4 py-2 rounded-full shadow-sm">
+                        <span className="text-[10px] font-bold text-red-500 bg-white px-4 py-2 rounded-full shadow-sm">
                             Sold Out
                         </span>
                     </div>
@@ -90,12 +92,12 @@ const WishlistCard = ({ item, onRemove }) => {
             {/* Info Section */}
             <div className="p-6 flex flex-col flex-grow">
                 <div className="space-y-1 mb-4">
-                    <p className="text-[10px] font-black text-brand-pink tracking-widest">
+                    <p className="text-[10px] font-bold text-purple-400">
                         {item.brandName || 'Naya Lumière'}
                     </p>
                     <h3 
                         onClick={() => router.push(`/product/${item.productId}`)}
-                        className="text-[17px] font-bold text-gray-900 tracking-tight leading-tight cursor-pointer hover:text-brand-pink transition-colors line-clamp-1"
+                        className="text-[17px] font-bold text-gray-900 leading-tight cursor-pointer hover:text-purple-400 transition-colors line-clamp-1"
                     >
                         {item.name}
                     </h3>
@@ -103,10 +105,10 @@ const WishlistCard = ({ item, onRemove }) => {
 
                 <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
                     <div className="flex items-baseline gap-1">
-                        <span className="text-[18px] font-black text-gray-900 tracking-tight">
+                        <span className="text-[18px] font-black text-gray-900">
                             {parseFloat(item.price).toFixed(0)}
                         </span>
-                        <span className="text-[9px] font-black text-gray-400 uppercase">AED</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase">AED</span>
                     </div>
                     
                     <button 
@@ -116,7 +118,7 @@ const WishlistCard = ({ item, onRemove }) => {
                             added 
                             ? 'bg-green-500 text-white' 
                             : item.stockQuantity > 0 
-                                ? 'bg-gray-900 text-white hover:bg-brand-pink' 
+                                ? 'bg-gray-900 text-white hover:bg-purple-400' 
                                 : 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
                         }`}
                     >
@@ -172,10 +174,10 @@ const WishlistContent = () => {
     };
 
     if (isLoading) return (
-        <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center">
+        <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
-                <div className="w-12 h-12 border-4 border-brand-pink/20 border-t-brand-pink rounded-full animate-spin" />
-                <p className="text-[10px] font-black tracking-[0.4em] text-gray-400 animate-pulse">Curating Artistry</p>
+                <LoaderSpinner size="lg" />
+                <p className="text-[14px] font-serif italic text-cl-deep animate-pulse">Curating your collection...</p>
             </div>
         </div>
     );
@@ -196,14 +198,14 @@ const WishlistContent = () => {
                 <header className="mb-16">
                     <Link 
                         href="/account"
-                        className="group flex items-center gap-1.5 text-[14px] font-medium text-brand-pink hover:underline mb-8 w-fit"
+                        className="group flex items-center gap-1.5 text-[14px] font-medium text-purple-500 hover:underline mb-8 w-fit"
                     >
                         <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
                         Account
                     </Link>
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
-                            <h1 className="text-[42px] md:text-[56px] font-bold tracking-tight text-gray-900 leading-none">
+                            <h1 className="text-[42px] md:text-[56px] font-bold text-gray-900 leading-none">
                                 Saved Art.
                             </h1>
                             <p className="text-[17px] md:text-[21px] text-gray-500 font-medium mt-4 max-w-xl">
@@ -212,7 +214,7 @@ const WishlistContent = () => {
                         </div>
                         {wishlistItems.length > 0 && (
                             <div className="flex items-center gap-3 px-6 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                                <Heart size={16} className="text-brand-pink fill-brand-pink" />
+                                <Heart size={16} className="text-purple-400 fill-purple-400" />
                                 <span className="text-[15px] font-bold text-gray-900">{wishlistItems.length} Curations</span>
                             </div>
                         )}
@@ -246,7 +248,8 @@ const WishlistContent = () => {
                             <p className="text-gray-400 text-[15px] font-medium mb-12 max-w-sm mx-auto">Discover and curate the products that resonate with your frequency.</p>
                             <button 
                                 onClick={() => router.push('/all-products')}
-                                className="px-12 py-5 bg-gray-900 text-white rounded-2xl text-[12px] font-black tracking-[0.4em] shadow-2xl hover:bg-brand-pink transition-all active:scale-95 duration-300"
+                                className="px-12 py-5 text-white rounded-2xl text-[12px] font-bold shadow-2xl transition-all active:scale-95 duration-300"
+                                style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
                             >
                                 Explore Collection
                             </button>
@@ -257,23 +260,23 @@ const WishlistContent = () => {
                 {/* CTA / Recommendation Section */}
                 {wishlistItems.length > 0 && (
                     <div className="mt-24 bg-gray-900 rounded-[3rem] p-10 md:p-16 text-white relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-brand-pink/20 to-transparent opacity-50" />
+                        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-purple-500/20 to-transparent opacity-50" />
                         <div className="relative z-10 text-center max-w-2xl mx-auto space-y-8">
-                            <Sparkles size={40} className="text-brand-pink mx-auto" />
-                            <h2 className="text-[32px] md:text-[42px] font-bold tracking-tight">Complete your protocol.</h2>
+                            <Sparkles size={40} className="text-purple-400 mx-auto" />
+                            <h2 className="text-[32px] md:text-[42px] font-bold">Complete your protocol.</h2>
                             <p className="text-gray-400 text-[17px] font-medium leading-relaxed">
                                 Our beauty consultants recommend combining your saved selections with our Signature Protocol for enhanced biological results.
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                                 <button 
                                     onClick={() => router.push('/all-products')}
-                                    className="w-full sm:w-auto px-10 py-5 bg-white text-gray-900 rounded-2xl text-[11px] font-black tracking-[0.4em] hover:bg-brand-pink hover:text-white transition-all shadow-xl"
+                                    className="w-full sm:w-auto px-10 py-5 bg-white text-gray-900 rounded-2xl text-[11px] font-bold hover:bg-purple-400 hover:text-white transition-all shadow-xl"
                                 >
                                     Shop All
                                 </button>
                                 <button 
                                     onClick={() => router.push('/skin-quiz')}
-                                    className="w-full sm:w-auto px-10 py-5 bg-white/10 text-white rounded-2xl text-[11px] font-black tracking-[0.4em] border border-white/10 hover:bg-white/20 transition-all backdrop-blur-md"
+                                    className="w-full sm:w-auto px-10 py-5 bg-white/10 text-white rounded-2xl text-[11px] font-bold border border-white/10 hover:bg-white/20 transition-all backdrop-blur-md"
                                 >
                                     Take Skin Quiz
                                 </button>
@@ -285,7 +288,7 @@ const WishlistContent = () => {
                 {/* Footnote */}
                 <div className="mt-32 flex flex-col items-center gap-4 text-center opacity-30">
                     <div className="w-8 h-[1px] bg-gray-900" />
-                    <p className="text-[10px] font-bold tracking-[0.2em] text-gray-900">Naya Lumière Gallery</p>
+                    <p className="text-[10px] font-bold text-gray-900">Naya Lumière Gallery</p>
                 </div>
             </div>
         </div>
@@ -294,7 +297,11 @@ const WishlistContent = () => {
 
 export default function WishlistPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center text-brand-pink font-black tracking-[0.5em]">Curating Artistry...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+                <LoaderSpinner size="lg" />
+            </div>
+        }>
             <WishlistContent />
         </Suspense>
     );

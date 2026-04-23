@@ -18,7 +18,19 @@ export async function GET(request) {
             ORDER BY RANDOM()
             LIMIT $1;
         `;
-        const { rows: suggestedProducts } = await db.query(productsSql, [limit]);
+        let suggestedProducts;
+        try {
+            const result = await db.query(productsSql, [limit]);
+            suggestedProducts = result.rows;
+        } catch (dbError) {
+            if (dbError.message.includes('is_active')) {
+                const fallbackSql = productsSql.replace('p.is_active = true AND ', '');
+                const result = await db.query(fallbackSql, [limit]);
+                suggestedProducts = result.rows;
+            } else {
+                throw dbError;
+            }
+        }
         
         return NextResponse.json(suggestedProducts);
 

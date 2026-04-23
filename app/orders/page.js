@@ -12,10 +12,12 @@ import { useAppContext } from '../context/AppContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+import { LoaderSpinner } from '../components/GlobalLoader';
+
 const StatusBadge = ({ status }) => {
     const configs = {
         'delivered': { color: 'text-green-600', icon: CheckCircle2, text: 'Delivered' },
-        'processing': { color: 'text-blue-600', icon: Clock, text: 'Processing' },
+        'processing': { color: 'text-purple-600', icon: Clock, text: 'Processing' },
         'shipped': { color: 'text-amber-600', icon: Truck, text: 'In Transit' },
         'cancelled': { color: 'text-red-500', icon: XCircle, text: 'Cancelled' },
         'pending': { color: 'text-gray-500', icon: AlertCircle, text: 'Pending' }
@@ -42,7 +44,7 @@ const OrderCard = ({ order, onClick }) => {
         <motion.div 
             whileHover={{ scale: 1.005 }}
             onClick={onClick}
-            className="w-full bg-white border border-gray-100 rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl hover:border-brand-pink/20"
+            className="w-full bg-white border border-gray-100 rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl hover:border-purple-200"
         >
             <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8">
                 {/* Product Preview */}
@@ -59,7 +61,7 @@ const OrderCard = ({ order, onClick }) => {
                         </div>
                     )}
                     {otherItemsCount > 0 && (
-                        <div className="absolute bottom-1.5 right-1.5 bg-white/90 backdrop-blur shadow-sm rounded-lg px-2 py-0.5 text-[10px] font-black text-brand-pink border border-brand-pink/10">
+                        <div className="absolute bottom-1.5 right-1.5 bg-white/90 backdrop-blur shadow-sm rounded-lg px-2 py-0.5 text-[10px] font-black text-purple-500 border border-purple-100">
                             +{otherItemsCount}
                         </div>
                     )}
@@ -70,30 +72,30 @@ const OrderCard = ({ order, onClick }) => {
                     <div className="space-y-1">
                         <div className="flex items-center justify-between">
                             <StatusBadge status={order.status || 'pending'} />
-                            <p className="text-[12px] text-gray-400 font-bold uppercase tracking-widest">
+                            <p className="text-[12px] text-gray-400 font-bold uppercase">
                                 {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </p>
                         </div>
-                        <h3 className="text-[20px] md:text-[22px] font-bold text-gray-900 tracking-tight pt-1">
+                        <h3 className="text-[20px] md:text-[22px] font-bold text-gray-900 pt-1">
                             {mainItem?.name || 'Your Naya Order'}
                             {otherItemsCount > 0 && <span className="text-gray-300 font-medium italic"> and more</span>}
                         </h3>
-                        <p className="text-[11px] text-gray-400 font-black uppercase tracking-[0.2em]">
+                        <p className="text-[11px] text-gray-400 font-black">
                             Vault ID: {order.id.toString().slice(-8).toUpperCase()}
                         </p>
                     </div>
 
                     <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-50">
                         <div className="flex items-center gap-4">
-                            <button className="text-[12px] font-black uppercase tracking-widest text-brand-pink hover:text-gray-900 transition-colors">
+                            <button className="text-[12px] font-bold uppercase text-purple-500 hover:text-gray-900 transition-colors">
                                 Details
                             </button>
                             <div className="w-[1px] h-3 bg-gray-100" />
-                            <button className="text-[12px] font-black uppercase tracking-widest text-gray-400 hover:text-brand-pink transition-colors">
+                            <button className="text-[12px] font-bold uppercase text-gray-400 hover:text-purple-500 transition-colors">
                                 Support
                             </button>
                         </div>
-                        <p className="text-[16px] font-black text-gray-900 tracking-tight">
+                        <p className="text-[16px] font-black text-gray-900">
                             {parseFloat(order.totalAmount).toFixed(2)} <span className="text-[10px] uppercase ml-0.5 text-gray-400">AED</span>
                         </p>
                     </div>
@@ -138,19 +140,19 @@ const OrdersPageContent = () => {
     });
 
     if (isLoading) return (
-        <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center">
+        <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
-                <div className="w-12 h-12 border-4 border-brand-pink/20 border-t-brand-pink rounded-full animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 animate-pulse">Archiving Acquisitions</p>
+                <LoaderSpinner size="lg" />
+                <p className="text-[14px] font-serif italic text-cl-deep animate-pulse">Archiving Acquisitions...</p>
             </div>
         </div>
     );
 
     return (
-        <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-32 relative overflow-hidden">
+        <div className="bg-[#fdf8ff] min-h-screen font-sans text-gray-900 pb-32 relative overflow-hidden">
             {/* Subtle Boutique Aura */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-brand-pink/[0.02] to-transparent"></div>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-purple-500/[0.02] to-transparent"></div>
             </div>
 
             {/* Tactile Paper Grain */}
@@ -162,12 +164,12 @@ const OrdersPageContent = () => {
                     <div className="flex flex-col gap-1 mb-8">
                         <Link 
                             href="/account"
-                            className="group flex items-center gap-1.5 text-[14px] font-medium text-brand-pink hover:underline mb-2 w-fit"
+                            className="group flex items-center gap-1.5 text-[14px] font-medium text-purple-500 hover:underline mb-2 w-fit"
                         >
                             <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
                             Account
                         </Link>
-                        <h1 className="text-[32px] md:text-[40px] font-semibold tracking-tight text-[#1d1d1f] leading-tight">
+                        <h1 className="text-[32px] md:text-[40px] font-semibold text-[#1d1d1f] leading-tight">
                             Your Orders.
                         </h1>
                     </div>
@@ -187,7 +189,7 @@ const OrdersPageContent = () => {
                                 {filter === f.toLowerCase() && (
                                     <motion.div 
                                         layoutId="activeTab"
-                                        className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-brand-pink"
+                                        className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-purple-500"
                                     />
                                 )}
                             </button>
@@ -220,7 +222,8 @@ const OrdersPageContent = () => {
                             <p className="text-gray-400 text-[14px] mb-8 font-medium">When you buy something, it will appear here.</p>
                             <button 
                                 onClick={() => router.push('/all-products')}
-                                className="px-12 py-4 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-brand-pink transition-all active:scale-95 shadow-lg"
+                                className="px-12 py-4 text-white rounded-xl text-[11px] font-bold transition-all active:scale-95 shadow-lg shadow-purple-100"
+                                style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
                             >
                                 Start Shopping
                             </button>
@@ -235,28 +238,28 @@ const OrdersPageContent = () => {
                         <p className="text-[14px] text-gray-500 leading-relaxed font-medium">
                             Orders are processed within 24 hours. Enjoy free shipping on orders over 500 AED.
                         </p>
-                        <Link href="#" className="text-[14px] font-medium text-brand-pink hover:underline block pt-1">Learn about shipping</Link>
+                        <Link href="#" className="text-[14px] font-medium text-purple-500 hover:underline block pt-1">Learn about shipping</Link>
                     </div>
                     <div className="space-y-3">
                         <h4 className="text-[17px] font-semibold">Returns & Refunds</h4>
                         <p className="text-[14px] text-gray-500 leading-relaxed font-medium">
                             If you're not completely satisfied, you can return your products within 14 days.
                         </p>
-                        <Link href="#" className="text-[14px] font-medium text-brand-pink hover:underline block pt-1">View return policy</Link>
+                        <Link href="#" className="text-[14px] font-medium text-purple-500 hover:underline block pt-1">View return policy</Link>
                     </div>
                     <div className="space-y-3">
                         <h4 className="text-[17px] font-semibold">Need Help?</h4>
                         <p className="text-[14px] text-gray-500 leading-relaxed font-medium">
                             Our beauty consultants are available to assist with your order 24/7.
                         </p>
-                        <Link href="#" className="text-[14px] font-medium text-brand-pink hover:underline block pt-1">Contact Support</Link>
+                        <Link href="#" className="text-[14px] font-medium text-purple-500 hover:underline block pt-1">Contact Support</Link>
                     </div>
                 </div>
 
                 {/* Footnote */}
                 <div className="mt-24 flex flex-col items-center gap-4 text-center opacity-30">
                     <div className="w-8 h-[1px] bg-gray-900" />
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-900">Naya Lumière</p>
+                    <p className="text-[10px] font-bold text-gray-900">Naya Lumière</p>
                 </div>
             </div>
         </div>
@@ -267,7 +270,11 @@ const OrdersPageContent = () => {
 
 export default function OrdersPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center text-brand-pink font-black uppercase tracking-[0.5em]">Synchronizing Chronicles...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+                <LoaderSpinner size="lg" />
+            </div>
+        }>
             <OrdersPageContent />
         </Suspense>
     );

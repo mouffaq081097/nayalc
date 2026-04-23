@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (result?.ok) {
-      toast.success('Logged in successfully!');
+      // Logged in successfully (toast removed per user request)
       router.push('/'); // Redirect after successful login
     }
   };

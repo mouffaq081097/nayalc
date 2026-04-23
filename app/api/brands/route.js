@@ -34,7 +34,21 @@ export async function GET(request) {
     const sql = isAdmin
       ? 'SELECT id, name, imageurl, is_active FROM brands ORDER BY name ASC'
       : 'SELECT id, name, imageurl FROM brands WHERE is_active = true ORDER BY name ASC';
-    const { rows } = await db.query(sql);
+    let rows;
+    try {
+      const result = await db.query(sql);
+      rows = result.rows;
+    } catch (dbError) {
+      if (dbError.message.includes('is_active')) {
+        const fallbackSql = isAdmin
+          ? 'SELECT id, name, imageurl FROM brands ORDER BY name ASC'
+          : 'SELECT id, name, imageurl FROM brands ORDER BY name ASC';
+        const result = await db.query(fallbackSql);
+        rows = result.rows.map(r => ({ ...r, is_active: true }));
+      } else {
+        throw dbError;
+      }
+    }
     return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching brands:', error);
@@ -74,7 +88,6 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const name = formData.get('name');
-    const status = formData.get('status');
     const imageFile = formData.get('image');
 
     if (!name) {
@@ -92,8 +105,8 @@ export async function POST(request) {
     }
 
     // Note the change from ? to $1, $2, etc., for Postgres
-    const sql = 'INSERT INTO brands (name, status, imageurl) VALUES ($1, $2, $3) RETURNING id, name, status, imageurl';
-    const values = [name, status, imageUrl];
+    const sql = 'INSERT INTO brands (name, imageurl) VALUES ($1, $2) RETURNING id, name, imageurl, is_active';
+    const values = [name, imageUrl];
     
     const { rows } = await db.query(sql, values);
 

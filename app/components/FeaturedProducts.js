@@ -12,7 +12,7 @@ export function FeaturedProducts() {
   const displayedProducts = featuredProducts;
 
   return (
-    <section className="pt-10 pb-16 relative overflow-hidden bg-[var(--cl-bg)]">
+    <section className="py-10 relative overflow-hidden bg-transparent">
        {/* Tactile Paper Texture */}
        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
        
@@ -24,11 +24,11 @@ export function FeaturedProducts() {
 
       <Container className="relative z-10">
         {/* Section Header */}
-        <div className="mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
-          <div className="space-y-3">
+        <div className="mb-8 flex flex-row justify-between items-center gap-4 md:items-end md:gap-6">
+          <div className="space-y-1.5 md:space-y-3">
              <div className="flex items-center gap-3">
-                <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
-                <span className="text-[10px] font-black tracking-[0.3em] uppercase" style={{ color: 'rgb(147,104,236)' }}>Editor's Pick</span>
+                <span className="w-5 md:w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
+                <span className="text-[10px] md:text-[12px] font-black tracking-widest uppercase" style={{ color: 'rgb(147,104,236)' }}>Editor's Pick</span>
              </div>
              <h2 className="text-3xl md:text-5xl font-serif text-cl-deep italic leading-tight">
                 Signature{' '}
@@ -43,11 +43,10 @@ export function FeaturedProducts() {
 
           <Link
             href="/all-products"
-            className="group inline-block rounded-full px-8 py-3.5 text-[11px] font-black uppercase tracking-widest text-white transition-all duration-300 hover:shadow-[0_6px_24px_rgba(168,85,247,0.40)]"
-            style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))', boxShadow: '0 4px 14px rgba(168,85,247,0.28)' }}
+            className="bg-transparent border-2 border-[#c4b5fd] text-[#a78bfa] hover:bg-[#f5f3ff] hover:border-[#a78bfa] hover:text-[#7e22ce] shadow-sm px-4 py-2.5 md:px-8 md:py-3.5 text-[11px] md:text-[13px] font-black tracking-tight rounded-full transition-all duration-300 group shrink-0"
           >
-            <span className="flex items-center gap-3">
-                View Full Collection
+            <span className="flex items-center gap-2 md:gap-3">
+                View All
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </span>
           </Link>
@@ -70,6 +69,7 @@ export function FeaturedProducts() {
                     id={product.id}
                     name={product.name}
                     price={product.price}
+                    originalPrice={product.originalPrice}
                     image={product.imageUrl}
                     averageRating={product.averageRating}
                     reviewCount={product.reviewCount}

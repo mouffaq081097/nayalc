@@ -6,8 +6,8 @@ async function getProductBySlugOrId(identifier) {
   // Try slug first, then fallback to ID if it's numeric
   let productSql = `
     SELECT
-        p.id, p.name, p.slug, p.description, p.price, b.name as "brand", p.stock_quantity,
-        p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice,
+        p.id, p.name, p.slug, p.description, p.price, b.name as "brand", b.imageurl as "brandImageUrl", p.stock_quantity,
+        p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, p.size, p.form,
         COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
         COUNT(r.id) as "reviewCount"
     FROM products p
@@ -15,7 +15,7 @@ async function getProductBySlugOrId(identifier) {
     LEFT JOIN brands b ON p.brand_id = b.id
     WHERE p.slug = $1
     GROUP BY p.id, p.name, p.slug, p.description, p.price, p.vendor, p.stock_quantity,
-             p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice, b.name;
+             p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, b.name, b.imageurl, p.size, p.form;
   `;
   
   let { rows } = await db.query(productSql, [identifier]);

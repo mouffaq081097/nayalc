@@ -31,33 +31,33 @@ export async function GET(request, context) {
     try {
         const productSql = `
             SELECT
-                p.id, p.name, p.description, p.price, b.name as "brand", p.stock_quantity,
-                p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice,
+                p.id, p.name, p.description, p.price, b.name as "brand", b.name as "brandName", b.id as "brand_id", b.imageurl as "brandImageUrl", p.stock_quantity,
+                p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, p.size, p.form, p.status, p.is_active,
                 pi.image_url as "imageUrl",
                 pi.alt_text as "altText",
                 COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
-                COUNT(r.id) as "reviewCount",
-                (SELECT ARRAY_AGG(concern_id) FROM product_concerns WHERE product_id = p.id) as "concern_ids"
+                COUNT(r.id) as "reviewCount"
             FROM products p
             LEFT JOIN reviews r ON p.id = r.product_id
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
             WHERE p.id = $1
             GROUP BY p.id, p.name, p.description, p.price, p.vendor, p.stock_quantity,
-                     p.long_description, p.benefits, p.how_to_use, p.ingredients, p.comparedprice, b.name, pi.image_url, pi.alt_text;
+                     p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, b.name, b.id, b.imageurl, pi.image_url, pi.alt_text, p.size, p.form;
         `;
         let productRows;
         try {
             const result = await client.query(productSql, [id]);
             productRows = result.rows;
         } catch (dbError) {
-            if (dbError.message.includes('product_concerns')) {
-                const fallbackSql = productSql.replace('(SELECT ARRAY_AGG(concern_id) FROM product_concerns WHERE product_id = p.id) as "concern_ids"', 'NULL as "concern_ids"');
-                const result = await client.query(fallbackSql, [id]);
-                productRows = result.rows;
-            } else {
-                throw dbError;
+            console.error('DB error fetching product:', dbError.message);
+            // Fallback for missing columns/tables
+            let fallbackSql = productSql;
+            if (dbError.message.includes('is_active')) {
+                fallbackSql = fallbackSql.replace('p.is_active,', 'TRUE as "is_active",');
             }
+            const result = await client.query(fallbackSql, [id]);
+            productRows = result.rows;
         }
 
         if (productRows.length === 0) {
@@ -65,9 +65,26 @@ export async function GET(request, context) {
         }
 
         const product = productRows[0];
-        product.stock_quantity = parseInt(product.stock_quantity, 10);
-        product.price = parseFloat(product.price);
-        product.comparedprice = parseFloat(product.comparedprice);
+        product.stock_quantity = product.stock_quantity ? parseInt(product.stock_quantity, 10) : 0;
+        product.price = product.price ? parseFloat(product.price) : 0;
+        product.comparedprice = product.comparedprice ? parseFloat(product.comparedprice) : null;
+        product.averageRating = product.averageRating ? parseFloat(product.averageRating) : 0;
+
+        // Fetch related data in separate queries to avoid complexity/errors in main query
+        try {
+            const { rows: concernRows } = await client.query('SELECT concern_id FROM product_concerns WHERE product_id = $1', [id]);
+            product.concern_ids = concernRows.map(r => r.concern_id);
+        } catch (e) { product.concern_ids = []; }
+
+        try {
+            const { rows: categoryRows } = await client.query('SELECT category_id FROM category_products WHERE product_id = $1', [id]);
+            product.category_ids = categoryRows.map(r => r.category_id);
+        } catch (e) { product.category_ids = []; }
+
+        try {
+            const { rows: categoryNameRows } = await client.query('SELECT c.name FROM categories c JOIN category_products cp ON c.id = cp.category_id WHERE cp.product_id = $1', [id]);
+            product.categoryNames = categoryNameRows.map(r => r.name).join(', ');
+        } catch (e) { product.categoryNames = ''; }
 
         const imagesSql = `
             SELECT image_url, alt_text
@@ -109,6 +126,13 @@ export async function PUT(request, context) {
         const brand_idRaw = parseInt(formData.get('brand_id'), 10);
         const brand_id = isNaN(brand_idRaw) ? null : brand_idRaw;
 
+        // Fetch brand name to update vendor column
+        let vendorName = null;
+        if (brand_id) {
+            const { rows: brandRows } = await client.query('SELECT name FROM brands WHERE id = $1', [brand_id]);
+            if (brandRows.length > 0) vendorName = brandRows[0].name;
+        }
+
         const comparedpriceRaw = parseFloat(formData.get('comparedprice'));
         const comparedprice = isNaN(comparedpriceRaw) ? null : comparedpriceRaw;
 
@@ -116,6 +140,9 @@ export async function PUT(request, context) {
         const long_description = formData.get('long_description');
         const benefits = formData.get('benefits');
         const how_to_use = formData.get('how_to_use');
+        const how_to_use_video = formData.get('how_to_use_video') || null;
+        const size = formData.get('size');
+        const form = formData.get('form');
         const status = formData.get('status');
         const mainImageFile = formData.get('mainImage'); // This will be a File object if uploaded
         const mainAltText = formData.get('mainAltText') || '';
@@ -131,10 +158,10 @@ export async function PUT(request, context) {
         }
 
         // 1. Update products table
-        const updateProductSql = "UPDATE products SET name = $1, description = $2, price = $3, stock_quantity = $4, brand_id = $5, comparedprice = $6, ingredients = $7, long_description = $8, benefits = $9, how_to_use = $10, status = $11 WHERE id = $12 RETURNING id;";
+        const updateProductSql = "UPDATE products SET name = $1, description = $2, price = $3, stock_quantity = $4, brand_id = $5, comparedprice = $6, ingredients = $7, long_description = $8, benefits = $9, how_to_use = $10, how_to_use_video = $11, status = $12, size = $13, vendor = $14, form = $15 WHERE id = $16 RETURNING id;";
         const updateProductValues = [
             name, description, price, stock_quantity, brand_id, comparedprice,
-            ingredients, long_description, benefits, how_to_use, status, id
+            ingredients, long_description, benefits, how_to_use, how_to_use_video, status, size, vendorName, form, id
         ];
         const { rowCount } = await client.query(updateProductSql, updateProductValues);
 
@@ -227,11 +254,18 @@ export async function PATCH(request, context) {
     const { id } = params;
     try {
         const { is_active } = await request.json();
-        const { rowCount } = await db.query(
-            'UPDATE products SET is_active = $1 WHERE id = $2',
-            [is_active, id]
-        );
-        if (rowCount === 0) return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+        try {
+            const { rowCount } = await db.query(
+                'UPDATE products SET is_active = $1 WHERE id = $2',
+                [is_active, id]
+            );
+            if (rowCount === 0) return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+        } catch (dbErr) {
+            if (dbErr.message.includes('is_active')) {
+                return NextResponse.json({ message: 'is_active column missing in database' }, { status: 400 });
+            }
+            throw dbErr;
+        }
         return NextResponse.json({ message: 'Product status updated', is_active });
     } catch (error) {
         console.error(`Error toggling product ${id}:`, error);

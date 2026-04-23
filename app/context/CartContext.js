@@ -139,7 +139,7 @@ export const CartProvider = ({ children }) => {
             }
             saveCartToBackend(updatedItems);
             if (addedSuccessfully) {
-                toast.success(`"${product.name}" added to cart!`);
+                // Item added to cart (toast removed per user request)
             }
             return updatedItems;
         });

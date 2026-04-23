@@ -6,7 +6,7 @@ import {
     Plus, Edit, Trash2, Search, Loader2, Package,
     MoreHorizontal, LayoutGrid, List, Filter,
     ExternalLink, Archive, CheckCircle2, AlertCircle, DollarSign,
-    EyeOff, Eye
+    EyeOff, Eye, Video
 } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { Button } from '@/app/components/ui/button';
@@ -30,24 +30,32 @@ const ManageProducts = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState('grid');
 
-    const getInitialFormData = useCallback((product) => ({
-        name:              product?.name              || '',
-        description:       product?.description       || '',
-        price:             product?.price             || 0,
-        stock_quantity:    product?.stock_quantity    || 0,
-        categoryIds:       product?.category_ids      || product?.categories?.map(c => c.id) || [],
-        concernIds:        product?.concern_ids       || [],
-        brand:             product?.brandName         || '',
-        imageUrl:          product?.imageUrl          || '',
-        altText:           product?.altText           || '',
-        additionalImages:  product?.additionalImagesData || [],
-        comparedprice:     product?.comparedprice     || 0,
-        ingredients:       product?.ingredients       || '',
-        long_description:  product?.long_description  || '',
-        benefits:          product?.benefits          || '',
-        how_to_use:        product?.how_to_use        || '',
-        status:            product?.status            || 'active',
-    }), []);
+    const getInitialFormData = useCallback((product) => {
+        const categories = product?.category_ids || product?.categories?.map(c => c.id) || [];
+        const concerns = product?.concern_ids || [];
+        
+        return {
+            name:              product?.name              || '',
+            description:       product?.description       || '',
+            price:             product?.price             || '',
+            stock_quantity:    product?.stock_quantity    || '',
+            categoryIds:       Array.isArray(categories) ? categories : [],
+            concernIds:        Array.isArray(concerns) ? concerns : [],
+            brand:             product?.brandName         || product?.brand || '',
+            imageUrl:          product?.imageUrl          || '',
+            altText:           product?.altText           || '',
+            additionalImages:  product?.additionalImagesData || [],
+            comparedprice:     product?.comparedprice     || '',
+            ingredients:       product?.ingredients       || '',
+            long_description:  product?.long_description  || '',
+            benefits:          product?.benefits          || '',
+            how_to_use:        product?.how_to_use        || '',
+            how_to_use_video:  product?.how_to_use_video  || '',
+            size:              product?.size              || '',
+            form:              product?.form              || '',
+            status:            product?.status            || 'active',
+        };
+    }, []);
 
     const [formData, setFormData] = useState(() => getInitialFormData(null));
 
@@ -64,12 +72,33 @@ const ManageProducts = () => {
     const handleCloseModal = () => { setIsModalOpen(false); setEditingProduct(null); setImageFile(null); setAdditionalImageFiles([]); };
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: ['price','stock_quantity','comparedprice'].includes(name) ? parseFloat(value) : value }));
+        setFormData(prev => ({ 
+            ...prev, 
+            [name]: ['price','stock_quantity','comparedprice'].includes(name) 
+                ? (value === '' ? '' : parseFloat(value)) 
+                : value 
+        }));
     };
     const handleCategoryChange = (id, checked) =>
-        setFormData(prev => ({ ...prev, categoryIds: checked ? [...prev.categoryIds, id] : prev.categoryIds.filter(x => x !== id) }));
+        setFormData(prev => {
+            const currentIds = Array.isArray(prev.categoryIds) ? prev.categoryIds : [];
+            return {
+                ...prev,
+                categoryIds: checked 
+                    ? [...currentIds, id] 
+                    : currentIds.filter(x => x !== id)
+            };
+        });
     const handleConcernChange = (id, checked) =>
-        setFormData(prev => ({ ...prev, concernIds: checked ? [...prev.concernIds, id] : prev.concernIds.filter(x => x !== id) }));
+        setFormData(prev => {
+            const currentIds = Array.isArray(prev.concernIds) ? prev.concernIds : [];
+            return {
+                ...prev,
+                concernIds: checked 
+                    ? [...currentIds, id] 
+                    : currentIds.filter(x => x !== id)
+            };
+        });
     const handleFileChange = (e) => setImageFile(e.target.files[0]);
     const handleAdditionalFilesChange = (e) =>
         setAdditionalImageFiles(prev => [...prev, ...Array.from(e.target.files).map(f => ({ file: f, alt: '' }))]);
@@ -355,8 +384,9 @@ const ManageProducts = () => {
                 size="max-w-7xl"
                 noBodyPadding
             >
-                <form onSubmit={handleSubmit} className="p-8 lg:p-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <form onSubmit={handleSubmit} className="relative">
+                    <div className="p-8 lg:p-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
                         {/* ── Left column ── */}
                         <div className="lg:col-span-8 space-y-8">
@@ -375,11 +405,6 @@ const ManageProducts = () => {
                                         <AutoResizeTextarea name="description" id="description" value={formData.description} onChange={handleChange}
                                             rows={2} placeholder="Brief summary…" className={FIELD_CLS} required disabled={isSubmitting} />
                                     </div>
-                                    <div>
-                                        <label htmlFor="long_description" className={LABEL_CLS}>Full Description</label>
-                                        <AutoResizeTextarea name="long_description" id="long_description" value={formData.long_description} onChange={handleChange}
-                                            rows={5} placeholder="Detailed product description…" className={FIELD_CLS} disabled={isSubmitting} />
-                                    </div>
                                 </div>
                             </section>
 
@@ -389,18 +414,42 @@ const ManageProducts = () => {
                                     <p className={SECTION_TITLE}><span className="w-6 h-px bg-purple-300 inline-block" />Details</p>
                                     <div>
                                         <label htmlFor="benefits" className={LABEL_CLS}>Benefits</label>
-                                        <AutoResizeTextarea name="benefits" id="benefits" value={formData.benefits} onChange={handleChange} rows={4} className={FIELD_CLS} disabled={isSubmitting} />
+                                        <textarea name="benefits" id="benefits" value={formData.benefits} onChange={handleChange} rows={2} className={`${FIELD_CLS} resize-y min-h-[80px]`} disabled={isSubmitting} />
                                     </div>
                                     <div>
                                         <label htmlFor="how_to_use" className={LABEL_CLS}>How to Use</label>
-                                        <AutoResizeTextarea name="how_to_use" id="how_to_use" value={formData.how_to_use} onChange={handleChange} rows={4} className={FIELD_CLS} disabled={isSubmitting} />
+                                        <textarea name="how_to_use" id="how_to_use" value={formData.how_to_use} onChange={handleChange} rows={2} className={`${FIELD_CLS} resize-y min-h-[80px]`} disabled={isSubmitting} />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="how_to_use_video" className={LABEL_CLS}>
+                                            <span className="flex items-center gap-1.5"><Video size={11} /> How to Use — Video URL</span>
+                                        </label>
+                                        <input
+                                            type="url"
+                                            name="how_to_use_video"
+                                            id="how_to_use_video"
+                                            value={formData.how_to_use_video}
+                                            onChange={handleChange}
+                                            placeholder="https://res.cloudinary.com/…/video.mp4"
+                                            className={FIELD_CLS}
+                                            disabled={isSubmitting}
+                                        />
+                                        {formData.how_to_use_video && (
+                                            <div className="mt-2 rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(216,180,254,0.4)' }}>
+                                                <video
+                                                    src={formData.how_to_use_video}
+                                                    controls
+                                                    className="w-full max-h-48 object-contain bg-black"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-4">
                                     <p className={SECTION_TITLE}><span className="w-6 h-px bg-purple-300 inline-block" />Ingredients</p>
                                     <div>
                                         <label htmlFor="ingredients" className={LABEL_CLS}>Ingredient List</label>
-                                        <AutoResizeTextarea name="ingredients" id="ingredients" value={formData.ingredients} onChange={handleChange} rows={10} className={FIELD_CLS} disabled={isSubmitting} />
+                                        <textarea name="ingredients" id="ingredients" value={formData.ingredients} onChange={handleChange} rows={2} className={`${FIELD_CLS} resize-y min-h-[80px]`} disabled={isSubmitting} />
                                     </div>
                                 </div>
                             </section>
@@ -550,6 +599,18 @@ const ManageProducts = () => {
                                 </div>
 
                                 <div>
+                                    <label htmlFor="form" className={LABEL_CLS}>Form</label>
+                                    <input type="text" name="form" id="form" value={formData.form} onChange={handleChange}
+                                        placeholder="e.g. Cream, Spray, Serum…" className={FIELD_CLS} disabled={isSubmitting} />
+                                </div>
+
+                                <div>
+                                    <label htmlFor="size" className={LABEL_CLS}>Size / Volume</label>
+                                    <input type="text" name="size" id="size" value={formData.size} onChange={handleChange}
+                                        placeholder="e.g. 50ml, 100g, 1.7 oz…" className={FIELD_CLS} disabled={isSubmitting} />
+                                </div>
+
+                                <div>
                                     <label className={LABEL_CLS}>Categories</label>
                                     <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                                         {categories.map(c => (
@@ -587,19 +648,23 @@ const ManageProducts = () => {
                                 </div>
                             </div>
 
-                            {/* Submit */}
-                            <button type="submit" disabled={isSubmitting}
-                                className="w-full py-4 text-white text-sm font-bold rounded-2xl shadow-lg transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
-                                style={{ background: '#9333ea', boxShadow: '0 4px 20px rgba(147,51,234,0.3)' }}>
-                                {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : isEditMode ? 'Update Product' : 'Save Product'}
-                            </button>
-                            <button type="button" onClick={handleCloseModal} disabled={isSubmitting}
-                                className="w-full py-2.5 text-xs font-semibold text-gray-400 hover:text-gray-700 transition-colors">
-                                Cancel
-                            </button>
                         </div>
                     </div>
-                </form>
+                </div>
+
+                {/* Sticky Footer */}
+                <div className="sticky bottom-0 left-0 right-0 px-8 py-5 bg-white/95 backdrop-blur-sm border-t border-purple-100 flex flex-row-reverse items-center gap-4 z-50">
+                    <button type="submit" disabled={isSubmitting}
+                        className="px-10 py-4 text-white text-sm font-bold rounded-2xl shadow-lg transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2 min-w-[200px]"
+                        style={{ background: '#9333ea', boxShadow: '0 4px 20px rgba(147,51,234,0.3)' }}>
+                        {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : isEditMode ? 'Update Product' : 'Save Product'}
+                    </button>
+                    <button type="button" onClick={handleCloseModal} disabled={isSubmitting}
+                        className="text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors px-4">
+                        Cancel
+                    </button>
+                </div>
+            </form>
             </Modal>
         </div>
     );

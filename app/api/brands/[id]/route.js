@@ -74,7 +74,6 @@ export async function PUT(request, context) {
   try {
     const formData = await request.formData();
     const name = formData.get('name');
-    const status = formData.get('status');
     const imageFile = formData.get('image');
 
     // First, get the existing brand data
@@ -83,7 +82,7 @@ export async function PUT(request, context) {
         return NextResponse.json({ message: 'Brand not found' }, { status: 404 });
     }
 
-    let imageUrl = existingRows[0].imageUrl;
+    let imageUrl = existingRows[0].imageurl;
 
     // If a new image is uploaded, upload it to Cloudinary
     if (imageFile && imageFile.size > 0) {
@@ -93,8 +92,8 @@ export async function PUT(request, context) {
         // TODO: Optionally delete the old image from Cloudinary
     }
 
-    const sql = 'UPDATE brands SET name = $1, status = $2, imageurl = $3 WHERE id = $4 RETURNING *;';
-    const { rows } = await db.query(sql, [name, status, imageUrl, id]);
+    const sql = 'UPDATE brands SET name = $1, imageurl = $2 WHERE id = $3 RETURNING *;';
+    const { rows } = await db.query(sql, [name, imageUrl, id]);
 
     if (rows.length === 0) {
         return NextResponse.json({ message: 'Brand not found or no changes made' }, { status: 404 });

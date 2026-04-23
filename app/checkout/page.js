@@ -214,7 +214,7 @@ export default function CheckoutPage() {
     try {
       const res = await fetchWithAuth('/api/orders', { method: 'POST', body: JSON.stringify(orderData) });
       const result = await res.json();
-      toast.success('Order Placed!');
+      // Order Placed (toast removed)
       clearCart();
       router.push(`/orders/${result.orderId}`);
     } catch { toast.error('Error placing order.'); setIsPlacingOrder(false); }

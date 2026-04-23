@@ -25,6 +25,7 @@ export const AppProvider = ({ children }) => {
  // New state for brands
   const [featuredProducts, setFeaturedProducts] = useState([]); // New state for featured products
   const [isChatOpen, setIsChatOpen] = useState(false); // Global chat widget state
+  const [loading, setLoading] = useState(true);
   const [loyaltyData, setLoyaltyData] = useState({ stats: { points: 0, tier: 'Member', nextTierPoints: 2000 }, transactions: [] });
 
   const fetchLoyalty = useCallback(async () => {
@@ -167,6 +168,7 @@ export const AppProvider = ({ children }) => {
     return {
       ...product,
       price: parseFloat(product.price),
+      originalPrice: product.comparedprice ? parseFloat(product.comparedprice) : null,
       imageUrls: [product.imageUrl || '/placeholder-image.jpg', ...additionalImages],
       image: product.imageUrl || '/placeholder-image.jpg',
       altText: product.altText || '',
@@ -213,6 +215,7 @@ export const AppProvider = ({ children }) => {
         return {
           ...product,
           price: parseFloat(product.price), // Ensure price is a number
+          originalPrice: product.comparedprice ? parseFloat(product.comparedprice) : null,
           imageUrls: [product.imageUrl || '/placeholder-image.jpg', ...additionalImages],
           image: product.imageUrl || '/placeholder-image.jpg', // Add 'image' property for ProductCard
           altText: product.altText || '',
@@ -239,6 +242,7 @@ export const AppProvider = ({ children }) => {
       const processedProducts = data.map(product => ({
         ...product,
         price: parseFloat(product.price), // Ensure price is a number
+        originalPrice: product.comparedprice ? parseFloat(product.comparedprice) : null,
         imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Convert imageUrl string to imageUrls array
         image: product.imageUrl || '/placeholder-image.jpg',
         stock_quantity: product.stock_quantity, // Add stock_quantity
@@ -499,20 +503,32 @@ export const AppProvider = ({ children }) => {
 
   // Fetch data on component mount
   useEffect(() => {
-    fetchProducts();
-    fetchFeaturedProducts();
-    fetchCategories();
-    fetchConcerns();
-    fetchBrands();
-    if (isAuthenticated && user?.id) {
-      fetchOrders();
-      fetchLoyalty();
-      if (user.email === 'mouffaq@nayalc.com') {
-        fetchAdminProducts();
-        fetchAdminBrands();
-        fetchAdminCategories();
+    const fetchInitialData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchProducts(),
+          fetchFeaturedProducts(),
+          fetchCategories(),
+          fetchConcerns(),
+          fetchBrands()
+        ]);
+        
+        if (isAuthenticated && user?.id) {
+          const promises = [fetchOrders(), fetchLoyalty()];
+          if (user.email === 'mouffaq.dalloul@nayalc.com') {
+            promises.push(fetchAdminProducts(), fetchAdminBrands(), fetchAdminCategories());
+          }
+          await Promise.all(promises);
+        }
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    fetchInitialData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user, fetchOrders, fetchLoyalty, fetchCategories]);
 
@@ -542,6 +558,7 @@ export const AppProvider = ({ children }) => {
       fetchProducts,
       fetchWithAuth,
       isChatOpen, setIsChatOpen,
+      loading,
       loyaltyData, fetchLoyalty,
       toggleProductStatus, toggleBrandStatus, toggleCategoryStatus, toggleCouponStatus,
         }}>

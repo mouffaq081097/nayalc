@@ -73,7 +73,7 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0
       setErrorMessage(submitError.message);
       setIsProcessing(false);
     } else {
-      toast.success('Payment authorized!');
+      // Payment authorized (toast removed)
       onSuccessfulPayment(paymentIntent?.id);
     }
     setIsProcessing(false);

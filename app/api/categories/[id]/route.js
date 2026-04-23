@@ -71,7 +71,19 @@ export async function GET(request, { params }) {
           WHERE cp.category_id = $1 AND p.is_active = true
           GROUP BY p.id, p.name, p.slug, p.description, p.price, b.name, pi.image_url
         `;
-        const { rows: productRows } = await db.query(productsSql, [id]);    
+        let productRows;
+        try {
+            const result = await db.query(productsSql, [id]);
+            productRows = result.rows;
+        } catch (prodError) {
+            if (prodError.message.includes('is_active')) {
+                const fallbackProdSql = productsSql.replace('AND p.is_active = true', '');
+                const result = await db.query(fallbackProdSql, [id]);
+                productRows = result.rows;
+            } else {
+                throw prodError;
+            }
+        }
     category.products = productRows;
 
     return NextResponse.json(category);

@@ -42,7 +42,7 @@ export function Categories() {
   if (error) return null;
 
   return (
-    <section className="pt-8 pb-6 relative overflow-hidden" style={{ background: 'transparent' }}>
+    <section className="py-10 relative overflow-hidden bg-transparent">
       {/* Cloud Luxe aura orbs */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
         <div className="cl-aura cl-aura-purple" style={{ width: 400, height: 400, top: '-10%', left: '-10%', opacity: 0.35 }} />
@@ -54,7 +54,7 @@ export function Categories() {
         <div className="mb-6 text-center space-y-3">
             <div className="flex items-center justify-center gap-3">
                 <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(216,180,254), rgb(196,167,254))' }}></span>
-                <span className="text-[10px] font-black tracking-[0.3em] uppercase" style={{ color: 'rgb(147,104,236)' }}>Our Departments</span>
+                <span className="text-[10px] md:text-[12px] font-black tracking-widest uppercase" style={{ color: 'rgb(147,104,236)' }}>Our Departments</span>
                 <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
             </div>
             <h2 className="text-3xl md:text-5xl font-serif italic text-cl-deep leading-tight">
@@ -93,8 +93,8 @@ export function Categories() {
                   >
                     
                     {/* Image Container */}
-                    <div className="absolute inset-0 p-4">
-                        <div className="relative w-full h-[75%] rounded-[1.5rem] overflow-hidden bg-gray-50">
+                    <div className="absolute inset-0 p-2">
+                        <div className="relative w-full h-[75%] rounded-[1.5rem] overflow-hidden bg-white">
                             <Image
                                 src={category.image}
                                 alt={category.name}

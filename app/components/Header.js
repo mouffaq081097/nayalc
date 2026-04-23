@@ -162,13 +162,13 @@ const Header = forwardRef((props, ref) => {
             </div>
 
             {/* Center: Logo + Brand Name — absolute center on mobile, static on desktop */}
-            <Link href="/" className="md:static absolute left-1/2 -translate-x-1/2 flex items-center gap-0 shrink-0 transition-all active:scale-95">
+            <Link href="/" className="md:static absolute left-1/2 -translate-x-1/2 flex items-center gap-[14px] shrink-0 transition-all active:scale-95">
                 <Image
                   src="/Adobe Express - file (5).png"
                   alt="Naya Lumière Cosmetics"
-                  height={36}
-                  width={120}
-                  className="h-7 md:h-9 w-auto object-contain shrink-0"
+                  height={42}
+                  width={140}
+                  className="h-[32px] md:h-[42px] w-auto object-contain shrink-0"
                   priority
                 />
                 {/* Brand name text — collapses when scrolled */}
@@ -176,25 +176,36 @@ const Header = forwardRef((props, ref) => {
                   initial={false}
                   animate={{
                     opacity: isScrolled ? 0 : 1,
-                    maxWidth: isScrolled ? 0 : 180,
-                    marginLeft: isScrolled ? 0 : 10,
+                    maxWidth: isScrolled ? 0 : 250,
+                    marginLeft: isScrolled ? 0 : 0,
                   }}
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                   className="overflow-hidden whitespace-nowrap"
                 >
-                  <div className="flex flex-col justify-center leading-none">
-                    <span
-                      className="text-[13px] font-black tracking-normal uppercase"
-                      style={{ color: 'var(--cl-text-deep)' }}
+                  <div style={{ textAlign: 'left', lineHeight: '1' }}>
+                    <div
+                      style={{ 
+                        fontSize: '18px', 
+                        fontWeight: '600', 
+                        letterSpacing: '0.05em', 
+                        color: '#3b0764', 
+                        textTransform: 'uppercase', 
+                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                      }}
                     >
                       NAYA
-                    </span>
-                    <span
-                      className="text-[9px] font-medium tracking-normal font-serif italic"
-                      style={{ color: 'var(--cl-text-mid)' }}
+                    </div>
+                    <div
+                      style={{ 
+                        fontSize: '12px', 
+                        fontStyle: 'italic', 
+                        fontFamily: "Georgia, 'Times New Roman', serif", 
+                        color: '#6b21a8',
+                        marginTop: '0px'
+                      }}
                     >
                       Lumière Cosmetics
-                    </span>
+                    </div>
                   </div>
                 </motion.div>
             </Link>
@@ -213,7 +224,7 @@ const Header = forwardRef((props, ref) => {
                     )}
                     aria-label="Search"
                 >
-                    <Search size={18} strokeWidth={2} />
+                    <Search size={18} strokeWidth={2} className="text-[#3b0764]" />
                 </Button>
 
                 <div className="flex items-center gap-2">
@@ -230,36 +241,42 @@ const Header = forwardRef((props, ref) => {
                     {/* Account button — desktop only (mobile uses bottom nav) */}
                     <div className="relative group/account hidden md:block">
                         <button
-                        type="button"
-                        onClick={handleAccountClick}
-                        className="flex items-center gap-3 rounded-full px-1.5 py-1 transition-all hover:bg-gray-50"
+                          type="button"
+                          onClick={handleAccountClick}
+                          className="flex items-center gap-3 rounded-full px-1.5 py-1.5 transition-all hover:bg-white/50 backdrop-blur-sm group/btn"
                         >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 transition-all group-hover/account:text-white" style={{}} onMouseEnter={e => e.currentTarget.style.background='var(--cl-gradient)'} onMouseLeave={e => e.currentTarget.style.background=''}>
-                            <User size={16} strokeWidth={2} />
-                        </div>
-                        {user && (
-                            <div className="hidden lg:flex flex-col items-start -space-y-0.5">
-                                <span className="text-[11px] font-black tracking-tight text-gray-900 leading-tight uppercase">
-                                    {user.first_name}
-                                </span>
-                            </div>
-                        )}
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/40 shadow-sm transition-all group-hover/btn:bg-white group-hover/btn:shadow-md group-hover/btn:scale-105 overflow-hidden">
+                              {user?.profile_image ? (
+                                <img src={user.profile_image} alt={user.first_name} className="w-full h-full object-cover" />
+                              ) : (
+                                <User size={18} strokeWidth={2} className="text-[#3b0764] transition-transform" />
+                              )}
+                          </div>
+                          {user && (
+                              <div className="hidden lg:flex flex-col items-start justify-center pr-3">
+                                  <span className="text-[12px] font-black tracking-widest text-[#3b0764] uppercase leading-none">
+                                      {user.first_name}
+                                  </span>
+                              </div>
+                          )}
                         </button>
 
                         {/* Admin Dropdown on Hover */}
-                        {user?.email === 'mouffaq@nayalc.com' && (
-                            <div className="absolute top-full right-0 mt-2 w-48 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-white/40 overflow-hidden opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-300 transform translate-y-2 group-hover/account:translate-y-0 z-[200]">
-                                <Link
-                                    href="/admin"
-                                    className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-all group/admin"
-                                >
-                                    <div className="w-8 h-8 rounded-full bg-brand-pink/10 flex items-center justify-center text-brand-pink group-hover/admin:bg-brand-pink group-hover:text-white transition-all">
-                                        <ShieldCheck size={16} strokeWidth={2} />
-                                    </div>
-                                    <span className="text-[11px] font-black tracking-widest text-gray-900">
-                                        Admin Panel
-                                    </span>
-                                </Link>
+                        {user?.email === 'mouffaq.dalloul@nayalc.com' && (
+                            <div className="absolute top-full right-0 w-48 pt-2 z-[200] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-300">
+                                <div className="bg-white/95 backdrop-blur-2xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-white/40 overflow-hidden transform translate-y-2 group-hover/account:translate-y-0 transition-all duration-300">
+                                    <Link
+                                        href="/admin"
+                                        className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-all group/admin"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-brand-pink/10 flex items-center justify-center text-brand-pink group-hover/admin:bg-brand-pink group-hover:text-white transition-all">
+                                            <ShieldCheck size={16} strokeWidth={2} />
+                                        </div>
+                                        <span className="text-[11px] font-black tracking-widest text-gray-900">
+                                            Admin Panel
+                                        </span>
+                                    </Link>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -267,13 +284,11 @@ const Header = forwardRef((props, ref) => {
 
                 <Button
                 type="button"
-                variant="pillPrimary"
-                size="pillIcon"
                 onClick={() => router.push('/cart')}
-                className="relative shadow-lg"
+                className="relative shadow-sm bg-white border-2 border-[#c4b5fd] size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 hover:bg-[#f5f3ff] hover:border-[#a78bfa] group"
                 aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
                 >
-                <ShoppingBag size={18} strokeWidth={2} />
+                <ShoppingBag size={18} strokeWidth={2} className="text-[#3b0764] group-hover:text-[#7e22ce] transition-colors" />
                 {cartCount > 0 && (
                     <>
                     <span className="absolute inset-0 rounded-full animate-ping bg-brand-pink/20 pointer-events-none" />
@@ -284,77 +299,171 @@ const Header = forwardRef((props, ref) => {
                 )}
                 </Button>
             </div>
-            </div>
+        </div>
         </div>
 
-        {/* Full-Screen Search Overlay */}
-        <AnimatePresence>
-            {isSearchOpen && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-[300] bg-white/97 backdrop-blur-3xl flex flex-col"
-                    onClick={(e) => { if (e.target === e.currentTarget) setIsSearchOpen(false); }}
-                >
-                    <div className="max-w-3xl mx-auto w-full px-6 md:px-10 pt-20 md:pt-32 pb-10 flex flex-col gap-10">
-                        {/* Input */}
-                        <form onSubmit={handleSearch} className="relative flex items-center gap-4 border-b-2 border-gray-200 pb-5">
-                            <Search size={26} className="text-brand-pink shrink-0" />
-                            <input
-                                autoFocus
-                                type="text"
-                                placeholder="Search the collection..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full text-2xl md:text-4xl font-bold bg-transparent border-none focus:ring-0 focus:outline-none placeholder:text-gray-200 text-gray-900 tracking-tight"
-                            />
-                            <Button type="button" variant="pillGlass" size="pillIcon" onClick={() => setIsSearchOpen(false)} className="shrink-0 border-transparent bg-gray-100 hover:bg-gray-200" aria-label="Close search">
-                                <X size={20} />
-                            </Button>
-                        </form>
+        {/* Full-Screen Search Overlay — Redesigned for Premium Luxury */}
+        <AnimatePresence mode="wait">
+            {isSearchOpen && <motion.div
+                key="search-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="fixed inset-0 z-[300] bg-white/60 backdrop-blur-2xl flex flex-col overflow-hidden"
+                onClick={(e) => { if (e.target === e.currentTarget) setIsSearchOpen(false); }}
+            >
+                {/* ── Dreamy Background Atmosphere ── */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <motion.div
+                        animate={{ 
+                            scale: [1, 1.2, 1],
+                            opacity: [0.1, 0.2, 0.1],
+                            x: [-50, 50, -50],
+                            y: [-30, 30, -30]
+                        }}
+                        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#c4b5fd]/30 rounded-full blur-[120px]"
+                    />
+                    <motion.div
+                        animate={{ 
+                            scale: [1.2, 1, 1.2],
+                            opacity: [0.08, 0.15, 0.08],
+                            x: [50, -50, 50],
+                            y: [30, -30, 30]
+                        }}
+                        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#f9a8d4]/20 rounded-full blur-[100px]"
+                    />
+                </div>
 
-                        {/* Quick Suggestions */}
-                        <div className="space-y-4">
-                            <p className="text-[9px] font-black tracking-[0.35em] text-gray-400">Popular Searches</p>
-                            <div className="flex flex-wrap gap-2">
-                                {['Anti-Aging', 'Serums', 'Fragrance', 'Gift Sets', 'GERnétic', 'Zorah'].map(q => (
-                                    <Button
+                <div className="max-w-4xl mx-auto w-full px-6 md:px-10 pt-24 md:pt-40 relative z-10">
+                    {/* ── Header Area ── */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1, duration: 0.6 }}
+                        className="mb-12"
+                    >
+                        <div className="flex items-center gap-3 mb-6">
+                            <span className="w-10 h-px bg-gradient-to-r from-[#9333ea] to-transparent"></span>
+                            <span className="text-[10px] font-black tracking-[0.3em] uppercase text-[#9333ea]">Discover Luxury Care</span>
+                        </div>
+                        
+                        <div className="flex justify-between items-start gap-10">
+                            <h2 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">
+                                Find Your{' '}
+                                <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-r from-[#c4b5fd] via-[#9333ea] to-[#7e22ce]">Radiance.</span>
+                            </h2>
+                            <Button 
+                                type="button" 
+                                variant="pillGlass" 
+                                size="pillIcon" 
+                                onClick={() => setIsSearchOpen(false)} 
+                                className="shrink-0 bg-white/50 border-gray-100/50 hover:bg-white hover:scale-110 shadow-lg transition-all duration-300" 
+                                aria-label="Close search"
+                            >
+                                <X size={20} className="text-gray-900" />
+                            </Button>
+                        </div>
+                    </motion.div>
+
+                    {/* ── Input Composition ── */}
+                    <motion.form 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.6 }}
+                        onSubmit={handleSearch} 
+                        className="relative flex items-center gap-6 group mb-20"
+                    >
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-transform duration-500 group-focus-within:scale-110">
+                            <Search size={32} strokeWidth={1.5} className="text-[#9333ea]" />
+                        </div>
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="What are you looking for?"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full text-2xl md:text-5xl font-bold bg-transparent border-none pl-14 pr-4 py-4 focus:ring-0 focus:outline-none placeholder:text-gray-200 text-gray-900 tracking-tight transition-all duration-500"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-100 overflow-hidden rounded-full">
+                            <motion.div 
+                                initial={{ x: '-100%' }}
+                                whileInView={{ x: 0 }}
+                                className="h-full w-full bg-gradient-to-r from-[#c4b5fd] via-[#9333ea] to-[#7e22ce]"
+                            />
+                        </div>
+                    </motion.form>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24">
+                        {/* ── Popular Searches ── */}
+                        <motion.div 
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.3, duration: 0.6 }}
+                            className="space-y-6"
+                        >
+                            <p className="text-[10px] font-black tracking-[0.3em] uppercase text-gray-400 flex items-center gap-3">
+                                <span className="w-4 h-4 rounded-full bg-[#f5f3ff] flex items-center justify-center text-[#9333ea]">
+                                    <Sparkles size={8} />
+                                </span>
+                                Popular Trends
+                            </p>
+                            <div className="flex flex-wrap gap-3">
+                                {['Anti-Aging', 'Serums', 'Hydration', 'Fragrance', 'Gift Sets', 'GERnétic'].map((q, i) => (
+                                    <motion.button
                                         key={q}
-                                        type="button"
-                                        variant="pillSecondary"
-                                        size="pillSm"
+                                        whileHover={{ y: -4, scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
                                         onClick={() => { setSearchQuery(q); router.push(`/search?q=${q}`); setIsSearchOpen(false); }}
-                                        className="font-black tracking-widest hover:border-brand-pink/30 hover:bg-brand-pink hover:text-white transition-all"
+                                        className="px-5 py-2.5 bg-white/50 backdrop-blur-md border border-[#f3e8ff] rounded-2xl text-[11px] font-black tracking-widest uppercase text-gray-600 hover:text-[#9333ea] hover:border-[#c4b5fd] hover:bg-white shadow-sm hover:shadow-xl transition-all duration-300"
                                     >
                                         {q}
-                                    </Button>
+                                    </motion.button>
                                 ))}
                             </div>
-                        </div>
+                        </motion.div>
 
-                        {/* Quick Links */}
-                        <div className="space-y-3">
-                            <p className="text-[9px] font-black tracking-[0.35em] text-gray-400">Quick Links</p>
-                            {[
-                                { label: 'New Arrivals', href: '/new-arrivals' },
-                                { label: 'All Products', href: '/all-products' },
-                                { label: 'Gift Sets', href: '/gift-sets' },
-                            ].map(link => (
-                                <button
-                                    key={link.href}
-                                    onClick={() => { router.push(link.href); setIsSearchOpen(false); }}
-                                    className="flex items-center gap-3 w-full text-left py-2 text-[15px] font-semibold text-gray-700 hover:text-brand-pink transition-colors group"
-                                >
-                                    <ArrowRight size={15} className="text-brand-pink/40 group-hover:text-brand-pink transition-colors" />
-                                    {link.label}
-                                </button>
-                            ))}
-                        </div>
+                        {/* ── Quick Exploration ── */}
+                        <motion.div 
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.4, duration: 0.6 }}
+                            className="space-y-6"
+                        >
+                            <p className="text-[10px] font-black tracking-[0.3em] uppercase text-gray-400 flex items-center gap-3">
+                                <span className="w-4 h-4 rounded-full bg-[#f5f3ff] flex items-center justify-center text-[#9333ea]">
+                                    <Layers size={8} />
+                                </span>
+                                Quick Links
+                            </p>
+                            <div className="grid grid-cols-1 gap-2">
+                                {[
+                                    { label: 'New Arrivals', href: '/new-arrivals', desc: 'Shop the latest innovations' },
+                                    { label: 'All Products', href: '/all-products', desc: 'Explore the full collection' },
+                                    { label: 'Gift Sets', href: '/gift-sets', desc: 'Luxury for someone special' },
+                                ].map((link, i) => (
+                                    <motion.button
+                                        key={link.href}
+                                        whileHover={{ x: 8 }}
+                                        onClick={() => { router.push(link.href); setIsSearchOpen(false); }}
+                                        className="flex items-center gap-4 w-full text-left p-4 rounded-2xl hover:bg-white/60 transition-all duration-300 group"
+                                    >
+                                        <div className="w-10 h-10 rounded-xl bg-[#f5f3ff] flex items-center justify-center text-[#9333ea] group-hover:scale-110 group-hover:bg-[#9333ea] group-hover:text-white transition-all duration-500">
+                                            <ArrowRight size={14} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[13px] font-black text-gray-900 group-hover:text-[#9333ea] transition-colors">{link.label}</p>
+                                            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-0.5">{link.desc}</p>
+                                        </div>
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </motion.div>
                     </div>
-                </motion.div>
-            )}
+                </div>
+            </motion.div>}
         </AnimatePresence>
       </header>
 
@@ -376,35 +485,67 @@ const Header = forwardRef((props, ref) => {
                     className="absolute top-0 left-0 bottom-0 w-[85%] max-w-[400px] bg-white shadow-2xl flex flex-col rounded-r-[2.5rem]"
                 >
                     <div className="p-6 md:p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/20">
-                        <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Cosmetics" height={32} width={110} className="h-8 w-auto object-contain" />
-                        <Button type="button" variant="pillSecondary" size="pillIcon" onClick={() => setIsMenuOpen(false)} className="active:scale-95" aria-label="Close menu">
-                            <X size={18} />
+                        <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-[14px]">
+                            <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Cosmetics" height={42} width={140} className="h-[36px] w-auto object-contain" />
+                            <div style={{ textAlign: 'left', lineHeight: '1' }}>
+                                <div
+                                style={{ 
+                                    fontSize: '18px', 
+                                    fontWeight: '600', 
+                                    letterSpacing: '0.05em', 
+                                    color: '#3b0764', 
+                                    textTransform: 'uppercase', 
+                                    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                                }}
+                                >
+                                NAYA
+                                </div>
+                                <div
+                                style={{ 
+                                    fontSize: '12px', 
+                                    fontStyle: 'italic', 
+                                    fontFamily: "Georgia, 'Times New Roman', serif", 
+                                    color: '#6b21a8',
+                                    marginTop: '0px'
+                                }}
+                                >
+                                Lumière Cosmetics
+                                </div>
+                            </div>
+                        </Link>
+                        <Button type="button" variant="pillSecondary" size="pillIcon" onClick={() => setIsMenuOpen(false)} className="active:scale-95 bg-white shadow-sm border border-gray-100" aria-label="Close menu">
+                            <X size={18} className="text-[#3b0764]" />
                         </Button>
                     </div>
                     
-                    <div className="flex flex-col py-6 overflow-y-auto">
-                        {[
-                            { label: 'Store', path: '/all-products' },
-                            { label: 'New Arrivals', path: '/new-arrivals' },
-                            { label: 'Skincare', path: '/SkinCare' },
-                            { label: 'Fragrance', path: '/fragrance' },
-                            { label: 'Collections', path: '/collections' },
-                        ].map((item) => (
-                            <button 
-                                key={item.path}
-                                onClick={() => { router.push(item.path); setIsMenuOpen(false); }} 
-                                className="flex items-center justify-between px-10 py-5 text-[15px] font-semibold tracking-tight text-gray-900 active:bg-gray-50 border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
-                            >
-                                {item.label}
-                                <ChevronRight size={16} className="text-brand-pink" />
-                            </button>
-                        ))}
+                    <div className="flex-1 flex flex-col py-6 overflow-y-auto">
+                        <div className="px-4 gap-2 flex flex-col mb-4">
+                            {[
+                                { label: 'Store', path: '/all-products' },
+                                { label: 'New Arrivals', path: '/new-arrivals' },
+                                { label: 'Skincare', path: '/SkinCare' },
+                                { label: 'Fragrance', path: '/fragrance' },
+                                { label: 'Collections', path: '/collections' },
+                            ].map((item) => (
+                                <button 
+                                    key={item.path}
+                                    onClick={() => { router.push(item.path); setIsMenuOpen(false); }} 
+                                    className="flex items-center justify-between px-6 py-4 rounded-2xl text-[15px] font-medium tracking-tight text-gray-900 active:bg-[#f5f3ff] hover:bg-gray-50 transition-all group"
+                                    style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+                                >
+                                    <span className="group-active:translate-x-1 transition-transform capitalize">{item.label.toLowerCase()}</span>
+                                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-active:text-[#9333ea] transition-all">
+                                        <ChevronRight size={14} />
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
 
                         {/* Mobile Concerns Section */}
                         {concerns && concerns.length > 0 && (
-                            <div className="bg-gray-50/50 px-10 py-8 border-b border-gray-100">
-                                <span className="text-[10px] font-black tracking-[0.3em] text-gray-400 mb-5 block">Targeted Concerns</span>
-                                <div className="grid grid-cols-1 gap-1">
+                            <div className="bg-[#fdfaff]/50 px-6 py-8 rounded-[2rem] mx-4 mb-4 border border-[#f3e8ff]/50">
+                                <span className="text-[9px] font-black tracking-[0.4em] uppercase text-[#9333ea]/60 mb-6 block px-2">Targeted Concerns</span>
+                                <div className="grid grid-cols-1 gap-2">
                                     {concerns.map((concern, i) => {
                                         const { icon: Icon } = getConcernMeta(concern.name);
                                         return (
@@ -414,12 +555,15 @@ const Header = forwardRef((props, ref) => {
                                                 animate={{ opacity: 1, x: 0 }}
                                                 transition={{ delay: i * 0.05, duration: 0.3 }}
                                                 onClick={() => { router.push(`/search?q=${concern.name}`); setIsMenuOpen(false); }}
-                                                className="flex items-center gap-3 py-4 text-[13px] font-bold text-gray-700 hover:text-brand-pink active:text-brand-pink transition-colors"
+                                                className="flex items-center gap-4 p-3 rounded-xl bg-white/40 border border-transparent active:border-[#c4b5fd] active:bg-white transition-all group"
                                             >
-                                                <div className="w-6 h-6 rounded-lg bg-white border border-gray-100 flex items-center justify-center text-brand-pink shadow-sm">
-                                                    <Icon size={12} strokeWidth={1.5} />
+                                                <div className="w-10 h-10 rounded-xl bg-white border border-[#f3e8ff] flex items-center justify-center text-[#9333ea] shadow-sm group-active:scale-95 transition-transform">
+                                                    <Icon size={16} strokeWidth={1.5} />
                                                 </div>
-                                                {concern.name}
+                                                <div className="text-left">
+                                                    <p className="text-[12px] font-bold text-gray-900">{concern.name}</p>
+                                                    <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Shop Solution</p>
+                                                </div>
                                             </motion.button>
                                         );
                                     })}
@@ -427,56 +571,75 @@ const Header = forwardRef((props, ref) => {
                             </div>
                         )}
                         
-                        {[
-                            { label: 'Wishlist', path: '/wishlist' },
-                            { label: 'Sales', path: '/sales' },
-                        ].map((item) => (
-                            <button 
-                                key={item.path}
-                                onClick={() => { router.push(item.path); setIsMenuOpen(false); }} 
-                                className="flex items-center justify-between px-10 py-5 text-[15px] font-semibold tracking-tight text-gray-900 active:bg-gray-50 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
-                            >
-                                {item.label}
-                                <ChevronRight size={16} className="text-brand-pink" />
-                            </button>
-                        ))}
+                        <div className="px-4 gap-2 flex flex-col mb-10">
+                            {[
+                                { label: 'Wishlist', path: '/wishlist' },
+                                { label: 'Sales', path: '/sales' },
+                            ].map((item) => (
+                                <button 
+                                    key={item.path}
+                                    onClick={() => { router.push(item.path); setIsMenuOpen(false); }} 
+                                    className="flex items-center justify-between px-6 py-4 rounded-2xl text-[15px] font-medium tracking-tight text-gray-900 active:bg-[#f5f3ff] hover:bg-gray-50 transition-all group"
+                                    style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+                                >
+                                    <span className="group-active:translate-x-1 transition-transform capitalize">{item.label.toLowerCase()}</span>
+                                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-active:text-[#9333ea] transition-all">
+                                        <ChevronRight size={14} />
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="mt-auto p-8 bg-gray-50/50 rounded-t-[3rem] border-t border-gray-100">
+                    <div className="mt-auto p-6 bg-white/80 backdrop-blur-xl rounded-t-[3rem] border-t border-[#f3e8ff]/50 shadow-[0_-20px_40px_-20px_rgba(147,51,234,0.1)]">
                         {user && (
-                            <div className="mb-6 flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-brand-pink text-white flex items-center justify-center font-black text-xl">
-                                    {user.first_name?.[0]}
+                            <div className="mb-6 flex items-center gap-4 px-2">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#c4b5fd] to-[#9333ea] text-white flex items-center justify-center font-black text-xl shadow-lg overflow-hidden">
+                                    {user?.profile_image ? (
+                                        <img src={user.profile_image} alt={user.first_name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <>{user.first_name?.[0]}</>
+                                    )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-lg font-bold text-gray-900 leading-tight">{user.first_name}</span>
+                                    <span className="text-lg font-black tracking-tight text-gray-900 leading-tight">{user.first_name}</span>
                                     <Link href="/loyalty" className="flex items-center gap-1.5 mt-1" onClick={() => setIsMenuOpen(false)}>
-                                        <Star size={12} className="text-brand-pink fill-brand-pink" />
-                                        <span className="text-[13px] font-medium text-brand-pink">{loyaltyData?.stats?.points?.toLocaleString() || 0} Points</span>
+                                        <div className="w-4 h-4 rounded-full bg-[#fdf2f8] flex items-center justify-center">
+                                            <Star size={8} className="text-brand-pink fill-brand-pink" />
+                                        </div>
+                                        <span className="text-[11px] font-black tracking-widest text-brand-pink uppercase">{loyaltyData?.stats?.points?.toLocaleString() || 0} Points</span>
                                     </Link>
                                 </div>
                             </div>
                         )}
-                        {user?.email === 'mouffaq@nayalc.com' && (
+                        
+                        <div className="flex flex-col gap-3">
+                            {user?.email === 'mouffaq.dalloul@nayalc.com' && (
+                                <button 
+                                    onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}
+                                    className="w-full bg-white border border-[#e8d5ff] text-[#9333ea] rounded-full h-14 font-medium tracking-tight text-[13px] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-[0_4px_12px_rgba(147,51,234,0.05)]"
+                                    style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+                                >
+                                    <ShieldCheck size={16} strokeWidth={2.5} />
+                                    Admin panel
+                                </button>
+                            )}
+                            
                             <button 
-                                onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}
-                                className="w-full mb-3 bg-white border border-gray-100 text-gray-900 rounded-2xl h-14 font-black tracking-widest text-[12px] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-sm"
+                                onClick={() => { router.push(user ? '/account' : '/auth'); setIsMenuOpen(false); }}
+                                className="w-full bg-gradient-to-r from-[#d8b4fe] to-[#a78bfa] text-white rounded-full h-14 font-medium tracking-tight text-[13px] active:scale-[0.98] transition-all shadow-[0_10px_25px_-5px_rgba(167,139,250,0.4)] flex items-center justify-center gap-3"
+                                style={{ fontFamily: "'Instrument Sans', sans-serif" }}
                             >
-                                <ShieldCheck size={16} className="text-brand-pink" strokeWidth={2.5} />
-                                Admin Panel
+                                <User size={16} strokeWidth={2.5} />
+                                {user ? 'My account' : 'Sign in'}
                             </button>
-                        )}
-                        <button 
-                            onClick={() => { router.push(user ? '/account' : '/auth'); setIsMenuOpen(false); }}
-                            className="w-full bg-gray-900 text-white rounded-2xl h-14 font-black tracking-widest text-[12px] active:scale-95 transition-all shadow-xl"
-                        >
-                            {user ? 'My Account' : 'Sign In'}
-                        </button>
+                        </div>
                     </div>
                 </motion.nav>
             </div>
         )}
       </AnimatePresence>
+
     </>
   );
 });

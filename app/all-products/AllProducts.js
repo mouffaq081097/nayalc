@@ -36,6 +36,8 @@ const SidebarFilters = ({
   maxPrice,
   clearFilters,
   allProducts,
+  searchTerm,
+  setSearchTerm
 }) => {
   const [localPriceRange, setLocalPriceRange] = useState(priceRange);
   const [showAllBrands, setShowMoreBrands] = useState(false);
@@ -75,25 +77,37 @@ const SidebarFilters = ({
 
   return (
     <div className="space-y-10">
-      <div className="flex items-center justify-between pb-6 border-b border-gray-100">
+      {/* Search Input in Sidebar */}
+      <div className="relative group">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-cl-purple/50 group-focus-within:text-cl-purple transition-colors">
+          <Search size={16} />
+        </div>
+        <input 
+          type="text"
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-white/60 border border-purple-100 rounded-2xl py-4 pl-12 pr-4 text-[13px] focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all placeholder:text-gray-300"
+        />
+      </div>
+
+      <div className="flex items-center justify-between pb-6 border-b border-purple-100/50">
         <div>
-            <h2 className="text-[11px] tracking-[0.4em] font-black text-gray-900">Selection</h2>
+            <h2 className="text-[12px] font-bold text-gray-900">Selection Filters</h2>
         </div>
         <button 
           onClick={clearFilters}
-          style={{ color: 'var(--cl-text-soft)' }}
+          className="text-[11px] text-cl-purple hover:underline"
         >
-          Reset
+          Reset All
         </button>
       </div>
 
       <Accordion type="multiple" defaultValue={['category', 'brand', 'price']} className="w-full">
-        <AccordionItem value="category" className="border-b border-gray-50 mb-2">
-          <div className="flex items-center justify-between">
-            <AccordionTrigger className="hover:no-underline py-5 text-[10px] uppercase tracking-[0.3em] font-black text-gray-900 flex-1">
-              Collections
-            </AccordionTrigger>
-          </div>
+        <AccordionItem value="category" className="border-b border-purple-50 mb-2">
+          <AccordionTrigger className="hover:no-underline py-5 text-[12px] font-bold text-gray-900">
+            Collections
+          </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-3 pt-1 pb-4">
               {categories.map((category) => (
@@ -109,16 +123,16 @@ const SidebarFilters = ({
                 >
                   <div className="flex items-center">
                     <div
-                      className="w-4 h-4 rounded border flex items-center justify-center transition-all"
-                      style={selectedCategories.includes(category) ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderColor: 'rgb(167,139,250)' } : { background: 'white', borderColor: '#e5e7eb' }}
+                      className="w-5 h-5 rounded-lg border flex items-center justify-center transition-all"
+                      style={selectedCategories.includes(category) ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderColor: 'transparent' } : { background: 'white', borderColor: '#f3e8ff' }}
                     >
-                        {selectedCategories.includes(category) && <Check size={10} className="text-white" strokeWidth={4} />}
+                        {selectedCategories.includes(category) && <Check size={12} className="text-white" strokeWidth={3} />}
                     </div>
-                    <span className={`ml-3 text-[12px] tracking-widest transition-colors ${selectedCategories.includes(category) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>
+                    <span className={`ml-3 text-[13px] transition-colors ${selectedCategories.includes(category) ? 'text-cl-purple font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>
                         {category.charAt(0).toUpperCase() + category.slice(1)}
                     </span>
                   </div>
-                  <span className="text-[9px] font-black text-gray-200 group-hover/item:text-[var(--cl-purple)] transition-colors">
+                  <span className="text-[11px] font-medium text-purple-200 group-hover/item:text-cl-purple transition-colors">
                     {categoryCounts[category] || 0}
                   </span>
                 </div>
@@ -127,12 +141,10 @@ const SidebarFilters = ({
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="brand" className="border-b border-gray-50 mb-2">
-          <div className="flex items-center justify-between">
-            <AccordionTrigger className="hover:no-underline py-5 text-[10px] uppercase tracking-[0.3em] font-black text-gray-900 flex-1">
-              Designers
-            </AccordionTrigger>
-          </div>
+        <AccordionItem value="brand" className="border-b border-purple-50 mb-2">
+          <AccordionTrigger className="hover:no-underline py-5 text-[12px] font-bold text-gray-900">
+            Designers
+          </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-3 pt-1 pb-4 pr-2">
               {displayedBrands.map((brand) => (
@@ -148,16 +160,16 @@ const SidebarFilters = ({
                 >
                 <div className="flex items-center">
                     <div
-                      className="w-4 h-4 rounded border flex items-center justify-center transition-all"
-                      style={selectedBrands.includes(brand) ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderColor: 'rgb(167,139,250)' } : { background: 'white', borderColor: '#e5e7eb' }}
+                      className="w-5 h-5 rounded-lg border flex items-center justify-center transition-all"
+                      style={selectedBrands.includes(brand) ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderColor: 'transparent' } : { background: 'white', borderColor: '#f3e8ff' }}
                     >
-                        {selectedBrands.includes(brand) && <Check size={10} className="text-white" strokeWidth={4} />}
+                        {selectedBrands.includes(brand) && <Check size={12} className="text-white" strokeWidth={3} />}
                     </div>
-                    <span className={`ml-3 text-[12px] tracking-widest transition-colors ${selectedBrands.includes(brand) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>
+                    <span className={`ml-3 text-[13px] transition-colors ${selectedBrands.includes(brand) ? 'text-cl-purple font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>
                         {brand}
                     </span>
                 </div>
-                <span className="text-[9px] font-black text-gray-200 group-hover/item:text-[var(--cl-purple)] transition-colors">
+                <span className="text-[11px] font-medium text-purple-200 group-hover/item:text-cl-purple transition-colors">
                     {brandCounts[brand] || 0}
                 </span>
                 </div>
@@ -165,11 +177,14 @@ const SidebarFilters = ({
               
               {brands.length > 8 && (
                 <button 
-                    onClick={() => setShowMoreBrands(!showAllBrands)}
-                    className="text-[9px] font-black text-gray-400 hover:text-[var(--cl-purple)] transition-colors pt-2 uppercase tracking-widest flex items-center gap-2"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMoreBrands(!showAllBrands);
+                    }}
+                    className="text-[11px] font-bold text-cl-purple/60 hover:text-cl-purple transition-colors pt-4 flex items-center gap-2"
                 >
-                    {showAllBrands ? <Minus size={10} /> : <PlusIcon size={10} />}
-                    {showAllBrands ? 'Condense' : `View All (${brands.length})`}
+                    {showAllBrands ? <Minus size={12} /> : <PlusIcon size={12} />}
+                    {showAllBrands ? 'Condense' : `View All Designers (${brands.length})`}
                 </button>
               )}
             </div>
@@ -177,8 +192,8 @@ const SidebarFilters = ({
         </AccordionItem>
 
         <AccordionItem value="price" className="border-none mb-2">
-          <AccordionTrigger className="hover:no-underline py-5 text-[10px] uppercase tracking-[0.3em] font-black text-gray-900">
-            Investment
+          <AccordionTrigger className="hover:no-underline py-5 text-[12px] font-bold text-gray-900">
+            Investment Range
           </AccordionTrigger>
           <AccordionContent>
             <div className="pt-6 px-2 pb-4">
@@ -189,15 +204,15 @@ const SidebarFilters = ({
                 onValueChange={setLocalPriceRange}
                 className="mb-8"
               />
-              <div className="flex justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex justify-between items-center gap-4 bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-purple-100 shadow-sm">
                 <div className="flex flex-col">
-                    <span className="text-[7px] uppercase text-gray-400 font-black tracking-[0.2em] mb-1">Min</span>
-                    <span className="text-[11px] font-black text-gray-900">AED {localPriceRange[0]}</span>
+                    <span className="text-[9px] text-purple-300 font-bold mb-0.5">From</span>
+                    <span className="text-[13px] font-bold text-gray-900">AED {localPriceRange[0]}</span>
                 </div>
-                <div className="h-6 w-[1px] bg-gray-100"></div>
+                <div className="h-8 w-px bg-purple-100"></div>
                 <div className="flex flex-col items-end">
-                    <span className="text-[7px] uppercase text-gray-400 font-black tracking-[0.2em] mb-1">Max</span>
-                    <span className="text-[11px] font-black text-gray-900">AED {localPriceRange[1]}</span>
+                    <span className="text-[9px] text-purple-300 font-bold mb-0.5">To</span>
+                    <span className="text-[13px] font-bold text-gray-900">AED {localPriceRange[1]}</span>
                 </div>
               </div>
             </div>
@@ -205,14 +220,14 @@ const SidebarFilters = ({
         </AccordionItem>
       </Accordion>
 
-      <div className="pt-6 border-t border-gray-100">
-        <label className="flex items-center justify-between group cursor-pointer bg-white p-4 rounded-2xl border border-gray-50 shadow-sm" onClick={() => setShowInStock(!showInStock)}>
+      <div className="pt-6 border-t border-purple-100/50">
+        <label className="flex items-center justify-between group cursor-pointer bg-white/50 backdrop-blur-sm p-5 rounded-2xl border border-purple-100 shadow-sm transition-all hover:bg-purple-50/50" onClick={() => setShowInStock(!showInStock)}>
           <div className="flex items-center">
-            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${showInStock ? 'bg-green-500 border-green-500' : 'border-gray-200 bg-white'}`}>
-                {showInStock && <Check size={12} strokeWidth={4} className="text-white" />}
+            <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${showInStock ? 'bg-green-500 border-green-500' : 'border-purple-100 bg-white'}`}>
+                {showInStock && <Check size={14} strokeWidth={3} className="text-white" />}
             </div>
             <div className="ml-4">
-                <span className={`block text-[10px] uppercase tracking-[0.2em] transition-colors font-black ${showInStock ? 'text-gray-900' : 'text-gray-400'}`}>
+                <span className={`block text-[13px] transition-colors font-bold ${showInStock ? 'text-gray-900' : 'text-gray-500'}`}>
                     Available Now
                 </span>
             </div>
@@ -238,10 +253,8 @@ export default function AllProductsPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(16);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const { scrollY } = useScroll();
-  const springScroll = useSpring(scrollY, { stiffness: 100, damping: 30 });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -283,7 +296,9 @@ export default function AllProductsPage() {
   }, [allProducts]);
   
   useEffect(() => {
-    setPriceRange([0, maxPrice]);
+    if (maxPrice > 0) {
+        setPriceRange([0, maxPrice]);
+    }
   }, [maxPrice]);
 
   const clearFilters = () => {
@@ -334,257 +349,192 @@ export default function AllProductsPage() {
   const displayedProducts = filteredAndSortedProducts.slice(0, visibleCount);
   const loadMore = () => setVisibleCount(prev => prev + 12);
 
-  const activeFiltersCount = selectedCategories.length + selectedBrands.length + (showInStock ? 1 : 0);
-
   return (
-    <div className="bg-[var(--cl-bg)] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+    <div className="bg-transparent min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       
-      {/* Cloud Luxe aura orbs */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="cl-aura cl-aura-purple" style={{ width: 600, height: 600, top: '-10%', right: '-10%', opacity: 0.15 }} />
-        <div className="cl-aura cl-aura-rose" style={{ width: 500, height: 500, bottom: '10%', left: '-10%', opacity: 0.1 }} />
-      </div>
-
-      {/* Tactile Paper Grain */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      {/* Global aura orbs are inherited from LayoutContent.js */}
 
       <StoreHeader title="Store." />
       <StoreCategoryNav />
 
       {/* ── The Naya Lumière Difference ── */}
-      <section className="w-full pt-8 pb-10 bg-transparent border-b border-[var(--cl-glass-border)]/50 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply" />
+      <section className="w-full pt-8 pb-10 bg-transparent border-b border-purple-100/30 relative overflow-hidden">
         <div className="max-w-[1400px] mx-auto">
-          {/* Section header — matches "Curated Universes" style */}
+          {/* Section header */}
           <div className="px-6 md:px-10 mb-6 text-center space-y-3">
             <div className="flex items-center justify-center gap-3">
-              <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(216,180,254), rgb(196,167,254))' }} />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'rgb(147,104,236)' }}>Our Promise</span>
-              <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }} />
+              <span className="w-8 h-px bg-purple-200" />
+              <span className="text-[11px] font-bold text-cl-purple">Our Promise</span>
+              <span className="w-8 h-px bg-purple-200" />
             </div>
             <h2 className="text-3xl md:text-5xl font-serif italic text-cl-deep leading-tight">
               The Naya Lumière{' '}
-              <span className="font-sans not-italic font-black" style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>difference.</span>
+              <span className="font-sans not-italic font-bold" style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>difference.</span>
             </h2>
-            <p className="text-[13px] font-medium" style={{ color: 'var(--cl-text-light)' }}>Even more reasons to shop with us.</p>
+            <p className="text-[14px] font-medium text-gray-500">Excellence in every formulation.</p>
           </div>
 
-          {/* Horizontally scrollable card rail */}
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pl-6 md:pl-10 pr-6 md:pr-10 pb-3" style={{ scrollSnapType: 'x mandatory' }}>
-
-            {/* Card 1 — Seasonal Offer */}
+          {/* Elegant Centered Cards */}
+          <div className="flex overflow-x-auto md:overflow-visible md:justify-center flex-nowrap gap-6 md:gap-8 px-6 md:px-10 pb-8 no-scrollbar snap-x snap-mandatory">
+            {/* Card 1 — Tabby */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
-              style={{ scrollSnapAlign: 'start' }}
+              initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] rounded-[2rem] overflow-hidden transition-all duration-500 hover:-translate-y-2 flex flex-col group relative p-8 snap-center"
+              style={{ 
+                background: 'rgba(255, 255, 255, 0.4)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.7)',
+                boxShadow: '0 10px 40px rgba(147,51,234,0.03)'
+              }}
             >
-              {/* Inner image zone — 75% */}
-              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
-                style={{ background: 'radial-gradient(ellipse at 60% 30%, #7c3aed 0%, #4c1d95 40%, #1c0050 90%)' }}>
-                {[...Array(16)].map((_, i) => (
-                  <div key={i} className="absolute rounded-full bg-white"
-                    style={{ width: i%3===0?'2px':'1px', height: i%3===0?'2px':'1px', top:`${8+(i*19)%80}%`, left:`${4+(i*27)%90}%`, opacity: 0.35+(i%4)*0.15 }} />
-                ))}
-                <div className="relative z-10 w-36 h-[84px] rounded-[14px] shadow-2xl flex flex-col justify-between p-3.5 overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #5b21b6 100%)' }}>
-                  <div className="absolute inset-0 opacity-15" style={{ background: 'radial-gradient(circle at 70% 15%, #fff 0%, transparent 55%)' }} />
+              <div className="absolute inset-0 bg-gradient-to-b from-purple-100/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              {/* Floating Glass Tabby Card */}
+              <div className="h-32 w-full flex items-center justify-center mb-6 relative">
+                <div className="absolute w-24 h-24 bg-purple-200/40 rounded-full blur-[30px] group-hover:bg-purple-300/50 transition-colors" />
+                <div className="relative z-10 w-36 h-24 rounded-2xl shadow-xl border border-white/40 flex flex-col justify-between p-4 overflow-hidden group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-500"
+                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.5))', backdropFilter: 'blur(10px)' }}>
                   <div className="flex justify-between items-start">
-                    <div className="w-6 h-4 rounded bg-yellow-300/80 shadow-sm" />
-                    <CreditCard size={13} className="text-white/50" strokeWidth={1.5} />
+                    <div className="w-7 h-4 rounded bg-[var(--cl-purple)]/20 flex items-center justify-center">
+                        <div className="w-3 h-2 rounded-sm bg-[var(--cl-purple)]/40" />
+                    </div>
+                    <CreditCard size={14} style={{ color: 'var(--cl-purple)' }} />
                   </div>
                   <div>
-                    <div className="text-[7px] font-bold text-white/50 tracking-widest uppercase mb-0.5">Tabby</div>
-                    <div className="text-[10px] font-bold text-white tracking-wider">•••• •••• •••• 4242</div>
+                    <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tabby Pay Later</div>
+                    <div className="text-[11px] font-mono font-bold text-gray-800">•••• 4242</div>
                   </div>
                 </div>
               </div>
-              {/* Text zone — 25% */}
-              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p style={{ color: 'var(--cl-purple)' }}>Seasonal Offer</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
+              
+              <div className="flex flex-col items-center text-center relative z-10">
+                <p className="text-[10px] uppercase tracking-[0.2em] font-bold mb-3" style={{ color: 'var(--cl-purple)' }}>Flexible Payments</p>
+                <h3 className="text-[18px] font-serif italic text-gray-900 leading-snug">
                   0% installment plan with Tabby.
                 </h3>
-                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Great ways to pay</span>
-                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
-                </div>
               </div>
             </motion.div>
 
-            {/* Card 2 — Curated For You */}
+            {/* Card 2 — AI Specialist */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.06, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
-              style={{ scrollSnapAlign: 'start' }}
+              initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] rounded-[2rem] overflow-hidden transition-all duration-500 hover:-translate-y-2 flex flex-col group relative p-8 snap-center"
+              style={{ 
+                background: 'rgba(255, 255, 255, 0.4)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.7)',
+                boxShadow: '0 10px 40px rgba(147,51,234,0.03)'
+              }}
             >
-              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-end justify-center"
-                style={{ background: 'linear-gradient(160deg, #4c1d95 0%, #6d28d9 40%, #3b0764 100%)' }}>
-                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 30% 0%, #e9d5ff 0%, transparent 50%)' }} />
-                <div className="relative z-10 mb-0 flex gap-2 items-end px-6">
-                  {[
-                    { bg: 'rgb(167,139,250)', h: 'h-20', icon: <Droplets size={18} className="text-white/70" strokeWidth={1.5} /> },
-                    { bg: 'rgb(126,105,230)', h: 'h-28', icon: <Sparkles size={18} className="text-white/80" strokeWidth={1.5} /> },
-                    { bg: 'rgb(196,167,254)', h: 'h-16', icon: <Heart size={18} className="text-white/70" strokeWidth={1.5} /> },
-                  ].map((b, i) => (
-                    <div key={i} className={`flex-1 ${b.h} rounded-t-2xl flex items-center justify-center shadow-lg`} style={{ backgroundColor: b.bg }}>
-                      {b.icon}
-                    </div>
-                  ))}
+              <div className="absolute inset-0 bg-gradient-to-b from-blue-100/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              {/* Glowing Orb */}
+              <div className="h-32 w-full flex items-center justify-center mb-6 relative">
+                <div className="absolute w-24 h-24 bg-blue-200/40 rounded-full blur-[30px] group-hover:bg-blue-300/50 transition-colors" />
+                <div className="relative z-10 w-20 h-20 rounded-full flex items-center justify-center border border-white/50 shadow-lg group-hover:scale-110 transition-transform duration-500"
+                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.4))', backdropFilter: 'blur(10px)' }}>
+                    <Sparkles size={28} className="text-blue-500" strokeWidth={1.5} />
+                    <div className="absolute top-0 right-0 w-3 h-3 bg-blue-400 rounded-full animate-ping opacity-70" />
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p style={{ color: 'var(--cl-purple)' }}>Curated For You</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
-                  Customize your daily skincare routine.
+              
+              <div className="flex flex-col items-center text-center relative z-10">
+                <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-blue-500 mb-3">AI Consultant</p>
+                <h3 className="text-[18px] font-serif italic text-gray-900 leading-snug">
+                  Precision skin diagnosis in seconds.
                 </h3>
-                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Explore</span>
-                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
-                </div>
               </div>
             </motion.div>
 
-            {/* Card 3 — AI Specialist */}
+            {/* Card 3 — Loyalty */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.12, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
-              style={{ scrollSnapAlign: 'start' }}
+              initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] rounded-[2rem] overflow-hidden transition-all duration-500 hover:-translate-y-2 flex flex-col group relative p-8 snap-center"
+              style={{ 
+                background: 'rgba(255, 255, 255, 0.4)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.7)',
+                boxShadow: '0 10px 40px rgba(147,51,234,0.03)'
+              }}
             >
-              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
-                style={{ background: 'linear-gradient(160deg, #003566 0%, #001d3d 70%)' }}>
-                <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 50% 40%, #0096c7 0%, transparent 60%)' }} />
-                <div className="relative z-10 flex items-center justify-center">
-                  <div className="absolute w-28 h-28 rounded-full border border-blue-400/20 animate-ping" style={{ animationDuration: '3s' }} />
-                  <div className="absolute w-18 h-18 rounded-full border border-blue-400/25" style={{ width: '4.5rem', height: '4.5rem' }} />
-                  <div className="w-14 h-14 rounded-full bg-blue-500/20 border border-blue-400/40 flex items-center justify-center">
-                    <Sparkles size={28} className="text-blue-300" strokeWidth={1.5} />
-                  </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-amber-100/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              {/* Floating Star */}
+              <div className="h-32 w-full flex items-center justify-center mb-6 relative">
+                <div className="absolute w-24 h-24 bg-amber-200/40 rounded-full blur-[30px] group-hover:bg-amber-300/50 transition-colors" />
+                <div className="relative z-10 w-20 h-20 rounded-2xl flex items-center justify-center border border-white/50 shadow-lg group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500"
+                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.4))', backdropFilter: 'blur(10px)' }}>
+                    <Star size={32} className="text-amber-500 fill-amber-400 drop-shadow-sm" strokeWidth={1.5} />
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p style={{ color: 'var(--cl-purple)' }}>AI Specialist</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
-                  Skin diagnosis in seconds.
+              
+              <div className="flex flex-col items-center text-center relative z-10">
+                <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-amber-500 mb-3">Naya Rewards</p>
+                <h3 className="text-[18px] font-serif italic text-gray-900 leading-snug">
+                  Earn points with every selection.
                 </h3>
-                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Try AI Consultant</span>
-                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
-                </div>
               </div>
             </motion.div>
-
-            {/* Card 4 — Loyalty Rewards */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.18, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
-              style={{ scrollSnapAlign: 'start' }}
-            >
-              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
-                style={{ background: 'linear-gradient(155deg, #92400e 0%, #b45309 50%, #78350f 100%)' }}>
-                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 20% 10%, #fde68a 0%, transparent 50%)' }} />
-                <div className="relative z-10 flex flex-col items-center gap-2">
-                  <Star size={56} className="text-yellow-300 fill-yellow-300 drop-shadow-lg" strokeWidth={1} />
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={12} className="text-yellow-300/80 fill-yellow-300/80" strokeWidth={1} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p style={{ color: 'var(--cl-purple)' }}>Loyalty Rewards</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
-                  Earn Naya Points with every purchase.
-                </h3>
-                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Redeem for rewards</span>
-                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 5 — Art of Gifting */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.24, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
-              style={{ scrollSnapAlign: 'start' }}
-            >
-              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
-                style={{ background: 'linear-gradient(150deg, #064e3b 0%, #065f46 50%, #047857 100%)' }}>
-                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 80% 10%, #6ee7b7 0%, transparent 50%)' }} />
-                <div className="relative z-10">
-                  <div className="relative w-24 h-20 rounded-xl bg-emerald-400 shadow-2xl flex items-center justify-center">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-4 rounded-lg bg-emerald-300" />
-                    <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[3px] bg-emerald-300" />
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex gap-1">
-                      <div className="w-5 h-5 rounded-full border-[2.5px] border-emerald-300 -rotate-12" />
-                      <div className="w-5 h-5 rounded-full border-[2.5px] border-emerald-300 rotate-12" />
-                    </div>
-                    <Gift size={24} className="text-white mt-2" strokeWidth={1.5} />
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p style={{ color: 'var(--cl-purple)' }}>The Art of Gifting</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
-                  Luxury gifts are in the cards.
-                </h3>
-                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Shop gift sets</span>
-                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 6 — Your Ritual */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.30, duration: 0.45 }}
-              className="flex-shrink-0 w-[260px] md:w-[280px] h-[350px] rounded-[2rem] overflow-hidden bg-white border border-gray-100 transition-all duration-500 hover:shadow-[0_0_30px_rgba(147,51,234,0.12)] hover:border-purple-200/60 flex flex-col group"
-              style={{ scrollSnapAlign: 'start' }}
-            >
-              <div className="relative mx-4 mt-4 rounded-[1.5rem] overflow-hidden flex-[3] flex items-center justify-center"
-                style={{ background: 'linear-gradient(150deg, #4c1d95 0%, #5b21b6 50%, #3b0764 100%)' }}>
-                <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 20% 80%, #c4b5fd 0%, transparent 50%)' }} />
-                <div className="relative z-10 flex items-end gap-3">
-                  <div className="w-9 h-20 rounded-full bg-violet-400/80 shadow-lg flex items-center justify-center">
-                    <Droplets size={16} className="text-white/80" strokeWidth={1.5} />
-                  </div>
-                  <div className="w-11 h-28 rounded-[1.5rem] bg-violet-500/90 shadow-xl flex items-center justify-center">
-                    <Droplets size={20} className="text-white/90" strokeWidth={1.5} />
-                  </div>
-                  <div className="w-9 h-16 rounded-full bg-violet-300/80 shadow-lg flex items-center justify-center">
-                    <Droplets size={14} className="text-white/80" strokeWidth={1.5} />
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-center flex-1 px-5 py-3 text-center">
-                <p style={{ color: 'var(--cl-purple)' }}>Your Ritual</p>
-                <h3 className="text-[14px] font-serif italic text-gray-900 leading-snug group-hover:text-[var(--cl-purple)] transition-colors duration-300">
-                  Master your new skincare ritual.
-                </h3>
-                <div className="flex items-center gap-1.5 mt-2 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Discover the routine</span>
-                  <ArrowRight size={11} style={{ color: 'rgb(147,104,236)' }} />
-                </div>
-              </div>
-            </motion.div>
-
           </div>
         </div>
       </section>
-      {/* ── End Difference Section ── */}
 
-      <div className="container mx-auto px-4 md:px-10 relative z-30 pt-4">
-        <div className="flex justify-end mb-6">
-            <button 
-                onClick={() => setIsFilterOpen(true)}
-                className="flex items-center gap-2 px-6 py-2 text-white rounded-full text-[12px] font-bold tracking-tight active:scale-95 group transition-all duration-500"
-                style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 14px rgba(147,51,234,0.22)' }}
-            >
-                <span>Refine</span>
-                <Filter size={14} className="group-hover:rotate-12 transition-transform text-white" />
-            </button>
+      <div className="container mx-auto px-4 md:px-10 relative z-30 pt-10">
+        
+        {/* Modern Action Bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+                <h1 className="text-4xl font-serif italic text-cl-deep">Library</h1>
+                <span className="h-8 w-px bg-purple-100 hidden md:block" />
+                <p className="text-[13px] font-medium text-gray-400 hidden md:block">
+                    {filteredAndSortedProducts.length} Results
+                </p>
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="relative flex-1 md:w-64 group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-200 group-focus-within:text-cl-purple transition-colors" size={16} />
+                    <input 
+                        type="text"
+                        placeholder="Search..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-white/80 border border-purple-50 rounded-2xl py-3 pl-11 pr-4 text-[13px] focus:outline-none focus:ring-2 focus:ring-purple-100 transition-all shadow-sm"
+                    />
+                </div>
+
+                <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-36 h-[46px] bg-white/80 border-purple-50 rounded-2xl text-[12px] font-bold focus:ring-purple-100">
+                        <SelectValue placeholder="Sort By" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-purple-50">
+                        <SelectItem value="featured" className="text-[12px] font-medium">Featured</SelectItem>
+                        <SelectItem value="newest" className="text-[12px] font-medium">Newest</SelectItem>
+                        <SelectItem value="price-low" className="text-[12px] font-medium">Price: Low to High</SelectItem>
+                        <SelectItem value="price-high" className="text-[12px] font-medium">Price: High to Low</SelectItem>
+                        <SelectItem value="rating" className="text-[12px] font-medium">Highest Rated</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <button 
+                    onClick={() => setIsFilterOpen(true)}
+                    className="flex items-center gap-2 px-6 h-[46px] text-white rounded-2xl text-[12px] font-bold active:scale-95 group transition-all duration-500 shadow-md"
+                    style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
+                >
+                    <Filter size={14} className="group-hover:rotate-12 transition-transform" />
+                    <span>Filter</span>
+                    {selectedCategories.length + selectedBrands.length > 0 && (
+                        <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                            {selectedCategories.length + selectedBrands.length}
+                        </span>
+                    )}
+                </button>
+            </div>
         </div>
+
         <main className="w-full">
             {isLoading ? (
               <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-4 md:gap-6`}>
@@ -596,25 +546,26 @@ export default function AllProductsPage() {
               <motion.div 
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-40 bg-white rounded-[2.5rem] border border-gray-200 shadow-sm relative overflow-hidden"
+                className="text-center py-40 bg-white/60 backdrop-blur-md rounded-[3rem] border border-purple-100 shadow-sm relative overflow-hidden"
               >
-                <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-8 border border-gray-100 shadow-inner">
-                  <Search size={28} strokeWidth={1.5} className="text-gray-300" />
+                <div className="w-20 h-20 bg-purple-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-8">
+                  <Search size={28} className="text-purple-200" />
                 </div>
-                <h3 className="font-serif text-4xl text-gray-900 mb-6 italic">Selection Not Found</h3>
+                <h3 className="font-serif text-4xl text-gray-900 mb-4 italic">No matches found</h3>
+                <p className="text-gray-400 mb-8 max-w-xs mx-auto text-[14px]">Try adjusting your filters or search terms to find what you're looking for.</p>
                 <button 
                   onClick={clearFilters}
-                  className="px-12 py-4 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] transition-all active:scale-95 shadow-lg"
+                  className="px-10 py-4 text-white rounded-2xl text-[11px] font-bold transition-all active:scale-95 shadow-lg shadow-purple-200"
                   style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
                 >
-                  Reset Parameters
+                  Clear All Filters
                 </button>
               </motion.div>
             ) : (
               <div className="space-y-16">
                 <motion.div 
                     layout
-                    className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-x-3 md:gap-x-4 gap-y-6 md:gap-y-10`}
+                    className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-x-4 md:gap-x-6 gap-y-10 md:gap-y-14`}
                 >
                     <AnimatePresence mode='popLayout'>
                         {displayedProducts.map((product, index) => (
@@ -622,8 +573,8 @@ export default function AllProductsPage() {
                             layout
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.5, delay: (index % 12) * 0.03, ease: "easeOut" }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.5, delay: (index % 12) * 0.03 }}
                             key={product.id} 
                         >
                             <ProductCard
@@ -646,9 +597,9 @@ export default function AllProductsPage() {
 
                 {/* Load More */}
                 {visibleCount < filteredAndSortedProducts.length && (
-                    <div className="flex flex-col items-center gap-5 pt-10 pb-6 border-t border-[var(--cl-glass-border)]/50">
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="w-48 h-0.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="flex flex-col items-center gap-6 pt-12 pb-6 border-t border-purple-50">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="w-56 h-1.5 bg-purple-50 rounded-full overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(displayedProducts.length / filteredAndSortedProducts.length) * 100}%` }}
@@ -656,17 +607,17 @@ export default function AllProductsPage() {
                                     style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(126,105,230))' }}
                                 />
                             </div>
-                            <span className="text-[9px] uppercase tracking-[0.3em] text-gray-400 font-medium">
-                                {displayedProducts.length} of {filteredAndSortedProducts.length}
+                            <span className="text-[11px] text-gray-400 font-bold">
+                                Viewed {displayedProducts.length} of {filteredAndSortedProducts.length}
                             </span>
                         </div>
                         <button
                             onClick={loadMore}
-                            className="group flex items-center gap-2 px-6 py-2.5 text-white rounded-full text-[11px] font-bold tracking-tight active:scale-95 transition-all duration-500 hover:shadow-[0_6px_20px_rgba(147,51,234,0.35)]"
-                            style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 14px rgba(147,51,234,0.22)' }}
+                            className="group flex items-center gap-2 px-8 py-4 text-white rounded-2xl text-[12px] font-bold active:scale-95 transition-all duration-500 shadow-md hover:shadow-xl shadow-purple-100"
+                            style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
                         >
-                            Show more
-                            <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                            View More Products
+                            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                         </button>
                     </div>
                 )}
@@ -683,35 +634,31 @@ export default function AllProductsPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/60 backdrop-blur-md" 
+                className="absolute inset-0 bg-cl-deep/20 backdrop-blur-sm" 
                 onClick={() => setIsFilterOpen(false)}
             ></motion.div>
             <motion.div 
                 initial={{ x: '100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
-                transition={{ type: "spring", damping: 35, stiffness: 300 }}
-                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[var(--cl-bg)] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-[var(--cl-glass-border)] flex flex-col"
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-white shadow-2xl overflow-hidden rounded-l-[2.5rem] border-l border-purple-50 flex flex-col"
             >
                 {/* Drawer Header */}
-                <div className="p-10 border-b border-[var(--cl-glass-border)]/50 bg-white/50 backdrop-blur-md sticky top-0 z-20">
-                    <div className="flex items-center justify-between mb-8">
+                <div className="p-8 border-b border-purple-50 bg-white/80 backdrop-blur-md flex-shrink-0 z-20">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-4xl font-serif italic text-cl-deep tracking-tighter leading-none">Refine</h2>
-                            <p className="text-[9px] uppercase tracking-[0.4em] font-black mt-3" style={{ color: 'var(--cl-text-soft)' }}>Selection Criteria</p>
+                            <h2 className="text-3xl font-serif italic text-cl-deep">Refine</h2>
+                            <p className="text-[11px] font-bold text-gray-400 mt-1">Filters</p>
                         </div>
-                        <button onClick={() => setIsFilterOpen(false)} className="w-12 h-12 bg-white text-cl-deep rounded-2xl shadow-lg hover:rotate-90 transition-all border border-[var(--cl-glass-border)]/50 flex items-center justify-center">
-                            <X size={20} strokeWidth={1.5} />
+                        <button onClick={() => setIsFilterOpen(false)} className="w-10 h-10 bg-purple-50 text-cl-deep rounded-xl flex items-center justify-center hover:bg-purple-100 transition-all">
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
                 
-                <div className="p-10 flex-grow relative">
-                     {/* Sidebar Texture */}
-                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
-                    
-                    <div className="relative z-10">
-                        <SidebarFilters 
+                <div className="p-8 flex-1 overflow-y-auto z-10 relative custom-scrollbar">
+                    <SidebarFilters 
                         categories={categories}
                         brands={brands}
                         selectedCategories={selectedCategories}
@@ -725,17 +672,18 @@ export default function AllProductsPage() {
                         maxPrice={maxPrice}
                         clearFilters={clearFilters}
                         allProducts={allProducts}
-                        />
-                    </div>
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                    />
                 </div>
                 
-                <div className="p-10 pt-6 pb-12 sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-[var(--cl-glass-border)]/50">
+                <div className="p-8 pt-4 pb-10 bg-white/90 backdrop-blur-md border-t border-purple-50 flex-shrink-0 z-20">
                     <button 
                         onClick={() => setIsFilterOpen(false)}
-                        className="w-full py-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.4em] text-white active:scale-95 transition-all duration-300 hover:shadow-[0_8px_28px_rgba(147,51,234,0.35)]"
-                        style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', boxShadow: '0 4px 16px rgba(147,51,234,0.22)' }}
+                        className="w-full py-5 rounded-2xl text-[12px] font-bold text-white shadow-lg active:scale-95 transition-all"
+                        style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
                     >
-                        Reveal Selection ({filteredAndSortedProducts.length})
+                        Apply Filters ({filteredAndSortedProducts.length})
                     </button>
                 </div>
             </motion.div>

@@ -31,10 +31,13 @@ export default function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Suspense fallback={
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-4 border-brand-pink/20 border-t-brand-pink rounded-full animate-spin"></div>
-            <span className="text-[10px] uppercase tracking-[0.4em] text-gray-400 font-bold">Loading Boutique</span>
+        <div className="min-h-screen bg-transparent flex items-center justify-center">
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative">
+                <div className="w-12 h-12 border-2 border-purple-100 rounded-full"></div>
+                <div className="absolute inset-0 w-12 h-12 border-t-2 border-purple-500 rounded-full animate-spin"></div>
+            </div>
+            <span className="text-[12px] text-cl-deep font-bold italic font-serif">Opening the Boutique...</span>
           </div>
         </div>
       }>

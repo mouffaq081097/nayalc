@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.email !== 'mouffaq@nayalc.com') {
+    if (!session || session.user?.email !== 'mouffaq.dalloul@nayalc.com') {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -48,6 +48,14 @@ export async function POST(request) {
                     ALTER TABLE delivered_orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10,2) DEFAULT 0;
                     ALTER TABLE cancelled_orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10,2) DEFAULT 0;
                 `
+            },
+            {
+                name: '007_add_size_to_products',
+                sql: `ALTER TABLE products ADD COLUMN IF NOT EXISTS size VARCHAR(255);`
+            },
+            {
+                name: '008_add_how_to_use_video_to_products',
+                sql: `ALTER TABLE products ADD COLUMN IF NOT EXISTS how_to_use_video TEXT;`
             },
         ];
 

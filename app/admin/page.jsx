@@ -42,7 +42,7 @@ const AdminDashboard = () => {
     const router = useRouter();
 
     useEffect(() => {
-        if (user?.email === 'mouffaq@nayalc.com') fetchAllOrders(1, 100);
+        if (user?.email === 'mouffaq.dalloul@nayalc.com') fetchAllOrders(1, 100);
     }, [fetchAllOrders, user]);
 
     const stats = useMemo(() => {
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
         };
     }, [allOrders.orders]);
 
-    if (loading || !user || user.email !== 'mouffaq@nayalc.com') return (
+    if (loading || !user || user.email !== 'mouffaq.dalloul@nayalc.com') return (
         <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
             <div className="w-10 h-10 border-4 border-purple-100 border-t-[#9333ea] rounded-full animate-spin" />
             <p className="text-sm text-gray-400 font-medium">Loading…</p>

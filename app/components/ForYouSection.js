@@ -12,7 +12,7 @@ export const ForYouSection = () => {
   const forYouProducts = products.slice(0, 8);
 
   return (
-    <section className="pt-10 pb-20 bg-[var(--cl-bg)] relative overflow-hidden border-t border-[var(--cl-glass-border)]/50">
+    <section className="py-10 bg-transparent relative overflow-hidden border-t border-[var(--cl-glass-border)]/50">
       {/* Tactile Paper Texture */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
       
@@ -27,8 +27,7 @@ export const ForYouSection = () => {
         <div className="mb-10 space-y-3">
           <div className="flex items-center gap-3">
              <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
-             <span className="text-[10px] font-black tracking-[0.3em] uppercase flex items-center gap-2" style={{ color: 'rgb(147,104,236)' }}>
-                <Sparkles size={10} />
+             <span className="text-[10px] md:text-[12px] font-black tracking-widest uppercase" style={{ color: 'rgb(147,104,236)' }}>
                 Tailored Experience
              </span>
           </div>
@@ -50,6 +49,7 @@ export const ForYouSection = () => {
                     id={product.id}
                     name={product.name}
                     price={product.price}
+                    originalPrice={product.originalPrice}
                     image={product.imageUrl}
                     brandName={product.brandName}
                     stock_quantity={product.stock_quantity}

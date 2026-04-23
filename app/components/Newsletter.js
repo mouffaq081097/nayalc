@@ -26,7 +26,7 @@ export function Newsletter() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(data.message);
+        // Newsletter signup success (toast removed)
         setEmail('');
         formRef.current.reset();
       } else {
@@ -90,7 +90,7 @@ export function Newsletter() {
                         </div>
                         <button 
                             type="submit" 
-                            className="h-14 px-10 bg-black text-white rounded-full text-[10px] font-bold hover:bg-brand-pink transition-all duration-500 flex items-center justify-center gap-3 shadow-lg shadow-black/5"
+                            className="cl-gradient-btn h-14 px-10 text-[10px] font-bold flex items-center justify-center gap-3 shadow-lg shadow-black/5"
                         >
                             Subscribe
                             <ArrowRight size={14} />
