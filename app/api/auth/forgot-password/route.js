@@ -7,7 +7,7 @@ export async function POST(request) {
   try {
     const { email } = await request.json();
 
-    if (!email) {
+    if (!email || typeof email !== 'string' || email.length > 254) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
@@ -26,7 +26,13 @@ export async function POST(request) {
       const user = result.rows[0];
       const pwdHash = user.password_hash.slice(0, 16);
 
-      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret');
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        console.error('JWT_SECRET is not set');
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+      }
+
+      const secret = new TextEncoder().encode(jwtSecret);
       const resetToken = await new SignJWT({ userId: user.id, email: user.email, pwdHash })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
