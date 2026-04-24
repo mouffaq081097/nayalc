@@ -104,14 +104,14 @@ export default function OrderConfirmation() {
   }, [stripe, clientSecret, paymentIntentId, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#fdf8ff' }}>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden w-full max-w-[100vw]" style={{ background: '#fdf8ff' }}>
       <div className="absolute top-[-80px] left-[-80px] w-96 h-96 rounded-full blur-[120px] pointer-events-none" style={{ background: 'rgba(196,167,254,0.2)' }} />
       <div className="absolute bottom-[-60px] right-[-60px] w-80 h-80 rounded-full blur-[100px] pointer-events-none" style={{ background: 'rgba(216,180,254,0.15)' }} />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 text-center px-8 py-12 rounded-3xl max-w-md w-full mx-4"
+        className="relative z-10 text-center px-8 py-12 rounded-3xl w-[calc(100%-2rem)] max-w-md mx-auto"
         style={{ background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(14px)', border: '1px solid rgba(216,180,254,0.35)', boxShadow: '0 8px 32px rgba(147,51,234,0.10)' }}
       >
         {(status === 'verifying' || status === 'creating') && (
