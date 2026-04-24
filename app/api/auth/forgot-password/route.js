@@ -13,25 +13,26 @@ export async function POST(request) {
 
     const client = await db.connect();
     try {
-      // Check if user exists
-      const result = await client.query('SELECT id, email FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-      
-      if (result.rows.length === 0) {
-        // For security, don't reveal if email exists or not
+      const result = await client.query(
+        'SELECT id, email, password_hash FROM users WHERE LOWER(email) = LOWER($1)',
+        [email]
+      );
+
+      // Return ambiguous message for unknown emails or OAuth-only accounts (no password_hash)
+      if (result.rows.length === 0 || !result.rows[0].password_hash) {
         return NextResponse.json({ message: 'If an account exists, a reset link has been sent.' });
       }
 
       const user = result.rows[0];
+      const pwdHash = user.password_hash.slice(0, 16);
 
-      // Create reset token (valid for 1 hour)
       const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret');
-      const resetToken = await new SignJWT({ userId: user.id, email: user.email })
+      const resetToken = await new SignJWT({ userId: user.id, email: user.email, pwdHash })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
         .setExpirationTime('1h')
         .sign(secret);
 
-      // Send email
       await sendPasswordResetEmail(user.email, resetToken);
 
       return NextResponse.json({ message: 'If an account exists, a reset link has been sent.' });
