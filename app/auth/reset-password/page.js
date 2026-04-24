@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { Lock, Eye, ArrowLeft, ShieldCheck, Check, ArrowRight, Loader2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, Check, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function ResetPasswordForm() {
@@ -56,6 +56,7 @@ function ResetPasswordForm() {
         <h3 className="font-serif text-3xl italic text-[#6b21a8]">Invalid Link</h3>
         <p className="text-sm text-[rgba(107,33,168,0.5)] font-medium leading-relaxed">This reset link is invalid or has expired.</p>
         <button
+          type="button"
           onClick={() => router.push('/auth')}
           className="text-[rgba(107,33,168,0.5)] hover:text-[#9333ea] font-bold uppercase text-[10px] tracking-widest transition-colors"
         >
@@ -87,10 +88,11 @@ function ResetPasswordForm() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold text-[rgba(107,33,168,0.5)] ml-1">New password</label>
+            <label htmlFor="new-password" className="text-[11px] font-semibold text-[rgba(107,33,168,0.5)] ml-1">New password</label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-purple-400 transition-colors" />
               <input
+                id="new-password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={password}
@@ -103,16 +105,17 @@ function ResetPasswordForm() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300"
               >
-                <Eye className="h-4 w-4" />
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold text-[rgba(107,33,168,0.5)] ml-1">Confirm password</label>
+            <label htmlFor="confirm-password" className="text-[11px] font-semibold text-[rgba(107,33,168,0.5)] ml-1">Confirm password</label>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-purple-400 transition-colors" />
               <input
+                id="confirm-password"
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={confirmPassword}
