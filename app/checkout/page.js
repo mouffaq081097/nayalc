@@ -154,7 +154,6 @@ export default function CheckoutPage() {
           country: addressData.country || 'United Arab Emirates',
           state: addressData.state || '',
           customer_phone: addressData.customerPhone,
-          customer_email: user.email,
           address_label: addressData.addressLabel || addressData.addressLine1,
           is_default: addressData.isDefault || false,
           latitude: addressData.latitude, longitude: addressData.longitude,

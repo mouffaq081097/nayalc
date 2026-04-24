@@ -29,7 +29,7 @@ const fetchOrderItems = async (orderId, itemTableName, client) => {
 const selectOrderFields = (tableName) => `
     SELECT
         o.id,
-        ua.customer_email as "customerEmail",
+        u.email as "customerEmail",
         ua.customer_phone as "customerPhone",
         ua.shipping_address as "shippingAddress",
         ua.city,
@@ -57,6 +57,7 @@ const selectOrderFields = (tableName) => `
         o.courier_website as "courierWebsite"
     FROM ${tableName} o
     LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
+    LEFT JOIN users u ON o.user_id = u.id
 `;
 
 
@@ -351,41 +352,48 @@ export async function POST(request) {
             "SELECT shipping_address, city, zip_code, country FROM user_addresses WHERE id = $1",
             [user_address_id]
         );
+        
+        // Fallback address structure to prevent email template errors
         const shippingAddress = addressRows.length > 0 ? {
-            street: addressRows[0].shipping_address,
-            city: addressRows[0].city,
-            zip: addressRows[0].zip_code,
-            country: addressRows[0].country,
-            state: '' // Assuming state is not stored or can be empty
-        } : null;
+            street: addressRows[0].shipping_address || 'Address not specified',
+            city: addressRows[0].city || 'City not specified',
+            zip: addressRows[0].zip_code || '',
+            country: addressRows[0].country || 'United Arab Emirates',
+            state: ''
+        } : {
+            street: 'Address not found in database',
+            city: '',
+            zip: '',
+            country: '',
+            state: ''
+        };
 
         await client.query('COMMIT');
 
+        // Prepare item details for customer email if needed
+        const productIds = items.map(item => item.productId);
+        const { rows: products } = await db.query(
+            'SELECT p.id, p.name, pi.image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE WHERE p.id = ANY($1)',
+            [productIds]
+        );
+        const itemsWithDetails = items.map(item => {
+            const product = products.find(p => p.id === item.productId);
+            return { 
+                ...item, 
+                name: product ? product.name : 'Unknown Product',
+                imageUrl: product ? product.image_url : ''
+            };
+        });
+
+        // 1. Send Order Confirmation to Customer (if email exists)
         if (userEmail) {
-            const productIds = items.map(item => item.productId);
-            const { rows: products } = await db.query(
-                'SELECT p.id, p.name, pi.image_url FROM products p LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE WHERE p.id = ANY($1)',
-                [productIds]
-            );
-            const itemsWithDetails = items.map(item => {
-                const product = products.find(p => p.id === item.productId);
-                return { 
-                    ...item, 
-                    name: product ? product.name : 'Unknown Product',
-                    imageUrl: product ? product.image_url : '' // Include imageUrl
-                };
-            });
-
-            // Send order confirmation email to customer using Nodemailer
             await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, subtotal, shipping_cost, itemsWithDetails, shippingAddress, gift_wrap_cost, couponCode);
+        }
 
-            // Execute Python script for sending email to administrator
-            const adminEmail = process.env.ADMIN_EMAIL;
-            if (adminEmail) {
-                await sendAdminNotificationEmail(adminEmail, orderId, userEmail, total_amount, shippingAddress);
-            }
-        } else {
-            
+        // 2. Send Notification to Admin (always attempted if ADMIN_EMAIL is set)
+        const adminEmail = process.env.ADMIN_EMAIL;
+        if (adminEmail) {
+            await sendAdminNotificationEmail(adminEmail, orderId, userEmail || 'Guest/Missing Email', total_amount, shippingAddress);
         }
 
         console.log('Order created successfully with ID:', orderId);

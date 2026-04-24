@@ -13,7 +13,6 @@ export async function PUT(request, { params }) {
         state,
         is_default,
         address_label,
-        customer_email,
         customer_phone
     } = await request.json();
 
@@ -29,10 +28,10 @@ export async function PUT(request, { params }) {
 
         const { rows } = await db.query(
             `UPDATE user_addresses
-             SET shipping_address = $1, address_line1 = $2, city = $3, zip_code = $4, country = $5, address_line2 = $6, state = $7, is_default = $8, address_label = $9, customer_email = $10, customer_phone = $11
-             WHERE id = $12 AND user_id = $13
+             SET shipping_address = $1, address_line1 = $2, city = $3, zip_code = $4, country = $5, address_line2 = $6, state = $7, is_default = $8, address_label = $9, customer_phone = $10
+             WHERE id = $11 AND user_id = $12
              RETURNING *`,
-            [address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_email, customer_phone, addressId, userId]
+            [address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_phone, addressId, userId]
         );
 
         if (rows.length === 0) {

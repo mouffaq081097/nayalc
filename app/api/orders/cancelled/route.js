@@ -32,7 +32,7 @@ export async function GET(request) {
         let baseSql = `
             SELECT
                 o.id,
-                ua.customer_email as "customerEmail",
+                u.email as "customerEmail",
                 ua.customer_phone as "customerPhone",
                 ua.shipping_address as "shippingAddress",
                 ua.city,
@@ -50,9 +50,10 @@ export async function GET(request) {
                 o.cancelled_at as "cancelledAt"
             FROM cancelled_orders o
             LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
+            LEFT JOIN users u ON o.user_id = u.id
         `;
         
-        let countSql = `SELECT COUNT(*) FROM cancelled_orders o LEFT JOIN user_addresses ua ON o.user_address_id = ua.id`;
+        let countSql = `SELECT COUNT(*) FROM cancelled_orders o`;
         const params = [];
         const countParams = [];
 

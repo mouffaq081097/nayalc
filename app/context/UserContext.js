@@ -127,7 +127,6 @@ export const UserProvider = ({ children }) => {
         is_default: newAddress.isDefault || newAddress.is_default || false,
         address_label: newAddress.addressLabel || newAddress.addressLine1 || 'Other',
         customer_name: newAddress.customer_name || `${user.first_name} ${user.last_name}`.trim() || '',
-        customer_email: newAddress.customer_email || user.email || '',
         customer_phone: newAddress.customerPhone || newAddress.customer_phone || '',
       };
       await fetchWithAuth(`/api/users/${user.id}/addresses`, {
@@ -154,7 +153,6 @@ export const UserProvider = ({ children }) => {
         is_default: updatedAddress.isDefault || updatedAddress.is_default || false,
         address_label: updatedAddress.addressLabel || updatedAddress.addressLine1 || 'Other',
         customer_name: updatedAddress.customer_name || `${user.first_name} ${user.last_name}`.trim() || '',
-        customer_email: updatedAddress.customer_email || user.email || '',
         customer_phone: updatedAddress.customerPhone || updatedAddress.customer_phone || '',
       };
       await fetchWithAuth(`/api/users/${user.id}/addresses/${updatedAddress.id}`, {

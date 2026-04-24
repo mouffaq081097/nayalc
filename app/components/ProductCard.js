@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartContext } from '../context/CartContext';
-import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, BadgeCheck } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, BadgeCheck, Share2, Flame } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
@@ -26,7 +26,7 @@ const TypewriterText = ({ text, speed = 10 }) => {
   return <div className="whitespace-pre-wrap">{displayedText}</div>;
 };
 
-const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, size, variant = 'light' }) => {
+const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, size, variant = 'light', concerns = [] }) => {
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -43,7 +43,21 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const discount = showComparePrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
   const productUrl = `/product/${slug || id}`;
   const seoAlt = altText || `${name} - ${brandName || 'Luxury Beauty'} | nayalc.com`;
+  const isLowStock = stock_quantity > 0 && stock_quantity < 5;
   const displayImage = (isHovered && imageUrls.length > 1) ? imageUrls[1] : (image || (imageUrls.length > 0 ? imageUrls[0] : '/placeholder-image.jpg'));
+  const secondImage = imageUrls.length > 1 ? imageUrls[1] : null;
+
+  const handleShare = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.share) {
+      navigator.share({
+        title: name,
+        text: `Check out this luxury beauty product: ${name}`,
+        url: window.location.origin + productUrl,
+      });
+    }
+  };
 
   const handleAIGenerate = async (e) => {
     e.preventDefault();
@@ -106,15 +120,14 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative flex flex-col h-full transition-all duration-500 overflow-hidden"
+        className="group relative flex flex-col h-full w-full transition-all duration-500 overflow-hidden"
         style={{
           borderRadius: '24px',
-          background: 'rgba(255, 255, 255, 0.45)',
+          background: 'rgba(255, 255, 255, 0.65)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          border: `1px solid ${isHovered ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)'}`,
-          boxShadow: isHovered ? '0 20px 40px rgba(147,51,234,0.08)' : '0 10px 30px rgba(147,51,234,0.03)',
-          transform: isHovered ? 'translateY(-6px)' : 'translateY(0)',
+          border: '1px solid rgba(216,180,254,0.6)',
+          boxShadow: '0 10px 30px rgba(167,139,250,0.05)',
         }}
       >
         {/* Image area */}
@@ -124,10 +137,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <AnimatePresence mode="wait">
                 <motion.div
                   key={displayImage}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   className="relative w-full h-full"
                 >
                   <Image
@@ -135,8 +148,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                     alt={seoAlt}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                    className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="object-contain"
                   />
+                  {/* Subtle Gradient Overlay on Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </motion.div>
               </AnimatePresence>
             </motion.div>
@@ -146,56 +161,71 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
             {discount > 0 && (
               <span
-                className="text-[9px] font-bold text-white px-2 py-1 rounded-full"
-                style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
+                className="text-[9px] font-bold text-white px-2.5 py-1 rounded-full shadow-sm"
+                style={{ background: 'linear-gradient(135deg, #FF6B6B, #FF8E8E)' }}
               >
                 -{discount}%
               </span>
             )}
             {isNew && (
-              <span className="text-[9px] font-bold text-white px-2 py-1 rounded-full bg-violet-500/80">
-                New
+              <span className="text-[9px] font-bold text-white px-2.5 py-1 rounded-full bg-violet-500/90 backdrop-blur-sm shadow-sm">
+                New Arrival
               </span>
+            )}
+            {isLowStock && (
+              <motion.span 
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="text-[9px] font-bold text-rose-600 px-2.5 py-1 rounded-full bg-rose-50/90 border border-rose-100 backdrop-blur-sm flex items-center gap-1"
+              >
+                <Flame size={10} className="fill-current" />
+                Only {stock_quantity} Left
+              </motion.span>
             )}
           </div>
 
           {/* Top-right: wishlist + AI wand */}
-          <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
+          <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 opacity-100 translate-x-0 md:opacity-0 md:group-hover:opacity-100 md:translate-x-4 md:group-hover:translate-x-0 transition-all duration-300">
             <button
               onClick={handleWishlistToggle}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-md"
               style={{
-                background: isWishlisted ? 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' : 'var(--cl-glass)',
-                border: '1px solid var(--cl-glass-border)',
+                background: isWishlisted ? 'linear-gradient(135deg, #FF7EB3, #FF758C)' : 'rgba(255, 255, 255, 0.9)',
+                border: '1px solid rgba(255,255,255,0.4)',
                 backdropFilter: 'blur(8px)',
               }}
               aria-label="Add to wishlist"
             >
               <Heart
                 size={14}
-                strokeWidth={1.75}
-                style={{ color: isWishlisted ? 'white' : 'var(--cl-purple)' }}
+                strokeWidth={isWishlisted ? 0 : 1.75}
+                style={{ color: isWishlisted ? 'white' : '#6366f1' }}
                 className={isWishlisted ? 'fill-white' : ''}
               />
             </button>
             <button
               onClick={handleAIGenerate}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 relative group/ai"
-              style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)', backdropFilter: 'blur(8px)' }}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 relative group/ai shadow-md"
+              style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }}
               aria-label="AI Insights"
             >
-              <Wand2 size={14} strokeWidth={1.75} style={{ color: 'var(--cl-purple)' }} />
-              <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-[var(--cl-text-deep)] text-white text-[8px] font-semibold px-2 py-1 rounded-full opacity-0 group-hover/ai:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                AI Insights
-              </span>
+              <Wand2 size={14} strokeWidth={1.75} className="text-indigo-600" />
             </button>
             <button
               onClick={toggleQuickView}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"
-              style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)', backdropFilter: 'blur(8px)' }}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-md"
+              style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }}
               aria-label="Quick view"
             >
-              <Eye size={14} strokeWidth={1.75} style={{ color: 'var(--cl-purple)' }} />
+              <Eye size={14} strokeWidth={1.75} className="text-indigo-600" />
+            </button>
+            <button
+              onClick={handleShare}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-md md:flex hidden"
+              style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }}
+              aria-label="Share product"
+            >
+              <Share2 size={14} strokeWidth={1.75} className="text-indigo-600" />
             </button>
           </div>
         </div>
@@ -203,52 +233,82 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
         {/* Info section */}
         <div className="flex flex-col flex-1 px-4 pt-3 pb-4 gap-2.5">
           {/* Brand */}
-          <span
-            className="text-[11px] font-bold"
-            style={{ color: 'var(--cl-text-soft)' }}
-          >
-            {brandName || 'Naya Lumière Cosmetics'}
-          </span>
+          <div className="flex items-center justify-between">
+            <span
+              className="text-[13px] md:text-[14px] font-semibold tracking-tight"
+              style={{ color: 'var(--cl-purple)', opacity: 0.95 }}
+            >
+              {brandName || 'Naya Lumière'}
+            </span>
+            {concerns.length > 0 && (
+              <div className="flex gap-1">
+                {concerns.slice(0, 1).map((concern, idx) => (
+                  <span key={idx} className="text-[8px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">
+                    {concern}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Name */}
           <Link href={productUrl} className="block transition-colors duration-200" style={{ color: 'var(--cl-text-deep)' }}>
-            <span className="font-serif text-[15px] font-light italic leading-snug">
+            <span className="font-serif text-lg italic leading-snug">
               {name}
             </span>
           </Link>
 
           {/* Stars */}
           {reviewCount > 0 && (
-            <div className="flex items-center gap-1.5">
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={9} className={i < Math.floor(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'} />
-                ))}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={9} className={i < Math.floor(averageRating || 5) ? 'fill-indigo-400 text-indigo-400' : 'text-gray-200'} />
+                  ))}
+                </div>
+                <p className="text-[10px] font-medium opacity-50">{reviewCount}</p>
               </div>
-              <p className="text-[10px] font-medium" style={{ color: 'var(--cl-text-muted)' }}>{reviewCount}</p>
+              {size && <span className="text-[10px] text-gray-400 font-medium italic">{size}</span>}
             </div>
+          )}
+          {(!reviewCount || reviewCount === 0) && size && (
+             <div className="flex items-center justify-end">
+               <span className="text-[10px] text-gray-400 font-medium italic">{size}</span>
+             </div>
           )}
 
           {/* Price row */}
-          <div className="flex items-center justify-between mt-auto pt-2 border-t border-purple-100/50">
-            <div className="flex flex-col gap-0.5">
-              {size && <span className="text-[10px] text-gray-400">{size}</span>}
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[10px] font-semibold" style={{ color: 'rgb(167,139,250)' }}>AED</span>
-                <span className="text-[21px] font-bold leading-none" style={{
-                  backgroundImage: 'linear-gradient(135deg, rgb(147,104,236), rgb(196,167,254))',
+          <div className="flex items-center justify-between mt-auto pt-4 border-t border-purple-100/30">
+            {/* Price Block */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-[10px] font-bold" style={{ color: 'var(--cl-purple)', opacity: 0.5 }}>AED</span>
+                <span className="text-[24px] font-bold tracking-tight" style={{
+                  backgroundImage: 'linear-gradient(135deg, #7E57C2, #B39DDB)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                 }}>
-                  {Number(price).toFixed(2)}
+                  {Math.floor(price)}
                 </span>
+                {Number(price) % 1 !== 0 && (
+                  <span className="text-[14px] font-bold opacity-60" style={{ color: '#7E57C2' }}>
+                    .{ (Number(price) % 1).toFixed(2).split('.')[1] }
+                  </span>
+                )}
               </div>
+
+              {/* Original Price */}
               {showComparePrice && (
-                <span className="text-[10px] line-through text-gray-300 font-medium">AED {originalPrice}</span>
+                <span className="text-[11px] line-through text-gray-300 font-medium translate-y-[2px]">
+                  AED {originalPrice}
+                </span>
               )}
             </div>
+
+            {/* Discount Badge */}
             {discount > 0 && (
-              <span className="text-[9px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(216,180,254,0.18)', color: 'rgb(126,105,230)' }}>
+              <span className="text-[10px] font-bold px-3 py-1.5 rounded-full" style={{ background: 'rgba(216,180,254,0.15)', color: 'rgb(126,105,230)' }}>
                 −{discount}%
               </span>
             )}
@@ -259,27 +319,30 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             <motion.button
               onClick={handleAddToCart}
               whileTap={{ scale: 0.97 }}
-              className={`w-full mt-2 h-11 text-[11px] font-bold flex items-center justify-center gap-2 rounded-[1rem] transition-all duration-500 ${
+              className={`w-full mt-2 h-11 text-[11px] font-bold flex items-center justify-center gap-2 rounded-xl transition-all duration-500 shadow-sm ${
                 addedToCart
-                  ? 'bg-white/60 border border-white/80 text-gray-500 cursor-default shadow-inner'
-                  : 'bg-white/50 backdrop-blur-md border border-white/80 text-cl-deep hover:bg-[linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))] hover:text-white hover:border-transparent group shadow-sm hover:shadow-lg hover:shadow-purple-200/50'
+                  ? 'bg-green-50 text-green-600 border border-green-100 cursor-default'
+                  : 'bg-[linear-gradient(135deg,#A78BFA,#C4A7FE)] text-white hover:shadow-[0_8px_25px_rgba(167,139,250,0.4)] active:translate-y-0.5'
               }`}
+              style={{
+                border: addedToCart ? 'none' : '1px solid rgba(255,255,255,0.3)',
+              }}
             >
               {addedToCart ? (
                 <>
-                  <BadgeCheck size={13} style={{ color: 'var(--cl-purple)' }} strokeWidth={2} />
-                  <span>Added to your bag</span>
+                  <BadgeCheck size={14} className="fill-green-600 text-white" />
+                  <span>Added to Bag</span>
                 </>
               ) : (
                 <>
-                  <ShoppingBag size={12} strokeWidth={1.75} className="opacity-60 group-hover:opacity-100 transition-opacity" />
+                  <ShoppingBag size={13} strokeWidth={2} />
                   <span>Add to Bag</span>
                 </>
               )}
             </motion.button>
           ) : (
-            <div className="w-full mt-2 h-10 flex items-center justify-center text-[10px] font-medium text-gray-300 rounded-full border border-gray-100 bg-white/40">
-              Sold Out
+            <div className="w-full mt-2 h-11 flex items-center justify-center text-[11px] font-bold text-gray-400 rounded-xl border border-gray-100 bg-gray-50/50">
+              Notify Me
             </div>
           )}
         </div>

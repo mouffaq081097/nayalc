@@ -60,10 +60,10 @@ export function FeaturedProducts() {
           }}
           className="w-full"
         >
-          <CarouselContent className="-ml-2">
+          <CarouselContent className="-ml-1.5">
             {displayedProducts.map((product) => (
-              <CarouselItem key={product.id} className="pl-2 basis-[85%] md:basis-1/3 lg:basis-1/4">
-                <div className="h-full p-2"> 
+              <CarouselItem key={product.id} className="pl-1.5 basis-[85%] md:basis-1/3 lg:basis-1/4 flex">
+                <div className="w-full h-full p-2 flex flex-col"> 
                     <ProductCard
                     key={product.id}
                     id={product.id}

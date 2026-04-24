@@ -17,7 +17,6 @@ export async function GET(request, { params }) {
                 state,
                 is_default as "isDefault",
                 address_label as "addressLabel",
-                customer_email as "customerEmail",
                 customer_phone as "customerPhone",
                 shipping_address as "shippingAddress",
                 (SELECT COUNT(*) FROM orders o WHERE o.user_address_id = user_addresses.id) = 0 as "isDeletable"
@@ -45,7 +44,6 @@ export async function POST(request, { params }) {
         state,
         is_default,
         address_label = 'My Address', // Provide a default if not present
-        customer_email = '', // Provide a default if not present
         customer_phone
     } = await request.json();
 
@@ -63,8 +61,8 @@ export async function POST(request, { params }) {
         
         // Use shipping_address and address_line1
         const { rows } = await db.query(
-            `INSERT INTO user_addresses (user_id, shipping_address, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_email, customer_phone)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            `INSERT INTO user_addresses (user_id, shipping_address, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_phone)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
              RETURNING 
                 id,
                 user_id as "userId",
@@ -77,9 +75,8 @@ export async function POST(request, { params }) {
                 state,
                 is_default as "isDefault",
                 address_label as "addressLabel",
-                customer_email as "customerEmail",
                 customer_phone as "customerPhone"`,
-            [userId, address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_email, customer_phone]
+            [userId, address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_phone]
         );
         return NextResponse.json(rows[0], { status: 201 });
     } catch (error) {

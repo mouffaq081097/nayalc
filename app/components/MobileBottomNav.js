@@ -126,20 +126,24 @@ function MobileBottomNav() {
               style={isActive ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
               >
                 {item.id === 'account' && user ? (
-                  <span
+                  <div
                     className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black',
-                      isActive
-                        ? 'text-white'
-                        : 'text-white'
+                      'flex h-7 w-7 items-center justify-center rounded-full overflow-hidden border border-white/20',
+                      !user.profile_image && (isActive ? 'bg-white/25' : 'bg-gradient-to-br from-[#c4a7fe] to-[#7e69e6]')
                     )}
-                    style={isActive
-                      ? { background: 'rgba(255,255,255,0.25)' }
-                      : { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }
-                    }
                   >
-                    {(user.name || user.first_name || 'U').charAt(0).toUpperCase()}
-                  </span>
+                    {user.profile_image ? (
+                      <img 
+                        src={user.profile_image} 
+                        alt="Profile" 
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[10px] font-black text-white">
+                        {(user.name || user.first_name || 'U').charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <Icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2.25 : 2} />
                 )}

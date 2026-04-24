@@ -40,13 +40,13 @@ export const SocialFeed = () => {
 
       <div className="container mx-auto px-6 relative z-10">
         {/* ── Header ── */}
-        <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-10">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
+        <div className="flex flex-row items-end justify-between gap-4 mb-10">
+          <div className="space-y-2 md:space-y-3">
+            <div className="flex items-center gap-2 md:gap-3">
+              <span className="w-6 md:w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
               <span className="text-[10px] md:text-[12px] font-black tracking-widest uppercase text-[#9333ea]">Our Community</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-serif italic text-cl-deep leading-tight">
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-serif italic text-cl-deep leading-tight">
               As Seen On{' '}
               <span
                 className="font-sans not-italic font-black"
@@ -57,17 +57,17 @@ export const SocialFeed = () => {
             </h2>
           </div>
 
-          <div className="flex items-center gap-6 pb-2">
+          <div className="flex items-center gap-2 md:gap-4 pb-1 md:pb-2">
             {[
-              { icon: <Instagram size={20} />, label: 'Instagram', href: '#' },
-              { icon: <Youtube size={20} />, label: 'Youtube', href: '#' },
-              { icon: <Facebook size={20} />, label: 'Facebook', href: '#' }
+              { icon: <Instagram className="w-5 h-5 md:w-6 md:h-6" />, label: 'Instagram', href: '#' },
+              { icon: <Youtube className="w-5 h-5 md:w-6 md:h-6" />, label: 'Youtube', href: '#' },
+              { icon: <Facebook className="w-5 h-5 md:w-6 md:h-6" />, label: 'Facebook', href: '#' }
             ].map((social, i) => (
               <motion.a
                 key={i}
                 href={social.href}
                 whileHover={{ y: -5 }}
-                className="w-12 h-12 rounded-full bg-[#fdf8ff] border border-[#f3e8ff] flex items-center justify-center text-[#9333ea] hover:bg-[#9333ea] hover:text-white transition-all duration-300 shadow-sm hover:shadow-xl"
+                className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-[#fdf8ff] border border-[#f3e8ff] flex items-center justify-center text-[#9333ea] hover:bg-[#9333ea] hover:text-white transition-all duration-300 shadow-sm hover:shadow-xl"
               >
                 {social.icon}
               </motion.a>

@@ -42,9 +42,10 @@ export const ForYouSection = () => {
           </h2>
         </div>
 
-        <div className="flex md:grid overflow-x-auto md:overflow-x-visible snap-x md:snap-none no-scrollbar gap-4 md:gap-6 -mx-2 px-2 md:mx-0 md:px-0 md:grid-cols-4">
+        <div className="flex overflow-x-auto md:grid md:grid-cols-4 md:overflow-x-visible snap-x md:snap-none no-scrollbar gap-0 -ml-1.5 md:mx-0">
           {forYouProducts.map((product) => (
-            <div key={product.id} className="min-w-[85%] md:min-w-0 snap-center md:snap-align-none h-full p-1">
+            <div key={product.id} className="pl-1.5 basis-[85%] md:basis-1/4 flex-shrink-0 snap-center md:snap-align-none flex flex-col">
+              <div className="w-full h-full p-2 flex flex-col">
                 <ProductCard
                     id={product.id}
                     name={product.name}
@@ -56,6 +57,7 @@ export const ForYouSection = () => {
                     averageRating={product.averageRating}
                     reviewCount={product.reviewCount}
                 />
+              </div>
             </div>
           ))}
         </div>

@@ -17,7 +17,6 @@ export async function GET(request) {
                         json_build_object(
                             'id', a.id,
                             'address_label', a.address_label,
-                            'customer_email', a.customer_email,
                             'customer_phone', a.customer_phone,
                             'shipping_address', a.shipping_address,
                             'city', a.city,

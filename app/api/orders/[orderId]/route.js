@@ -217,7 +217,7 @@ export async function PUT(request, context) {
                 o.tracking_number, o.courier_name, o.courier_website, o.created_at, o.updated_at,
                 o.subtotal, o.shipping_cost, o.stripe_payment_intent_id, o.gift_wrap, o.gift_wrap_cost,
                 COALESCE(o.redeemed_points, 0) as redeemed_points,
-                COALESCE(ua.customer_email, u.email, '') as customer_email,
+                u.email as customer_email,
                 ua.customer_phone,
                 COALESCE(ua.shipping_address, '') as shipping_address,
                 COALESCE(ua.city, '') as city,

@@ -228,16 +228,6 @@ const Header = forwardRef((props, ref) => {
                 </Button>
 
                 <div className="flex items-center gap-2">
-                    {/* Loyalty points — desktop only */}
-                    {user && (
-                        <Link href="/loyalty" className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors" style={{ background: 'rgba(147,51,234,0.06)', border: '1px solid rgba(147,51,234,0.15)' }}>
-                            <Star size={12} style={{ color: 'var(--cl-purple)', fill: 'var(--cl-purple)' }} />
-                            <span className="text-[10px] font-black tracking-widest" style={{ color: 'var(--cl-purple)' }}>
-                                {loyaltyData?.stats?.points?.toLocaleString() || 0}
-                            </span>
-                        </Link>
-                    )}
-
                     {/* Account button — desktop only (mobile uses bottom nav) */}
                     <div className="relative group/account hidden md:block">
                         <button
@@ -257,6 +247,12 @@ const Header = forwardRef((props, ref) => {
                                   <span className="text-[12px] font-black tracking-widest text-[#3b0764] uppercase leading-none">
                                       {user.first_name}
                                   </span>
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                      <Star size={10} style={{ color: 'var(--cl-purple)', fill: 'var(--cl-purple)' }} />
+                                      <span className="text-[10px] font-bold tracking-widest text-brand-pink uppercase">
+                                          {loyaltyData?.stats?.points?.toLocaleString() || 0} Points
+                                      </span>
+                                  </div>
                               </div>
                           )}
                         </button>

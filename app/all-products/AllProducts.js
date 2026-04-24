@@ -537,7 +537,7 @@ export default function AllProductsPage() {
 
         <main className="w-full">
             {isLoading ? (
-              <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-4 md:gap-6`}>
+              <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-${gridCols} gap-2 md:gap-4`}>
                 {Array.from({ length: 12 }).map((_, index) => (
                   <ProductCardSkeleton key={index} />
                 ))}
@@ -565,7 +565,7 @@ export default function AllProductsPage() {
               <div className="space-y-16">
                 <motion.div 
                     layout
-                    className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-x-4 md:gap-x-6 gap-y-10 md:gap-y-14`}
+                    className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${gridCols} gap-x-4 md:gap-x-3 gap-y-10 md:gap-y-14`}
                 >
                     <AnimatePresence mode='popLayout'>
                         {displayedProducts.map((product, index) => (
@@ -576,6 +576,7 @@ export default function AllProductsPage() {
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ duration: 0.5, delay: (index % 12) * 0.03 }}
                             key={product.id} 
+                            className="h-full flex flex-col"
                         >
                             <ProductCard
                             id={product.id}

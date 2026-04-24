@@ -30,9 +30,41 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
   const [markerPosition, setMarkerPosition] = useState(initialAddress?.location || defaultCenter);
   const [searchBox, setSearchBox] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState(null);
 
   // We need to keep a reference to the advanced marker we create manually
   const [markerInstance, setMarkerInstance] = useState(null);
+
+  const getAddressFromLatLng = useCallback(async ({ lat, lng }) => {
+    if (!map) return;
+    setLocationError(null);
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const place = results[0];
+        const components = place.address_components;
+        let streetNumber = '', routeName = '', sublocalityLevel1 = '', sublocality = '', city = '', country = '';
+
+        for (const c of components) {
+          if (c.types.includes('street_number'))        streetNumber     = c.long_name;
+          if (c.types.includes('route'))                routeName        = c.long_name;
+          if (c.types.includes('sublocality_level_1')) sublocalityLevel1 = c.long_name;
+          if (c.types.includes('sublocality'))          sublocality      = c.long_name;
+          if (c.types.includes('locality') || c.types.includes('administrative_area_level_2')) city = c.long_name;
+          if (c.types.includes('country'))              country          = c.long_name;
+        }
+
+        let streetAddress = routeName
+          ? `${streetNumber} ${routeName}`.trim()
+          : sublocalityLevel1 || sublocality || place.formatted_address.split(', ')[0] || '';
+
+        onPlaceSelect({ lat, lng, formattedAddress: place.formatted_address, streetAddress, city, country });
+      } else {
+        console.error('Geocoder failed: ' + status);
+        onPlaceSelect(null);
+      }
+    });
+  }, [map, onPlaceSelect]);
 
   const onLoad = useCallback((mapInstance) => {
     setMap(mapInstance);
@@ -72,39 +104,10 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
     }
   }, [markerPosition, markerInstance]);
 
-  const getAddressFromLatLng = useCallback(async ({ lat, lng }) => {
-    if (!map) return;
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results[0]) {
-        const place = results[0];
-        const components = place.address_components;
-        let streetNumber = '', routeName = '', sublocalityLevel1 = '', sublocality = '', city = '', country = '';
-
-        for (const c of components) {
-          if (c.types.includes('street_number'))        streetNumber     = c.long_name;
-          if (c.types.includes('route'))                routeName        = c.long_name;
-          if (c.types.includes('sublocality_level_1')) sublocalityLevel1 = c.long_name;
-          if (c.types.includes('sublocality'))          sublocality      = c.long_name;
-          if (c.types.includes('locality') || c.types.includes('administrative_area_level_2')) city = c.long_name;
-          if (c.types.includes('country'))              country          = c.long_name;
-        }
-
-        let streetAddress = routeName
-          ? `${streetNumber} ${routeName}`.trim()
-          : sublocalityLevel1 || sublocality || place.formatted_address.split(', ')[0] || '';
-
-        onPlaceSelect({ lat, lng, formattedAddress: place.formatted_address, streetAddress, city, country });
-      } else {
-        console.error('Geocoder failed: ' + status);
-        onPlaceSelect(null);
-      }
-    });
-  }, [map, onPlaceSelect]);
-
   const handleMapClick = useCallback((event) => {
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
+    setLocationError(null);
     setMarkerPosition({ lat, lng });
     getAddressFromLatLng({ lat, lng });
   }, [getAddressFromLatLng]);
@@ -116,6 +119,7 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
     }
 
     setIsLocating(true);
+    setLocationError(null);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude;
@@ -129,18 +133,16 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
         }
         getAddressFromLatLng(newPosition);
         setIsLocating(false);
-        toast.success('Location updated!');
       },
       (error) => {
-        console.error('Error fetching location:', error);
         setIsLocating(false);
         let errorMsg = 'Could not fetch your location.';
         if (error.code === 1) errorMsg = 'Location access denied. Please enable it in your browser settings.';
-        else if (error.code === 2) errorMsg = 'Location unavailable.';
+        else if (error.code === 2) errorMsg = 'Location unavailable. Please check your system location settings.';
         else if (error.code === 3) errorMsg = 'Location request timed out.';
-        toast.error(errorMsg);
+        setLocationError(errorMsg);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
     );
   };
 
@@ -151,6 +153,7 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
     const places = searchBox.getPlaces();
     
     if (places && places.length > 0) {
+      setLocationError(null);
       const place = places[0];
       if (place.geometry?.location) {
         const lat = place.geometry.location.lat();
@@ -211,6 +214,14 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
           <LocateFixed size={18} className={`${isLocating ? 'animate-pulse text-blue-500' : 'text-gray-600'}`} />
         </button>
       </div>
+
+      {locationError && (
+        <div className="mb-4">
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-[11px] font-medium animate-in fade-in slide-in-from-top-1 duration-300">
+            {locationError}
+          </div>
+        </div>
+      )}
 
       <div className="flex-grow h-[55vh] relative">
         <GoogleMap
