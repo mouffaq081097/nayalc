@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "windsor-ai@claude-plugins-official": true
+  }
+}
