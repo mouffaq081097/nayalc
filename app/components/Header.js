@@ -235,7 +235,7 @@ const Header = forwardRef((props, ref) => {
                           onClick={handleAccountClick}
                           className="flex items-center gap-3 rounded-full px-1.5 py-1.5 transition-all hover:bg-white/50 backdrop-blur-sm group/btn"
                         >
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/40 shadow-sm transition-all group-hover/btn:bg-white group-hover/btn:shadow-md group-hover/btn:scale-105 overflow-hidden">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/40 shadow-sm transition-all group-hover/btn:bg-white group-hover/btn:shadow-md group-hover/btn:scale-105 overflow-hidden relative">
                               {user?.profile_image ? (
                                 <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
                               ) : (
@@ -590,7 +590,7 @@ const Header = forwardRef((props, ref) => {
                     <div className="mt-auto p-6 bg-white/80 backdrop-blur-xl rounded-t-[3rem] border-t border-[#f3e8ff]/50 shadow-[0_-20px_40px_-20px_rgba(147,51,234,0.1)]">
                         {user && (
                             <div className="mb-6 flex items-center gap-4 px-2">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#c4b5fd] to-[#9333ea] text-white flex items-center justify-center font-black text-xl shadow-lg overflow-hidden">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#c4b5fd] to-[#9333ea] text-white flex items-center justify-center font-black text-xl shadow-lg overflow-hidden relative">
                                     {user?.profile_image ? (
                                         <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
                                     ) : (
