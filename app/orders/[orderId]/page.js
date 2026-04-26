@@ -20,9 +20,7 @@ export default function OrderPage() {
 
   useEffect(() => {
     const fetchOrder = async () => {
-      console.log('User:', user);
       const token = localStorage.getItem('token');
-      console.log('Token:', token);
       
       try {
         const response = await fetchWithAuth(`/api/orders/${orderId}`); // Direct fetch

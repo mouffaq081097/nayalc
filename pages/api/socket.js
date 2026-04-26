@@ -16,8 +16,24 @@ const SocketHandler = (req, res) => {
     res.socket.server.io = io;
     global.io = io; // Store it globally
 
+    // Track online users in memory (userId -> Set of socketIds)
+    const onlineUsers = new Map();
+
     io.on('connection', (socket) => {
       console.log('A user connected:', socket.id);
+
+      socket.on('identify', (userId) => {
+        if (!userId) return;
+        
+        socket.userId = userId;
+        if (!onlineUsers.has(userId)) {
+          onlineUsers.set(userId, new Set());
+          // Notify admin room that user is online
+          io.to('admin').emit('user_status_change', { userId, status: 'online' });
+        }
+        onlineUsers.get(userId).add(socket.id);
+        console.log(`User ${userId} identified on socket ${socket.id}`);
+      });
 
       socket.on('join_room', (room) => {
         socket.join(room);
@@ -41,6 +57,30 @@ const SocketHandler = (req, res) => {
 
       socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+        
+        const userId = socket.userId;
+        if (userId && onlineUsers.has(userId)) {
+          const userSockets = onlineUsers.get(userId);
+          userSockets.delete(socket.id);
+          
+          if (userSockets.size === 0) {
+            onlineUsers.delete(userId);
+            // Notify admin room that user is offline
+            io.to('admin').emit('user_status_change', { userId, status: 'offline' });
+            
+            // Optionally update database last_seen_at
+            import('@/lib/db').then(dbModule => {
+                const db = dbModule.default;
+                db.query('UPDATE users SET last_seen_at = CURRENT_TIMESTAMP WHERE id = $1', [userId]).catch(e => console.error('DB update error on disconnect:', e));
+            });
+          }
+        }
+      });
+
+      socket.on('get_online_users', (callback) => {
+        if (typeof callback === 'function') {
+          callback(Array.from(onlineUsers.keys()));
+        }
       });
     });
   }

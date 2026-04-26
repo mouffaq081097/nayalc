@@ -14,7 +14,7 @@ export const ForYouSection = () => {
   return (
     <section className="py-10 bg-transparent relative overflow-hidden border-t border-[var(--cl-glass-border)]/50">
       {/* Tactile Paper Texture */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
       
       {/* Cloud Luxe aura orbs */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">

@@ -9,6 +9,7 @@ import { Timer, Zap, Percent, Star, ArrowRight, ShoppingBag, Sparkles, Clock, Sh
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import { toast } from 'react-toastify';
+import Image from 'next/image';
 
 export default function SalePage() {
   const [saleProducts, setSaleProducts] = useState([]);
@@ -54,7 +55,7 @@ export default function SalePage() {
   return (
     <div className="min-h-screen bg-[#FAF9F6] font-sans text-gray-900 pb-24 relative overflow-hidden">
       {/* Tactile Paper Grain Overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
 
       {/* Background Aura */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
@@ -163,8 +164,8 @@ export default function SalePage() {
                 { title: "Makeup Essentials Kit", price: "135", old: "208", discount: "35", items: "Foundation · Palette · Lipstick · Mascara", img: "https://images.unsplash.com/photo-1606158562001-5b5a8729a80b?auto=format&fit=crop&q=80&w=800" }
             ].map((bundle) => (
                 <div key={bundle.title} className="bg-gray-50/50 rounded-[2.5rem] p-6 lg:p-8 border border-gray-100 flex flex-col sm:flex-row gap-8 hover:bg-white hover:shadow-2xl hover:shadow-gray-200/40 transition-all duration-700 group border-b-[3px] border-b-transparent hover:border-b-brand-pink/20 text-left">
-                    <div className="w-full sm:w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-white border border-gray-100 p-2 shrink-0 shadow-inner">
-                        <img src={bundle.img} alt={bundle.title} className="w-full h-full object-cover rounded-xl transition-transform duration-1000 group-hover:scale-110" />
+                    <div className="w-full sm:w-32 h-32 lg:w-40 lg:h-40 rounded-2xl overflow-hidden bg-white border border-gray-100 p-2 shrink-0 shadow-inner relative">
+                        <Image src={bundle.img} alt={bundle.title} fill className="object-cover rounded-xl transition-transform duration-1000 group-hover:scale-110" />
                     </div>
                     <div className="flex-1 flex flex-col justify-between py-1">
                         <div>

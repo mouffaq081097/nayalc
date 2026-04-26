@@ -51,28 +51,51 @@ const ChatWidget = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, []);
 
-    const createOrFetchConversation = useCallback(async () => {
+    const fetchActiveConversation = useCallback(async () => {
+        if (!user?.id) return null;
+        try {
+            // Use the user-specific GET endpoint to find existing conversations
+            const response = await fetchWithAuth(`/api/chat-user/${user.id}/conversations`);
+            if (!response.ok) return null;
+            
+            const conversations = await response.json();
+            // Find the most recent conversation that isn't closed
+            const activeConv = conversations.find(c => c.status !== 'closed');
+            
+            if (activeConv) {
+                setConversationId(activeConv.id);
+                if (activeConv.status) setConversationStatus(activeConv.status);
+                return activeConv.id;
+            }
+            return null;
+        } catch (error) {
+            console.error('Failed to fetch conversation:', error);
+            return null;
+        }
+    }, [user?.id, fetchWithAuth]);
+
+    const createNewConversation = useCallback(async () => {
         if (!user?.id) return null;
         try {
             const response = await fetchWithAuth('/api/chat-global/conversations', {
                 method: 'POST',
                 body: JSON.stringify({ user_id: user.id }),
             });
-            if (!response.ok) throw new Error('Failed');
+            if (!response.ok) throw new Error('Failed to create');
             const data = await response.json();
             const newConvId = data.conversationId || data.conversation?.id;
             setConversationId(newConvId);
             if (data.status) setConversationStatus(data.status);
             return newConvId;
         } catch (error) {
-            console.error('Failed to fetch or create conversation:', error);
+            console.error('Failed to create conversation:', error);
             return null;
         }
     }, [user?.id, fetchWithAuth]);
 
     useEffect(() => {
-        if (user?.id) createOrFetchConversation();
-    }, [user?.id, createOrFetchConversation]);
+        if (user?.id) fetchActiveConversation();
+    }, [user?.id, fetchActiveConversation]);
 
     // Socket setup
     useEffect(() => {
@@ -83,7 +106,10 @@ const ChatWidget = () => {
             const newSocket = io('/', { path: '/api/socket_io' });
             socketRef.current = newSocket;
 
-            newSocket.on('connect', () => setIsConnected(true));
+            newSocket.on('connect', () => {
+                setIsConnected(true);
+                if (user?.id) newSocket.emit('identify', user.id);
+            });
 
             newSocket.on('receive_message', (message) => {
                 const transformed = {
@@ -203,15 +229,15 @@ const ChatWidget = () => {
         }, 2000);
     };
 
-    const handleSendMessage = async (contentOverride = null) => {
+    const handleSendMessage = async (contentOverride = null, forceNew = false) => {
         const textToSend = (contentOverride || newMessage).trim();
         if (!textToSend || !user?.id || isSending) return;
 
         setIsSending(true);
-        let currentConvId = conversationId;
+        let currentConvId = forceNew ? null : conversationId;
 
         if (!currentConvId) {
-            currentConvId = await createOrFetchConversation();
+            currentConvId = await createNewConversation();
             if (!currentConvId) { setIsSending(false); return; }
         }
 
@@ -233,11 +259,21 @@ const ChatWidget = () => {
                 method: 'POST',
                 body: JSON.stringify({ senderId: user.id, sender_type: 'customer', content: textToSend }),
             });
-            if (!response.ok) throw new Error('Send failed');
+            
             const data = await response.json();
             setMessages((prev) => prev.map(msg => msg.id === tempId ? { ...data, status: 'sent' } : msg));
         } catch (error) {
             console.error('Error sending message:', error);
+            
+            // Handle 404 error (Conversation not found)
+            if (error.message.includes('status: 404')) {
+                setConversationId(null);
+                setMessages((prev) => prev.filter(m => m.id !== tempId));
+                setIsSending(false); // Reset sending state before retry
+                // Try again once by forcing a new conversation
+                return handleSendMessage(textToSend, true);
+            }
+
             setMessages((prev) => prev.map(msg => msg.id === tempId ? { ...msg, status: 'failed' } : msg));
         } finally {
             setIsSending(false);

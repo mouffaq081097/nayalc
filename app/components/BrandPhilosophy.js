@@ -24,7 +24,7 @@ export const BrandPhilosophy = () => {
   return (
     <section className="py-32 bg-white text-center px-6 overflow-hidden relative border-t border-gray-50">
       {/* Global Grain Overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-10 bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-10 bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
       
       <motion.div 
         animate={{ rotate: 360 }}

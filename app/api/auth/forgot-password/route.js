@@ -14,7 +14,7 @@ export async function POST(request) {
     const client = await db.connect();
     try {
       const result = await client.query(
-        'SELECT id, email, password_hash FROM users WHERE LOWER(email) = LOWER($1)',
+        'SELECT id, email, password_hash FROM users WHERE LOWER(email) = LOWER($1) ORDER BY id DESC LIMIT 1',
         [email]
       );
 

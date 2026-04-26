@@ -110,7 +110,7 @@ export default function FragrancePage() {
     <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       
             {/* Tactile Paper Grain */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+            <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
       
                   <StoreHeader title="Fragrance." />
       
@@ -263,7 +263,7 @@ export default function FragrancePage() {
 
       {/* THE RITUAL OF LAYERING - Scientific Diagram Style */}
       <section className="py-32 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+        <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('/textures/carbon-fibre.png')]"></div>
         <Container>
           <div className="text-center space-y-6 max-w-2xl mx-auto mb-24">
             <div className="flex items-center justify-center gap-4">

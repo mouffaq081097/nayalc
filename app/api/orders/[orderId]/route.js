@@ -7,8 +7,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function GET(request, context) {
     const { orderId } = await context.params;
+    const { searchParams } = new URL(request.url);
+    const isAdmin = searchParams.get('admin') === 'true';
+
     const client = await db.connect();
     try {
+        if (isAdmin) {
+            // Mark as viewed by admin silently
+            await client.query('UPDATE orders SET viewed_by_admin = true WHERE id = $1', [orderId]);
+        }
+
         let orderResult;
         let items = [];
 
@@ -197,6 +205,7 @@ export async function PUT(request, context) {
     const { orderId } = await context.params;
     const client = await db.connect();
 
+    let pointsEarned = 0;
     try {
         const { status, cancellationReason, trackingNumber, courierName, courierWebsite, shippingCompany, shippingLink } = await request.json();
         // Accept both legacy (shippingCompany/shippingLink) and current (courierName/courierWebsite) field names
@@ -320,7 +329,7 @@ export async function PUT(request, context) {
             if (userLoyaltyRes.rows.length > 0) {
                 const userLoyalty = userLoyaltyRes.rows[0];
                 const tierMultiplier = userLoyalty.loyalty_tier === 'Platinum' ? 2 : (userLoyalty.loyalty_tier === 'Gold' ? 1.5 : 1);
-                const pointsEarned = Math.floor(currentOrder.total_amount * tierMultiplier);
+                pointsEarned = Math.floor(parseFloat(currentOrder.total_amount) * tierMultiplier);
 
                 await client.query(
                     'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
@@ -336,8 +345,6 @@ export async function PUT(request, context) {
                     'UPDATE users SET loyalty_points = loyalty_points + $1, lifetime_spend = $2, loyalty_tier = $3 WHERE id = $4',
                     [pointsEarned, newLifetimeSpend, newTier, currentOrder.user_id]
                 );
-
-                console.log(`Loyalty: User ${currentOrder.user_id} earned ${pointsEarned} points. New Tier: ${newTier}`);
             }
             // --- END LOYALTY SYSTEM ---
 
@@ -486,7 +493,8 @@ export async function PUT(request, context) {
                     quantity: item.quantity,
                     price: item.price
                 })),
-            }
+            },
+            status === 'Delivered' ? pointsEarned : null
         );
 
         // Determine response based on whether the order was moved or just updated

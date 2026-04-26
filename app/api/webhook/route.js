@@ -28,7 +28,6 @@ export async function POST(req) {
     switch (event.type) {
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object;
-        console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
         
         // Update order status in database
         // We find the order by the stripe_payment_intent_id
@@ -43,17 +42,13 @@ export async function POST(req) {
         
         const result = await db.query(updateQuery, [paymentIntent.id]);
         
-        if (result.rowCount > 0) {
-            console.log(`Order ${result.rows[0].id} updated to Paid via Webhook.`);
-        } else {
-            console.log(`No order found for PaymentIntent ${paymentIntent.id}. It might be created shortly.`);
+        if (result.rowCount === 0) {
             // Optional: Store this event to process later if the order creation is lagging
         }
         break;
         
       case 'payment_intent.payment_failed':
         const paymentFailed = event.data.object;
-        console.log(`Payment failed for ${paymentFailed.id}`);
         try {
             const failedOrderResult = await db.query(
                 `UPDATE orders SET order_status = 'Payment Failed', updated_at = NOW()
@@ -84,7 +79,7 @@ export async function POST(req) {
         
       default:
         // Unexpected event type
-        console.log(`Unhandled event type ${event.type}`);
+        break;
     }
   } catch (error) {
     console.error('Error processing webhook:', error);

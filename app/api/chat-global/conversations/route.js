@@ -13,6 +13,7 @@ export async function GET() {
                 c.status,
                 u.first_name || ' ' || u.last_name as "customerName",
                 u.email as "customerEmail",
+                u.profile_image as "customerImage",
                 (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND sender_type = 'customer' AND read_by_admin = false)::int as "unreadCount",
                 (SELECT message_text FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as "lastMessage",
                 (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as "lastMessageAt"

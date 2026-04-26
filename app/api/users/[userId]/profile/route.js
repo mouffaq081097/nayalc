@@ -10,7 +10,7 @@ export async function GET(request, { params }) {
   }
   try {
     const { rows } = await db.query(
-      `SELECT first_name, last_name, email, phone_number FROM users WHERE id = $1`,
+      `SELECT first_name, last_name, email, phone_number, profile_image FROM users WHERE id = $1`,
       [userId]
     );
     if (rows.length === 0) {

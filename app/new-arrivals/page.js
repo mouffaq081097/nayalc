@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Search, X, Filter, Sparkles, Hash, ArrowRight, ShoppingBag, Star, Wind, Award, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function NewArrivalsPage() {
   const { products: allProducts, fetchProducts } = useAppContext();
@@ -63,7 +64,7 @@ export default function NewArrivalsPage() {
       </div>
 
       {/* Tactile Paper Grain Overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
 
       <StoreHeader title="Latest." />
       <StoreCategoryNav />
@@ -139,8 +140,8 @@ export default function NewArrivalsPage() {
                                 onClick={() => router.push(`/product/${product.id}`)}
                                 className="group relative aspect-[4/3] rounded-[3rem] overflow-hidden bg-white border border-gray-100 shadow-xl cursor-pointer"
                             >
-                                <div className="absolute inset-0 bg-[#f5f5f7] p-12 lg:p-20">
-                                    <img src={product.imageUrl} alt="" className="w-full h-full object-contain mix-blend-multiply transition-transform duration-1000 group-hover:scale-105" />
+                                <div className="absolute inset-0 bg-[#f5f5f7] p-12 lg:p-20 relative">
+                                    <Image src={product.imageUrl} alt={product.name} fill className="object-contain mix-blend-multiply transition-transform duration-1000 group-hover:scale-105" />
                                 </div>
                                 <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent flex flex-col justify-end p-10 lg:p-12 space-y-4">
                                     <div className="space-y-1">

@@ -125,7 +125,7 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0
 
       {/* Physical Card Visual - Fully Responsive Apple Style */}
       <div className="relative w-full max-w-md mx-auto rounded-[1.5rem] bg-white p-6 lg:p-10 shadow-lg overflow-hidden border border-gray-200 group transition-all duration-1000">
-        <div className="absolute inset-0 opacity-[0.03] mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/brushed-alum.png')]"></div>
+        <div className="absolute inset-0 opacity-[0.03] mix-blend-multiply bg-[url('/textures/brushed-alum.png')]"></div>
         
         <div className="relative z-10 flex justify-between items-start mb-10 lg:mb-12">
             <div className="w-12 h-8 lg:w-14 lg:h-10 rounded-lg bg-[#f2f2f2] relative overflow-hidden border border-gray-200/50 shadow-inner">

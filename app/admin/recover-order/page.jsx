@@ -67,7 +67,7 @@ export default function RecoverOrderPage() {
 
     const card = { background: 'rgba(255,255,255,0.72)', border: '1px solid rgba(216,180,254,0.35)', borderRadius: 16, padding: 24 };
     const input = { background: 'rgba(248,240,255,0.6)', border: '1px solid rgba(216,180,254,0.35)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#3b0764', width: '100%', outline: 'none' };
-    const label = { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(59,7,100,0.5)', display: 'block', marginBottom: 6 };
+    const label = { fontSize: 11, fontWeight: 700, textTransform: '', letterSpacing: '0.12em', color: 'rgba(59,7,100,0.5)', display: 'block', marginBottom: 6 };
 
     return (
         <div className="max-w-2xl mx-auto p-6 space-y-6">
@@ -91,7 +91,7 @@ export default function RecoverOrderPage() {
                     <button
                         onClick={lookup}
                         disabled={lookupLoading || !pi.trim()}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest text-white disabled:opacity-50"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-black text-white disabled:opacity-50"
                         style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))', boxShadow: '0 4px 14px rgba(168,85,247,0.28)' }}
                     >
                         {lookupLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
@@ -112,7 +112,7 @@ export default function RecoverOrderPage() {
                                 ? <CheckCircle size={16} style={{ color: 'rgb(126,105,230)' }} />
                                 : <AlertTriangle size={16} className="text-yellow-500" />}
                             <span className="text-sm font-semibold" style={{ color: '#3b0764' }}>
-                                {piInfo.stripe.status.toUpperCase()} — {piInfo.stripe.amountFormatted}
+                                {piInfo.stripe.status.to()} — {piInfo.stripe.amountFormatted}
                             </span>
                             <span className="text-xs" style={{ color: 'rgba(59,7,100,0.45)' }}>
                                 {new Date(piInfo.stripe.created).toLocaleString()}
@@ -177,7 +177,7 @@ export default function RecoverOrderPage() {
                     <button
                         onClick={recover}
                         disabled={recoverLoading || !userId || !addressId || items.some(i => !i.productId || !i.price)}
-                        className="w-full py-3.5 rounded-full text-[11px] font-black uppercase tracking-widest text-white disabled:opacity-50"
+                        className="w-full py-3.5 rounded-full text-[11px] font-black text-white disabled:opacity-50"
                         style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))', boxShadow: '0 4px 14px rgba(168,85,247,0.28)' }}
                     >
                         {recoverLoading ? <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" />Creating order…</span> : 'Recover order'}

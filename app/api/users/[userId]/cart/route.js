@@ -117,7 +117,6 @@ export async function PUT(request, context) {
     const client = await db.connect();
     try {
         const { cart: incomingCart } = await request.json(); // Rename to avoid confusion
-        console.log('Backend received cart for user', userId, ':', incomingCart);
 
         if (!Array.isArray(incomingCart)) {
             return NextResponse.json({ message: 'Cart data must be an array.' }, { status: 400 });

@@ -41,7 +41,7 @@ const OrderDetailsPage = () => {
         if (!orderId) return;
         setIsLoading(true);
         try {
-            const response = await fetchWithAuth(`/api/orders/${orderId}`);
+            const response = await fetchWithAuth(`/api/orders/${orderId}?admin=true`);
             if (!response.ok) throw new Error('Failed to fetch order details');
             const data = await response.json();
             setOrder(data);

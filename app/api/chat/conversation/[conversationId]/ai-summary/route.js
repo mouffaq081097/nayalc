@@ -5,11 +5,9 @@ import db from '@/lib/db';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const ADMIN_EMAIL = 'mouffaq.dalloul@nayalc.com';
-
 export async function POST(req, context) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.email !== ADMIN_EMAIL) {
+    if (!session || session.user?.role !== 'admin') {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 

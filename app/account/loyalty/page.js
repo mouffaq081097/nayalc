@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Sparkles, Package, Heart, Star, MapPin, Settings,
-  Camera, Crown, LogOut, ChevronRight,
+  Camera, Crown, LogOut, ChevronRight, Clock, Gift, RotateCcw,
 } from 'lucide-react';
 import { AccountMobileTopBar } from '../_components/AccountMobileTopBar';
 import { setAccountNavDirection } from '../_components/navDirection';
@@ -198,6 +198,59 @@ export default function AccountLoyaltyPage() {
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Transaction History */}
+                  <div className="rounded-3xl p-8" style={glassCard}>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Transaction History</p>
+                    </div>
+                    <div className="space-y-3">
+                      {loyaltyData?.transactions?.length > 0 ? (
+                        loyaltyData.transactions.map((tx) => {
+                          const isPlaced  = tx.type === 'placed';
+                          const isRedeem  = tx.type === 'redeem';
+                          const isRefund  = tx.type === 'refund';
+                          const isBonus   = tx.type === 'bonus';
+                          const pts       = tx.points ?? 0;
+
+                          const Icon = isPlaced ? Clock : isRedeem ? RotateCcw : isBonus ? Gift : Package;
+                          const iconBg   = isPlaced  ? 'rgba(196,167,254,0.18)' : isRedeem ? 'rgba(239,68,68,0.10)' : isRefund ? 'rgba(34,197,94,0.10)' : 'rgba(196,167,254,0.18)';
+                          const iconColor = isPlaced ? CL.purple : isRedeem ? '#ef4444' : isRefund ? '#22c55e' : CL.purple;
+                          const ptColor  = isPlaced ? CL.purple : isRedeem || pts < 0 ? '#ef4444' : '#22c55e';
+                          const ptLabel  = isPlaced
+                            ? `~${pts.toLocaleString()} est.`
+                            : `${pts >= 0 ? '+' : ''}${pts.toLocaleString()}`;
+
+                          return (
+                            <div key={tx.id} className="flex items-center gap-4 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(216,180,254,0.22)' }}>
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+                                <Icon size={14} style={{ color: iconColor }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-semibold truncate" style={{ color: CL.textDeep }}>{tx.description}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <p className="text-[10px] font-medium" style={{ color: 'rgba(59,7,100,0.40)' }}>
+                                    {new Date(tx.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </p>
+                                  {isPlaced && (
+                                    <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: 'rgba(196,167,254,0.22)', color: CL.purple }}>
+                                      Pending
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-[13px] font-black flex-shrink-0" style={{ color: ptColor }}>{ptLabel}</p>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="py-10 text-center">
+                          <p className="text-sm italic" style={{ color: 'rgba(59,7,100,0.35)' }}>No points history yet. Place your first order to start earning!</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 

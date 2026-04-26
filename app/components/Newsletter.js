@@ -41,7 +41,7 @@ export function Newsletter() {
   return (
     <section className="py-24 bg-[#FAF9F6] relative overflow-hidden border-t border-gray-100">
       {/* Tactile Paper Texture */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
       
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto">

@@ -78,6 +78,15 @@ export async function POST(request, { params }) {
                 customer_phone as "customerPhone"`,
             [userId, address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_phone]
         );
+
+        // SYNC: Update user's main phone number if they don't have one yet
+        if (customer_phone) {
+            await db.query(
+                "UPDATE users SET phone_number = $1 WHERE id = $2 AND (phone_number IS NULL OR phone_number = '')",
+                [customer_phone, userId]
+            );
+        }
+
         return NextResponse.json(rows[0], { status: 201 });
     } catch (error) {
         console.error('Error creating address:', error);

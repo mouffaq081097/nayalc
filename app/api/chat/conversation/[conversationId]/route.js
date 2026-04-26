@@ -17,7 +17,8 @@ export async function GET(req, context) {
                 c.updated_at as "updatedAt", 
                 c.status,
                 u.first_name || ' ' || u.last_name as "customerName",
-                u.email as "customerEmail"
+                u.email as "customerEmail",
+                u.profile_image as "customerImage"
             FROM conversations c
             JOIN users u ON c.user_id = u.id
             WHERE c.id = $1`,
@@ -38,7 +39,7 @@ export async function GET(req, context) {
 }
 
 export async function DELETE(req, context) {
-    const { conversationId } = context.params;
+    const { conversationId } = await context.params;
     const client = await db.connect();
     try {
         if (!conversationId) {

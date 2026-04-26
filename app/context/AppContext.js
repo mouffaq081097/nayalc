@@ -516,7 +516,7 @@ export const AppProvider = ({ children }) => {
         
         if (isAuthenticated && user?.id) {
           const promises = [fetchOrders(), fetchLoyalty()];
-          if (user.email === 'mouffaq.dalloul@nayalc.com') {
+          if (user.role === 'admin') {
             promises.push(fetchAdminProducts(), fetchAdminBrands(), fetchAdminCategories());
           }
           await Promise.all(promises);

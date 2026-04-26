@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 
 export async function GET(req, context) {
-    const { userId } = context.params;
+    const { userId } = await context.params;
     const client = await db.connect();
     try {
         if (!userId) {

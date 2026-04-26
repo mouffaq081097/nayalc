@@ -155,12 +155,12 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-[#FAF9F6] relative overflow-hidden flex flex-col font-sans">
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply z-0"></div>
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('/textures/natural-paper.png')] mix-blend-multiply z-0"></div>
 
       <main className="flex-grow container mx-auto px-6 py-12 relative z-10 flex items-center justify-center">
         <div className="w-full max-w-lg">
           <div className="bg-white/80 backdrop-blur-3xl rounded-[3.5rem] p-10 md:p-14 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.1)] border border-purple-100 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
+            <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('/textures/natural-paper.png')]"></div>
             <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin text-purple-400" /></div>}>
               <ResetPasswordForm />
             </Suspense>

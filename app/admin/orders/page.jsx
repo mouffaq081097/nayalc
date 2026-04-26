@@ -29,7 +29,7 @@ const StatCard = ({ title, value, icon: Icon, accent, href }) => {
                 </div>
                 <ArrowUpRight size={14} className="text-gray-300 group-hover:text-purple-400 transition-colors" />
             </div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{title}</p>
+            <p className="text-[11px] font-semibold text-gray-400 mb-1">{title}</p>
             <p className="text-3xl font-black" style={{ color: '#3b0764' }}>{value}</p>
         </motion.div>
     );
@@ -119,7 +119,7 @@ const ManageOrders = () => {
                         <thead>
                             <tr style={{ background: 'rgba(248,240,255,0.6)' }}>
                                 {['Order ID','Customer','Date','Status','Payment','Total',''].map((h, i) => (
-                                    <th key={i} className={`px-6 py-4 text-[10px] font-black uppercase tracking-wider text-purple-400 ${i>=5 ? 'text-right' : 'text-left'}`}>{h}</th>
+                                    <th key={i} className={`px-6 py-4 text-[10px] font-black text-purple-400 ${i>=5 ? 'text-right' : 'text-left'}`}>{h}</th>
                                 ))}
                             </tr>
                         </thead>

@@ -176,12 +176,11 @@ export async function POST(req, context) {
         }
 
         // Validate sender_type — block customer from sending as 'admin' or 'ai'
-        const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mouffaq.dalloul@nayalc.com';
         if (sender_type === 'admin') {
             const { getServerSession } = await import('next-auth');
             const { authOptions } = await import('@/lib/auth');
             const session = await getServerSession(authOptions);
-            if (!session || session.user?.email !== ADMIN_EMAIL) {
+            if (!session || session.user?.role !== 'admin') {
                 return NextResponse.json({ message: 'Unauthorized: Only admins can send admin messages' }, { status: 403 });
             }
         } else if (sender_type === 'ai') {
@@ -268,10 +267,9 @@ export async function POST(req, context) {
                         }
                     } catch (aiErr) {
                         console.error('AI response error:', aiErr);
-                        // Fallback: send admin email if AI fails
-                        const adminEmail = process.env.ADMIN_EMAIL;
-                        if (adminEmail) {
-                            await sendNewChatMessageNotificationEmail(adminEmail, customerName, customerEmail, conversationId, content).catch(() => {});
+                        const { rows: admins } = await aiClient.query("SELECT email FROM users WHERE is_admin = true");
+                        for (const admin of admins) {
+                            await sendNewChatMessageNotificationEmail(admin.email, customerName, customerEmail, conversationId, content).catch(() => {});
                         }
                     } finally {
                         aiClient.release();
@@ -283,9 +281,10 @@ export async function POST(req, context) {
                     `UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
                     [conversationId]
                 );
-                const adminEmail = process.env.ADMIN_EMAIL;
-                if (adminEmail) {
-                    await sendNewChatMessageNotificationEmail(adminEmail, customerName, customerEmail, conversationId, content).catch(() => {});
+                
+                const { rows: admins } = await client.query("SELECT email FROM users WHERE is_admin = true");
+                for (const admin of admins) {
+                    await sendNewChatMessageNotificationEmail(admin.email, customerName, customerEmail, conversationId, content).catch(() => {});
                 }
             }
         } else if (sender_type === 'admin') {

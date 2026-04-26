@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // Returns Stripe PI details + whether an order already exists for it.
 export async function GET(request) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.email !== 'mouffaq.dalloul@nayalc.com') {
+    if (!session || session.user?.role !== 'admin') {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -42,7 +42,7 @@ export async function GET(request) {
 // Creates the missing order linked to the already-paid PI.
 export async function POST(request) {
     const session = await getServerSession(authOptions);
-    if (!session || session.user?.email !== 'mouffaq.dalloul@nayalc.com') {
+    if (!session || session.user?.role !== 'admin') {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 

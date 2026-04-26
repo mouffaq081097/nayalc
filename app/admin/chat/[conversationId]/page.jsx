@@ -19,6 +19,7 @@ import {
     SelectValue,
 } from '@/app/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 const AdminConversationPage = () => {
     const { conversationId } = useParams();
@@ -37,6 +38,7 @@ const AdminConversationPage = () => {
     const [isAiSummarizing, setIsAiSummarizing] = useState(false);
     const [aiSummary, setAiSummary] = useState('');
     const [customerContext, setCustomerContext] = useState(null);
+    const [isCustomerOnline, setIsCustomerOnline] = useState(false);
 
     const messagesEndRef = useRef(null);
     const socketRef = useRef(null);
@@ -69,7 +71,21 @@ const AdminConversationPage = () => {
         socketRef.current = sock;
 
         sock.on('connect', () => {
-            if (conversationId) sock.emit('join_room', `conversation-${conversationId}`);
+            if (conversationId) {
+                sock.emit('join_room', `conversation-${conversationId}`);
+                sock.emit('join_room', 'admin');
+                sock.emit('get_online_users', (ids) => {
+                    if (conversation?.user_id && ids.map(id => Number(id)).includes(Number(conversation.user_id))) {
+                        setIsCustomerOnline(true);
+                    }
+                });
+            }
+        });
+
+        sock.on('user_status_change', ({ userId, status }) => {
+            if (conversation?.user_id && Number(userId) === Number(conversation.user_id)) {
+                setIsCustomerOnline(status === 'online');
+            }
         });
 
         sock.on('receive_message', (message) => {
@@ -302,7 +318,11 @@ const AdminConversationPage = () => {
                     </div>
                 </div>
 
-                <Button onClick={handleDeleteConversation} variant="outline" className="rounded-xl border-red-100 text-red-400 hover:bg-red-50 hover:text-red-600 transition-all">
+                <Button 
+                    onClick={handleDeleteConversation} 
+                    variant="outline" 
+                    className="rounded-xl border-red-200 text-red-500 bg-white hover:bg-red-50 hover:text-red-600 transition-all font-bold text-xs px-5 h-11"
+                >
                     <Trash2 size={16} className="mr-2" /> Dissolve Dossier
                 </Button>
             </div>
@@ -312,8 +332,12 @@ const AdminConversationPage = () => {
                 <div className="lg:col-span-8 flex flex-col h-[70vh] bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
                     <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/20">
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-cl-purple flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                                <MessageCircle size={20} />
+                            <div className="w-12 h-12 rounded-2xl bg-cl-bg-lavender border border-purple-100 flex items-center justify-center text-cl-purple shadow-sm shrink-0 overflow-hidden relative">
+                                {conversation.customerImage ? (
+                                    <Image src={conversation.customerImage} alt={conversation.customerName} fill className="object-cover" />
+                                ) : (
+                                    <MessageCircle size={22} />
+                                )}
                             </div>
                             <div>
                                 <p className="text-[10px] font-black text-gray-400">Active Transmission</p>
@@ -328,7 +352,7 @@ const AdminConversationPage = () => {
                             <button
                                 onClick={() => fetchMessages(true)}
                                 disabled={isLoadingMore}
-                                className="w-full py-4 text-[9px] font-black text-gray-300 hover:text-cl-purple transition-all flex items-center justify-center gap-2"
+                                className="w-full py-4 text-[9px] font-black text-gray-300 hover:text-cl-purple transition-all flex items-center justify-center gap-2 bg-transparent"
                             >
                                 {isLoadingMore ? <Loader2 size={14} className="animate-spin" /> : <ChevronUp size={14} />}
                                 Load Historical Transmissions
@@ -344,29 +368,48 @@ const AdminConversationPage = () => {
                                         key={msg.id}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}
+                                        className={`flex gap-3 ${isAdmin ? 'flex-row-reverse' : 'flex-row'}`}
                                     >
+                                        {/* Message Avatar */}
+                                        <div className="shrink-0 mt-1">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border shadow-sm overflow-hidden relative ${
+                                                isAdmin ? 'bg-cl-purple border-purple-200 text-white' : 
+                                                isAi ? 'bg-purple-100 border-purple-200 text-purple-600' : 
+                                                'bg-white border-gray-200 text-gray-400'
+                                            }`}>
+                                                {isAdmin ? (
+                                                    <ShieldCheck size={14} />
+                                                ) : isAi ? (
+                                                    <Sparkles size={14} />
+                                                ) : conversation.customerImage ? (
+                                                    <Image src={conversation.customerImage} alt="User" fill className="object-cover" />
+                                                ) : (
+                                                    <User size={14} />
+                                                )}
+                                            </div>
+                                        </div>
+
                                         <div className={`max-w-[80%] space-y-2 flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}>
                                             {isAi && (
-                                                <span className="text-[9px] font-black text-purple-500 flex items-center gap-1 px-1">
+                                                <span className="text-[9px] font-bold text-purple-500 flex items-center gap-1 px-1">
                                                     <Sparkles size={9} /> Naya AI
                                                 </span>
                                             )}
-                                            <div className={`px-6 py-4 rounded-[2rem] text-sm font-medium shadow-sm ${
+                                            <div className={`px-5 py-3.5 rounded-[1.5rem] text-sm font-medium shadow-sm ${
                                                 isAdmin
-                                                    ? 'bg-cl-purple text-white rounded-br-none'
+                                                    ? 'bg-cl-purple text-white rounded-tr-none'
                                                     : isAi
-                                                        ? 'bg-purple-50 border-l-4 border-purple-400 text-gray-700 rounded-bl-none italic'
-                                                        : 'bg-white border border-gray-100 text-gray-700 rounded-bl-none'
+                                                        ? 'bg-purple-50 border-l-4 border-purple-400 text-gray-700 rounded-tl-none italic'
+                                                        : 'bg-white border border-gray-100 text-gray-700 rounded-tl-none'
                                             }`}>
                                                 {msg.messageText || msg.message_text}
                                             </div>
-                                            <div className={`flex items-center gap-2 px-2 ${isAdmin ? 'flex-row-reverse' : ''}`}>
-                                                <p className="text-[9px] font-black text-gray-300  ">
-                                                    {isAdmin ? 'You' : isAi ? 'AI Specialist' : conversation.customerName || 'Client'}
+                                            <div className={`flex items-center gap-2 px-1 ${isAdmin ? 'flex-row-reverse' : ''}`}>
+                                                <p className="text-[9px] font-bold text-gray-400">
+                                                    {isAdmin ? 'Concierge' : isAi ? 'AI Support' : conversation.customerName?.split(' ')[0] || 'Client'}
                                                 </p>
-                                                <span className="w-1 h-1 rounded-full bg-gray-100" />
-                                                <p className="text-[9px] font-medium text-gray-300 italic">
+                                                <span className="w-1 h-1 rounded-full bg-gray-200" />
+                                                <p className="text-[9px] font-medium text-gray-400 italic">
                                                     {new Date(msg.createdAt || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </p>
                                             </div>
@@ -456,20 +499,27 @@ const AdminConversationPage = () => {
                 <div className="lg:col-span-4 space-y-6">
                     {/* Client Identity */}
                     <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
-                        <h3 className="text-[10px] font-black  tracking-[0.3em] text-gray-900 mb-6 border-b border-gray-50 pb-4 flex justify-between items-center">
+                        <h3 className="text-xs font-bold text-purple-600 mb-6 border-b border-purple-50 pb-4 flex justify-between items-center">
                             Client Identity
-                            <User size={14} className="text-gray-300" />
+                            <User size={14} className="text-purple-300" />
                         </h3>
                         <div className="space-y-5">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-cl-bg-lavender flex items-center justify-center text-cl-purple shadow-inner shrink-0">
-                                    <User size={24} strokeWidth={1.5} />
+                                <div className="relative w-12 h-12 rounded-2xl bg-cl-bg-lavender flex items-center justify-center text-cl-purple shadow-inner shrink-0 overflow-hidden">
+                                    {conversation.customerImage ? (
+                                        <Image src={conversation.customerImage} alt={conversation.customerName} fill className="object-cover" />
+                                    ) : (
+                                        <User size={24} strokeWidth={1.5} />
+                                    )}
+                                    {isCustomerOnline && (
+                                        <div className="absolute inset-0 border-2 border-green-500 rounded-2xl animate-pulse" />
+                                    )}
                                 </div>
                                 <div>
                                     <p className="text-base font-bold text-gray-900 leading-tight">{conversation.customerName || 'Verified Client'}</p>
                                     <div className="flex items-center gap-1.5 mt-0.5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                                        <p className="text-[9px] font-black text-gray-400  ">Active</p>
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isCustomerOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+                                        <p className="text-[10px] font-bold text-gray-400">{isCustomerOnline ? 'Online Now' : 'Offline'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -489,7 +539,7 @@ const AdminConversationPage = () => {
                                 <div className="pt-4 border-t border-gray-50 space-y-3">
                                     {customerContext.loyaltyTier && (
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-black text-gray-400   flex items-center gap-1.5">
+                                            <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1.5">
                                                 <Star size={10} /> Loyalty
                                             </span>
                                             <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getTierColor(customerContext.loyaltyTier)}`}>
@@ -499,7 +549,7 @@ const AdminConversationPage = () => {
                                     )}
                                     {customerContext.lastOrder && (
                                         <div className="bg-gray-50 rounded-xl p-3 space-y-1">
-                                            <p className="text-[10px] font-black text-gray-400   flex items-center gap-1.5">
+                                            <p className="text-[10px] font-bold text-gray-400 flex items-center gap-1.5">
                                                 <ShoppingBag size={10} /> Last Order
                                             </p>
                                             <p className="text-xs font-semibold text-gray-700">#{customerContext.lastOrder.id} · AED {parseFloat(customerContext.lastOrder.totalAmount || 0).toFixed(2)}</p>
@@ -513,36 +563,51 @@ const AdminConversationPage = () => {
 
                     {/* Protocol Control */}
                     <section className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-sm">
-                        <h3 className="text-[10px] font-black  tracking-[0.3em] text-gray-900 mb-6 border-b border-gray-50 pb-4 flex justify-between items-center">
+                        <h3 className="text-xs font-bold text-purple-600 mb-6 border-b border-purple-50 pb-4 flex justify-between items-center">
                             Protocol Control
-                            <ShieldCheck size={14} />
+                            <ShieldCheck size={14} className="text-purple-300" />
                         </h3>
                         <div className="space-y-5">
-                            <div className="space-y-3">
-                                <Label className="text-[10px] font-black text-gray-400  ">Transmission State</Label>
-                                <Select value={newStatus} onValueChange={setNewStatus}>
-                                    <SelectTrigger className="w-full h-12 rounded-xl bg-gray-50 border-gray-100 font-bold">
-                                        <SelectValue placeholder="Transition Protocol" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl shadow-2xl border-gray-100">
-                                        <SelectItem value="open">Active Portal</SelectItem>
-                                        <SelectItem value="ai_handling">AI Handling</SelectItem>
-                                        <SelectItem value="pending_admin_response">Requires Concierge</SelectItem>
-                                        <SelectItem value="pending_customer_response">Awaiting Client</SelectItem>
-                                        <SelectItem value="closed">Archive Dossier</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-400 shadow-inner shrink-0">
+                                    <Zap size={24} strokeWidth={1.5} />
+                                </div>
+                                <div>
+                                    <p className="text-base font-bold text-gray-900 leading-tight">System Status</p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${conversation.status === 'closed' ? 'bg-gray-400' : 'bg-purple-500 animate-pulse'}`} />
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{conversation.status?.replace(/_/g, ' ') || 'Open'}</p>
+                                    </div>
+                                </div>
                             </div>
-                            <Button onClick={handleUpdateStatus} className="w-full py-6 bg-gray-900 hover:bg-cl-purple text-white rounded-xl text-[10px] font-black   transition-all">
-                                Update Protocol State
-                            </Button>
+                            
+                            <div className="space-y-4 pt-4 border-t border-gray-50">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-bold text-gray-400 ml-1">Transition Transmission State</Label>
+                                    <Select value={newStatus} onValueChange={setNewStatus}>
+                                        <SelectTrigger className="w-full h-12 rounded-xl bg-gray-50 border-gray-100 font-bold text-xs">
+                                            <SelectValue placeholder="Select Protocol" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl shadow-2xl border-gray-100">
+                                            <SelectItem value="open">Active Portal</SelectItem>
+                                            <SelectItem value="ai_handling">AI Handling</SelectItem>
+                                            <SelectItem value="pending_admin_response">Requires Concierge</SelectItem>
+                                            <SelectItem value="pending_customer_response">Awaiting Client</SelectItem>
+                                            <SelectItem value="closed">Archive Dossier</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Button onClick={handleUpdateStatus} className="w-full py-6 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-[11px] font-bold transition-all shadow-md shadow-purple-100">
+                                    Update Protocol State
+                                </Button>
+                            </div>
                         </div>
                     </section>
 
-                    <div className="p-6 bg-cl-bg-lavender/50 rounded-[2rem] border border-indigo-100/30">
-                        <div className="flex items-center gap-3 mb-3 text-cl-purple">
+                    <div className="p-6 bg-purple-50 rounded-[2rem] border border-purple-100/50">
+                        <div className="flex items-center gap-3 mb-3 text-purple-600">
                             <Zap size={16} />
-                            <span className="text-[11px] font-black  ">Concierge Efficiency</span>
+                            <span className="text-[11px] font-bold">Concierge Efficiency</span>
                         </div>
                         <p className="text-[11px] text-gray-500 font-medium italic leading-relaxed">
                             Maintain Naya Lumière standards by responding within 15 minutes of client transmission.
@@ -559,3 +624,4 @@ const AdminConversationPage = () => {
 };
 
 export default AdminConversationPage;
+

@@ -6,20 +6,17 @@ import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-// ─── Slide data ──────────────────────────────────────────────────────────────
-// Each slide: full-bleed photography IS the hero.
-// textTheme 'light' = white text (for dark/colored photo backgrounds)
-// textTheme 'dark'  = charcoal text (for light/neutral photo backgrounds)
-const heroSlides = [
+// ─── Slide data Fallback ──────────────────────────────────────────────────────────────
+const fallbackSlides = [
   {
-    id: 1,
+    id: 'f1',
     eyebrow: 'GERNÉTIC INTERNATIONAL',
     headline: 'The Art of\nSkin Science',
     body: 'Biological cellular treatments crafted in France. Trusted by dermatologists worldwide for transformative results.',
     cta: { text: 'Shop the Collection', href: '/all-products' },
-    imageSrc: '/ROUTINE 4.mp4',
-    imageSrcDesktop: '/Body protocol.mp4',
-    isVideo: true,
+    imageSrc: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=1000',
+    imageSrcDesktop: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=2000',
+    isVideo: false,
     imagePosition: 'object-center',
     textPosition: 'left',
     ctaStyle: 'lavender-cloud',
@@ -27,14 +24,14 @@ const heroSlides = [
     textTheme: 'dark',
   },
   {
-    id: 2,
+    id: 'f2',
     eyebrow: 'OXYGENATING EXPERTISE',
     headline: 'Luminous\nRadiance',
     body: 'Breathe new life into your skin with our transformative oxygenating facial. Instant vitality, enduring glow.',
     cta: { text: 'Discover the Secret', href: '/all-products' },
-    imageSrc: '/18012026.mov',
-    imageSrcDesktop: '/Double-Up Oxygenating Facial.mp4',
-    isVideo: true,
+    imageSrc: 'https://images.unsplash.com/photo-1596462502278-27bfdc4033c8?auto=format&fit=crop&q=80&w=1000',
+    imageSrcDesktop: 'https://images.unsplash.com/photo-1596462502278-27bfdc4033c8?auto=format&fit=crop&q=80&w=2000',
+    isVideo: false,
     imagePosition: 'object-center object-top',
     textPosition: 'right',
     ctaStyle: 'lavender-cloud',
@@ -42,14 +39,14 @@ const heroSlides = [
     textTheme: 'light',
   },
   {
-    id: 3,
+    id: 'f3',
     eyebrow: 'DAILY RITUALS',
     headline: 'Your Skincare\nSymphony',
     body: 'Discover the perfect sequence for lasting radiance. A comprehensive routine tailored for luxury care.',
     cta: { text: 'View the Ritual', href: '/all-products' },
-    imageSrc: '/ROUTINE 3.mov',
-    imageSrcDesktop: '/Untitled design.png', 
-    isVideo: true,
+    imageSrc: 'https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&q=80&w=1000',
+    imageSrcDesktop: 'https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&q=80&w=2000', 
+    isVideo: false,
     imagePosition: 'object-center object-bottom',
     textPosition: 'left',
     ctaStyle: 'lavender-cloud',
@@ -105,10 +102,11 @@ function getTextVariants(reduceMotion) {
   };
 }
 
-// ... SlideBackground remains the same ...
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function SlideBackground({ slide, reduceMotion }) {
+  const isVideoDesktop = slide.is_video_desktop || (slide.imageSrcDesktop && (typeof slide.imageSrcDesktop === 'string' && (slide.imageSrcDesktop.endsWith('.mp4') || slide.imageSrcDesktop.endsWith('.mov'))));
+  const isVideoMobile = slide.is_video_mobile || (slide.imageSrc && (typeof slide.imageSrc === 'string' && (slide.imageSrc.endsWith('.mp4') || slide.imageSrc.endsWith('.mov'))));
+
   return (
     <motion.div
       key={`bg-${slide.id}`}
@@ -118,61 +116,56 @@ function SlideBackground({ slide, reduceMotion }) {
       exit={{ opacity: 0 }}
       transition={{ duration: reduceMotion ? 0.15 : 0.65, ease: 'easeInOut' }}
     >
-      {slide.isVideo ? (
-        <>
-          {slide.imageSrcDesktop ? (
-            <>
-              {/* Mobile Video */}
-              <video
-                src={slide.imageSrc}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className={`md:hidden object-cover w-full h-full ${slide.imagePosition}`}
-              />
-              {/* Desktop Video/Image */}
-              {slide.imageSrcDesktop.endsWith('.mp4') || slide.imageSrcDesktop.endsWith('.mov') ? (
-                <video
-                  src={slide.imageSrcDesktop}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className={`hidden md:block object-cover w-full h-full ${slide.imagePosition}`}
-                />
-              ) : (
-                <Image
-                  src={slide.imageSrcDesktop}
-                  alt={slide.headline}
-                  fill
-                  sizes="100vw"
-                  className={`hidden md:block object-cover ${slide.imagePosition}`}
-                  priority={slide.id === 1}
-                />
-              )}
-            </>
-          ) : (
-            <video
-              src={slide.imageSrc}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className={`object-cover w-full h-full ${slide.imagePosition}`}
-            />
-          )}
-        </>
-      ) : (
-        <Image
-          src={slide.imageSrc}
-          alt={slide.headline}
-          fill
-          sizes="100vw"
-          className={`object-cover ${slide.imagePosition}`}
-          priority={slide.id === 1}
-        />
-      )}
+      {/* Mobile Background */}
+      <div className="md:hidden w-full h-full relative">
+        {isVideoMobile ? (
+          <video
+            src={slide.imageSrc}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className={`object-cover w-full h-full ${slide.imagePosition}`}
+          >
+            <track kind="captions" />
+          </video>
+        ) : (
+          <Image
+            src={slide.imageSrc}
+            alt={slide.headline}
+            fill
+            sizes="100vw"
+            className={`object-cover ${slide.imagePosition}`}
+            priority={slide.id === 1 || slide.id === 'f1'}
+          />
+        )}
+      </div>
+
+      {/* Desktop Background */}
+      <div className="hidden md:block w-full h-full relative">
+        {isVideoDesktop ? (
+          <video
+            src={slide.imageSrcDesktop || slide.imageSrc}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className={`object-cover w-full h-full ${slide.imagePosition}`}
+          >
+            <track kind="captions" />
+          </video>
+        ) : (
+          <Image
+            src={slide.imageSrcDesktop || slide.imageSrc}
+            alt={slide.headline}
+            fill
+            sizes="100vw"
+            className={`object-cover ${slide.imagePosition}`}
+            priority={slide.id === 1 || slide.id === 'f1'}
+          />
+        )}
+      </div>
+
       {/* Directional scrim for text legibility */}
       {SCRIM_CLASS[slide.scrimDirection] && (
         <div className={`hidden md:block ${SCRIM_CLASS[slide.scrimDirection]}`} />
@@ -214,9 +207,11 @@ function SlideText({ slide, variants, isMobile = false }) {
     >
       <motion.div variants={variants.item} className={`space-y-2 md:space-y-3 ${textAlignment}`}>
         {/* Eyebrow */}
-        <p className={`text-[11px] md:text-[13px] tracking-[0.25em] uppercase font-bold ${eyebrowCls}`}>
-          {slide.eyebrow}
-        </p>
+        {slide.eyebrow && (
+          <p className={`text-[11px] md:text-[13px] tracking-[0.25em] uppercase font-bold ${eyebrowCls}`}>
+            {slide.eyebrow}
+          </p>
+        )}
 
         {/* Headline */}
         <h1 className={`font-sans font-black uppercase tracking-wide whitespace-pre-line ${headlineSize} ${headlineCls}`}>
@@ -231,37 +226,60 @@ function SlideText({ slide, variants, isMobile = false }) {
         )}
 
         {/* CTA */}
-        <div className="pt-1">
-          <Link
-            href={slide.cta.href}
-            className={`inline-flex items-center justify-center px-10 py-4 text-[12px] tracking-[0.2em] uppercase font-black transition-all duration-300 ${ctaCls}`}
-          >
-            <span>{slide.cta.text}</span>
-          </Link>
-        </div>
+        {slide.cta && slide.cta.text && (
+          <div className="pt-1">
+            <Link
+              href={slide.cta.href || '/'}
+              className={`inline-flex items-center justify-center px-10 py-4 text-[12px] tracking-[0.2em] uppercase font-black transition-all duration-300 ${ctaCls}`}
+            >
+              <span>{slide.cta.text}</span>
+            </Link>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export function HeroSection() {
+export function HeroSection({ dbSlides = [] }) {
   const reduceMotion = useReducedMotion();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
 
+  // Map DB slides to the format expected by the component
+  const mappedDbSlides = dbSlides.map(s => ({
+    id: s.id,
+    eyebrow: s.eyebrow,
+    headline: s.headline,
+    body: s.body,
+    cta: { text: s.cta_text, href: s.cta_href },
+    imageSrc: s.image_src_mobile,
+    imageSrcDesktop: s.image_src_desktop,
+    isVideo: s.is_video_mobile || s.is_video_desktop,
+    is_video_mobile: s.is_video_mobile,
+    is_video_desktop: s.is_video_desktop,
+    imagePosition: s.image_position,
+    textPosition: s.text_position,
+    ctaStyle: s.cta_style,
+    scrimDirection: s.scrim_direction,
+    textTheme: s.text_theme,
+  }));
+
+  const activeSlides = mappedDbSlides.length > 0 ? mappedDbSlides : fallbackSlides;
+
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(() => setCurrent(p => (p + 1) % heroSlides.length), 7000);
+    const t = setInterval(() => setCurrent(p => (p + 1) % activeSlides.length), 7000);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [paused, activeSlides.length]);
 
-  const slide = heroSlides[current];
+  const slide = activeSlides[current];
   const variants = getTextVariants(reduceMotion);
 
   const goTo = (i) => { setPaused(true); setCurrent(i); };
-  const prev  = () => { setPaused(true); setCurrent(p => (p - 1 + heroSlides.length) % heroSlides.length); };
-  const next  = () => { setPaused(true); setCurrent(p => (p + 1) % heroSlides.length); };
+  const prev  = () => { setPaused(true); setCurrent(p => (p - 1 + activeSlides.length) % activeSlides.length); };
+  const next  = () => { setPaused(true); setCurrent(p => (p + 1) % activeSlides.length); };
 
   // ── Touch / swipe support ──────────────────────────────────────────────────
   const touchStartX = React.useRef(null);
@@ -298,27 +316,27 @@ export function HeroSection() {
         {/* Primary Glow Orb - Intensified */}
         <motion.div
           animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.3, 0.45, 0.3],
-            x: [0, 70, 0],
-            y: [0, -40, 0],
+            scale: [1, 1.1, 1],
+            opacity: [0.2, 0.3, 0.2],
+            x: [0, 40, 0],
+            y: [0, -20, 0],
           }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-[10%] -left-[5%] w-[70%] h-[70%] rounded-full blur-[140px]"
-          style={{ background: 'radial-gradient(circle, rgba(196,167,254,0.5) 0%, transparent 75%)' }}
+          className="absolute -top-[10%] -left-[5%] w-[70%] h-[70%] rounded-full blur-[100px]"
+          style={{ background: 'radial-gradient(circle, rgba(196,167,254,0.3) 0%, transparent 75%)' }}
         />
         
         {/* Secondary Glow Orb - Intensified */}
         <motion.div
           animate={{
-            scale: [1.3, 1, 1.3],
-            opacity: [0.25, 0.4, 0.25],
-            x: [0, -60, 0],
-            y: [0, 50, 0],
+            scale: [1.1, 1, 1.1],
+            opacity: [0.15, 0.25, 0.15],
+            x: [0, -30, 0],
+            y: [0, 30, 0],
           }}
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -bottom-[15%] -right-[5%] w-[60%] h-[60%] rounded-full blur-[120px]"
-          style={{ background: 'radial-gradient(circle, rgba(216,180,254,0.4) 0%, transparent 75%)' }}
+          className="absolute -bottom-[15%] -right-[5%] w-[60%] h-[60%] rounded-full blur-[80px]"
+          style={{ background: 'radial-gradient(circle, rgba(216,180,254,0.2) 0%, transparent 75%)' }}
         />
 
         {/* Global Atmosphere Tint - More Lavender focused */}
@@ -356,7 +374,7 @@ export function HeroSection() {
 
       {/* ── Dot navigation ── */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-        {heroSlides.map((_, i) => (
+        {activeSlides.map((_, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}

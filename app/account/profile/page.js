@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -209,7 +210,7 @@ export default function ProfilePage() {
                       style={{ background: CL.gradient }}
                     >
                       {user?.profile_image ? (
-                        <img src={user.profile_image} alt={user.first_name} className="w-full h-full object-cover" />
+                        <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
                       ) : (
                         <>{user?.first_name?.[0]}{user?.last_name?.[0]}</>
                       )}

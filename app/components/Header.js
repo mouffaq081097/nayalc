@@ -237,7 +237,7 @@ const Header = forwardRef((props, ref) => {
                         >
                           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/40 shadow-sm transition-all group-hover/btn:bg-white group-hover/btn:shadow-md group-hover/btn:scale-105 overflow-hidden">
                               {user?.profile_image ? (
-                                <img src={user.profile_image} alt={user.first_name} className="w-full h-full object-cover" />
+                                <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
                               ) : (
                                 <User size={18} strokeWidth={2} className="text-[#3b0764] transition-transform" />
                               )}
@@ -258,7 +258,7 @@ const Header = forwardRef((props, ref) => {
                         </button>
 
                         {/* Admin Dropdown on Hover */}
-                        {user?.email === 'mouffaq.dalloul@nayalc.com' && (
+                        {user?.role === 'admin' && (
                             <div className="absolute top-full right-0 w-48 pt-2 z-[200] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-300">
                                 <div className="bg-white/95 backdrop-blur-2xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-white/40 overflow-hidden transform translate-y-2 group-hover/account:translate-y-0 transition-all duration-300">
                                     <Link
@@ -592,7 +592,7 @@ const Header = forwardRef((props, ref) => {
                             <div className="mb-6 flex items-center gap-4 px-2">
                                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#c4b5fd] to-[#9333ea] text-white flex items-center justify-center font-black text-xl shadow-lg overflow-hidden">
                                     {user?.profile_image ? (
-                                        <img src={user.profile_image} alt={user.first_name} className="w-full h-full object-cover" />
+                                        <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
                                     ) : (
                                         <>{user.first_name?.[0]}</>
                                     )}
@@ -610,7 +610,7 @@ const Header = forwardRef((props, ref) => {
                         )}
                         
                         <div className="flex flex-col gap-3">
-                            {user?.email === 'mouffaq.dalloul@nayalc.com' && (
+                            {user?.role === 'admin' && (
                                 <button 
                                     onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}
                                     className="w-full bg-white border border-[#e8d5ff] text-[#9333ea] rounded-full h-14 font-medium tracking-tight text-[13px] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-[0_4px_12px_rgba(147,51,234,0.05)]"

@@ -1,34 +1,35 @@
 import "./globals.css";
 import Providers from './Providers';
 import LayoutContent from './LayoutContent';
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
   metadataBase: new URL('https://nayalc.com'),
   title: {
-    default: "nayalc.com - Premier Beauty & Skincare in UAE",
-    template: "%s | nayalc.com"
+    default: "Naya Lumière Cosmetics | Luxury Beauty & Skincare UAE",
+    template: "%s | Naya Lumière Cosmetics"
   },
-  description: "Discover luxury beauty and skincare at nayalc.com. Shop top-tier fragrances, night creams, serums, and gift sets. Your destination for personal care in the UAE.",
-  keywords: ["beauty", "skincare", "fragrance", "gift sets", "UAE", "online shopping", "night cream", "serum", "luxury beauty", "Dubai skincare"],
-  authors: [{ name: 'nayalc.com' }],
-  creator: 'nayalc.com',
-  publisher: 'nayalc.com',
+  description: "Shop luxury beauty and skincare in the UAE at Naya Lumière Cosmetics. Official retailer of GERnétic, Zorah, and Naya Lumière Perfumes. Free delivery on orders over AED 200.",
+  keywords: ["luxury skincare UAE", "GERnétic Dubai", "Zorah beauty", "Naya Lumière Perfumes", "beauty store Dubai", "skincare online UAE", "night cream UAE", "luxury serum Dubai", "fragrance UAE", "gift sets Dubai", "bio-cosmetics UAE"],
+  authors: [{ name: 'Naya Lumière Cosmetics' }],
+  creator: 'Naya Lumière Cosmetics',
+  publisher: 'Naya Lumière Cosmetics',
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
   openGraph: {
-    title: "nayalc.com - Premier Beauty & Skincare in UAE",
-    description: "Discover luxury beauty and skincare products in the UAE. Shop fragrances, serums, and more.",
+    title: "Naya Lumière Cosmetics | Luxury Beauty & Skincare UAE",
+    description: "Official retailer of GERnétic, Zorah, and Naya Lumière Perfumes. Shop luxury skincare, fragrances, and gift sets with free UAE delivery.",
     url: "https://nayalc.com",
-    siteName: "nayalc.com",
+    siteName: "Naya Lumière Cosmetics",
     images: [
       {
-        url: "/public/2.jpg",
+        url: "/Adobe Express - file (12).png",
         width: 1200,
         height: 630,
-        alt: 'nayalc.com - Luxury Beauty Store',
+        alt: 'Naya Lumière Cosmetics - Luxury Beauty & Skincare Store UAE',
       },
     ],
     locale: "en_US",
@@ -36,9 +37,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "nayalc.com - Premier Beauty & Skincare in UAE",
-    description: "Discover luxury beauty and skincare products in the UAE.",
-    images: ["/public/2.jpg"],
+    title: "Naya Lumière Cosmetics | Luxury Beauty & Skincare UAE",
+    description: "Official retailer of GERnétic, Zorah & Naya Lumière Perfumes. Shop luxury skincare & fragrance with free UAE delivery.",
+    images: ["/Adobe Express - file (12).png"],
   },
   icons: {
     icon: "/favicon.jpeg",
@@ -52,20 +53,42 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: 'nayalc.com',
-    url: 'https://nayalc.com',
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: 'https://nayalc.com/search?q={search_term_string}',
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Naya Lumière Cosmetics',
+      url: 'https://nayalc.com',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: 'https://nayalc.com/search?q={search_term_string}',
+        },
+        'query-input': 'required name=search_term_string',
       },
-      'query-input': 'required name=search_term_string',
     },
-  };
+    {
+      '@context': 'https://schema.org',
+      '@type': ['Organization', 'OnlineStore'],
+      name: 'Naya Lumière Cosmetics',
+      url: 'https://nayalc.com',
+      logo: 'https://nayalc.com/Adobe%20Express%20-%20file%20(5).png',
+      description: 'Luxury beauty and skincare destination in the UAE. Official retailer of GERnétic, Zorah, and Naya Lumière Perfumes.',
+      areaServed: {
+        '@type': 'Country',
+        name: 'United Arab Emirates',
+      },
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer service',
+        availableLanguage: ['English', 'Arabic'],
+      },
+      sameAs: [
+        'https://www.instagram.com/nayalc',
+      ],
+    },
+  ];
 
   return (
     <html lang="en">
@@ -75,7 +98,11 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Instrument+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cinzel:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd[0]) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd[1]) }}
         />
       </head>
       <body className="antialiased">

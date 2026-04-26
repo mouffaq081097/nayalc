@@ -156,7 +156,7 @@ const OrdersPageContent = () => {
             </div>
 
             {/* Tactile Paper Grain */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+            <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
 
             <div className="max-w-[840px] mx-auto px-6 relative z-10">
                 {/* Header */}

@@ -54,7 +54,8 @@ const selectOrderFields = (tableName) => `
         ${tableName === 'delivered_orders' ? 'o.delivered_at::timestamptz' : 'NULL::timestamptz'} as "deliveredAt",
         o.tracking_number as "trackingNumber",
         o.courier_name as "courierName",
-        o.courier_website as "courierWebsite"
+        o.courier_website as "courierWebsite",
+        (SELECT points FROM loyalty_transactions WHERE order_id = o.id AND type = 'earn' LIMIT 1) as "pointsEarned"
     FROM ${tableName} o
     LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
     LEFT JOIN users u ON o.user_id = u.id
@@ -368,7 +369,28 @@ export async function POST(request) {
             state: ''
         };
 
+        // Record pending loyalty transaction so the loyalty tab shows activity immediately
+        const estimatedPoints = Math.floor(parseFloat(subtotal) || 0);
+        await client.query(
+            'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
+            [user_id, 'placed', estimatedPoints, `Order #${orderId} placed`, orderId]
+        );
+
         await client.query('COMMIT');
+
+        // SYNC: Update user's main phone number if they don't have one yet, using the number from the selected address
+        try {
+            const { rows: phoneRows } = await client.query("SELECT customer_phone FROM user_addresses WHERE id = $1", [user_address_id]);
+            if (phoneRows.length > 0 && phoneRows[0].customer_phone) {
+                await client.query(
+                    "UPDATE users SET phone_number = $1 WHERE id = $2 AND (phone_number IS NULL OR phone_number = '')",
+                    [phoneRows[0].customer_phone, user_id]
+                );
+            }
+        } catch (syncError) {
+            console.error('Non-critical sync error:', syncError);
+            // We don't rollback here because the order itself was successful
+        }
 
         // Prepare item details for customer email if needed
         const productIds = items.map(item => item.productId);
@@ -396,7 +418,6 @@ export async function POST(request) {
             await sendAdminNotificationEmail(adminEmail, orderId, userEmail || 'Guest/Missing Email', total_amount, shippingAddress);
         }
 
-        console.log('Order created successfully with ID:', orderId);
         return NextResponse.json({ message: 'Order created successfully', orderId }, { status: 201 });
 
     } catch (error) {

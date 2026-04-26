@@ -252,7 +252,7 @@ export default function BrandClient() {
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-brand-pink/[0.02] to-transparent"></div>
       </div>
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
 
       <StoreHeader title={currentBrand?.name || "Maison"} />
       <StoreCategoryNav />
@@ -383,7 +383,7 @@ export default function BrandClient() {
                 </div>
                 
                 <div className="p-10 flex-grow relative">
-                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
+                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('/textures/natural-paper.png')]"></div>
                     <div className="relative z-10">
                         <SidebarFilters 
                         categories={categories}

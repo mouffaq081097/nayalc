@@ -213,7 +213,7 @@ export default function AccountOrdersPage() {
                             </div>
                             <div className="space-y-1">
                               <p className="text-base font-bold" style={{ color: CL.textDeep }}>Order #{order.id}</p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
                                   {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}
                                 </span>
@@ -221,6 +221,15 @@ export default function AccountOrdersPage() {
                                 <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: CL.purple }}>
                                   {String(order.status || 'Processing')}
                                 </span>
+                                {order.pointsEarned && (
+                                  <>
+                                    <span className="w-1 h-1 rounded-full bg-gray-300 inline-block" />
+                                    <div className="flex items-center gap-1 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                                      <Star size={8} className="fill-purple-500 text-purple-500" />
+                                      <span className="text-[9px] font-black text-purple-600 uppercase tracking-tight">+{order.pointsEarned} Points</span>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>

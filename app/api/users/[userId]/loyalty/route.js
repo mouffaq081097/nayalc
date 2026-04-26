@@ -16,6 +16,7 @@ export async function GET(request, { params }) {
         }
 
         const stats = userRes.rows[0];
+        stats.nextTierPoints = stats.tier === 'Platinum' ? 5000 : stats.tier === 'Gold' ? 5000 : 2000;
 
         // 2. Get transaction history
         const transRes = await db.query(

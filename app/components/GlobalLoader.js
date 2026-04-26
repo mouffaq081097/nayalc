@@ -41,7 +41,7 @@ const GlobalLoader = ({ isLoading }) => {
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#fdf8ff]/90 backdrop-blur-xl"
         >
           {/* Paper Grain Effect */}
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('/textures/natural-paper.png')]"></div>
           
           <div className="relative">
             {/* Pulsing Aura */}

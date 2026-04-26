@@ -368,7 +368,7 @@ export default function CollectionClient() {
       </div>
 
       {/* Tactile Paper Grain */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] mix-blend-multiply"></div>
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
 
       <StoreCategoryNav />
       <CategoryHero category={currentCategory} />
@@ -502,7 +502,7 @@ export default function CollectionClient() {
                 </div>
                 
                 <div className="p-10 flex-grow relative">
-                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')]"></div>
+                    <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('/textures/natural-paper.png')]"></div>
                     
                     <div className="relative z-10">
                         <SidebarFilters 

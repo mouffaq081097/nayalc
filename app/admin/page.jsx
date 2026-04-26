@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const STATUS_STYLES = {
     Delivered:  'bg-green-50 text-green-700 border-green-200',
@@ -31,7 +32,7 @@ const MetricCard = ({ title, value, icon: Icon, accent, delay }) => (
                 <Icon size={19} style={{ color: accent }} />
             </div>
         </div>
-        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{title}</p>
+        <p className="text-[11px] font-semibold text-gray-400 mb-1">{title}</p>
         <h3 className="text-2xl font-black" style={{ color: '#3b0764' }}>{value}</h3>
     </motion.div>
 );
@@ -42,7 +43,7 @@ const AdminDashboard = () => {
     const router = useRouter();
 
     useEffect(() => {
-        if (user?.email === 'mouffaq.dalloul@nayalc.com') fetchAllOrders(1, 100);
+        if (user?.role === 'admin') fetchAllOrders(1, 100);
     }, [fetchAllOrders, user]);
 
     const stats = useMemo(() => {
@@ -56,7 +57,7 @@ const AdminDashboard = () => {
         };
     }, [allOrders.orders]);
 
-    if (loading || !user || user.email !== 'mouffaq.dalloul@nayalc.com') return (
+    if (loading || !user || user.role !== 'admin') return (
         <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
             <div className="w-10 h-10 border-4 border-purple-100 border-t-[#9333ea] rounded-full animate-spin" />
             <p className="text-sm text-gray-400 font-medium">Loading…</p>
@@ -111,7 +112,7 @@ const AdminDashboard = () => {
                                 <thead>
                                     <tr style={{ background: 'rgba(248,240,255,0.6)' }}>
                                         {['Order', 'Customer', 'Date', 'Status', 'Total'].map((h, i) => (
-                                            <th key={h} className={`px-6 py-3.5 text-[10px] font-black uppercase tracking-wider text-purple-400 ${i === 4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                                            <th key={h} className={`px-6 py-3.5 text-[10px] font-black text-purple-400 ${i === 4 ? 'text-right' : 'text-left'}`}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -168,7 +169,7 @@ const AdminDashboard = () => {
                             {products.filter(p => p.stock_quantity <= 5).slice(0, 4).map(p => (
                                 <div key={p.id} className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-lg bg-purple-50 border border-purple-100 flex-shrink-0 overflow-hidden">
-                                        <img src={p.imageUrl} alt="" className="w-full h-full object-contain p-1" />
+                                        <Image src={p.imageUrl} alt={p.name} fill className="object-contain p-1" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-semibold text-gray-800 truncate">{p.name}</p>

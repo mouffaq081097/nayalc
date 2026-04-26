@@ -16,8 +16,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FIELD_CLS = 'w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400 transition-all placeholder:text-gray-300';
-const LABEL_CLS = 'block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5';
-const SECTION_TITLE = 'text-[10px] font-black text-purple-500 uppercase tracking-widest mb-5 flex items-center gap-2';
+const LABEL_CLS = 'block text-[11px] font-bold text-gray-400 mb-1.5';
+const SECTION_TITLE = 'text-[10px] font-black text-purple-500 mb-5 flex items-center gap-2';
 
 const ManageProducts = () => {
     const { adminProducts: products, categories, concerns, brands, addProduct, updateProduct, deleteProduct, toggleProductStatus, loading: isDataLoading } = useAppContext();
@@ -274,7 +274,7 @@ const ManageProducts = () => {
                                 {/* Info */}
                                 <div className="px-4 pt-3 pb-4 flex flex-col flex-grow">
                                     {brandName && (
-                                        <p className="text-[9px] font-black tracking-[0.18em] uppercase mb-1" style={{ color: '#9333ea' }}>
+                                        <p className="text-[10px] font-bold mb-1" style={{ color: '#9333ea' }}>
                                             {brandName}
                                         </p>
                                     )}
@@ -284,7 +284,7 @@ const ManageProducts = () => {
 
                                     {/* Price — matches user-side layout */}
                                     <div className="mb-3">
-                                        <span className="text-[9px] font-bold tracking-wider text-gray-400 uppercase block">AED</span>
+                                        <span className="text-[9px] font-bold text-gray-400 block">AED</span>
                                         <span className="text-xl font-black leading-none" style={{ color: '#3b0764' }}>
                                             {product.price.toFixed(0)}
                                             <span className="text-xs font-medium text-gray-400 ml-0.5">.{(product.price % 1).toFixed(2).slice(2)}</span>
@@ -315,7 +315,7 @@ const ManageProducts = () => {
                             <thead>
                                 <tr style={{ background: 'rgba(248,240,255,0.7)' }}>
                                     {['Product','Brand','Status','Stock','Price',''].map((h, i) => (
-                                        <th key={i} className={`px-6 py-4 text-[10px] font-black uppercase tracking-wider text-purple-400 ${i>=4 ? 'text-right' : 'text-left'}`}>{h}</th>
+                                        <th key={i} className={`px-6 py-4 text-[10px] font-black text-purple-400 ${i>=4 ? 'text-right' : 'text-left'}`}>{h}</th>
                                     ))}
                                 </tr>
                             </thead>
@@ -539,7 +539,7 @@ const ManageProducts = () => {
                             {/* Pricing */}
                             <div className="bg-white rounded-2xl border p-6 space-y-4" style={{ borderColor: 'rgba(216,180,254,0.35)' }}>
                                 <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'rgba(216,180,254,0.2)' }}>
-                                    <p className="text-xs font-black text-gray-700 uppercase tracking-wider">Pricing</p>
+                                    <p className="text-xs font-black text-gray-700 ">Pricing</p>
                                     <DollarSign size={14} className="text-gray-300" />
                                 </div>
                                 <div>
@@ -563,7 +563,7 @@ const ManageProducts = () => {
                             {/* Inventory */}
                             <div className="bg-white rounded-2xl border p-6 space-y-4" style={{ borderColor: 'rgba(216,180,254,0.35)' }}>
                                 <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'rgba(216,180,254,0.2)' }}>
-                                    <p className="text-xs font-black text-gray-700 uppercase tracking-wider">Inventory</p>
+                                    <p className="text-xs font-black text-gray-700 ">Inventory</p>
                                     <Archive size={14} className="text-gray-300" />
                                 </div>
                                 <div>
@@ -576,7 +576,7 @@ const ManageProducts = () => {
                             {/* Organization */}
                             <div className="bg-white rounded-2xl border p-6 space-y-5" style={{ borderColor: 'rgba(216,180,254,0.35)' }}>
                                 <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'rgba(216,180,254,0.2)' }}>
-                                    <p className="text-xs font-black text-gray-700 uppercase tracking-wider">Organization</p>
+                                    <p className="text-xs font-black text-gray-700 ">Organization</p>
                                     <Filter size={14} className="text-gray-300" />
                                 </div>
 

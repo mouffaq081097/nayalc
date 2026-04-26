@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import { Button } from '@/app/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 const ManageBrands = () => {
     const { adminBrands: brands, addBrand, updateBrand, deleteBrand, toggleBrandStatus, loading: isDataLoading } = useAppContext();
@@ -128,9 +129,9 @@ const ManageBrands = () => {
                         >
                             <div className="p-8 space-y-6">
                                 <div className="flex justify-between items-start">
-                                    <div className="w-16 h-16 rounded-2xl bg-cl-bg-lavender border border-indigo-100/50 flex items-center justify-center text-cl-purple transition-colors group-hover:bg-cl-purple group-hover:text-white duration-500 shadow-inner overflow-hidden">
+                                    <div className="w-16 h-16 rounded-2xl bg-cl-bg-lavender border border-indigo-100/50 flex items-center justify-center text-cl-purple transition-colors group-hover:bg-cl-purple group-hover:text-white duration-500 shadow-inner overflow-hidden relative">
                                         {brand.imageurl ? (
-                                            <img src={brand.imageurl} alt={brand.name} className="w-full h-full object-contain p-2" />
+                                            <Image src={brand.imageurl} alt={brand.name} fill className="object-contain p-2" />
                                         ) : (
                                             <Award size={32} strokeWidth={1.5} />
                                         )}
@@ -209,11 +210,11 @@ const ManageBrands = () => {
 
                         <div className="group">
                             <label htmlFor="logo" className="block text-[11px] font-black text-gray-400   mb-3">Brand Logo</label>
-                            <div className="relative group/img aspect-video bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-6 transition-all hover:bg-gray-100/50">
+                            <div className="relative group/img aspect-video bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-6 transition-all hover:bg-gray-100/50 relative">
                                 {imageFile ? (
-                                    <img src={URL.createObjectURL(imageFile)} alt="Preview" className="w-full h-full object-contain p-2" />
+                                    <Image src={URL.createObjectURL(imageFile)} alt="Preview" fill className="object-contain p-2" />
                                 ) : editingBrand?.imageurl ? (
-                                    <img src={editingBrand.imageurl} alt="Current" className="w-full h-full object-contain p-2" />
+                                    <Image src={editingBrand.imageurl} alt="Current" fill className="object-contain p-2" />
                                 ) : (
                                     <div className="text-gray-200 flex flex-col items-center gap-2">
                                         <ImageIcon size={32} />

@@ -92,7 +92,9 @@ export const EditorialShowcase = () => {
                 src="/Argini+MyMyoso_2x3.jpg" 
                 alt="Editorial Showcase" 
                 fill 
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
                 className="object-cover object-center" 
+                priority
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/30" />
             </motion.div>

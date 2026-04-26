@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import {
   Package, Heart, MapPin,
-  LogOut, ChevronRight, Star, Sparkles, Plus, Settings, Bell, Lock, ShieldCheck, ShoppingBag, CreditCard, ArrowRight, Camera, Crown, Trash2
+  LogOut, ChevronRight, Star, Sparkles, Plus, Settings, Bell, Lock, ShieldCheck, ShoppingBag, CreditCard, ArrowRight, Camera, Crown, Trash2, Clock, Gift, RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -157,11 +157,17 @@ const AccountPageContent = () => {
     { id: 'profile',   label: 'Profile',    icon: User,    href: '/account/profile' },
     { id: 'orders',    label: 'Orders',     icon: Package  },
     { id: 'wishlist',  label: 'Wishlist',   icon: Heart    },
+    { id: 'loyalty',   label: 'Loyalty',    icon: Star     },
     { id: 'addresses', label: 'Addresses',  icon: MapPin   },
     { id: 'settings',  label: 'Settings',   icon: Settings },
   ];
 
-  const loyaltyPct = Math.min(100, Math.round((loyaltyData.stats.points / loyaltyData.stats.nextTierPoints) * 100));
+  const loyaltyPct = Math.min(100, Math.round(((loyaltyData?.stats?.points ?? 0) / (loyaltyData?.stats?.nextTierPoints ?? 2000)) * 100));
+  const tiers = [
+    { name: 'Silver',   min: 0,    color: 'rgba(192,192,192,0.9)' },
+    { name: 'Gold',     min: 2000, color: 'rgba(234,179,8,0.9)'   },
+    { name: 'Platinum', min: 5000, color: 'rgba(196,167,254,0.9)' },
+  ];
 
   return (
     <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
@@ -191,7 +197,7 @@ const AccountPageContent = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-bold tracking-tight" style={{ color: CL.textDeep }}>{user.first_name} {user.last_name}</h3>
-                  <p className="text-[9px] font-black uppercase tracking-[0.12em] mt-0.5" style={{ color: CL.purple }}>{loyaltyData.stats.tier} Member</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.12em] mt-0.5" style={{ color: CL.purple }}>{loyaltyData?.stats?.tier ?? 'Silver'} Member</p>
                 </div>
               </div>
 
@@ -241,7 +247,7 @@ const AccountPageContent = () => {
                   <Star size={14} className="fill-yellow-300 text-yellow-300" />
                   <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/60">Loyalty Points</span>
                 </div>
-                <p className="text-4xl font-black text-white">{loyaltyData.stats.points.toLocaleString()}</p>
+                <p className="text-4xl font-black text-white">{(loyaltyData?.stats?.points || 0).toLocaleString()}</p>
                 <div>
                   <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
                     <motion.div
@@ -253,12 +259,12 @@ const AccountPageContent = () => {
                     />
                   </div>
                   <p className="text-[9px] text-white/40 font-medium uppercase tracking-widest mt-2">
-                    {loyaltyData.stats.nextTierPoints - loyaltyData.stats.points} pts to next tier
+                    {Math.max(0, (loyaltyData?.stats?.nextTierPoints || 2000) - (loyaltyData?.stats?.points || 0))} pts to next tier
                   </p>
                 </div>
                 <div className="flex items-center gap-2 pt-1">
                   <Crown size={12} style={{ color: 'rgba(253,224,71,0.8)' }} />
-                  <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{loyaltyData.stats.tier} Prestige</span>
+                  <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{loyaltyData?.stats?.tier || 'Silver'} Prestige</span>
                 </div>
               </div>
             </div>
@@ -455,6 +461,110 @@ const AccountPageContent = () => {
                         <p className="text-xs uppercase tracking-widest" style={{ color: CL.textSoft }}>Save products you love to find them here</p>
                       </div>
                     )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ── Loyalty ── */}
+              {activeTab === 'loyalty' && (
+                <motion.div key="loyalty" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-6">
+                  <SectionTitle title="Loyalty" subtitle="My Account" />
+
+                  {/* Hero points card */}
+                  <div className="rounded-3xl p-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: CL.glowShadow }}>
+                    <div className="absolute top-0 right-0 w-48 h-48 rounded-full blur-[80px]" style={{ background: 'rgba(249,168,212,0.28)' }} />
+                    <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full blur-[60px]" style={{ background: 'rgba(196,167,254,0.2)' }} />
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Crown size={14} style={{ color: 'rgba(253,224,71,0.85)' }} />
+                        <p className="text-[9px] font-black uppercase tracking-[0.35em] text-white/60">{loyaltyData?.stats?.tier ?? 'Silver'} Prestige</p>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 mb-5">
+                        <p className="text-6xl font-black text-white tabular-nums">{(loyaltyData?.stats?.points ?? 0).toLocaleString()}</p>
+                        <p className="text-white/50 text-sm font-semibold">points</p>
+                      </div>
+                      <div className="w-full h-2 rounded-full overflow-hidden mb-2" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${loyaltyPct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }} className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, rgba(249,168,212,0.9), rgba(253,224,71,0.85))' }} />
+                      </div>
+                      <div className="flex justify-between mt-2">
+                        <p className="text-[9px] text-white/40 uppercase tracking-widest">{(loyaltyData?.stats?.points ?? 0).toLocaleString()} pts</p>
+                        <p className="text-[9px] text-white/40 uppercase tracking-widest">{(loyaltyData?.stats?.nextTierPoints ?? 2000).toLocaleString()} pts</p>
+                      </div>
+                      <p className="text-xs text-white/60 mt-3 font-medium">{Math.max(0, (loyaltyData?.stats?.nextTierPoints ?? 2000) - (loyaltyData?.stats?.points ?? 0)).toLocaleString()} points to reach the next tier</p>
+                    </div>
+                  </div>
+
+                  {/* Tier progression */}
+                  <div className="rounded-3xl p-8" style={glassCard}>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Tier Progression</p>
+                    </div>
+                    <div className="space-y-5">
+                      {tiers.map((t) => (
+                        <div key={t.name} className="flex items-center gap-5">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: (loyaltyData?.stats?.tier ?? 'Silver') === t.name ? CL.gradient : CL.purpleLight }}>
+                            <Star size={14} strokeWidth={2} style={{ color: (loyaltyData?.stats?.tier ?? 'Silver') === t.name ? '#fff' : 'rgba(147,51,234,0.5)' }} fill={(loyaltyData?.stats?.tier ?? 'Silver') === t.name ? '#fff' : 'none'} />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-baseline">
+                              <p className="text-[14px] font-bold" style={{ color: (loyaltyData?.stats?.tier ?? 'Silver') === t.name ? CL.textDeep : 'rgba(59,7,100,0.45)' }}>{t.name}</p>
+                              <p className="text-[10px] font-semibold" style={{ color: 'rgba(59,7,100,0.40)' }}>{t.min.toLocaleString()}+ pts</p>
+                            </div>
+                          </div>
+                          {(loyaltyData?.stats?.tier ?? 'Silver') === t.name && (
+                            <span className="text-[8px] font-black uppercase tracking-[0.1em] px-3 py-1 rounded-full text-white" style={{ background: CL.gradient }}>Current</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Transaction history */}
+                  <div className="rounded-3xl p-8" style={glassCard}>
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Transaction History</p>
+                    </div>
+                    <div className="space-y-3">
+                      {loyaltyData?.transactions?.length > 0 ? (
+                        loyaltyData.transactions.map((tx) => {
+                          const isPlaced = tx.type === 'placed';
+                          const isRedeem = tx.type === 'redeem';
+                          const isRefund = tx.type === 'refund';
+                          const isBonus  = tx.type === 'bonus';
+                          const pts      = tx.points ?? 0;
+                          const TxIcon   = isPlaced ? Clock : isRedeem ? RotateCcw : isBonus ? Gift : Package;
+                          const iconBg   = isPlaced ? 'rgba(196,167,254,0.18)' : isRedeem ? 'rgba(239,68,68,0.10)' : 'rgba(196,167,254,0.18)';
+                          const iconColor = isPlaced ? CL.purple : isRedeem ? '#ef4444' : CL.purple;
+                          const ptColor  = isPlaced ? CL.purple : isRedeem || pts < 0 ? '#ef4444' : '#22c55e';
+                          const ptLabel  = isPlaced ? `~${pts.toLocaleString()} est.` : `${pts >= 0 ? '+' : ''}${pts.toLocaleString()}`;
+                          return (
+                            <div key={tx.id} className="flex items-center gap-4 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(216,180,254,0.22)' }}>
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+                                <TxIcon size={14} style={{ color: iconColor }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-semibold truncate" style={{ color: CL.textDeep }}>{tx.description}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <p className="text-[10px] font-medium" style={{ color: 'rgba(59,7,100,0.40)' }}>
+                                    {new Date(tx.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </p>
+                                  {isPlaced && (
+                                    <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: 'rgba(196,167,254,0.22)', color: CL.purple }}>Pending</span>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-[13px] font-black flex-shrink-0" style={{ color: ptColor }}>{ptLabel}</p>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="py-10 text-center">
+                          <p className="text-sm italic" style={{ color: 'rgba(59,7,100,0.35)' }}>No points history yet. Place your first order to start earning!</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               )}
