@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { sendPayoutRequestNotificationEmail } from '@/lib/mail';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -41,6 +42,15 @@ export async function POST(request) {
             amount: Math.round(amount * 100), // Stripe expects amount in cents
             currency: currency.toLowerCase(),
         });
+
+        // Send email notifications
+        try {
+            const recipients = ['mouffaq@nayalc.com', 'wael@nayalc.com'];
+            await sendPayoutRequestNotificationEmail(recipients, parseFloat(amount), currency, payout.id);
+        } catch (emailError) {
+            console.error('Failed to send payout notification emails:', emailError);
+            // We don't fail the whole request if only emails fail
+        }
 
         return NextResponse.json({ message: 'Payout requested successfully', payout });
     } catch (error) {
