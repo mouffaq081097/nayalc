@@ -6,7 +6,8 @@ import {
  ShoppingBag, Heart, Package, LogOut, Menu, X,
  LayoutDashboard, Tags, Ticket, Users, MessageSquare,
  ExternalLink, ShieldCheck, Bell, Globe, Instagram,
- Layout
+ Layout,
+ Banknote
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,6 +19,7 @@ const SIDEBAR_W = '256px';
 const navItems = [
  { to: '/admin', text: 'Dashboard', icon: LayoutDashboard },
  { to: '/admin/hero', text: 'Hero Banner', icon: Layout },
+ { to: '/admin/finance', text: 'Finance', icon: Banknote },
  { to: '/admin/products', text: 'Products', icon: Package },
  { to: '/admin/categories', text: 'Categories', icon: Tags },
  { to: '/admin/brands', text: 'Brands', icon: Heart },
