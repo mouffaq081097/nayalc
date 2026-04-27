@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createFetchWithAuth } from '@/app/lib/api';
 import { useAuth } from '@/app/context/AuthContext';
 
-const FinancePage = () => {
+const PaymentsPage = () => {
     const { logout } = useAuth();
     const fetchWithAuth = createFetchWithAuth(logout);
     const [data, setData] = useState(null);
@@ -97,7 +97,7 @@ const FinancePage = () => {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-black text-[#3b0764]">Financial Management</h1>
+                    <h1 className="text-2xl font-black text-[#3b0764]">Payment Management</h1>
                     <p className="text-sm text-gray-500">Monitor your Stripe balance and manage payouts.</p>
                 </div>
                 <Button 
@@ -253,4 +253,4 @@ const FinancePage = () => {
     );
 };
 
-export default FinancePage;
+export default PaymentsPage;

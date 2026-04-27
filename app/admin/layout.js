@@ -19,7 +19,7 @@ const SIDEBAR_W = '256px';
 const navItems = [
  { to: '/admin', text: 'Dashboard', icon: LayoutDashboard },
  { to: '/admin/hero', text: 'Hero Banner', icon: Layout },
- { to: '/admin/finance', text: 'Finance', icon: Banknote },
+ { to: '/admin/payments', text: 'Payments', icon: Banknote },
  { to: '/admin/products', text: 'Products', icon: Package },
  { to: '/admin/categories', text: 'Categories', icon: Tags },
  { to: '/admin/brands', text: 'Brands', icon: Heart },
