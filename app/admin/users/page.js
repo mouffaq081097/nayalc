@@ -2,10 +2,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { io } from 'socket.io-client';
-import { 
-    Mail, Phone, User, Search, UserCheck, Shield, Calendar, 
-    ShieldAlert, ShieldCheck, LayoutGrid, List, MoreHorizontal, 
-    EyeOff, Archive, ExternalLink, MapPin, Home, ChevronDown, Circle, Star
+import {
+    Mail, Phone, User, Search, UserCheck, Shield, Calendar,
+    ShieldAlert, ShieldCheck, LayoutGrid, List, MoreHorizontal,
+    EyeOff, Archive, ExternalLink, MapPin, Home, ChevronDown, Circle, Star,
+    X, TrendingUp, Award, Clock, ArrowUpRight, ArrowDownLeft, Gift
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,6 +23,10 @@ const AllUsersPage = () => {
     const [expandedUsers, setExpandedUsers] = useState({});
     const [onlineUsers, setOnlineUsers] = useState([]);
     const socketRef = useRef(null);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [clientTab, setClientTab] = useState('overview');
+    const [loyaltyData, setLoyaltyData] = useState({});
+    const [loyaltyLoading, setLoyaltyLoading] = useState(false);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -104,6 +109,28 @@ const AllUsersPage = () => {
     const toggleUserAddresses = (userId) => {
         setExpandedUsers(prev => ({ ...prev, [userId]: !prev[userId] }));
     };
+
+    const fetchLoyalty = async (userId) => {
+        if (loyaltyData[userId]) return;
+        setLoyaltyLoading(true);
+        try {
+            const res = await fetchWithAuth(`/api/users/${userId}/loyalty`);
+            const data = await res.json();
+            setLoyaltyData(prev => ({ ...prev, [userId]: data }));
+        } catch (e) {
+            console.error('Failed to fetch loyalty data', e);
+        } finally {
+            setLoyaltyLoading(false);
+        }
+    };
+
+    const openClient = (user, tab = 'overview') => {
+        setSelectedUser(user);
+        setClientTab(tab);
+        fetchLoyalty(user.id);
+    };
+
+    const closeClient = () => setSelectedUser(null);
 
     const filteredUsers = users.filter(user =>
         (user.first_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
@@ -198,7 +225,7 @@ const AllUsersPage = () => {
                                             <DropdownMenuItem onClick={() => toggleAdminRole(user.id, user.is_admin)} className="rounded-lg px-3 py-2.5 text-sm gap-2.5">
                                                 {user.is_admin ? <><ShieldAlert size={14} className="text-orange-500" /> Revoke Admin</> : <><ShieldCheck size={14} className="text-purple-500" /> Make Admin</>}
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => toast("User details portal coming soon")} className="rounded-lg px-3 py-2.5 text-sm gap-2.5">
+                                            <DropdownMenuItem onClick={() => openClient(user)} className="rounded-lg px-3 py-2.5 text-sm gap-2.5">
                                                 <ExternalLink size={14} className="text-blue-500" /> View Details
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => toast("Suspend feature coming soon")} className="rounded-lg px-3 py-2.5 text-sm gap-2.5 text-red-600 focus:bg-red-50">
@@ -261,8 +288,8 @@ const AllUsersPage = () => {
                                                 {user.loyalty_points || 0} pts
                                             </span>
                                         </div>
-                                        <button 
-                                            onClick={() => toast("Detailed ledger view coming soon")}
+                                        <button
+                                            onClick={() => openClient(user, 'loyalty')}
                                             className="w-full py-1.5 rounded-lg border border-dashed border-purple-200 text-[9px] font-bold text-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all uppercase tracking-tight"
                                         >
                                             View Point history
@@ -321,9 +348,9 @@ const AllUsersPage = () => {
                                         </AnimatePresence>
                                     </div>
 
-                                    {/* Action button — matches user-side "Edit Product" */}
+                                    {/* Action button */}
                                     <button
-                                        onClick={() => toast("User details portal coming soon")}
+                                        onClick={() => openClient(user)}
                                         className="mt-auto w-full py-2 rounded-full text-[11px] font-semibold transition-all duration-200 hover:shadow-md"
                                         style={{
                                             background: 'rgba(255,255,255,0.7)',
@@ -450,6 +477,246 @@ const AllUsersPage = () => {
                     <p className="text-gray-400 font-medium">No clients found</p>
                 </div>
             )}
+
+            {/* Client slide-over panel */}
+            <AnimatePresence>
+                {selectedUser && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            key="backdrop"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={closeClient}
+                            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
+                        />
+
+                        {/* Drawer */}
+                        <motion.div
+                            key="drawer"
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                            className="fixed top-0 right-0 h-full w-full max-w-md z-50 flex flex-col overflow-hidden"
+                            style={{ background: '#fdf8ff', borderLeft: '1px solid rgba(216,180,254,0.4)' }}
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: 'rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.8)' }}>
+                                <div className="flex items-center gap-3">
+                                    <div className="relative w-10 h-10 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-400 overflow-hidden flex-shrink-0">
+                                        {selectedUser.profile_image ? (
+                                            <img src={selectedUser.profile_image} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User size={18} />
+                                        )}
+                                        {onlineUsers.includes(Number(selectedUser.id)) && (
+                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-900">{selectedUser.first_name} {selectedUser.last_name}</p>
+                                        <p className="text-[10px] text-purple-400 font-medium">ID #{selectedUser.id?.toString().padStart(5, '0')}</p>
+                                    </div>
+                                </div>
+                                <button onClick={closeClient} className="p-2 rounded-full hover:bg-purple-50 text-gray-400 hover:text-purple-600 transition-all">
+                                    <X size={16} />
+                                </button>
+                            </div>
+
+                            {/* Tabs */}
+                            <div className="flex border-b" style={{ borderColor: 'rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.5)' }}>
+                                {[
+                                    { key: 'overview', label: 'Overview' },
+                                    { key: 'addresses', label: 'Addresses' },
+                                    { key: 'loyalty', label: 'Point History' },
+                                ].map(tab => (
+                                    <button
+                                        key={tab.key}
+                                        onClick={() => { setClientTab(tab.key); if (tab.key === 'loyalty') fetchLoyalty(selectedUser.id); }}
+                                        className="flex-1 py-3 text-[11px] font-bold transition-all border-b-2"
+                                        style={clientTab === tab.key
+                                            ? { color: '#9333ea', borderColor: '#9333ea' }
+                                            : { color: 'rgba(107,33,168,0.4)', borderColor: 'transparent' }}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Tab content */}
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+
+                                {/* ── Overview ── */}
+                                {clientTab === 'overview' && (
+                                    <>
+                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Contact</p>
+                                            <div className="space-y-2.5">
+                                                <div className="flex items-center gap-3">
+                                                    <Mail size={13} className="text-purple-300 shrink-0" />
+                                                    <span className="text-[12px] text-gray-700 break-all">{selectedUser.email}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <Phone size={13} className="text-purple-300 shrink-0" />
+                                                    <span className="text-[12px] text-gray-700">{selectedUser.phone_number || 'No phone'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <Calendar size={13} className="text-purple-300 shrink-0" />
+                                                    <span className="text-[12px] text-gray-700">Joined {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Loyalty status</p>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Star size={14} className="text-amber-400 fill-amber-400" />
+                                                    <span className="text-sm font-bold text-gray-800">{selectedUser.loyalty_points || 0} pts</span>
+                                                </div>
+                                                <span className="px-3 py-1 rounded-full text-[10px] font-bold"
+                                                    style={{ background: 'rgba(216,180,254,0.25)', color: '#6b21a8', border: '1px solid rgba(216,180,254,0.5)' }}>
+                                                    {selectedUser.loyalty_tier || 'Bronze'}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => setClientTab('loyalty')}
+                                                className="w-full py-1.5 rounded-lg text-[10px] font-bold text-purple-500 hover:bg-purple-50 transition-all border border-dashed border-purple-200"
+                                            >
+                                                View full point history →
+                                            </button>
+                                        </div>
+
+                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Role</p>
+                                            <div className="flex items-center gap-2">
+                                                {selectedUser.is_admin ? (
+                                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-[11px] font-bold border border-purple-200">
+                                                        <ShieldCheck size={11} /> Admin
+                                                    </span>
+                                                ) : (
+                                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 text-gray-600 text-[11px] font-bold border border-gray-200">
+                                                        <User size={11} /> Client
+                                                    </span>
+                                                )}
+                                                <button
+                                                    onClick={() => toggleAdminRole(selectedUser.id, selectedUser.is_admin)}
+                                                    className="text-[10px] font-bold text-purple-400 hover:text-purple-600 underline underline-offset-2 transition-colors ml-1"
+                                                >
+                                                    {selectedUser.is_admin ? 'Revoke admin' : 'Make admin'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* ── Addresses ── */}
+                                {clientTab === 'addresses' && (
+                                    <div className="space-y-3">
+                                        {selectedUser.addresses && selectedUser.addresses.length > 0 ? (
+                                            selectedUser.addresses.map(addr => (
+                                                <div key={addr.id} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <MapPin size={12} className="text-purple-400" />
+                                                            <span className="text-[11px] font-bold text-gray-800">{addr.address_label}</span>
+                                                        </div>
+                                                        {addr.is_default && (
+                                                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black text-white bg-purple-500">Default</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[11px] text-gray-600 leading-relaxed pl-5">
+                                                        {addr.address_line1}{addr.address_line2 ? `, ${addr.address_line2}` : ''}<br />
+                                                        <span className="font-semibold text-gray-800">{addr.city}, {addr.state}</span><br />
+                                                        {addr.country} · {addr.zip_code}
+                                                    </p>
+                                                    {addr.customer_phone && (
+                                                        <p className="text-[10px] text-purple-400 mt-1.5 pl-5 flex items-center gap-1"><Phone size={9} /> {addr.customer_phone}</p>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="min-h-[200px] flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed" style={{ borderColor: 'rgba(216,180,254,0.5)' }}>
+                                                <MapPin size={28} className="text-purple-200" />
+                                                <p className="text-[11px] text-gray-400">No addresses saved</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* ── Point History ── */}
+                                {clientTab === 'loyalty' && (
+                                    loyaltyLoading ? (
+                                        <div className="min-h-[200px] flex flex-col items-center justify-center gap-2">
+                                            <div className="w-8 h-8 border-4 border-purple-100 border-t-purple-500 rounded-full animate-spin" />
+                                            <p className="text-[11px] text-gray-400">Loading transactions…</p>
+                                        </div>
+                                    ) : loyaltyData[selectedUser.id] ? (
+                                        <>
+                                            {/* Stats row */}
+                                            <div className="grid grid-cols-3 gap-3">
+                                                {[
+                                                    { label: 'Current pts', value: loyaltyData[selectedUser.id].stats?.points ?? 0, icon: <Star size={13} className="text-amber-400 fill-amber-400" /> },
+                                                    { label: 'Tier', value: loyaltyData[selectedUser.id].stats?.tier ?? '—', icon: <Award size={13} className="text-purple-400" /> },
+                                                    { label: 'Lifetime spend', value: loyaltyData[selectedUser.id].stats?.lifetimeSpend ? `AED ${Number(loyaltyData[selectedUser.id].stats.lifetimeSpend).toFixed(0)}` : '—', icon: <TrendingUp size={13} className="text-green-400" /> },
+                                                ].map(stat => (
+                                                    <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                                        <div className="flex justify-center mb-1">{stat.icon}</div>
+                                                        <p className="text-[13px] font-black text-gray-800">{stat.value}</p>
+                                                        <p className="text-[9px] text-gray-400 mt-0.5">{stat.label}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Transactions */}
+                                            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(216,180,254,0.35)' }}>
+                                                <div className="px-4 py-3" style={{ background: 'rgba(248,240,255,0.7)' }}>
+                                                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Transactions</p>
+                                                </div>
+                                                <div className="divide-y" style={{ divideColor: 'rgba(216,180,254,0.2)' }}>
+                                                    {loyaltyData[selectedUser.id].transactions?.length > 0 ? (
+                                                        loyaltyData[selectedUser.id].transactions.map(tx => (
+                                                            <div key={tx.id} className="flex items-center gap-3 px-4 py-3" style={{ background: 'rgba(255,255,255,0.6)' }}>
+                                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${tx.points > 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                                                                    {tx.points > 0
+                                                                        ? <ArrowUpRight size={13} className="text-green-500" />
+                                                                        : <ArrowDownLeft size={13} className="text-red-400" />
+                                                                    }
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-[11px] font-semibold text-gray-700 truncate">{tx.description || tx.type}</p>
+                                                                    <p className="text-[9px] text-gray-400 flex items-center gap-1 mt-0.5">
+                                                                        <Clock size={8} />
+                                                                        {new Date(tx.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                                    </p>
+                                                                </div>
+                                                                <span className={`text-[12px] font-black flex-shrink-0 ${tx.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                                    {tx.points > 0 ? '+' : ''}{tx.points} pts
+                                                                </span>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="py-8 flex flex-col items-center gap-2">
+                                                            <Gift size={24} className="text-purple-200" />
+                                                            <p className="text-[11px] text-gray-400">No transactions yet</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="min-h-[200px] flex flex-col items-center justify-center gap-2">
+                                            <p className="text-[11px] text-gray-400">Could not load loyalty data</p>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
