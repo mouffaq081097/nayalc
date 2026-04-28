@@ -33,64 +33,7 @@ const navItems = [
  { to: '/admin/social', text: 'Social', icon: Instagram },
 ];
 
-const AdminLayout = ({ children }) => {
- const { user, loading, logout, isAuthenticated } = useAuth();
- const router = useRouter();
- const pathname = usePathname();
- const fetchWithAuth = createFetchWithAuth(logout);
-
- const [isSidebarOpen, setIsSidebarOpen] = useState(false);
- const [notifications, setNotifications] = useState({
- unreadTotal: 0,
- unreadChatsCount: 0,
- unreadOrdersCount: 0,
- unreadOrdersDetails: [],
- unreadChatsDetails: []
- });
- const [isNotifOpen, setIsNotifOpen] = useState(false);
- const notifRef = React.useRef(null);
-
- useEffect(() => {
- if (!loading && !isAuthenticated) router.push('/auth');
- else if (!loading && user?.role !== 'admin') router.push('/');
- }, [user, loading, isAuthenticated, router]);
-
- useEffect(() => {
- const poll = async () => {
- if (!isAuthenticated) return;
- try {
- const r = await fetchWithAuth('/api/admin/notifications');
- if (r.ok) setNotifications(await r.json());
- } catch {}
- };
- poll();
- const id = setInterval(poll, 30000);
- return () => clearInterval(id);
- }, [isAuthenticated, fetchWithAuth]);
-
- useEffect(() => {
- const handleClickOutside = (e) => {
- if (notifRef.current && !notifRef.current.contains(e.target)) {
- setIsNotifOpen(false);
- }
- };
- document.addEventListener('mousedown', handleClickOutside);
- return () => document.removeEventListener('mousedown', handleClickOutside);
- }, []);
-
- const handleNotifClick = (type, id) => {
- setIsNotifOpen(false);
- if (type === 'order') router.push(`/admin/orders/${id}`);
- else if (type === 'chat') router.push(`/admin/chat/${id}`);
- };
-
- const handleLogout = () => { logout(); router.push('/'); };
-
- const current = navItems.find(n => pathname === n.to || (n.to !== '/admin' && pathname.startsWith(n.to)));
- const pageTitle = current?.text ?? 'Admin';
-
- /* ── Sidebar ── */
- const SidebarContent = () => (
+const SidebarContent = ({ pathname, isSidebarOpen, setIsSidebarOpen, notifications, onLogout }) => (
  <div className="flex flex-col h-full" style={{ background: '#fdf8ff', borderRight: '1px solid rgba(216,180,254,0.45)' }}>
 
  {/* Logo */}
@@ -180,7 +123,7 @@ const AdminLayout = ({ children }) => {
  <span className="text-[13px] font-semibold">Go to Store</span>
  </Link>
  <button
- onClick={handleLogout}
+ onClick={onLogout}
  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-red-50 hover:text-red-500"
  style={{ color: 'rgba(107,33,168,0.5)' }}
  >
@@ -189,7 +132,63 @@ const AdminLayout = ({ children }) => {
  </button>
  </div>
  </div>
- );
+);
+
+const AdminLayout = ({ children }) => {
+ const { user, loading, logout, isAuthenticated } = useAuth();
+ const router = useRouter();
+ const pathname = usePathname();
+ const fetchWithAuth = createFetchWithAuth(logout);
+
+ const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+ const [notifications, setNotifications] = useState({
+ unreadTotal: 0,
+ unreadChatsCount: 0,
+ unreadOrdersCount: 0,
+ unreadOrdersDetails: [],
+ unreadChatsDetails: []
+ });
+ const [isNotifOpen, setIsNotifOpen] = useState(false);
+ const notifRef = React.useRef(null);
+
+ useEffect(() => {
+ if (!loading && !isAuthenticated) router.push('/auth');
+ else if (!loading && user?.role !== 'admin') router.push('/');
+ }, [user, loading, isAuthenticated, router]);
+
+ useEffect(() => {
+ const poll = async () => {
+ if (!isAuthenticated) return;
+ try {
+ const r = await fetchWithAuth('/api/admin/notifications');
+ if (r.ok) setNotifications(await r.json());
+ } catch {}
+ };
+ poll();
+ const id = setInterval(poll, 30000);
+ return () => clearInterval(id);
+ }, [isAuthenticated, fetchWithAuth]);
+
+ useEffect(() => {
+ const handleClickOutside = (e) => {
+ if (notifRef.current && !notifRef.current.contains(e.target)) {
+ setIsNotifOpen(false);
+ }
+ };
+ document.addEventListener('mousedown', handleClickOutside);
+ return () => document.removeEventListener('mousedown', handleClickOutside);
+ }, []);
+
+ const handleNotifClick = (type, id) => {
+ setIsNotifOpen(false);
+ if (type === 'order') router.push(`/admin/orders/${id}`);
+ else if (type === 'chat') router.push(`/admin/chat/${id}`);
+ };
+
+ const handleLogout = () => { logout(); router.push('/'); };
+
+ const current = navItems.find(n => pathname === n.to || (n.to !== '/admin' && pathname.startsWith(n.to)));
+ const pageTitle = current?.text ?? 'Admin';
 
  /* ── Loading state ── */
  if (loading) return (
@@ -220,7 +219,13 @@ const AdminLayout = ({ children }) => {
  }`}
  style={{ width: SIDEBAR_W }}
  >
- <SidebarContent />
+ <SidebarContent
+ pathname={pathname}
+ isSidebarOpen={isSidebarOpen}
+ setIsSidebarOpen={setIsSidebarOpen}
+ notifications={notifications}
+ onLogout={handleLogout}
+ />
  </aside>
 
  {/* Main */}

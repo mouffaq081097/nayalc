@@ -168,7 +168,7 @@ const AdminDashboard = () => {
                         <div className="space-y-4">
                             {products.filter(p => p.stock_quantity <= 5).slice(0, 4).map(p => (
                                 <div key={p.id} className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-purple-50 border border-purple-100 flex-shrink-0 overflow-hidden">
+                                    <div className="relative w-10 h-10 rounded-lg bg-purple-50 border border-purple-100 flex-shrink-0 overflow-hidden">
                                         <Image src={p.imageUrl} alt={p.name} fill className="object-contain p-1" />
                                     </div>
                                     <div className="flex-1 min-w-0">
