@@ -7,7 +7,8 @@ import {
  LayoutDashboard, Tags, Ticket, Users, MessageSquare,
  ExternalLink, ShieldCheck, Bell, Globe, Instagram,
  Layout,
- Banknote
+ Banknote,
+ Send
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +28,7 @@ const navItems = [
  { to: '/admin/coupons', text: 'Coupons', icon: Ticket },
  { to: '/admin/users', text: 'Users', icon: Users },
  { to: '/admin/chat', text: 'Chat', icon: MessageSquare },
+ { to: '/admin/marketing', text: 'Marketing', icon: Send },
  { to: '/admin/seo', text: 'SEO', icon: Globe },
  { to: '/admin/social', text: 'Social', icon: Instagram },
 ];
@@ -104,22 +106,22 @@ const AdminLayout = ({ children }) => {
  />
  <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
      <div
-     style={{ 
-         fontSize: '18px', 
-         fontWeight: '600', 
-         letterSpacing: '0.05em', 
-         color: '#3b0764', 
-         textTransform: 'uppercase', 
-         fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+     style={{
+         fontSize: '18px',
+         fontWeight: '600',
+         letterSpacing: '0.05em',
+         color: '#3b0764',
+         textTransform: 'uppercase',
+         fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
      }}
      >
      NAYA
      </div>
      <div
-     style={{ 
-         fontSize: '12px', 
-         fontStyle: 'italic', 
-         fontFamily: "Georgia, 'Times New Roman', serif", 
+     style={{
+         fontSize: '12px',
+         fontStyle: 'italic',
+         fontFamily: "Georgia, 'Times New Roman', serif",
          color: '#6b21a8',
          marginTop: '0px'
      }}

@@ -184,22 +184,22 @@ const Header = forwardRef((props, ref) => {
                 >
                   <div style={{ textAlign: 'left', lineHeight: '1' }}>
                     <div
-                      style={{ 
-                        fontSize: '18px', 
-                        fontWeight: '600', 
-                        letterSpacing: '0.05em', 
-                        color: '#3b0764', 
-                        textTransform: 'uppercase', 
-                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: '600',
+                        letterSpacing: '0.05em',
+                        color: '#3b0764',
+                        textTransform: 'uppercase',
+                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
                       }}
                     >
                       NAYA
                     </div>
                     <div
-                      style={{ 
-                        fontSize: '12px', 
-                        fontStyle: 'italic', 
-                        fontFamily: "Georgia, 'Times New Roman', serif", 
+                      style={{
+                        fontSize: '12px',
+                        fontStyle: 'italic',
+                        fontFamily: "Georgia, 'Times New Roman', serif",
                         color: '#6b21a8',
                         marginTop: '0px'
                       }}
@@ -485,22 +485,22 @@ const Header = forwardRef((props, ref) => {
                             <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Cosmetics" height={42} width={140} className="h-[36px] w-auto object-contain" />
                             <div style={{ textAlign: 'left', lineHeight: '1' }}>
                                 <div
-                                style={{ 
-                                    fontSize: '18px', 
-                                    fontWeight: '600', 
-                                    letterSpacing: '0.05em', 
-                                    color: '#3b0764', 
-                                    textTransform: 'uppercase', 
-                                    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                                style={{
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    letterSpacing: '0.05em',
+                                    color: '#3b0764',
+                                    textTransform: 'uppercase',
+                                    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
                                 }}
                                 >
                                 NAYA
                                 </div>
                                 <div
-                                style={{ 
-                                    fontSize: '12px', 
-                                    fontStyle: 'italic', 
-                                    fontFamily: "Georgia, 'Times New Roman', serif", 
+                                style={{
+                                    fontSize: '12px',
+                                    fontStyle: 'italic',
+                                    fontFamily: "Georgia, 'Times New Roman', serif",
                                     color: '#6b21a8',
                                     marginTop: '0px'
                                 }}

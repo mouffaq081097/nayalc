@@ -10,7 +10,8 @@ export async function GET() {
         
         // Fetch recent balance transactions for more context
         const transactions = await stripe.balanceTransactions.list({
-            limit: 10
+            limit: 10,
+            expand: ['data.source', 'data.source.payment_method', 'data.source.customer']
         });
 
         // Fetch payouts to show history
@@ -45,7 +46,7 @@ export async function POST(request) {
 
         // Send email notifications
         try {
-            const recipients = ['mouffaq@nayalc.com', 'wael@nayalc.com'];
+            const recipients = ['waeldal@gmail.com', 'mouffaq.dalloul@gmail.com'];
             await sendPayoutRequestNotificationEmail(recipients, parseFloat(amount), currency, payout.id);
         } catch (emailError) {
             console.error('Failed to send payout notification emails:', emailError);
