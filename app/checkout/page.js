@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CreditCard, Truck, MapPin, Lock, Check, Gift, ShieldCheck, Loader2, Pencil, Trash2, Plus, Sparkles, RotateCcw } from 'lucide-react';
 import { FaPlus } from 'react-icons/fa';
@@ -13,6 +14,7 @@ import dynamic from 'next/dynamic';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from './CheckoutForm';
+import TabbyCard from '../components/TabbyCard';
 
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
 const AddressInputForm = dynamic(() => import('../components/AddressInputForm'), { ssr: false });
@@ -45,6 +47,7 @@ export default function CheckoutPage() {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [formData, setFormData] = useState({ paymentMethod: 'cashOnDelivery', giftWrap: false, giftMessage: '', newsletter: false });
   const [loyaltyLoaded, setLoyaltyLoaded] = useState(false);
+  const [isTabbyLoading, setIsTabbyLoading] = useState(false);
   const piCreatedRef = useRef(false); // prevents duplicate PI creation during re-renders
 
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
@@ -174,8 +177,77 @@ export default function CheckoutPage() {
     } catch { toast.error('Error deleting address.'); }
   };
 
+  const handleTabbyCheckout = async () => {
+    if (!selectedAddressId) { toast.error('Please select a shipping address.'); return; }
+    const addr = shippingAddresses.find(a => a.id === selectedAddressId);
+    if (!addr) { toast.error('Selected address not found.'); return; }
+
+    setIsTabbyLoading(true);
+    try {
+      // Save pending order data so /tabby-return can create the order
+      const shippingDate = new Date();
+      shippingDate.setDate(shippingDate.getDate() + 7);
+      const pendingOrder = {
+        user_address_id: selectedAddressId,
+        subtotal: parseFloat(subtotal.toFixed(2)),
+        shipping_cost: parseFloat(shipping.toFixed(2)),
+        total_amount: parseFloat(total.toFixed(2)),
+        shipping_scheduled_date: shippingDate.toISOString(),
+        user_id: user.id,
+        items: cartItems.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price })),
+        taxAmount: parseFloat(tax.toFixed(2)),
+        applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
+        discount_amount: parseFloat((discountAmount || 0).toFixed(2)),
+        redeemed_points: usePoints ? Math.floor(loyaltyPoints / 100) * 100 : 0,
+        points_discount: pointsDiscount,
+        gift_wrap: formData.giftWrap,
+        gift_wrap_cost: giftWrapFee,
+      };
+      sessionStorage.setItem('pendingTabbyOrder', JSON.stringify(pendingOrder));
+
+      const res = await fetch('/api/tabby/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: total,
+          items: cartItems.map(i => ({
+            id: i.id,
+            productId: i.id,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+            image: i.image || '',
+            productUrl: `${window.location.origin}/product/${i.id}`,
+          })),
+          buyer: {
+            email: user.email,
+            name: user.name || user.first_name || '',
+            phone: addr.customer_phone || '',
+          },
+          shippingAddress: {
+            city: addr.city || 'Dubai',
+            address: addr.shipping_address || addr.addressLine1 || '',
+            zip: addr.zip_code || '00000',
+          },
+          taxAmount: tax,
+          shippingAmount: shipping,
+          discountAmount: discountAmount || 0,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || 'Tabby checkout failed.'); setIsTabbyLoading(false); return; }
+
+      window.location.href = data.webUrl;
+    } catch {
+      toast.error('Could not connect to Tabby. Please try another payment method.');
+      setIsTabbyLoading(false);
+    }
+  };
+
   const handleNextStep = () => {
     if (currentStep === 1 && !selectedAddressId) { toast.error('Please select a shipping address.'); return; }
+    if (currentStep === 2 && formData.paymentMethod === 'tabby') { handleTabbyCheckout(); return; }
     if (currentStep === 2 && formData.paymentMethod === 'card' && !paymentAuthorized) { toast.error('Please complete card authorization.'); return; }
     if (currentStep < 3) setCurrentStep(s => s + 1);
   };
@@ -226,7 +298,9 @@ export default function CheckoutPage() {
   ];
 
   const btnLabel = isPlacingOrder ? 'Processing…'
+    : isTabbyLoading ? 'Redirecting to Tabby…'
     : currentStep === 3 ? `Finalize · AED ${total.toFixed(2)}`
+    : formData.paymentMethod === 'tabby' && currentStep === 2 ? `Pay with Tabby`
     : formData.paymentMethod === 'card' && currentStep === 2 ? 'Authorize Card'
     : 'Continue';
 
@@ -372,9 +446,10 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="space-y-3">
+                      {/* Credit Card */}
                       {[
-                        { id: 'card',          label: 'Credit Card',        Icon: CreditCard, desc: 'Visa, Mastercard, Amex' },
-                        { id: 'cashOnDelivery', label: 'Cash on Delivery',   Icon: Truck,      desc: 'Payment upon delivery' },
+                        { id: 'card',           label: 'Credit Card',      Icon: CreditCard, desc: 'Visa, Mastercard, Amex' },
+                        { id: 'cashOnDelivery', label: 'Cash on Delivery', Icon: Truck,      desc: 'Payment upon delivery'  },
                       ].map(({ id, label, Icon, desc }) => {
                         const sel = formData.paymentMethod === id;
                         return (
@@ -401,6 +476,39 @@ export default function CheckoutPage() {
                           </div>
                         );
                       })}
+
+                      {/* Tabby — branded row */}
+                      {(() => {
+                        const sel = formData.paymentMethod === 'tabby';
+                        return (
+                          <div
+                            onClick={() => setFormData(p => ({ ...p, paymentMethod: 'tabby' }))}
+                            className="flex items-center justify-between p-5 rounded-2xl cursor-pointer transition-all duration-400"
+                            style={sel
+                              ? { border: '1.5px solid rgba(61,255,160,0.5)', background: 'rgba(61,255,160,0.06)', boxShadow: '0 4px 20px rgba(61,255,160,0.12)' }
+                              : { border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.5)' }}
+                          >
+                            <div className="flex items-center gap-4">
+                              {/* Official Tabby brand icon */}
+                              <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0">
+                                <Image src="/0x0.png" alt="Tabby" width={44} height={44} className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-[14px] font-bold" style={{ color: '#3b0764' }}>Pay in 4</p>
+                                  <span className="text-[9px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded" style={{ background: '#3DFFA0', color: '#1A1A2E' }}>tabby</span>
+                                </div>
+                                <p className="text-[11px] uppercase tracking-[0.1em]" style={{ color: 'rgba(59,7,100,0.4)' }}>
+                                  4 × AED {(total / 4).toFixed(2)} · No interest
+                                </p>
+                              </div>
+                            </div>
+                            <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all" style={sel ? { borderColor: '#3DFFA0', background: '#3DFFA0' } : { borderColor: 'rgba(216,180,254,0.5)' }}>
+                              {sel && <Check size={11} strokeWidth={3} color="#1A1A2E" />}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Stripe card form */}
@@ -434,6 +542,15 @@ export default function CheckoutPage() {
                               </div>
                             </div>
                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Official Tabby card widget */}
+                    <AnimatePresence mode="wait">
+                      {formData.paymentMethod === 'tabby' && (
+                        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
+                          <TabbyCard price={total} />
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -518,7 +635,7 @@ export default function CheckoutPage() {
                   </button>
                   <button
                     onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()}
-                    disabled={isPlacingOrder || hasStockIssues}
+                    disabled={isPlacingOrder || isTabbyLoading || hasStockIssues}
                     className="px-12 py-4 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
                     style={{ background: lavGradient, boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
                   >
@@ -617,7 +734,7 @@ export default function CheckoutPage() {
           </button>
           <button
             onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()}
-            disabled={isPlacingOrder || hasStockIssues}
+            disabled={isPlacingOrder || isTabbyLoading || hasStockIssues}
             className="flex-1 h-14 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
             style={{ background: lavGradient, boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
           >

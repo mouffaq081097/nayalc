@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
   const loading = status === 'loading';
   const isAuthenticated = status === 'authenticated';
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     const result = await signIn('credentials', {
       redirect: false,
       email,
@@ -31,9 +31,9 @@ export const AuthProvider = ({ children }) => {
       // Logged in successfully (toast removed per user request)
       router.push('/'); // Redirect after successful login
     }
-  };
+  }, [router]);
 
-  const register = async (username, email, password, firstName, lastName) => {
+  const register = useCallback(async (username, email, password, firstName, lastName) => {
     const response = await fetch(`/api/auth/signup`, {
       method: 'POST',
       headers: {
@@ -50,11 +50,11 @@ export const AuthProvider = ({ children }) => {
 
     // After successful registration, log the user in
     await login(email, password);
-  };
+  }, [login]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     signOut({ callbackUrl: '/auth' });
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, login, logout, register, loading, isAuthenticated }}>

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -164,7 +164,10 @@ const AdminLayout = ({ children }) => {
  if (r.ok) setNotifications(await r.json());
  } catch {}
  };
- poll();
+ // Initial fetch, but only if we are truly authenticated and not just mounting
+ if (isAuthenticated) {
+     poll();
+ }
  const id = setInterval(poll, 30000);
  return () => clearInterval(id);
  }, [isAuthenticated, fetchWithAuth]);

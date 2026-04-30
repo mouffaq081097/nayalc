@@ -36,6 +36,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const [addedToCart, setAddedToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isHovered, setIsHovered] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -143,13 +144,23 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   className="relative w-full h-full"
                 >
-                  <Image
-                    src={displayImage}
-                    alt={seoAlt}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                    className="object-contain"
-                  />
+                  {imgError ? (
+                    <div
+                      className="w-full h-full flex items-center justify-center"
+                      style={{ background: 'linear-gradient(135deg, rgba(216,180,254,0.18), rgba(249,168,212,0.12))' }}
+                    >
+                      <Sparkles size={32} style={{ color: 'rgba(147,51,234,0.25)' }} strokeWidth={1} />
+                    </div>
+                  ) : (
+                    <Image
+                      src={displayImage}
+                      alt={seoAlt}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                      className="object-contain"
+                      onError={() => setImgError(true)}
+                    />
+                  )}
                   {/* Subtle Gradient Overlay on Hover */}
                   <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </motion.div>

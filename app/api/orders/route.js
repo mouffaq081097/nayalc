@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail';
 import Stripe from 'stripe';
+import { getTabbyPayment } from '@/lib/tabby';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -240,11 +241,12 @@ export async function POST(request) {
     
     const client = await db.connect();
     try {
-        const { 
-            user_address_id, payment_method, total_amount, shipping_scheduled_date, 
-            user_id, items, taxAmount, applied_coupon_id, discount_amount, subtotal, 
-            shipping_cost, gift_wrap = false, gift_wrap_cost = 0, 
+        const {
+            user_address_id, payment_method, total_amount, shipping_scheduled_date,
+            user_id, items, taxAmount, applied_coupon_id, discount_amount, subtotal,
+            shipping_cost, gift_wrap = false, gift_wrap_cost = 0,
             stripe_payment_intent_id = null,
+            tabby_payment_id = null,
             redeemed_points = 0, points_discount = 0
         } = await request.json();
 
@@ -314,8 +316,28 @@ export async function POST(request) {
         }
         // --- End Stripe Payment Verification ---
 
-        const insertOrderSql = "INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id, redeemed_points) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id;";
-        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id, redeemed_points || 0];
+        // --- Tabby Payment Verification ---
+        if (payment_method === 'tabby') {
+            if (!tabby_payment_id) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: 'Tabby payment requires a payment ID.' }, { status: 400 });
+            }
+            try {
+                const tabbyPayment = await getTabbyPayment(tabby_payment_id);
+                if (tabbyPayment.status !== 'authorized' && tabbyPayment.status !== 'closed') {
+                    await client.query('ROLLBACK');
+                    return NextResponse.json({ message: `Tabby payment not authorized (status: ${tabbyPayment.status}).` }, { status: 402 });
+                }
+            } catch (tabbyErr) {
+                await client.query('ROLLBACK');
+                console.error('Tabby verification error:', tabbyErr);
+                return NextResponse.json({ message: 'Unable to verify Tabby payment. Please try again.' }, { status: 402 });
+            }
+        }
+        // --- End Tabby Payment Verification ---
+
+        const insertOrderSql = "INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id, tabby_payment_id, redeemed_points) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id;";
+        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id, tabby_payment_id, redeemed_points || 0];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
 

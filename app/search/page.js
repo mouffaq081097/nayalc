@@ -65,7 +65,7 @@ function SearchResults() {
   }, [query]);
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] px-4 pb-28 pt-6 md:pb-12 md:pt-12">
+    <div className="min-h-screen bg-[#fdf8ff] px-4 pb-28 pt-6 md:pb-12 md:pt-12">
       <div className="container mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6 flex flex-col items-center text-center md:mb-10">
@@ -123,7 +123,7 @@ function SearchResults() {
                   variant="pillSecondary"
                   size="pillSm"
                   onClick={() => submitQuery(q)}
-                  className="font-black tracking-widest hover:border-brand-pink/30 hover:bg-brand-pink hover:text-white"
+                  className="font-black tracking-widest"
                 >
                   {q}
                 </Button>
@@ -150,9 +150,15 @@ function SearchResults() {
             </div>
           </div>
         ) : searchedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
             {searchedProducts.map(product => (
-              <ProductCard key={product.id} {...product} />
+              <ProductCard
+                key={product.id}
+                {...product}
+                image={product.imageUrl || product.image}
+                imageUrls={product.imageUrl ? [product.imageUrl] : (product.imageUrls || [])}
+                originalPrice={product.comparedprice || product.originalPrice}
+              />
             ))}
           </div>
         ) : (

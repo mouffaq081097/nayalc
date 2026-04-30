@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import ProductCard from '../components/ProductCard';
@@ -380,39 +381,67 @@ export default function AllProductsPage() {
             <motion.div
               initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] rounded-[2rem] overflow-hidden transition-all duration-500 hover:-translate-y-2 flex flex-col group relative p-8 snap-center"
-              style={{ 
-                background: 'rgba(255, 255, 255, 0.4)',
+              style={{
+                background: 'rgba(255,255,255,0.55)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.7)',
-                boxShadow: '0 10px 40px rgba(147,51,234,0.03)'
+                border: '1px solid rgba(61,255,160,0.18)',
+                boxShadow: '0 10px 40px rgba(61,255,160,0.06)',
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-purple-100/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Floating Glass Tabby Card */}
-              <div className="h-32 w-full flex items-center justify-center mb-6 relative">
-                <div className="absolute w-24 h-24 bg-purple-200/40 rounded-full blur-[30px] group-hover:bg-purple-300/50 transition-colors" />
-                <div className="relative z-10 w-36 h-24 rounded-2xl shadow-xl border border-white/40 flex flex-col justify-between p-4 overflow-hidden group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-500"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.5))', backdropFilter: 'blur(10px)' }}>
+              {/* Subtle green hover overlay */}
+              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-[#3DFFA0]/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+              {/* Floating Tabby card mockup */}
+              <div className="h-36 w-full flex items-center justify-center mb-6 relative">
+                {/* Glow */}
+                <div className="absolute w-28 h-28 rounded-full blur-[40px] transition-colors duration-500" style={{ background: 'rgba(61,255,160,0.25)' }} />
+
+                {/* Card */}
+                <div
+                  className="relative z-10 w-40 h-[96px] rounded-2xl flex flex-col justify-between p-4 overflow-hidden group-hover:scale-105 group-hover:-rotate-2 transition-transform duration-500"
+                  style={{
+                    background: 'linear-gradient(135deg, #3DFFA0 0%, #00d97e 100%)',
+                    boxShadow: '0 12px 32px rgba(61,255,160,0.35)',
+                  }}
+                >
+                  {/* Decorative circle */}
+                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20" style={{ background: '#fff' }} />
+
                   <div className="flex justify-between items-start">
-                    <div className="w-7 h-4 rounded bg-[var(--cl-purple)]/20 flex items-center justify-center">
-                        <div className="w-3 h-2 rounded-sm bg-[var(--cl-purple)]/40" />
+                    {/* Tabby logo */}
+                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/20 flex items-center justify-center">
+                      <Image src="/0x0.png" alt="Tabby" width={28} height={28} className="w-full h-full object-cover rounded-md" />
                     </div>
-                    <CreditCard size={14} style={{ color: 'var(--cl-purple)' }} />
+                    <CreditCard size={14} color="rgba(26,26,46,0.5)" />
                   </div>
+
                   <div>
-                    <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tabby Pay Later</div>
-                    <div className="text-[11px] font-mono font-bold text-gray-800">•••• 4242</div>
+                    <div className="text-[8px] font-black uppercase tracking-[0.18em] mb-0.5" style={{ color: 'rgba(26,26,46,0.6)' }}>Tabby Pay Later</div>
+                    <div className="text-[12px] font-mono font-bold" style={{ color: '#1A1A2E' }}>•••• 4242</div>
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex flex-col items-center text-center relative z-10">
-                <p className="text-[10px] uppercase tracking-[0.2em] font-bold mb-3" style={{ color: 'var(--cl-purple)' }}>Flexible Payments</p>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: '#00a86b' }}>Flexible Payments</span>
+                </div>
                 <h3 className="text-[18px] font-serif italic text-gray-900 leading-snug">
-                  0% installment plan with Tabby.
+                  0% installment plan<br />with{' '}
+                  <span className="not-italic font-black" style={{ color: '#1A1A2E' }}>tabby</span>.
                 </h3>
+                {/* 4 installments hint */}
+                <div className="flex items-center gap-1.5 mt-4">
+                  {[1,2,3,4].map(n => (
+                    <div key={n} className="flex flex-col items-center gap-1">
+                      <div className="w-7 h-1.5 rounded-full" style={{ background: n === 1 ? '#3DFFA0' : 'rgba(61,255,160,0.25)' }} />
+                      <span className="text-[7px] font-bold" style={{ color: n === 1 ? '#00a86b' : 'rgba(0,0,0,0.25)' }}>
+                        {n === 1 ? 'Now' : `+${(n-1)*30}d`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </motion.div>
 

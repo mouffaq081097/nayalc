@@ -57,6 +57,14 @@ export async function POST(request) {
                 name: '008_add_how_to_use_video_to_products',
                 sql: `ALTER TABLE products ADD COLUMN IF NOT EXISTS how_to_use_video TEXT;`
             },
+            {
+                name: '009_tabby_payment_id_on_orders',
+                sql: `
+                    ALTER TABLE orders            ADD COLUMN IF NOT EXISTS tabby_payment_id VARCHAR(255);
+                    ALTER TABLE delivered_orders  ADD COLUMN IF NOT EXISTS tabby_payment_id VARCHAR(255);
+                    ALTER TABLE cancelled_orders  ADD COLUMN IF NOT EXISTS tabby_payment_id VARCHAR(255);
+                `
+            },
         ];
 
         for (const migration of migrations) {

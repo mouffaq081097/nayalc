@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import BuyAgainSection from '../components/BuyAgainSection';
+import TabbyPromo from '../components/TabbyPromo';
 import PairItWithSection from '../components/PairItWithSection';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -387,6 +388,11 @@ export default function CartPage() {
                       <p className="text-2xl font-black tabular-nums" style={{ color: '#3b0764' }}>AED {total.toFixed(2)}</p>
                       <p className="text-[10px] mt-0.5" style={{ color: 'rgba(59,7,100,0.45)' }}>VAT included where applicable</p>
                     </div>
+                  </div>
+
+                  {/* Tabby promo */}
+                  <div className="mb-4">
+                    <TabbyPromo price={total} source="cart" />
                   </div>
 
                   {/* CTA */}

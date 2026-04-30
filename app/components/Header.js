@@ -182,30 +182,17 @@ const Header = forwardRef((props, ref) => {
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                   className="overflow-hidden whitespace-nowrap"
                 >
-                  <div style={{ textAlign: 'left', lineHeight: '1' }}>
-                    <div
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: '600',
-                        letterSpacing: '0.05em',
-                        color: '#3b0764',
-                        textTransform: 'uppercase',
-                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
-                      }}
-                    >
-                      NAYA
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '12px',
-                        fontStyle: 'italic',
-                        fontFamily: "Georgia, 'Times New Roman', serif",
-                        color: '#6b21a8',
-                        marginTop: '0px'
-                      }}
-                    >
-                      Lumière Cosmetics
-                    </div>
+                  <div
+                    style={{
+                      fontSize: '18px',
+                      fontWeight: '600',
+                      letterSpacing: '0.05em',
+                      color: '#000000',
+                      textTransform: 'uppercase',
+                      fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
+                    }}
+                  >
+                    NAYALC
                   </div>
                 </motion.div>
             </Link>
@@ -281,10 +268,10 @@ const Header = forwardRef((props, ref) => {
                 <Button
                 type="button"
                 onClick={() => router.push('/cart')}
-                className="relative shadow-sm bg-white border-2 border-[#c4b5fd] size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 hover:bg-[#f5f3ff] hover:border-[#a78bfa] group"
+                className="relative shadow-md bg-[#3b0764] border border-[#3b0764] size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 hover:bg-[#581c87] group"
                 aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
                 >
-                <ShoppingBag size={18} strokeWidth={2} className="text-[#3b0764] group-hover:text-[#7e22ce] transition-colors" />
+                <ShoppingBag size={18} strokeWidth={2} className="text-white group-hover:text-purple-100 transition-colors" />
                 {cartCount > 0 && (
                     <>
                     <span className="absolute inset-0 rounded-full animate-ping bg-brand-pink/20 pointer-events-none" />

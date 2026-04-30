@@ -13,6 +13,7 @@ import { Badge } from '../../components/ui/badge';
 import { Separator } from '../../components/ui/separator';
 import { Heart, Star, Plus, Minus, Check, ChevronRight, Sparkles, Maximize2, ShieldCheck, FlaskConical, Droplets, Waves, Truck, RotateCcw, X, ShoppingBag, Lock } from 'lucide-react';
 import Reviews from '../../components/Reviews';
+import TabbyPromo from '../../components/TabbyPromo';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
 import ProductCard from '../../components/ProductCard';
@@ -415,6 +416,7 @@ export default function ProductClient({ params, initialProduct }) {
                             )}
                         </div>
                     </div>
+                    <TabbyPromo price={product.price} source="product" />
                 </div>
 
                 <div className="flex items-center gap-3 lg:hidden">

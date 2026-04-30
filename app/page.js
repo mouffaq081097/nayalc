@@ -5,6 +5,7 @@ import { FeaturedProducts } from './components/FeaturedProducts';
 import { ForYouSection } from './components/ForYouSection';
 import { EditorialShowcase } from './components/EditorialShowcase';
 import { SocialFeed } from './components/SocialFeed';
+import TabbyHeroBanner from './components/TabbyHeroBanner';
 import db from '@/lib/db';
 
 async function getHeroSlides() {
@@ -25,6 +26,7 @@ export default async function HomePage() {
             <HeroSection dbSlides={dbSlides} />
             <Categories />
             <FeaturedProducts />
+            <TabbyHeroBanner />
             <ForYouSection />
             <EditorialShowcase />
             <SocialFeed />
