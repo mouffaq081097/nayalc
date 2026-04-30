@@ -1,20 +1,35 @@
 import db from '@/lib/db';
 import BrandClient from './BrandClient';
 import Script from 'next/script';
+import { redirect } from 'next/navigation';
 
-async function getBrand(id) {
+async function getBrandBySlug(slug) {
   try {
-    const { rows } = await db.query('SELECT id, name, imageurl FROM brands WHERE id = $1', [id]);
+    const { rows } = await db.query('SELECT id, name, imageurl, slug FROM brands WHERE slug = $1 AND is_active = true', [slug]);
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {
-    console.error("Error fetching brand for metadata:", error);
+    console.error("Error fetching brand by slug:", error);
+    return null;
+  }
+}
+
+async function getBrandById(id) {
+  try {
+    const { rows } = await db.query('SELECT id, name, imageurl, slug FROM brands WHERE id = $1 AND is_active = true', [id]);
+    return rows.length > 0 ? rows[0] : null;
+  } catch (error) {
+    console.error("Error fetching brand by id:", error);
     return null;
   }
 }
 
 export async function generateMetadata({ params }) {
-  const { id } = await params;
-  const brand = await getBrand(id);
+  const { slug } = await params;
+  
+  let brand = await getBrandBySlug(slug);
+  if (!brand && /^\d+$/.test(slug)) {
+    brand = await getBrandById(slug);
+  }
 
   if (!brand) {
     return {
@@ -35,14 +50,22 @@ export async function generateMetadata({ params }) {
       type: 'website',
     },
     alternates: {
-      canonical: `https://nayalc.com/brand/${id}`
+      canonical: `https://nayalc.com/brand/${brand.slug || brand.id}`
     }
   };
 }
 
 export default async function Page({ params }) {
-  const { id } = await params;
-  const brand = await getBrand(id);
+  const { slug } = await params;
+
+  if (/^\d+$/.test(slug)) {
+    const brand = await getBrandById(slug);
+    if (brand && brand.slug) {
+      redirect(`/brand/${brand.slug}`);
+    }
+  }
+
+  const brand = await getBrandBySlug(slug);
 
   if (!brand) return <BrandClient />;
 
@@ -50,7 +73,7 @@ export default async function Page({ params }) {
     '@context': 'https://schema.org',
     '@type': 'Brand',
     name: brand.name,
-    url: `https://nayalc.com/brand/${id}`,
+    url: `https://nayalc.com/brand/${brand.slug || brand.id}`,
     logo: brand.imageurl,
   };
 
@@ -61,7 +84,7 @@ export default async function Page({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <BrandClient />
+      <BrandClient brand={brand} />
     </>
   );
 }

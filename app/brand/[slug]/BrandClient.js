@@ -149,8 +149,8 @@ const SidebarFilters = ({
   );
 };
 
-export default function BrandClient() {
-  const { id: brandId } = useParams();
+export default function BrandClient({ brand: serverBrand }) {
+  const { slug } = useParams();
   const { products: allProducts, brands: appBrands, categories: appCategories, fetchProducts } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
@@ -175,8 +175,9 @@ export default function BrandClient() {
   }, [fetchProducts]);
 
   const currentBrand = useMemo(() => {
-    return appBrands.find(b => b.id.toString() === brandId || b.name.toLowerCase() === brandId.toLowerCase());
-  }, [appBrands, brandId]);
+    if (serverBrand) return serverBrand;
+    return appBrands.find(b => b.slug === slug || b.id.toString() === slug || b.name.toLowerCase() === slug.toLowerCase());
+  }, [appBrands, slug, serverBrand]);
 
   const brandProducts = useMemo(() => {
     if (!currentBrand) return [];
@@ -325,6 +326,7 @@ export default function BrandClient() {
                     </AnimatePresence>
                 </motion.div>
 
+                {/* Load More */}
                 {visibleCount < filteredAndSortedProducts.length && (
                     <div className="flex flex-col items-center gap-12 py-20 border-t border-gray-200">
                         <div className="flex flex-col items-center gap-5">

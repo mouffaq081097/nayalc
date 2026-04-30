@@ -261,8 +261,8 @@ const CategoryHero = ({ category }) => {
   );
 };
 
-export default function CollectionClient() {
-  const { categoryId } = useParams();
+export default function CollectionClient({ category: serverCategory }) {
+  const { slug } = useParams();
   const { products: allProducts, categories: appCategories, concerns, fetchProducts } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
@@ -288,8 +288,9 @@ export default function CollectionClient() {
   }, [fetchProducts]);
 
   const currentCategory = useMemo(() => {
-    return appCategories.find(cat => cat.id.toString() === categoryId || cat.slug === categoryId);
-  }, [appCategories, categoryId]);
+    if (serverCategory) return serverCategory;
+    return appCategories.find(cat => cat.slug === slug || cat.id.toString() === slug);
+  }, [appCategories, slug, serverCategory]);
 
   const categoryProducts = useMemo(() => {
     if (!currentCategory) return [];
