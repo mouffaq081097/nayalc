@@ -35,7 +35,7 @@ const Header = forwardRef((props, ref) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { cartItems } = useCart();
   const { user } = useAuth();
-  const { loyaltyData, concerns } = useAppContext();
+  const { loyaltyData, concerns, brands } = useAppContext();
   const router = useRouter();
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,56 +104,156 @@ const Header = forwardRef((props, ref) => {
                 </Button>
 
                 <nav className="hidden md:flex items-center gap-8">
-                    {[
-                    { name: 'Store', href: '/all-products' },
-                    { name: 'Skincare', href: '/SkinCare' },
-                    { name: 'Fragrance', href: '/fragrance' },
-                    { name: 'Sales', href: '/sales' },
-                    ].map(link => (
-                    <Link 
-                        key={link.name} 
-                        href={link.href} 
-                        className={`text-[12px] md:text-[13px] font-medium tracking-tight transition-all ${isScrolled ? 'text-gray-800' : 'text-gray-900'}`} style={{ ['--hover-color']: 'var(--cl-purple)' }} onMouseEnter={e => e.currentTarget.style.color='var(--cl-purple)'} onMouseLeave={e => e.currentTarget.style.color=''}
-                    >
-                        {link.name}
-                    </Link>
-                    ))}
+                    {/* Shop Dropdown */}
+                    <div className="relative group/shop">
+                        <button onClick={() => router.push('/all-products')} className={`text-[12px] md:text-[13px] font-medium tracking-tight transition-all flex items-center gap-1 ${isScrolled ? 'text-gray-800' : 'text-gray-900'}`} onMouseEnter={e => e.currentTarget.style.color='var(--cl-purple)'} onMouseLeave={e => e.currentTarget.style.color=''}>
+                            Shop
+                            <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-300 group-hover/shop:rotate-[270deg]" />
+                        </button>
+                        
+                        {/* Invisible bridge to prevent hover loss */}
+                        <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
+                        
+                        <div className="absolute top-[calc(100%+0.5rem)] left-0 w-[280px] bg-white/95 backdrop-blur-3xl rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.5)] border border-[#f3e8ff]/60 opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-400 transform translate-y-3 group-hover/shop:translate-y-0 z-[200] p-2 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none">
+                            
+                            <div className="relative z-10 px-3 pt-2 pb-1.5 border-b border-[#f3e8ff]/50 mb-1.5 flex items-center justify-between">
+                                <p className="text-[8px] font-black tracking-[0.4em] text-[#9333ea]/70 uppercase">Discover</p>
+                                <Sparkles size={8} className="text-[#c4b5fd]" />
+                            </div>
+                            
+                            <div className="flex flex-col gap-0 relative z-10">
+                                {[
+                                    { name: 'All products', href: '/all-products', desc: 'Explore the full collection', icon: ShoppingBag },
+                                    { name: 'Skincare', href: '/SkinCare', desc: 'Nourish & protect', icon: Droplets },
+                                    { name: 'Fragrance', href: '/fragrance', desc: 'Signature scents', icon: Sparkles },
+                                ].map((link, idx) => {
+                                    const Icon = link.icon;
+                                    return (
+                                    <Link
+                                        key={link.name}
+                                        href={link.href}
+                                        className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all duration-300 hover:bg-[#faf5ff] group/shop-item relative overflow-hidden"      
+                                    >
+                                        <div className="w-7 h-7 rounded-lg bg-white border border-[#f3e8ff] shadow-sm flex items-center justify-center text-[#c4b5fd] group-hover/shop-item:text-[#9333ea] group-hover/shop-item:scale-110 transition-all duration-300 z-10">
+                                            <Icon size={12} strokeWidth={1.5} />
+                                        </div>
+                                        <div className="flex-1 z-10">
+                                            <span className="block text-[11px] font-black text-gray-900 leading-tight group-hover/shop-item:text-[#9333ea] transition-colors">{link.name}</span> 
+                                            <span className="block text-[9px] font-medium text-gray-400 mt-0 tracking-wide">{link.desc}</span>
+                                        </div>                                        <div className="w-4 h-4 rounded-full bg-white shadow-sm flex items-center justify-center opacity-0 -translate-x-2 group-hover/shop-item:opacity-100 group-hover/shop-item:translate-x-0 transition-all duration-300 z-10">
+                                            <ArrowRight size={8} className="text-[#9333ea]" />
+                                        </div>
+                                        
+                                        {/* Hover background effect */}
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover/shop-item:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none" />
+                                    </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Brands Dropdown */}
+                    {brands && brands.length > 0 && (
+                        <div className="relative group/brands">
+                            <button className={`text-[12px] md:text-[13px] font-medium tracking-tight transition-all flex items-center gap-1 ${isScrolled ? 'text-gray-800' : 'text-gray-900'}`} onMouseEnter={e => e.currentTarget.style.color='var(--cl-purple)'} onMouseLeave={e => e.currentTarget.style.color=''}>
+                                Brands
+                                <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-300 group-hover/brands:rotate-[270deg]" />
+                            </button>
+
+                            {/* Invisible bridge to prevent hover loss */}
+                            <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
+
+                            <div className="absolute top-[calc(100%+0.5rem)] left-0 w-[280px] bg-white/95 backdrop-blur-3xl rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.5)] border border-[#f3e8ff]/60 opacity-0 invisible group-hover/brands:opacity-100 group-hover/brands:visible transition-all duration-400 transform translate-y-3 group-hover/brands:translate-y-0 z-[200] p-2 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none">
+
+                                <div className="relative z-10 px-3 pt-2 pb-1.5 border-b border-[#f3e8ff]/50 mb-1.5 flex items-center justify-between">
+                                    <p className="text-[8px] font-black tracking-[0.4em] text-[#9333ea]/70 uppercase">Featured collections</p>
+                                    <Star size={8} className="text-[#c4b5fd] fill-[#c4b5fd]/20" />
+                                </div>
+
+                                <div className="flex flex-col gap-0.5 relative z-10">
+                                    {brands.map((brand, idx) => (
+                                        <Link
+                                            key={brand.id}
+                                            href={`/brand/${brand.slug || brand.id}`}
+                                            className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 hover:bg-[#faf5ff] group/brand-item relative overflow-hidden" 
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-[#fdfaff] border border-[#f3e8ff] shadow-sm flex items-center justify-center text-[#c4b5fd] font-serif italic text-base group-hover/brand-item:text-[#9333ea] group-hover/brand-item:scale-110 group-hover/brand-item:border-[#e9d5ff] transition-all duration-300 z-10">
+                                                {brand.name.charAt(0)}
+                                            </div>
+                                            <div className="flex-1 z-10">
+                                                <span className="block text-[13px] font-bold text-gray-900 leading-tight group-hover/brand-item:text-[#9333ea] transition-colors capitalize">{brand.name.toLowerCase()}</span>
+                                            </div>
+                                            <div className="w-5 h-5 rounded-full bg-white shadow-sm flex items-center justify-center opacity-0 -translate-x-2 group-hover/brand-item:opacity-100 group-hover/brand-item:translate-x-0 transition-all duration-300 z-10">
+                                                <ArrowRight size={10} className="text-[#9333ea]" />
+                                            </div>
+
+                                            {/* Hover background effect */}
+                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover/brand-item:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none" />
+                                        </Link>
+                                    ))}
+                                </div>
+
+                                <div className="relative z-10 mt-1.5 pt-2.5 border-t border-[#f3e8ff]/50 px-3">
+                                    <Link href="/brands" className="flex items-center gap-1.5 text-[9px] font-black tracking-widest hover:gap-3 transition-all duration-200 cl-gradient-text uppercase">
+                                        View all brands <ArrowRight size={10} />
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Shop by Concern — Mega-Menu */}
                     {concerns && concerns.length > 0 && (
                         <div className="relative group/concerns">
                             <button className={`text-[12px] md:text-[13px] font-medium tracking-tight transition-all flex items-center gap-1 ${isScrolled ? 'text-gray-800' : 'text-gray-900'}`} onMouseEnter={e => e.currentTarget.style.color='var(--cl-purple)'} onMouseLeave={e => e.currentTarget.style.color=''}>
-                                Concern
+                                Concerns
                                 <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-300 group-hover/concerns:rotate-[270deg]" />
                             </button>
-                            <div className="absolute top-full left-0 mt-3 w-[480px] bg-white/97 backdrop-blur-3xl rounded-3xl shadow-[0_24px_64px_-16px_rgba(0,0,0,0.18),0_0_0_0.5px_rgba(0,0,0,0.05)] border border-white/50 opacity-0 invisible group-hover/concerns:opacity-100 group-hover/concerns:visible transition-all duration-300 transform translate-y-2 group-hover/concerns:translate-y-0 z-[200] p-4 overflow-hidden">
-                                <p className="text-[9px] font-black tracking-[0.35em] text-gray-400 px-3 pb-3 border-b border-gray-100 mb-3">Shop by Skin Concern</p>
-                                <div className="grid grid-cols-2 gap-1">
+                            
+                            {/* Invisible bridge to prevent hover loss */}
+                            <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
+                            
+                            <div className="absolute top-[calc(100%+0.5rem)] left-1/2 -translate-x-1/2 w-[480px] bg-white/95 backdrop-blur-3xl rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.5)] border border-[#f3e8ff]/60 opacity-0 invisible group-hover/concerns:opacity-100 group-hover/concerns:visible transition-all duration-400 transform translate-y-3 group-hover/concerns:translate-y-0 z-[200] p-3 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none">
+                                
+                                <div className="relative z-10 px-3 pt-1.5 pb-2 border-b border-[#f3e8ff]/50 mb-2 flex items-center justify-between">
+                                    <p className="text-[8px] font-black tracking-[0.4em] text-[#9333ea]/70 uppercase">Targeted solutions</p>
+                                    <Layers size={10} className="text-[#c4b5fd]" />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-1 relative z-10">
                                     {concerns.map(concern => {
                                         const { icon: Icon, desc } = getConcernMeta(concern.name);
                                         return (
                                             <Link
                                                 key={concern.id}
                                                 href={`/search?q=${concern.name}`}
-                                                className="flex items-start gap-3 px-3 py-3 rounded-2xl transition-colors group/item"
-                                                onMouseEnter={e => e.currentTarget.style.background='rgba(147,51,234,0.04)'}
-                                                onMouseLeave={e => e.currentTarget.style.background=''}
+                                                className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 hover:bg-[#faf5ff] group/concern-item relative overflow-hidden" 
                                             >
-                                                <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300 group-hover/item:text-white" style={{ color: 'var(--cl-purple)' }} onMouseEnter={e => e.currentTarget.style.background='var(--cl-gradient)'} onMouseLeave={e => { e.currentTarget.style.background=''; }}>
+                                                <div className="w-8 h-8 rounded-lg bg-white border border-[#f3e8ff] shadow-sm flex items-center justify-center shrink-0 transition-all duration-300 group-hover/concern-item:bg-gradient-to-br group-hover/concern-item:from-[#d8b4fe] group-hover/concern-item:to-[#9333ea] group-hover/concern-item:text-white group-hover/concern-item:border-transparent text-[#c4b5fd] z-10 group-hover/concern-item:scale-105">
                                                     <Icon size={14} strokeWidth={1.5} />
                                                 </div>
-                                                <div>
-                                                    <p className="text-[11px] font-bold text-gray-900 leading-tight">{concern.name}</p>
-                                                    <p className="text-[10px] text-gray-400 leading-snug mt-0.5">{desc}</p>
+                                                <div className="flex-1 z-10">
+                                                    <p className="text-[12px] font-black text-gray-900 leading-tight group-hover/concern-item:text-[#9333ea] transition-colors capitalize">{concern.name.toLowerCase()}</p>
+                                                    <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-0 leading-snug">{desc}</p>
                                                 </div>
+
+                                                {/* Hover background effect */}
+                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover/concern-item:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none" />
                                             </Link>
                                         );
                                     })}
                                 </div>
-                                <div className="mt-3 pt-3 border-t border-gray-100 px-3">
-                                    <Link href="/all-products" className="flex items-center gap-1.5 text-[10px] font-black tracking-widest hover:gap-3 transition-all duration-200 cl-gradient-text">
-                                        Browse all products <ArrowRight size={11} />
+                                
+                                <div className="relative z-10 mt-2 pt-2.5 border-t border-[#f3e8ff]/50 px-3 flex justify-between items-center">
+                                    <Link href="/all-products" className="flex items-center gap-1.5 text-[9px] font-black tracking-widest hover:gap-3 transition-all duration-300 cl-gradient-text uppercase">
+                                        Browse all products <ArrowRight size={10} />
                                     </Link>
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#e9d5ff]"></div>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#d8b4fe]"></div>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#c084fc]"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
