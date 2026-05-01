@@ -1,4 +1,4 @@
-import SkincareClient from './SkincareClient';
+import SkinCareClient from './SkinCareClient';
 
 export const metadata = {
   title: 'Professional Skincare UAE | GERnétic & Zorah | Naya Lumière',
@@ -17,5 +17,5 @@ export const metadata = {
 };
 
 export default function SkincarePage() {
-  return <SkincareClient />;
+  return <SkinCareClient />;
 }

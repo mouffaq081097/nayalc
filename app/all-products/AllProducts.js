@@ -2,20 +2,16 @@
 
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../components/ProductCard';
 import StoreHeader from '../components/StoreHeader';
 import StoreCategoryNav from '../components/StoreCategoryNav';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Search, X, Filter, Sparkles, Check, Hash, ArrowRight, Minus, Plus as PlusIcon, Star, Gift, Droplets, CreditCard, Zap, Heart } from 'lucide-react';
+import { Search, X, Filter, Sparkles, Check, ArrowRight, Minus, Plus as PlusIcon, Star, CreditCard } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { Slider } from '../components/ui/slider';
-import Link from 'next/link';
-import { Badge } from '../components/ui/badge';
-import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Accordion,
   AccordionContent,
@@ -245,7 +241,7 @@ export default function AllProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
   const [isLoading, setIsLoading] = useState(true);
-  const [gridCols, setGridCols] = useState(4);
+  const gridCols = 4;
 
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedBrands, setSelectedBrands] = useState([]);
@@ -253,17 +249,6 @@ export default function AllProductsPage() {
   const [showInStock, setShowInStock] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(16);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  const { scrollY } = useScroll();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     const category = searchParams.get('category');
@@ -359,10 +344,13 @@ export default function AllProductsPage() {
       <StoreCategoryNav />
 
       {/* ── The Naya Lumière Difference ── */}
-      <section className="w-full pt-8 pb-10 bg-transparent border-b border-purple-100/30 relative overflow-hidden">
-        <div className="max-w-[1400px] mx-auto">
+      <section className="w-full pt-10 pb-12 bg-transparent border-y border-purple-100/40 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/textures/natural-paper.png')] opacity-[0.025] mix-blend-multiply pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d8b4fe]/70 to-transparent" />
+        <div className="absolute left-1/2 top-0 h-[320px] w-[min(960px,90vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(216,180,254,0.18),transparent_68%)] pointer-events-none" />
+        <div className="max-w-[1400px] mx-auto relative z-10">
           {/* Section header */}
-          <div className="px-6 md:px-10 mb-6 text-center space-y-3">
+          <div className="px-6 md:px-10 mb-8 text-center">
             <div className="flex items-center justify-center gap-3">
               <span className="w-8 h-px bg-purple-200" />
               <span className="text-[11px] font-bold text-cl-purple">Our Promise</span>
@@ -376,68 +364,66 @@ export default function AllProductsPage() {
           </div>
 
           {/* Elegant Centered Cards */}
-          <div className="flex overflow-x-auto md:overflow-visible md:justify-center flex-nowrap gap-6 md:gap-8 px-6 md:px-10 pb-8 no-scrollbar snap-x snap-mandatory">
+          <div className="flex overflow-x-auto flex-nowrap gap-5 md:gap-6 px-6 md:px-10 pb-8 no-scrollbar snap-x snap-mandatory md:justify-center">
             {/* Card 1 — Tabby */}
             <motion.div
               initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] rounded-[2rem] overflow-hidden transition-all duration-500 hover:-translate-y-2 flex flex-col group relative p-8 snap-center"
+              className="flex-shrink-0 w-[80vw] sm:w-[300px] md:w-[calc(25%-18px)] max-w-[340px] overflow-hidden transition-all duration-500 flex flex-col group relative snap-center"
               style={{
-                background: 'rgba(255,255,255,0.55)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(61,255,160,0.18)',
-                boxShadow: '0 10px 40px rgba(61,255,160,0.06)',
+                borderRadius: '24px',
+                background: 'linear-gradient(160deg, #ffffff 0%, #f0fff8 45%, #d4fce8 100%)',
+                border: '1px solid rgba(0,217,126,0.18)',
+                boxShadow: '0 10px 40px rgba(61,255,160,0.10)',
+                minHeight: '480px',
               }}
             >
-              {/* Subtle green hover overlay */}
-              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-b from-[#3DFFA0]/8 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+              {/* Text — top left, Apple card style */}
+              <div className="px-7 pt-7 pb-0 relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#00a86b' }}>Flexible Payments</span>
+                <h3 className="text-[20px] font-bold leading-snug mt-2" style={{ color: '#0d2b1a' }}>
+                  0% installment plan<br />with <span style={{ color: '#00d97e' }}>tabby</span>.
+                </h3>
+              </div>
 
-              {/* Floating Tabby card mockup */}
-              <div className="h-36 w-full flex items-center justify-center mb-6 relative">
-                {/* Glow */}
-                <div className="absolute w-28 h-28 rounded-full blur-[40px] transition-colors duration-500" style={{ background: 'rgba(61,255,160,0.25)' }} />
+              {/* Large centered Tabby card visual */}
+              <div className="flex-1 flex items-center justify-center relative py-8">
+                {/* Green ambient glow */}
+                <div className="absolute w-64 h-64 rounded-full blur-[78px] pointer-events-none" style={{ background: 'rgba(61,255,160,0.24)' }} />
 
-                {/* Card */}
+                {/* The payment card — larger, more prominent */}
                 <div
-                  className="relative z-10 w-40 h-[96px] rounded-2xl flex flex-col justify-between p-4 overflow-hidden group-hover:scale-105 group-hover:-rotate-2 transition-transform duration-500"
+                  className="relative z-10 w-[270px] h-[164px] rounded-[24px] flex flex-col justify-between p-6 overflow-hidden group-hover:scale-[1.04] group-hover:-rotate-2 transition-transform duration-500"
                   style={{
                     background: 'linear-gradient(135deg, #3DFFA0 0%, #00d97e 100%)',
-                    boxShadow: '0 12px 32px rgba(61,255,160,0.35)',
+                    boxShadow: '0 24px 60px rgba(61,255,160,0.32), 0 4px 16px rgba(0,180,100,0.18)',
                   }}
                 >
-                  {/* Decorative circle */}
-                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20" style={{ background: '#fff' }} />
+                  {/* Decorative circles */}
+                  <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-15" style={{ background: '#fff' }} />
+                  <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full opacity-10" style={{ background: '#fff' }} />
 
-                  <div className="flex justify-between items-start">
-                    {/* Tabby logo */}
-                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-white/20 flex items-center justify-center">
-                      <Image src="/0x0.png" alt="Tabby" width={28} height={28} className="w-full h-full object-cover rounded-md" />
+                  <div className="flex justify-between items-start relative z-10">
+                    <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white/25 flex items-center justify-center backdrop-blur-sm">
+                      <Image src="/0x0.png" alt="Tabby" width={42} height={42} className="w-full h-full object-cover rounded-xl" />
                     </div>
-                    <CreditCard size={14} color="rgba(26,26,46,0.5)" />
+                    <CreditCard size={20} color="rgba(26,46,26,0.45)" />
                   </div>
 
-                  <div>
-                    <div className="text-[8px] font-black uppercase tracking-[0.18em] mb-0.5" style={{ color: 'rgba(26,26,46,0.6)' }}>Tabby Pay Later</div>
-                    <div className="text-[12px] font-mono font-bold" style={{ color: '#1A1A2E' }}>•••• 4242</div>
+                  <div className="relative z-10">
+                    <div className="text-[7.5px] font-black uppercase tracking-[0.22em] mb-0.5" style={{ color: 'rgba(10,40,20,0.55)' }}>Tabby Pay Later</div>
+                    <div className="text-[13px] font-mono font-bold" style={{ color: '#0d2b1a' }}>•••• •••• •••• 4242</div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col items-center text-center relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: '#00a86b' }}>Flexible Payments</span>
-                </div>
-                <h3 className="text-[18px] font-serif italic text-gray-900 leading-snug">
-                  0% installment plan<br />with{' '}
-                  <span className="not-italic font-black" style={{ color: '#1A1A2E' }}>tabby</span>.
-                </h3>
-                {/* 4 installments hint */}
-                <div className="flex items-center gap-1.5 mt-4">
+              {/* 4 installments — bottom */}
+              <div className="px-7 pb-7 relative z-10">
+                <div className="flex items-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(0,200,100,0.15)' }}>
                   {[1,2,3,4].map(n => (
-                    <div key={n} className="flex flex-col items-center gap-1">
-                      <div className="w-7 h-1.5 rounded-full" style={{ background: n === 1 ? '#3DFFA0' : 'rgba(61,255,160,0.25)' }} />
-                      <span className="text-[7px] font-bold" style={{ color: n === 1 ? '#00a86b' : 'rgba(0,0,0,0.25)' }}>
-                        {n === 1 ? 'Now' : `+${(n-1)*30}d`}
+                    <div key={n} className="flex-1 flex flex-col items-center gap-1.5">
+                      <div className="w-full h-1.5 rounded-full" style={{ background: n === 1 ? '#3DFFA0' : 'rgba(61,255,160,0.22)' }} />
+                      <span className="text-[8px] font-bold" style={{ color: n === 1 ? '#00a86b' : 'rgba(13,43,26,0.3)' }}>
+                        {n === 1 ? 'Today' : `+${(n-1)*30}d`}
                       </span>
                     </div>
                   ))}
@@ -445,66 +431,171 @@ export default function AllProductsPage() {
               </div>
             </motion.div>
 
-            {/* Card 2 — AI Specialist */}
+            {/* Card 2 — AI Consultant */}
             <motion.div
               initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] rounded-[2rem] overflow-hidden transition-all duration-500 hover:-translate-y-2 flex flex-col group relative p-8 snap-center"
-              style={{ 
-                background: 'rgba(255, 255, 255, 0.4)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.7)',
-                boxShadow: '0 10px 40px rgba(147,51,234,0.03)'
+              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] overflow-hidden transition-all duration-500 flex flex-col group relative snap-center"
+              style={{
+                borderRadius: '24px',
+                background: 'linear-gradient(160deg, #ffffff 0%, #f5f0ff 45%, #ede5ff 100%)',
+                border: '1px solid rgba(139,92,246,0.18)',
+                boxShadow: '0 10px 40px rgba(139,92,246,0.08)',
+                minHeight: '400px',
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-100/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Glowing Orb */}
-              <div className="h-32 w-full flex items-center justify-center mb-6 relative">
-                <div className="absolute w-24 h-24 bg-blue-200/40 rounded-full blur-[30px] group-hover:bg-blue-300/50 transition-colors" />
-                <div className="relative z-10 w-20 h-20 rounded-full flex items-center justify-center border border-white/50 shadow-lg group-hover:scale-110 transition-transform duration-500"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.4))', backdropFilter: 'blur(10px)' }}>
-                    <Sparkles size={28} className="text-blue-500" strokeWidth={1.5} />
-                    <div className="absolute top-0 right-0 w-3 h-3 bg-blue-400 rounded-full animate-ping opacity-70" />
+              {/* Text — top left */}
+              <div className="px-6 pt-6 pb-0 relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#8b5cf6' }}>AI Consultant</span>
+                <h3 className="text-[20px] font-bold leading-snug mt-2" style={{ color: '#2d1b69' }}>
+                  Precision skin<br />diagnosis <span style={{ color: '#8b5cf6' }}>in seconds</span>.
+                </h3>
+              </div>
+
+              {/* Large centered neural-network visual */}
+              <div className="flex-1 flex items-center justify-center relative py-6">
+                <div className="absolute w-44 h-44 rounded-full blur-[64px] pointer-events-none" style={{ background: 'rgba(139,92,246,0.18)' }} />
+
+                <div className="relative z-10 w-32 h-32 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
+                  {/* Outer orbit */}
+                  <div className="absolute w-32 h-32 rounded-full border border-[#c4b5fd]/40 animate-spin" style={{ animationDuration: '12s' }}>
+                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-[#c4b5fd] shadow-[0_0_8px_rgba(196,181,253,0.9)]" />
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full" style={{ background: 'rgba(167,139,250,0.5)' }} />
+                  </div>
+                  {/* Inner orbit */}
+                  <div className="absolute w-20 h-20 rounded-full border border-[#a78bfa]/50 animate-spin" style={{ animationDuration: '8s', animationDirection: 'reverse' }}>
+                    <div className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-[#7c3aed] shadow-[0_0_10px_rgba(124,58,237,0.8)]" />
+                    <div className="absolute bottom-0 left-0 w-2 h-2 rounded-full" style={{ background: 'rgba(167,139,250,0.6)' }} />
+                  </div>
+                  {/* Center orb */}
+                  <div className="relative w-14 h-14 rounded-full flex items-center justify-center"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.97), rgba(237,229,255,0.85))',
+                      boxShadow: '0 8px 32px rgba(124,58,237,0.22), inset 0 1px 0 rgba(255,255,255,0.9)',
+                      border: '1px solid rgba(196,181,253,0.5)',
+                    }}>
+                    <Sparkles size={22} style={{ color: '#7c3aed' }} strokeWidth={1.5} />
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex flex-col items-center text-center relative z-10">
-                <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-blue-500 mb-3">AI Consultant</p>
-                <h3 className="text-[18px] font-serif italic text-gray-900 leading-snug">
-                  Precision skin diagnosis in seconds.
-                </h3>
+
+              {/* Bottom — live indicator */}
+              <div className="px-6 pb-6 relative z-10">
+                <div className="flex items-center gap-2.5 pt-4 border-t" style={{ borderColor: 'rgba(139,92,246,0.12)' }}>
+                  <div className="w-2 h-2 flex-shrink-0 rounded-full bg-[#8b5cf6] animate-pulse" />
+                  <span className="text-[9.5px] font-bold tracking-wide leading-tight" style={{ color: '#6d28d9' }}>Analyzing skin type · Recommending products</span>
+                </div>
               </div>
             </motion.div>
 
-            {/* Card 3 — Loyalty */}
+            {/* Card 3 — Naya Rewards */}
             <motion.div
               initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] rounded-[2rem] overflow-hidden transition-all duration-500 hover:-translate-y-2 flex flex-col group relative p-8 snap-center"
-              style={{ 
-                background: 'rgba(255, 255, 255, 0.4)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.7)',
-                boxShadow: '0 10px 40px rgba(147,51,234,0.03)'
+              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] overflow-hidden transition-all duration-500 flex flex-col group relative snap-center"
+              style={{
+                borderRadius: '24px',
+                background: 'linear-gradient(160deg, #fffdf7 0%, #fff8e8 45%, #ffedbb 100%)',
+                border: '1px solid rgba(202,138,4,0.2)',
+                boxShadow: '0 10px 40px rgba(202,138,4,0.08)',
+                minHeight: '400px',
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-amber-100/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Floating Star */}
-              <div className="h-32 w-full flex items-center justify-center mb-6 relative">
-                <div className="absolute w-24 h-24 bg-amber-200/40 rounded-full blur-[30px] group-hover:bg-amber-300/50 transition-colors" />
-                <div className="relative z-10 w-20 h-20 rounded-2xl flex items-center justify-center border border-white/50 shadow-lg group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.4))', backdropFilter: 'blur(10px)' }}>
-                    <Star size={32} className="text-amber-500 fill-amber-400 drop-shadow-sm" strokeWidth={1.5} />
+              {/* Text — top left */}
+              <div className="px-6 pt-6 pb-0 relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#b45309' }}>Naya Rewards</span>
+                <h3 className="text-[20px] font-bold leading-snug mt-2" style={{ color: '#1c1000' }}>
+                  Earn points with<br />every <span style={{ color: '#d97706' }}>selection</span>.
+                </h3>
+              </div>
+
+              {/* Large centered membership card visual */}
+              <div className="flex-1 flex items-center justify-center relative py-6">
+                <div className="absolute w-44 h-44 rounded-full blur-[64px] pointer-events-none" style={{ background: 'rgba(251,191,36,0.22)' }} />
+
+                <div
+                  className="relative z-10 w-[200px] h-[122px] rounded-[18px] flex flex-col justify-between p-5 overflow-hidden group-hover:scale-[1.04] group-hover:rotate-2 transition-transform duration-500"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%)',
+                    boxShadow: '0 24px 60px rgba(202,138,4,0.30), 0 4px 16px rgba(180,83,9,0.18)',
+                  }}
+                >
+                  <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-15" style={{ background: '#fff' }} />
+                  <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full opacity-10" style={{ background: '#fff' }} />
+
+                  <div className="flex justify-between items-start relative z-10">
+                    <div>
+                      <div className="text-[7px] font-black uppercase tracking-[0.2em] mb-0.5" style={{ color: 'rgba(255,255,255,0.65)' }}>Naya Lumière</div>
+                      <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Silver Member</div>
+                    </div>
+                    <Star size={15} style={{ color: 'rgba(255,255,255,0.6)', fill: 'rgba(255,255,255,0.25)' }} />
+                  </div>
+
+                  <div className="relative z-10 flex justify-between items-end">
+                    <div>
+                      <div className="text-[7px] font-black uppercase tracking-[0.15em] mb-0.5" style={{ color: 'rgba(255,255,255,0.6)' }}>Points balance</div>
+                      <div className="text-[18px] font-bold font-mono leading-none" style={{ color: '#fff' }}>5,240 pts</div>
+                    </div>
+                    <div className="flex gap-0.5 items-center">
+                      {[1,2,3].map(n => (
+                        <Star key={n} size={8} style={{ color: n <= 2 ? '#fff' : 'rgba(255,255,255,0.35)', fill: n <= 2 ? '#fff' : 'rgba(255,255,255,0.25)' }} />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex flex-col items-center text-center relative z-10">
-                <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-amber-500 mb-3">Naya Rewards</p>
-                <h3 className="text-[18px] font-serif italic text-gray-900 leading-snug">
-                  Earn points with every selection.
+
+              {/* Bottom — progress to next tier */}
+              <div className="px-6 pb-6 relative z-10">
+                <div className="pt-4 border-t" style={{ borderColor: 'rgba(202,138,4,0.15)' }}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[9px] font-black uppercase tracking-wide" style={{ color: '#b45309' }}>To Gold tier</span>
+                    <span className="text-[9px] font-bold" style={{ color: '#b45309' }}>2,760 pts away</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(202,138,4,0.15)' }}>
+                    <div className="h-full rounded-full" style={{ width: '65%', background: 'linear-gradient(90deg, #f59e0b, #d97706)' }} />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Card 4 — Expert Consultation (full-bleed photo) */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="w-[80vw] sm:w-[300px] md:w-[calc(25%-18px)] max-w-[340px] flex-shrink-0 overflow-hidden group relative snap-center cursor-pointer"
+              style={{ borderRadius: '24px', minHeight: '400px' }}
+            >
+              {/* Full-bleed photo */}
+              <Image
+                src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
+                alt="Skin consultation at Naya Lumière"
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                style={{ objectPosition: 'center top' }}
+              />
+
+              {/* Top gradient for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/62 via-black/20 to-black/10 z-10" />
+
+              {/* Bottom vignette */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-10" />
+
+              {/* Text — top left, Apple card style */}
+              <div className="absolute top-0 left-0 right-0 z-20 px-6 pt-6">
+                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white/70">Expert Advice</span>
+                <h3 className="text-[20px] font-bold leading-snug mt-2 text-white">
+                  Meet our skin<br />specialists.
                 </h3>
+                <p className="text-[12px] text-white/75 font-medium mt-2 leading-relaxed max-w-[220px]">
+                  Personalized consultations tailored to your skin.
+                </p>
+              </div>
+
+              {/* CTA — bottom left */}
+              <div className="absolute bottom-0 left-0 right-0 z-20 px-6 pb-6 flex items-center justify-between">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-bold text-white backdrop-blur-md transition-all duration-300 group-hover:bg-white/25"
+                  style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                  Book a session
+                  <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                </div>
               </div>
             </motion.div>
           </div>

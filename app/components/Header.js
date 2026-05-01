@@ -30,7 +30,12 @@ function getConcernMeta(name = '') {
   return { icon: Sparkles, desc: 'Targeted skincare solutions' };
 }
 
-const Header = forwardRef((props, ref) => {
+function toSentenceCase(value = '') {
+  const text = String(value).trim().toLowerCase();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}
+
+const Header = forwardRef((_, ref) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { cartItems } = useCart();
@@ -64,7 +69,8 @@ const Header = forwardRef((props, ref) => {
 
   return (
     <>
-      <header 
+      <header
+        ref={ref}
         className={`fixed top-0 left-0 right-0 z-[150] transition-all duration-500 ease-in-out ${
           isScrolled ? 'pt-4 px-4' : 'pt-0 px-0'
         }`}
@@ -114,34 +120,34 @@ const Header = forwardRef((props, ref) => {
                         {/* Invisible bridge to prevent hover loss */}
                         <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
                         
-                        <div className="absolute top-[calc(100%+0.5rem)] left-0 w-[280px] bg-white/95 backdrop-blur-3xl rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.5)] border border-[#f3e8ff]/60 opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-400 transform translate-y-3 group-hover/shop:translate-y-0 z-[200] p-2 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none">
+                        <div className="absolute top-[calc(100%+0.6rem)] left-0 w-[304px] bg-white/95 backdrop-blur-3xl rounded-[22px] shadow-[0_28px_70px_-22px_rgba(59,7,100,0.32),0_0_0_1px_rgba(216,180,254,0.38)] border border-[#eadcff] opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-300 transform translate-y-3 group-hover/shop:translate-y-0 z-[200] p-3 overflow-hidden before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,rgba(245,243,255,0.92),transparent_62%)] before:pointer-events-none">
                             
-                            <div className="relative z-10 px-3 pt-2 pb-1.5 border-b border-[#f3e8ff]/50 mb-1.5 flex items-center justify-between">
-                                <p className="text-[8px] font-black tracking-[0.4em] text-[#9333ea]/70 uppercase">Discover</p>
-                                <Sparkles size={8} className="text-[#c4b5fd]" />
+                            <div className="relative z-10 px-2.5 pt-1 pb-2.5 border-b border-[#eadcff] mb-2 flex items-center justify-between">
+                                <p className="text-[11px] font-bold tracking-normal text-[#4c1d95]">Discover</p>
+                                <Sparkles size={12} className="text-[#7c3aed]" />
                             </div>
-                            
-                            <div className="flex flex-col gap-0 relative z-10">
+
+                            <div className="flex flex-col gap-1 relative z-10">
                                 {[
                                     { name: 'All products', href: '/all-products', desc: 'Explore the full collection', icon: ShoppingBag },
                                     { name: 'Skincare', href: '/SkinCare', desc: 'Nourish & protect', icon: Droplets },
                                     { name: 'Fragrance', href: '/fragrance', desc: 'Signature scents', icon: Sparkles },
-                                ].map((link, idx) => {
+                                ].map((link) => {
                                     const Icon = link.icon;
                                     return (
                                     <Link
                                         key={link.name}
                                         href={link.href}
-                                        className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all duration-300 hover:bg-[#faf5ff] group/shop-item relative overflow-hidden"      
+                                        className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/shop-item relative overflow-hidden"
                                     >
-                                        <div className="w-7 h-7 rounded-lg bg-white border border-[#f3e8ff] shadow-sm flex items-center justify-center text-[#c4b5fd] group-hover/shop-item:text-[#9333ea] group-hover/shop-item:scale-110 transition-all duration-300 z-10">
-                                            <Icon size={12} strokeWidth={1.5} />
+                                        <div className="w-9 h-9 rounded-xl bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/shop-item:bg-[#7c3aed] group-hover/shop-item:text-white transition-all duration-300 z-10">
+                                            <Icon size={15} strokeWidth={1.8} />
                                         </div>
                                         <div className="flex-1 z-10">
-                                            <span className="block text-[11px] font-black text-gray-900 leading-tight group-hover/shop-item:text-[#9333ea] transition-colors">{link.name}</span> 
-                                            <span className="block text-[9px] font-medium text-gray-400 mt-0 tracking-wide">{link.desc}</span>
-                                        </div>                                        <div className="w-4 h-4 rounded-full bg-white shadow-sm flex items-center justify-center opacity-0 -translate-x-2 group-hover/shop-item:opacity-100 group-hover/shop-item:translate-x-0 transition-all duration-300 z-10">
-                                            <ArrowRight size={8} className="text-[#9333ea]" />
+                                            <span className="block text-[13px] font-bold tracking-normal text-[#1e0a3c] leading-tight group-hover/shop-item:text-[#5b21b6] transition-colors">{toSentenceCase(link.name)}</span>
+                                            <span className="block text-[11px] font-medium tracking-normal text-gray-500 mt-0.5 leading-snug">{toSentenceCase(link.desc)}</span>
+                                        </div>                                        <div className="w-5 h-5 rounded-full bg-white shadow-sm flex items-center justify-center opacity-0 -translate-x-2 group-hover/shop-item:opacity-100 group-hover/shop-item:translate-x-0 transition-all duration-300 z-10">
+                                            <ArrowRight size={10} className="text-[#6b21a8]" />
                                         </div>
                                         
                                         {/* Hover background effect */}
@@ -164,28 +170,28 @@ const Header = forwardRef((props, ref) => {
                             {/* Invisible bridge to prevent hover loss */}
                             <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
 
-                            <div className="absolute top-[calc(100%+0.5rem)] left-0 w-[280px] bg-white/95 backdrop-blur-3xl rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.5)] border border-[#f3e8ff]/60 opacity-0 invisible group-hover/brands:opacity-100 group-hover/brands:visible transition-all duration-400 transform translate-y-3 group-hover/brands:translate-y-0 z-[200] p-2 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none">
+                            <div className="absolute top-[calc(100%+0.6rem)] left-0 w-[304px] bg-white/95 backdrop-blur-3xl rounded-[22px] shadow-[0_28px_70px_-22px_rgba(59,7,100,0.32),0_0_0_1px_rgba(216,180,254,0.38)] border border-[#eadcff] opacity-0 invisible group-hover/brands:opacity-100 group-hover/brands:visible transition-all duration-300 transform translate-y-3 group-hover/brands:translate-y-0 z-[200] p-3 overflow-hidden before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,rgba(245,243,255,0.92),transparent_62%)] before:pointer-events-none">
 
-                                <div className="relative z-10 px-3 pt-2 pb-1.5 border-b border-[#f3e8ff]/50 mb-1.5 flex items-center justify-between">
-                                    <p className="text-[8px] font-black tracking-[0.4em] text-[#9333ea]/70 uppercase">Featured collections</p>
-                                    <Star size={8} className="text-[#c4b5fd] fill-[#c4b5fd]/20" />
+                                <div className="relative z-10 px-2.5 pt-1 pb-2.5 border-b border-[#eadcff] mb-2 flex items-center justify-between">
+                                    <p className="text-[11px] font-bold tracking-normal text-[#4c1d95]">Featured collections</p>
+                                    <Star size={12} className="text-[#7c3aed] fill-[#c4b5fd]/30" />
                                 </div>
 
-                                <div className="flex flex-col gap-0.5 relative z-10">
-                                    {brands.map((brand, idx) => (
+                                <div className="flex flex-col gap-1 relative z-10">
+                                    {brands.map((brand) => (
                                         <Link
                                             key={brand.id}
                                             href={`/brand/${brand.slug || brand.id}`}
-                                            className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 hover:bg-[#faf5ff] group/brand-item relative overflow-hidden" 
+                                            className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/brand-item relative overflow-hidden"
                                         >
-                                            <div className="w-8 h-8 rounded-full bg-[#fdfaff] border border-[#f3e8ff] shadow-sm flex items-center justify-center text-[#c4b5fd] font-serif italic text-base group-hover/brand-item:text-[#9333ea] group-hover/brand-item:scale-110 group-hover/brand-item:border-[#e9d5ff] transition-all duration-300 z-10">
-                                                {brand.name.charAt(0)}
+                                            <div className="w-9 h-9 rounded-full bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] font-serif italic text-base group-hover/brand-item:bg-[#7c3aed] group-hover/brand-item:text-white transition-all duration-300 z-10">
+                                                {toSentenceCase(brand.name).charAt(0)}
                                             </div>
                                             <div className="flex-1 z-10">
-                                                <span className="block text-[13px] font-bold text-gray-900 leading-tight group-hover/brand-item:text-[#9333ea] transition-colors capitalize">{brand.name.toLowerCase()}</span>
+                                                <span className="block text-[13px] font-bold tracking-normal text-[#1e0a3c] leading-tight group-hover/brand-item:text-[#5b21b6] transition-colors">{toSentenceCase(brand.name)}</span>
                                             </div>
                                             <div className="w-5 h-5 rounded-full bg-white shadow-sm flex items-center justify-center opacity-0 -translate-x-2 group-hover/brand-item:opacity-100 group-hover/brand-item:translate-x-0 transition-all duration-300 z-10">
-                                                <ArrowRight size={10} className="text-[#9333ea]" />
+                                                <ArrowRight size={10} className="text-[#5b21b6]" />
                                             </div>
 
                                             {/* Hover background effect */}
@@ -194,8 +200,8 @@ const Header = forwardRef((props, ref) => {
                                     ))}
                                 </div>
 
-                                <div className="relative z-10 mt-1.5 pt-2.5 border-t border-[#f3e8ff]/50 px-3">
-                                    <Link href="/brands" className="flex items-center gap-1.5 text-[9px] font-black tracking-widest hover:gap-3 transition-all duration-200 cl-gradient-text uppercase">
+                                <div className="relative z-10 mt-1.5 pt-2.5 border-t border-[#e9d5ff] px-3">
+                                    <Link href="/brands" className="flex items-center gap-1.5 text-[11px] font-bold tracking-normal text-[#5b21b6] hover:text-[#4c1d95] hover:gap-2.5 transition-all duration-200">
                                         View all brands <ArrowRight size={10} />
                                     </Link>
                                 </div>
@@ -214,13 +220,13 @@ const Header = forwardRef((props, ref) => {
                             {/* Invisible bridge to prevent hover loss */}
                             <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
                             
-                            <div className="absolute top-[calc(100%+0.5rem)] left-1/2 -translate-x-1/2 w-[480px] bg-white/95 backdrop-blur-3xl rounded-[1.5rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.5)] border border-[#f3e8ff]/60 opacity-0 invisible group-hover/concerns:opacity-100 group-hover/concerns:visible transition-all duration-400 transform translate-y-3 group-hover/concerns:translate-y-0 z-[200] p-3 overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/40 before:to-transparent before:pointer-events-none">
+                            <div className="absolute top-[calc(100%+0.6rem)] left-1/2 -translate-x-1/2 w-[500px] bg-white/95 backdrop-blur-3xl rounded-[22px] shadow-[0_28px_70px_-22px_rgba(59,7,100,0.32),0_0_0_1px_rgba(216,180,254,0.38)] border border-[#eadcff] opacity-0 invisible group-hover/concerns:opacity-100 group-hover/concerns:visible transition-all duration-300 transform translate-y-3 group-hover/concerns:translate-y-0 z-[200] p-3 overflow-hidden before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,rgba(245,243,255,0.92),transparent_62%)] before:pointer-events-none">
                                 
-                                <div className="relative z-10 px-3 pt-1.5 pb-2 border-b border-[#f3e8ff]/50 mb-2 flex items-center justify-between">
-                                    <p className="text-[8px] font-black tracking-[0.4em] text-[#9333ea]/70 uppercase">Targeted solutions</p>
-                                    <Layers size={10} className="text-[#c4b5fd]" />
+                                <div className="relative z-10 px-2.5 pt-1 pb-2.5 border-b border-[#eadcff] mb-2 flex items-center justify-between">
+                                    <p className="text-[11px] font-bold tracking-normal text-[#4c1d95]">Targeted solutions</p>
+                                    <Layers size={12} className="text-[#7c3aed]" />
                                 </div>
-                                
+
                                 <div className="grid grid-cols-2 gap-1 relative z-10">
                                     {concerns.map(concern => {
                                         const { icon: Icon, desc } = getConcernMeta(concern.name);
@@ -228,14 +234,14 @@ const Header = forwardRef((props, ref) => {
                                             <Link
                                                 key={concern.id}
                                                 href={`/search?q=${concern.name}`}
-                                                className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 hover:bg-[#faf5ff] group/concern-item relative overflow-hidden" 
+                                                className="flex items-start gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/concern-item relative overflow-hidden"
                                             >
-                                                <div className="w-8 h-8 rounded-lg bg-white border border-[#f3e8ff] shadow-sm flex items-center justify-center shrink-0 transition-all duration-300 group-hover/concern-item:bg-gradient-to-br group-hover/concern-item:from-[#d8b4fe] group-hover/concern-item:to-[#9333ea] group-hover/concern-item:text-white group-hover/concern-item:border-transparent text-[#c4b5fd] z-10 group-hover/concern-item:scale-105">
+                                                <div className="w-9 h-9 rounded-xl bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center shrink-0 transition-all duration-300 group-hover/concern-item:bg-[#7c3aed] group-hover/concern-item:text-white group-hover/concern-item:border-transparent text-[#5b21b6] z-10">
                                                     <Icon size={14} strokeWidth={1.5} />
                                                 </div>
                                                 <div className="flex-1 z-10">
-                                                    <p className="text-[12px] font-black text-gray-900 leading-tight group-hover/concern-item:text-[#9333ea] transition-colors capitalize">{concern.name.toLowerCase()}</p>
-                                                    <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-0 leading-snug">{desc}</p>
+                                                    <p className="text-[13px] font-bold tracking-normal text-[#1e0a3c] leading-tight group-hover/concern-item:text-[#5b21b6] transition-colors">{toSentenceCase(concern.name)}</p>
+                                                    <p className="text-[11px] text-gray-500 font-medium tracking-normal mt-0.5 leading-snug">{toSentenceCase(desc)}</p>
                                                 </div>
 
                                                 {/* Hover background effect */}
@@ -244,9 +250,9 @@ const Header = forwardRef((props, ref) => {
                                         );
                                     })}
                                 </div>
-                                
-                                <div className="relative z-10 mt-2 pt-2.5 border-t border-[#f3e8ff]/50 px-3 flex justify-between items-center">
-                                    <Link href="/all-products" className="flex items-center gap-1.5 text-[9px] font-black tracking-widest hover:gap-3 transition-all duration-300 cl-gradient-text uppercase">
+
+                                <div className="relative z-10 mt-2 pt-2.5 border-t border-[#e9d5ff] px-3 flex justify-between items-center">
+                                    <Link href="/all-products" className="flex items-center gap-1.5 text-[11px] font-bold tracking-normal text-[#5b21b6] hover:text-[#4c1d95] hover:gap-2.5 transition-all duration-300">
                                         Browse all products <ArrowRight size={10} />
                                     </Link>
                                     <div className="flex items-center gap-1">
@@ -262,13 +268,13 @@ const Header = forwardRef((props, ref) => {
             </div>
 
             {/* Center: Logo + Brand Name — absolute center on mobile, static on desktop */}
-            <Link href="/" className="md:static absolute left-1/2 -translate-x-1/2 flex items-center gap-[14px] shrink-0 transition-all active:scale-95">
+            <Link href="/" className="md:static absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5 shrink-0 transition-all active:scale-95 group">
                 <Image
                   src="/Adobe Express - file (5).png"
                   alt="Naya Lumière Cosmetics"
-                  height={42}
-                  width={140}
-                  className="h-[32px] md:h-[42px] w-auto object-contain shrink-0"
+                  height={40}
+                  width={130}
+                  className="h-[32px] md:h-10 w-auto object-contain shrink-0"
                   priority
                 />
                 {/* Brand name text — collapses when scrolled */}
@@ -282,18 +288,31 @@ const Header = forwardRef((props, ref) => {
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                   className="overflow-hidden whitespace-nowrap"
                 >
-                  <div
-                    style={{
-                      fontSize: '18px',
-                      fontWeight: '600',
-                      letterSpacing: '0.05em',
-                      color: '#000000',
-                      textTransform: 'uppercase',
-                      fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
-                    }}
-                  >
-                    NAYALC
-                  </div>
+                    <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
+                        <div
+                          style={{ 
+                            fontSize: '18px', 
+                            fontWeight: '600', 
+                            letterSpacing: '0.05em', 
+                            color: '#3b0764', 
+                            textTransform: 'uppercase', 
+                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                          }}
+                        >
+                          NAYA
+                        </div>
+                        <div
+                          style={{ 
+                            fontSize: '12px', 
+                            fontStyle: 'italic', 
+                            fontFamily: "Georgia, 'Times New Roman', serif", 
+                            color: '#6b21a8',
+                            marginTop: '1px'
+                          }}
+                        >
+                          Lumière Cosmetics
+                        </div>
+                    </div>
                 </motion.div>
             </Link>
 
@@ -494,7 +513,7 @@ const Header = forwardRef((props, ref) => {
                                 Popular Trends
                             </p>
                             <div className="flex flex-wrap gap-3">
-                                {['Anti-Aging', 'Serums', 'Hydration', 'Fragrance', 'Gift Sets', 'GERnétic'].map((q, i) => (
+                                {['Anti-Aging', 'Serums', 'Hydration', 'Fragrance', 'Gift Sets', 'GERnétic'].map((q) => (
                                     <motion.button
                                         key={q}
                                         whileHover={{ y: -4, scale: 1.02 }}
@@ -526,7 +545,7 @@ const Header = forwardRef((props, ref) => {
                                     { label: 'New Arrivals', href: '/new-arrivals', desc: 'Shop the latest innovations' },
                                     { label: 'All Products', href: '/all-products', desc: 'Explore the full collection' },
                                     { label: 'Gift Sets', href: '/gift-sets', desc: 'Luxury for someone special' },
-                                ].map((link, i) => (
+                                ].map((link) => (
                                     <motion.button
                                         key={link.href}
                                         whileHover={{ x: 8 }}
@@ -568,9 +587,9 @@ const Header = forwardRef((props, ref) => {
                     className="absolute top-0 left-0 bottom-0 w-[85%] max-w-[400px] bg-white shadow-2xl flex flex-col rounded-r-[2.5rem]"
                 >
                     <div className="p-6 md:p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/20">
-                        <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-[14px]">
-                            <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Cosmetics" height={42} width={140} className="h-[36px] w-auto object-contain" />
-                            <div style={{ textAlign: 'left', lineHeight: '1' }}>
+                        <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2.5 transition-all active:scale-95 group">
+                            <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Cosmetics" height={40} width={130} className="h-9 w-auto object-contain shrink-0" />
+                            <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
                                 <div
                                 style={{
                                     fontSize: '18px',
@@ -589,7 +608,7 @@ const Header = forwardRef((props, ref) => {
                                     fontStyle: 'italic',
                                     fontFamily: "Georgia, 'Times New Roman', serif",
                                     color: '#6b21a8',
-                                    marginTop: '0px'
+                                    marginTop: '1px'
                                 }}
                                 >
                                 Lumière Cosmetics
