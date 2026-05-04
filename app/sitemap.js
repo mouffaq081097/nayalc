@@ -40,7 +40,6 @@ export default async function sitemap() {
     { path: '/SkinCare', priority: 0.8 },
     { path: '/fragrance', priority: 0.8 },
     { path: '/gift-sets', priority: 0.8 },
-    { path: '/blog', priority: 0.6 },
   ].map(({ path, priority }) => ({
     url: `${baseUrl}${path}`,
     lastModified: new Date(),

@@ -211,81 +211,18 @@ export async function POST(req, context) {
             io.to(`conversation-${conversationId}`).emit('receive_message', newMessageData);
         }
 
-        // --- AI ROUTING ---
+        // --- CUSTOMER MESSAGE HANDLING (AI DISABLED) ---
         if (sender_type === 'customer') {
-            const shouldAiRespond = convStatus !== 'pending_admin_response' && convStatus !== 'closed';
-
-            // AI debounce: skip if AI replied within the last 8 seconds
-            let aiDebounced = false;
-            if (shouldAiRespond) {
-                const lastAiResult = await client.query(
-                    `SELECT MAX(created_at) as last_ai FROM messages WHERE conversation_id = $1 AND sender_type = 'ai'`,
-                    [conversationId]
-                );
-                const lastAiTime = lastAiResult.rows[0]?.last_ai;
-                if (lastAiTime && (Date.now() - new Date(lastAiTime).getTime()) < 8000) {
-                    aiDebounced = true;
-                }
-            }
-
-            if (shouldAiRespond && !aiDebounced && process.env.GEMINI_API_KEY) {
-                // Fire AI response asynchronously — don't block the HTTP response
-                setImmediate(async () => {
-                    const aiClient = await db.connect();
-                    try {
-                        const systemPrompt = await buildAiSystemPrompt(
-                            aiClient, conversationId, conversationUserId, first_name, content
-                        );
-
-                        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-                        const aiResult = await model.generateContent(systemPrompt);
-                        const aiText = aiResult.response.text().trim();
-
-                        if (!aiText) return;
-
-                        // Save AI message (sender_id = customer's user_id, differentiated by sender_type='ai')
-                        const aiMsgResult = await aiClient.query(
-                            `INSERT INTO messages (conversation_id, sender_id, message_text, sender_type)
-                             VALUES ($1, $2, $3, 'ai')
-                             RETURNING id, conversation_id, sender_id, message_text as "messageText", created_at as "createdAt", sender_type as "senderType"`,
-                            [conversationId, conversationUserId, aiText]
-                        );
-                        const aiMessageData = aiMsgResult.rows[0];
-                        if (!aiMessageData.createdAt) aiMessageData.createdAt = new Date().toISOString();
-
-                        // Update conversation status to ai_handling
-                        await aiClient.query(
-                            `UPDATE conversations SET status = 'ai_handling', updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
-                            [conversationId]
-                        );
-
-                        // Broadcast AI message
-                        const ioInstance = getIo();
-                        if (ioInstance) {
-                            ioInstance.to(`conversation-${conversationId}`).emit('receive_message', aiMessageData);
-                            ioInstance.to('admin').emit('conversation_status_updated', { id: parseInt(conversationId), status: 'ai_handling' });
-                        }
-                    } catch (aiErr) {
-                        console.error('AI response error:', aiErr);
-                        const { rows: admins } = await aiClient.query("SELECT email FROM users WHERE is_admin = true");
-                        for (const admin of admins) {
-                            await sendNewChatMessageNotificationEmail(admin.email, customerName, customerEmail, conversationId, content).catch(() => {});
-                        }
-                    } finally {
-                        aiClient.release();
-                    }
-                });
-            } else {
-                // Human escalation: notify admin
-                await client.query(
-                    `UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
-                    [conversationId]
-                );
-                
-                const { rows: admins } = await client.query("SELECT email FROM users WHERE is_admin = true");
-                for (const admin of admins) {
-                    await sendNewChatMessageNotificationEmail(admin.email, customerName, customerEmail, conversationId, content).catch(() => {});
-                }
+            // Update conversation timestamp
+            await client.query(
+                `UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+                [conversationId]
+            );
+            
+            // Notify admins of the new message
+            const { rows: admins } = await client.query("SELECT email FROM users WHERE is_admin = true");
+            for (const admin of admins) {
+                await sendNewChatMessageNotificationEmail(admin.email, customerName, customerEmail, conversationId, content).catch(() => {});
             }
         } else if (sender_type === 'admin') {
             // Admin replied — mark as pending customer response

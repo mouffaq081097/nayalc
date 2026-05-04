@@ -46,9 +46,6 @@ export const metadata = {
     shortcut: "/favicon.jpeg",
     apple: "/favicon.jpeg",
   },
-  alternates: {
-    canonical: 'https://nayalc.com',
-  },
   category: 'beauty',
 };
 

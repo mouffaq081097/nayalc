@@ -10,7 +10,11 @@ export const metadata = {
     title: "Shop All Beauty & Skincare Products | nayalc.com UAE",
     description: "Discover the best in beauty and skincare. Premium products delivered across the UAE.",
     url: "https://nayalc.com/all-products",
+    locale: 'en_AE',
     type: "website",
+  },
+  alternates: {
+    canonical: 'https://nayalc.com/all-products',
   },
 };
 

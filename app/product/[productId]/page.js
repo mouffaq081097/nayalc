@@ -82,7 +82,7 @@ export async function generateMetadata({ params }) {
       title: title,
       description: description.substring(0, 160),
       images: product.images?.[0] ? [{ url: product.images[0] }] : [],
-      type: 'product',
+      type: 'website',
       locale: 'en_AE',
     },
     alternates: {
