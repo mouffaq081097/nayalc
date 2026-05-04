@@ -14,7 +14,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useUser } from '../../context/UserContext';
 import Modal from '../../components/Modal';
 import AddressInputForm from '../../components/AddressInputForm';
-import { toast } from 'react-toastify';
 
 const CL = {
   glass:       'rgba(255,255,255,0.72)',
@@ -65,19 +64,13 @@ export default function AccountAddressesPage() {
   const openModal = (address = null) => { setEditingAddress(address); setIsModalOpen(true); };
 
   const handleSave = async (formData) => {
-    try {
-      if (editingAddress) {
-        await updateShippingAddress({ ...formData, id: editingAddress.id });
-        toast.success('Address updated');
-      } else {
-        await addShippingAddress(formData);
-        toast.success('Address added');
-      }
-      setIsModalOpen(false);
-      setEditingAddress(null);
-    } catch {
-      toast.error('Error saving address');
+    if (editingAddress) {
+      await updateShippingAddress({ ...formData, id: editingAddress.id });
+    } else {
+      await addShippingAddress(formData);
     }
+    setIsModalOpen(false);
+    setEditingAddress(null);
   };
 
   const handleDelete = async (id) => {

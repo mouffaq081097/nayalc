@@ -386,7 +386,7 @@ const Header = forwardRef((_, ref) => {
 
                 <Button
                 type="button"
-                onClick={openCart}
+                onClick={() => router.push('/cart')}
                 className="relative shadow-md bg-[#3b0764] border border-[#3b0764] size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 hover:bg-[#581c87] group"
                 aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
                 >

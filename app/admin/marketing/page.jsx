@@ -5,7 +5,7 @@ import {
     Loader2, Eye, MoveUp, MoveDown,
     Type, Image as ImageIcon, MousePointer2, Layout,
     Layers, Sparkles, Package, Search,
-    UserCheck, X, LayoutTemplate, Percent, Tag, Check
+    UserCheck, X, LayoutTemplate, Percent, Tag, Check, HeartHandshake
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/app/components/ui/button';
@@ -85,6 +85,20 @@ const TEMPLATES = [
             { id: rid(), type: SECTION_TYPES.PROMO_BANNER, data: { headline: 'Your Loyalty Rewards Are Here', subline: 'Thank you for being a cherished Naya Lumière member', code: '', discount: 'BONUS POINTS ADDED', expiry: 'Points never expire · Redeem anytime' } },
             { id: rid(), type: SECTION_TYPES.TEXT, data: { content: "Your loyalty means the world to us. As a special thank you, we've added bonus loyalty points to your account. Visit your account dashboard to see your current balance and discover the exclusive rewards waiting for you." } },
             { id: rid(), type: SECTION_TYPES.BUTTON, data: { text: 'View My Rewards', link: 'https://nayalc.com/account/loyalty' } },
+        ],
+    },
+    {
+        id: 'service_apology',
+        name: 'Service Apology',
+        color: '#0891b2',
+        description: 'Apologize for an issue and rebuild trust',
+        icon: HeartHandshake,
+        defaultSections: () => [
+            { id: rid(), type: SECTION_TYPES.HERO, data: { image: '', title: 'A Message From Our Team', subtitle: 'We value your trust and want to address something important with complete transparency.', ctaText: '', ctaLink: 'https://nayalc.com' } },
+            { id: rid(), type: SECTION_TYPES.TEXT, data: { content: "Dear valued customer,\n\nWe want to reach out personally to apologize for [describe the issue]. We understand this may have disrupted your experience with us, and for that, we are truly sorry.\n\nOur team has worked swiftly to resolve the issue and we can confirm it is now fully corrected. We take full responsibility and are committed to ensuring this does not happen again.\n\nYour trust and loyalty mean everything to us at Naya Lumière, and we want to make this right." } },
+            { id: rid(), type: SECTION_TYPES.PROMO_BANNER, data: { headline: 'Our Sincere Apologies', subline: 'As a token of our appreciation for your patience and understanding', code: 'SORRY15', discount: '15% OFF YOUR NEXT ORDER', expiry: 'Valid for 7 days · No minimum spend required' } },
+            { id: rid(), type: SECTION_TYPES.TEXT, data: { content: "If you have any questions or would like to speak with us directly, please do not hesitate to reach out to our team. We are always here for you." } },
+            { id: rid(), type: SECTION_TYPES.BUTTON, data: { text: 'Continue Shopping', link: 'https://nayalc.com' } },
         ],
     },
 ];

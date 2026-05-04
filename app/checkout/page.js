@@ -147,25 +147,23 @@ export default function CheckoutPage() {
     const endpoint = editingAddress
       ? `/api/users/${user.id}/addresses/${editingAddress.id}`
       : `/api/users/${user.id}/addresses`;
-    try {
-      await fetchWithAuth(endpoint, {
-        method,
-        body: JSON.stringify({
-          address_line1: addressData.addressLine1,
-          address_line2: addressData.apartment || addressData.addressLine2,
-          city: addressData.city, zip_code: addressData.zipCode || '0000',
-          country: addressData.country || 'United Arab Emirates',
-          state: addressData.state || '',
-          customer_phone: addressData.customerPhone,
-          address_label: addressData.addressLabel || addressData.addressLine1,
-          is_default: addressData.isDefault || false,
-          latitude: addressData.latitude, longitude: addressData.longitude,
-        }),
-      });
-      closeAddressModal();
-      fetchShippingAddresses();
-      toast.success(`Address ${editingAddress ? 'updated' : 'saved'}!`);
-    } catch { toast.error('Error saving address.'); }
+    const res = await fetchWithAuth(endpoint, {
+      method,
+      body: JSON.stringify({
+        address_line1: addressData.addressLine1,
+        address_line2: addressData.apartment || addressData.addressLine2,
+        city: addressData.city, zip_code: addressData.zipCode || '0000',
+        country: addressData.country || 'United Arab Emirates',
+        state: addressData.state || '',
+        customer_phone: addressData.customerPhone,
+        address_label: addressData.addressLabel || addressData.addressLine1,
+        is_default: addressData.isDefault || false,
+        latitude: addressData.latitude, longitude: addressData.longitude,
+      }),
+    });
+    if (!res.ok) throw new Error('Failed to save address');
+    closeAddressModal();
+    fetchShippingAddresses();
   };
 
   const handleDeleteAddress = async (id) => {
