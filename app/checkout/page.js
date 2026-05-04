@@ -409,11 +409,11 @@ export default function CheckoutPage() {
                                   <MapPin size={10} /> {addr.city}, {addr.country}
                                 </p>
                               </div>
-                              <div className="pt-1.5 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={(e) => { e.stopPropagation(); openAddressModal(addr); }} className="text-[10px] font-semibold flex items-center gap-1" style={{ color: 'rgb(126,105,230)' }}>
+                              <div className="pt-1.5 flex items-center gap-4">
+                                <button onClick={(e) => { e.stopPropagation(); openAddressModal(addr); }} className="text-[10px] font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all" style={{ color: 'rgb(126,105,230)', background: 'rgba(196,167,254,0.12)', border: '1px solid rgba(196,167,254,0.3)' }}>
                                   <Pencil size={10} /> Edit
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }} className="text-[10px] font-semibold flex items-center gap-1 text-red-400 hover:text-red-600">
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }} className="text-[10px] font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all text-red-400 hover:text-red-600" style={{ background: 'rgba(254,226,226,0.5)', border: '1px solid rgba(252,165,165,0.3)' }}>
                                   <Trash2 size={10} /> Remove
                                 </button>
                               </div>

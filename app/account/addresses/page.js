@@ -55,6 +55,7 @@ export default function AccountAddressesPage() {
 
   const [isModalOpen, setIsModalOpen]   = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const tier       = loyaltyData?.stats?.tier           || 'Silver';
   const points     = loyaltyData?.stats?.points          ?? 0;
@@ -80,13 +81,13 @@ export default function AccountAddressesPage() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Remove this address?')) {
-      try {
-        await deleteShippingAddress(id);
-        toast.success('Address removed');
-      } catch {
-        toast.error('Error removing address');
-      }
+    if (confirmDeleteId !== id) { setConfirmDeleteId(id); return; }
+    setConfirmDeleteId(null);
+    try {
+      await deleteShippingAddress(id);
+      toast.success('Address removed');
+    } catch {
+      toast.error('Error removing address');
     }
   };
 
@@ -214,8 +215,14 @@ export default function AccountAddressesPage() {
                                 {addr.isDefault && (
                                   <span className="text-[9px] font-black uppercase tracking-[0.1em] px-3 py-1 rounded-full text-white" style={{ background: CL.gradient }}>Primary</span>
                                 )}
-                                <button onClick={(e) => { e.stopPropagation(); handleDelete(addr.id); }} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-gray-400 hover:text-red-600 hover:bg-red-50">
-                                  <Trash2 size={15} />
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(addr.id); }}
+                                  onBlur={() => setConfirmDeleteId(null)}
+                                  className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-1.5 ${confirmDeleteId === addr.id ? 'text-white' : 'text-red-400'}`}
+                                  style={confirmDeleteId === addr.id ? { background: 'rgb(220,38,38)', border: '1px solid rgb(220,38,38)' } : { background: 'rgba(254,226,226,0.6)', border: '1px solid rgba(252,165,165,0.4)' }}
+                                >
+                                  <Trash2 size={12} />
+                                  {confirmDeleteId === addr.id ? 'Confirm?' : 'Delete'}
                                 </button>
                               </div>
                             </div>
@@ -226,8 +233,8 @@ export default function AccountAddressesPage() {
                               </p>
                             </div>
                           </div>
-                          <div className="pt-4 mt-4 opacity-0 group-hover/card:opacity-100 transition-opacity" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
-                            <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: CL.purple }}>Click to edit address</p>
+                          <div className="pt-4 mt-4" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
+                            <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: CL.purple }}>Tap to edit</p>
                           </div>
                         </div>
                       ))}

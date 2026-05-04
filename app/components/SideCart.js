@@ -3,31 +3,26 @@
 import { useCart } from '../context/CartContext';
 import { Button } from './ui/button';
 import { X, Trash2 } from 'lucide-react';
-import { ImageWithFallback } from './figma/ImageWithFallback'; // Import ImageWithFallback
+import { ImageWithFallback } from './figma/ImageWithFallback';
 import Link from 'next/link';
 
 export default function SideCart() {
   const { isCartOpen, closeCart, cartItems, removeFromCart, updateQuantity } = useCart();
 
-  // Conditionally render the entire component based on isCartOpen
-  if (!isCartOpen) {
-    return null;
-  }
-
   const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return (
     <div
-      className="fixed inset-0 z-51 pointer-events-auto" // Always auto when rendered, overlay will handle click to close
-      onClick={closeCart} // Clicking outside the cart closes it
+      className={`fixed inset-0 z-[300] pointer-events-auto transition-opacity duration-300 ${isCartOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      onClick={closeCart}
     >
-      {/* Semi-transparent Overlay */}
-      <div className="fixed inset-0" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }} />
+      {/* Overlay */}
+      <div className="fixed inset-0" style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }} />
 
-      {/* Cart Panel - Slides in from right */}
+      {/* Cart Panel */}
       <div
-        className="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-lg flex flex-col transform transition-transform duration-300 translate-x-0"
-        onClick={(e) => e.stopPropagation()} // Prevent clicks inside the cart from closing the overlay
+        className={`fixed top-0 right-0 h-full w-full sm:max-w-md bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-4 flex justify-between items-center border-b">

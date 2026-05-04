@@ -38,7 +38,7 @@ function toSentenceCase(value = '') {
 const Header = forwardRef((_, ref) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { cartItems } = useCart();
+  const { cartItems, openCart } = useCart();
   const { user } = useAuth();
   const { loyaltyData, concerns, brands } = useAppContext();
   const router = useRouter();
@@ -386,7 +386,7 @@ const Header = forwardRef((_, ref) => {
 
                 <Button
                 type="button"
-                onClick={() => router.push('/cart')}
+                onClick={openCart}
                 className="relative shadow-md bg-[#3b0764] border border-[#3b0764] size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 hover:bg-[#581c87] group"
                 aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
                 >
@@ -415,28 +415,10 @@ const Header = forwardRef((_, ref) => {
                 className="fixed inset-0 z-[300] bg-white/60 backdrop-blur-2xl flex flex-col overflow-hidden"
                 onClick={(e) => { if (e.target === e.currentTarget) setIsSearchOpen(false); }}
             >
-                {/* ── Dreamy Background Atmosphere ── */}
+                {/* Static background atmosphere — no infinite animation on mobile */}
                 <div className="absolute inset-0 pointer-events-none">
-                    <motion.div
-                        animate={{ 
-                            scale: [1, 1.2, 1],
-                            opacity: [0.1, 0.2, 0.1],
-                            x: [-50, 50, -50],
-                            y: [-30, 30, -30]
-                        }}
-                        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#c4b5fd]/30 rounded-full blur-[120px]"
-                    />
-                    <motion.div
-                        animate={{ 
-                            scale: [1.2, 1, 1.2],
-                            opacity: [0.08, 0.15, 0.08],
-                            x: [50, -50, 50],
-                            y: [30, -30, 30]
-                        }}
-                        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#f9a8d4]/20 rounded-full blur-[100px]"
-                    />
+                    <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#c4b5fd]/20 rounded-full blur-[120px]" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#f9a8d4]/15 rounded-full blur-[100px]" />
                 </div>
 
                 <div className="max-w-4xl mx-auto w-full px-6 md:px-10 pt-24 md:pt-40 relative z-10">
@@ -648,14 +630,11 @@ const Header = forwardRef((_, ref) => {
                             <div className="bg-[#fdfaff]/50 px-6 py-8 rounded-[2rem] mx-4 mb-4 border border-[#f3e8ff]/50">
                                 <span className="text-[9px] font-black tracking-[0.4em] uppercase text-[#9333ea]/60 mb-6 block px-2">Targeted Concerns</span>
                                 <div className="grid grid-cols-1 gap-2">
-                                    {concerns.map((concern, i) => {
+                                    {concerns.map((concern) => {
                                         const { icon: Icon } = getConcernMeta(concern.name);
                                         return (
-                                            <motion.button
+                                            <button
                                                 key={concern.id}
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: i * 0.05, duration: 0.3 }}
                                                 onClick={() => { router.push(`/search?q=${concern.name}`); setIsMenuOpen(false); }}
                                                 className="flex items-center gap-4 p-3 rounded-xl bg-white/40 border border-transparent active:border-[#c4b5fd] active:bg-white transition-all group"
                                             >
@@ -666,7 +645,7 @@ const Header = forwardRef((_, ref) => {
                                                     <p className="text-[12px] font-bold text-gray-900">{concern.name}</p>
                                                     <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Shop Solution</p>
                                                 </div>
-                                            </motion.button>
+                                            </button>
                                         );
                                     })}
                                 </div>

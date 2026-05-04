@@ -1,241 +1,321 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { GoogleMap, useJsApiLoader, StandaloneSearchBox } from '@react-google-maps/api';
-import { LocateFixed } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { LocateFixed, Search, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-const containerStyle = {
-  width: '100%',
-  borderRadius: '8px',
-};
+// Dubai, UAE default center
+const DEFAULT_CENTER = [25.276987, 55.296249];
 
-// Default center for Dubai, UAE
-const defaultCenter = {
-  lat: 25.276987,
-  lng: 55.296249,
-};
+// Custom SVG pin marker — avoids the default Leaflet icon file-path issues in Next.js
+const PIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="42" viewBox="0 0 28 42">
+  <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 28 14 28S28 24.5 28 14C28 6.268 21.732 0 14 0z" fill="#7e69d4"/>
+  <circle cx="14" cy="14" r="6" fill="white"/>
+</svg>`;
 
-// Must be a stable reference outside the component to avoid re-loading the API
-const libraries = ['places', 'marker'];
+function parseNominatimAddress(addr = {}) {
+  const streetAddress = [addr.house_number, addr.road || addr.pedestrian]
+    .filter(Boolean).join(' ')
+    || addr.suburb || addr.neighbourhood || addr.quarter || '';
+  const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || '';
+  return {
+    streetAddress,
+    city,
+    country: addr.country || 'United Arab Emirates',
+    zipCode: addr.postcode || '0000',
+    state: addr.state || '',
+  };
+}
 
 function MapPicker({ onPlaceSelect, initialAddress }) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-    libraries,
-    mapIds: ['DEMO_MAP_ID'], // Required for AdvancedMarkerElement
-  });
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+  const leafletRef = useRef(null);
+  const [ready, setReady] = useState(false);
 
-  const [map, setMap] = useState(null);
-  const [markerPosition, setMarkerPosition] = useState(initialAddress?.location || defaultCenter);
-  const [searchBox, setSearchBox] = useState(null);
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationError, setLocationError] = useState(null);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
 
-  // We need to keep a reference to the advanced marker we create manually
-  const [markerInstance, setMarkerInstance] = useState(null);
+  const initialPos = initialAddress?.location
+    ? [initialAddress.location.lat, initialAddress.location.lng]
+    : null;
 
-  const getAddressFromLatLng = useCallback(async ({ lat, lng }) => {
-    if (!map) return;
-    setLocationError(null);
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === 'OK' && results[0]) {
-        const place = results[0];
-        const components = place.address_components;
-        let streetNumber = '', routeName = '', sublocalityLevel1 = '', sublocality = '', city = '', country = '';
+  // ── Reverse geocode a lat/lng → call onPlaceSelect ──────────────────────
+  const reverseGeocode = useCallback(async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+        { headers: { 'Accept-Language': 'en', 'User-Agent': 'NayaLumiereCosmetics/1.0' } }
+      );
+      const data = await res.json();
+      const parsed = parseNominatimAddress(data.address || {});
+      onPlaceSelect({ lat, lng, formattedAddress: data.display_name || '', ...parsed });
+    } catch {
+      // silent — user can still type manually
+    }
+  }, [onPlaceSelect]);
 
-        for (const c of components) {
-          if (c.types.includes('street_number'))        streetNumber     = c.long_name;
-          if (c.types.includes('route'))                routeName        = c.long_name;
-          if (c.types.includes('sublocality_level_1')) sublocalityLevel1 = c.long_name;
-          if (c.types.includes('sublocality'))          sublocality      = c.long_name;
-          if (c.types.includes('locality') || c.types.includes('administrative_area_level_2')) city = c.long_name;
-          if (c.types.includes('country'))              country          = c.long_name;
-        }
+  // ── Place / move the draggable marker ───────────────────────────────────
+  const placeMarker = useCallback((lat, lng) => {
+    const L = leafletRef.current;
+    const map = mapRef.current;
+    if (!L || !map) return;
 
-        let streetAddress = routeName
-          ? `${streetNumber} ${routeName}`.trim()
-          : sublocalityLevel1 || sublocality || place.formatted_address.split(', ')[0] || '';
+    if (markerRef.current) {
+      markerRef.current.setLatLng([lat, lng]);
+    } else {
+      const icon = L.divIcon({
+        html: PIN_SVG,
+        className: '',
+        iconSize: [28, 42],
+        iconAnchor: [14, 42],
+      });
+      const marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+      marker.on('dragend', () => {
+        const pos = marker.getLatLng();
+        reverseGeocode(pos.lat, pos.lng);
+      });
+      markerRef.current = marker;
+    }
+  }, [reverseGeocode]);
 
-        onPlaceSelect({ lat, lng, formattedAddress: place.formatted_address, streetAddress, city, country });
-      } else {
-        console.error('Geocoder failed: ' + status);
-        onPlaceSelect(null);
+  // ── Load Leaflet + CSS dynamically (client-only) ────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined' || mapRef.current) return;
+
+    // Inject Leaflet CSS once
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    let cancelled = false;
+
+    import('leaflet').then((mod) => {
+      if (cancelled || !containerRef.current) return;
+      const L = mod.default;
+      leafletRef.current = L;
+
+      const center = initialPos || DEFAULT_CENTER;
+      const map = L.map(containerRef.current, {
+        center,
+        zoom: initialPos ? 15 : 12,
+        zoomControl: true,
+        attributionControl: true,
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }).addTo(map);
+
+      if (initialPos) {
+        placeMarker(initialPos[0], initialPos[1]);
       }
+
+      map.on('click', (e) => {
+        const { lat, lng } = e.latlng;
+        placeMarker(lat, lng);
+        reverseGeocode(lat, lng);
+      });
+
+      mapRef.current = map;
+      setReady(true);
     });
-  }, [map, onPlaceSelect]);
 
-  const onLoad = useCallback((mapInstance) => {
-    setMap(mapInstance);
-    // Initialize AdvancedMarkerElement when map loads
-    if (window.google && window.google.maps && window.google.maps.marker) {
-      const { AdvancedMarkerElement } = window.google.maps.marker;
-      const newMarker = new AdvancedMarkerElement({
-        map: mapInstance,
-        position: markerPosition,
-        gmpDraggable: true,
-      });
-      
-      // Listen for drag end
-      newMarker.addListener('dragend', (event) => {
-        const lat = event.latLng.lat();
-        const lng = event.latLng.lng();
-        setMarkerPosition({ lat, lng });
-        getAddressFromLatLng({ lat, lng });
-      });
+    return () => {
+      cancelled = true;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        markerRef.current = null;
+        leafletRef.current = null;
+        setReady(false);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-      setMarkerInstance(newMarker);
+  // ── Search Nominatim ─────────────────────────────────────────────────────
+  const handleSearch = useCallback(async () => {
+    if (!query.trim()) return;
+    setSearching(true);
+    setResults([]);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&countrycodes=ae&limit=5&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en', 'User-Agent': 'NayaLumiereCosmetics/1.0' } }
+      );
+      const data = await res.json();
+      setResults(data);
+      if (data.length === 0) toast.info('No results found — try a different search.');
+    } catch {
+      toast.error('Search failed. Check your connection.');
     }
-  }, [markerPosition, getAddressFromLatLng]);
+    setSearching(false);
+  }, [query]);
 
-  const onUnmount = useCallback(() => {
-    if (markerInstance) {
-      markerInstance.map = null;
+  const handleSelectResult = useCallback((result) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const map = mapRef.current;
+    if (map) {
+      map.setView([lat, lng], 16);
+      placeMarker(lat, lng);
     }
-    setMap(null);
-    setMarkerInstance(null);
-  }, [markerInstance]);
+    const parsed = parseNominatimAddress(result.address || {});
+    onPlaceSelect({ lat, lng, formattedAddress: result.display_name || '', ...parsed });
+    setResults([]);
+    setQuery(result.display_name?.split(',').slice(0, 2).join(',').trim() || '');
+  }, [onPlaceSelect, placeMarker]);
 
-  // Update marker position when state changes
-  React.useEffect(() => {
-    if (markerInstance && markerPosition) {
-      markerInstance.position = markerPosition;
-    }
-  }, [markerPosition, markerInstance]);
-
-  const handleMapClick = useCallback((event) => {
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
-    setLocationError(null);
-    setMarkerPosition({ lat, lng });
-    getAddressFromLatLng({ lat, lng });
-  }, [getAddressFromLatLng]);
-
-  const handleGetCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser.');
-      return;
-    }
-
-    setIsLocating(true);
-    setLocationError(null);
+  // ── Use current GPS location ─────────────────────────────────────────────
+  const handleLocate = useCallback(() => {
+    if (!navigator.geolocation) { toast.error('Geolocation not supported by your browser.'); return; }
+    setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        const newPosition = { lat, lng };
-        
-        setMarkerPosition(newPosition);
-        if (map) {
-          map.panTo(newPosition);
-          map.setZoom(16);
-        }
-        getAddressFromLatLng(newPosition);
-        setIsLocating(false);
+      ({ coords }) => {
+        const lat = coords.latitude;
+        const lng = coords.longitude;
+        const map = mapRef.current;
+        if (map) { map.setView([lat, lng], 16); }
+        placeMarker(lat, lng);
+        reverseGeocode(lat, lng);
+        setLocating(false);
       },
-      (error) => {
-        setIsLocating(false);
-        let errorMsg = 'Could not fetch your location.';
-        if (error.code === 1) errorMsg = 'Location access denied. Please enable it in your browser settings.';
-        else if (error.code === 2) errorMsg = 'Location unavailable. Please check your system location settings.';
-        else if (error.code === 3) errorMsg = 'Location request timed out.';
-        setLocationError(errorMsg);
+      (err) => {
+        setLocating(false);
+        if (err.code === 1) toast.error('Location access denied. Please allow it in your browser.');
+        else toast.error('Could not get your location.');
       },
       { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
     );
+  }, [placeMarker, reverseGeocode]);
+
+  const inputStyle = {
+    padding: '10px 36px 10px 36px',
+    borderRadius: '12px',
+    border: '1px solid rgba(216,180,254,0.45)',
+    background: 'rgba(248,240,255,0.6)',
+    color: '#3b0764',
+    fontSize: '13px',
+    outline: 'none',
+    width: '100%',
   };
 
-  const onSearchBoxLoad = useCallback((ref) => setSearchBox(ref), []);
-
-  const onPlacesChanged = useCallback(() => {
-    if (!searchBox) return;
-    const places = searchBox.getPlaces();
-    
-    if (places && places.length > 0) {
-      setLocationError(null);
-      const place = places[0];
-      if (place.geometry?.location) {
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-        const newPosition = { lat, lng };
-        setMarkerPosition(newPosition);
-        if (map) {
-          map.panTo(newPosition);
-          map.setZoom(15);
-        }
-        getAddressFromLatLng(newPosition);
-      } else if (place.name) {
-        // Fallback: user typed and pressed Enter without selecting a suggestion
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ address: place.name, region: 'ae' }, (results, status) => {
-          if (status === 'OK' && results[0]?.geometry?.location) {
-            const lat = results[0].geometry.location.lat();
-            const lng = results[0].geometry.location.lng();
-            const newPosition = { lat, lng };
-            setMarkerPosition(newPosition);
-            if (map) { map.panTo(newPosition); map.setZoom(15); }
-            getAddressFromLatLng(newPosition);
-          }
-        });
-      }
-    }
-  }, [searchBox, map, getAddressFromLatLng]);
-
-  if (loadError) return <div>Error loading maps</div>;
-  if (!isLoaded) return <div>Loading Maps...</div>;
-
   return (
-    <div className="flex flex-col h-full">
-      {/* Search — StandaloneSearchBox */}
-      <div className="mb-4 flex gap-2 w-full" style={{ position: 'relative', zIndex: 9999 }}>
-        <div className="flex-1">
-          <StandaloneSearchBox
-            onLoad={onSearchBoxLoad}
-            onPlacesChanged={onPlacesChanged}
-            options={{ componentRestrictions: { country: 'ae' } }}
-          >
-            <input
-              type="text"
-              placeholder="Search for a location in UAE"
-              className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--cl-purple)]"
-            />
-          </StandaloneSearchBox>
+    <div className="flex flex-col gap-2 h-full">
+
+      {/* ── Search bar ── */}
+      <div className="flex gap-2 relative">
+        <div className="flex-1 relative">
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: 'rgb(196,167,254)' }}
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={e => { setQuery(e.target.value); if (!e.target.value) setResults([]); }}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            placeholder="Search address in UAE…"
+            style={inputStyle}
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => { setQuery(''); setResults([]); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              <X size={13} style={{ color: 'rgb(196,167,254)' }} />
+            </button>
+          )}
         </div>
+
         <button
           type="button"
-          onClick={handleGetCurrentLocation}
-          disabled={isLocating}
-          className={`px-3 py-2 rounded-md shadow-sm border border-gray-300 flex items-center justify-center transition-all ${
-            isLocating ? 'bg-gray-100' : 'bg-white hover:bg-gray-50 active:scale-95'
-          }`}
-          title="Use Current Location"
+          onClick={handleSearch}
+          disabled={searching}
+          className="px-4 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all active:scale-95"
+          style={{
+            border: '1px solid rgba(216,180,254,0.45)',
+            background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+            color: 'white',
+            opacity: searching ? 0.7 : 1,
+          }}
         >
-          <LocateFixed size={18} className={`${isLocating ? 'animate-pulse text-blue-500' : 'text-gray-600'}`} />
+          {searching ? '…' : 'Go'}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleLocate}
+          disabled={locating}
+          title="Use my current location"
+          className="px-3 rounded-xl border transition-all flex items-center justify-center active:scale-95"
+          style={{ border: '1px solid rgba(216,180,254,0.45)', background: 'rgba(248,240,255,0.6)', color: 'rgb(126,105,230)' }}
+        >
+          <LocateFixed size={16} className={locating ? 'animate-pulse' : ''} />
         </button>
       </div>
 
-      {locationError && (
-        <div className="mb-4">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-600 text-[11px] font-medium animate-in fade-in slide-in-from-top-1 duration-300">
-            {locationError}
-          </div>
+      {/* ── Search results dropdown ── */}
+      {results.length > 0 && (
+        <div
+          className="rounded-xl overflow-hidden relative z-50"
+          style={{ border: '1px solid rgba(216,180,254,0.4)', background: 'white', boxShadow: '0 8px 24px rgba(147,51,234,0.12)' }}
+        >
+          {results.map((r, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleSelectResult(r)}
+              className="w-full text-left px-4 py-3 transition-all hover:bg-purple-50 border-b last:border-b-0"
+              style={{ color: '#3b0764', borderColor: 'rgba(216,180,254,0.2)' }}
+            >
+              <p className="text-[12px] font-semibold truncate">
+                {r.display_name?.split(',').slice(0, 2).join(', ')}
+              </p>
+              <p className="text-[10px] truncate mt-0.5" style={{ color: 'rgba(59,7,100,0.4)' }}>
+                {r.display_name?.split(',').slice(2, 4).join(', ')}
+              </p>
+            </button>
+          ))}
         </div>
       )}
 
-      <div className="flex-grow h-[55vh] relative">
-        <GoogleMap
-          mapContainerStyle={{ ...containerStyle, height: '100%' }}
-          center={markerPosition}
-          zoom={12}
-          options={{ mapId: 'DEMO_MAP_ID' }}
-          onLoad={onLoad}
-          onUnmount={onUnmount}
-          onClick={handleMapClick}
+      {/* ── Map container ── */}
+      {!ready && (
+        <div
+          className="flex-1 rounded-xl flex items-center justify-center"
+          style={{ minHeight: '200px', border: '1px solid rgba(216,180,254,0.35)', background: 'rgba(248,240,255,0.4)' }}
         >
-          {/* We are injecting the AdvancedMarkerElement directly into the map instance via the onLoad hook, so no <Marker> child is needed here. */}
-        </GoogleMap>
-      </div>
+          <div className="flex flex-col items-center gap-2" style={{ color: 'rgba(147,51,234,0.5)' }}>
+            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <p className="text-[11px] font-medium">Loading map…</p>
+          </div>
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        className="flex-1 rounded-xl overflow-hidden"
+        style={{
+          minHeight: '200px',
+          border: '1px solid rgba(216,180,254,0.35)',
+          display: ready ? 'block' : 'none',
+        }}
+      />
+
+      <p className="text-[10px]" style={{ color: 'rgba(59,7,100,0.3)' }}>
+        Map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">OpenStreetMap</a> contributors
+      </p>
     </div>
   );
 }
