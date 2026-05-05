@@ -320,11 +320,7 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 py-3 rounded-full text-white text-[11px] font-bold uppercase tracking-[0.12em] transition-all active:scale-[0.98] disabled:opacity-80 flex items-center justify-center gap-2"
-            style={{
-              background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
-              boxShadow: saving ? 'none' : '0 4px 16px rgba(147,51,234,0.2)',
-            }}
+            className="cl-gradient-btn flex-1 py-3 rounded-full text-white text-[11px] font-bold uppercase tracking-[0.12em] transition-all active:scale-[0.98] disabled:opacity-80 flex items-center justify-center gap-2 border-none shadow-none"
           >
             {saving ? (
               <>

@@ -49,7 +49,8 @@ export async function GET(request) {
         throw dbError;
       }
     }
-    return NextResponse.json(rows);
+    const headers = !isAdmin ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } : {};
+    return NextResponse.json(rows, { headers });
   } catch (error) {
     console.error('Error fetching brands:', error);
     return NextResponse.json({ message: 'Error fetching brands from database' }, { status: 500 });

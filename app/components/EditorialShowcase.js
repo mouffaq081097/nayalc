@@ -117,7 +117,7 @@ export const EditorialShowcase = () => {
 
             <Link
               href="/all-products"
-              className="group inline-flex items-center gap-3 rounded-full border-2 border-[#c4b5fd] bg-white/40 px-6 py-3 text-[13px] font-black tracking-tight text-[#8b5cf6] shadow-sm transition-all duration-300 hover:border-[#a78bfa] hover:bg-[#f5f3ff] hover:text-[#6b21a8] md:px-8"
+              className="group inline-flex items-center gap-3 rounded-full border-2 border-[#c4b5fd] bg-white/40 px-6 py-3 text-[14px] font-semibold text-[#8b5cf6] transition-all duration-300 hover:border-[#a78bfa] hover:bg-[#f5f3ff] hover:text-[#6b21a8] hover:shadow-[0_0_16px_2px_rgba(196,167,254,0.4)] md:px-8"
             >
               Explore the collection
               <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />

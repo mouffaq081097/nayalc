@@ -417,19 +417,15 @@ export default function ProfilePage() {
                         <button
                           type="submit"
                           disabled={saving}
-                          className="px-8 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-full transition-all"
-                          style={{
-                            background:  CL.gradient,
-                            boxShadow:   '0 4px 16px rgba(147,51,234,0.3)',
-                            opacity:     saving ? 0.6 : 1,
-                          }}
+                          className="cl-gradient-btn px-8 py-3 text-[13px] font-semibold rounded-full"
+                          style={{ opacity: saving ? 0.6 : 1 }}
                         >
                           {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
                         </button>
                         <button
                           type="button"
                           onClick={handleDiscard}
-                          className="px-7 py-3 text-[11px] font-bold uppercase tracking-widest rounded-full border transition-all"
+                          className="px-7 py-3 text-[13px] font-medium rounded-full border transition-all"
                           style={{
                             border:     `1px solid ${CL.glassBorder}`,
                             color:      CL.textMid,

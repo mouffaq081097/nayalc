@@ -56,7 +56,7 @@ export default function TabbyHeroBanner() {
             {/* CTA */}
             <button
               onClick={() => router.push('/all-products')}
-              className="mt-1 w-fit px-6 py-2.5 rounded-full text-[12px] font-black uppercase tracking-[0.18em] transition-all hover:scale-105 active:scale-95"
+              className="mt-1 w-fit px-6 py-2.5 rounded-full text-[13px] font-semibold transition-all hover:scale-105 active:scale-95"
               style={{ background: '#1A1A2E', color: '#3DFFA0' }}
             >
               Shop Now

@@ -194,7 +194,7 @@ export default function NewArrivalsClient() {
                             <Star size={32} className="text-brand-pink mx-auto" strokeWidth={1.5} />
                             <h2 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">Be the first to reveal <br/> our next Curations.</h2>
                             <p className="text-gray-400 text-[15px] font-medium tracking-tight leading-relaxed italic px-4">Join our exclusive journal for early access to limited seasonal previews, laboratory reveals, and private boutique events.</p>
-                            <button className="px-12 py-5 bg-gray-900 text-white rounded-full text-[11px] font-black uppercase tracking-[0.4em] shadow-xl hover:bg-brand-pink transition-all active:scale-95">
+                            <button className="px-12 py-5 bg-gray-900 text-white rounded-full text-[14px] font-semibold hover:bg-brand-pink transition-all active:scale-95">
                                 Join the VIP list
                             </button>
                         </div>

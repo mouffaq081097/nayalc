@@ -299,7 +299,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
                   <button
                     onClick={handleResendEmail}
                     disabled={isResending}
-                    className="w-full max-w-[200px] py-2.5 rounded-full text-[11px] font-bold capitalize tracking-wide text-[rgb(147,104,236)] border border-[rgba(216,180,254,0.4)] bg-white hover:bg-[#fdf8ff] transition-colors disabled:opacity-50 text-center"
+                    className="cl-gradient-btn w-full max-w-[200px] py-2.5 text-[11px] font-bold capitalize tracking-wide transition-colors disabled:opacity-50 text-center"
                   >
                     {isResending ? 'Sending...' : 'Resend Receipt'}
                   </button>
@@ -321,14 +321,14 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
         >
           <button
             onClick={onContinueShopping}
-            className="group px-8 py-4 rounded-full bg-[linear-gradient(135deg,#A78BFA,#C4A7FE)] text-white text-[12px] font-bold capitalize tracking-wide shadow-sm hover:shadow-[0_8px_25px_rgba(167,139,250,0.4)] active:translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-3 w-full sm:w-auto"
+            className="cl-gradient-btn group px-8 py-4 rounded-full text-white text-[12px] font-bold capitalize tracking-wide transition-all duration-300 flex items-center justify-center gap-3 w-full sm:w-auto"
           >
             Return To Boutique
             <ChevronRight className="w-4 h-4 text-white/90 group-hover:translate-x-1 group-hover:text-white transition-all" />
           </button>
           <button
             onClick={onViewAccount}
-            className="px-8 py-4 rounded-full bg-white text-[#3b0764] text-[12px] font-bold capitalize tracking-wide border border-[rgba(216,180,254,0.4)] shadow-sm hover:bg-[#fdf8ff] transition-all duration-300 flex items-center justify-center w-full sm:w-auto"
+            className="cl-gradient-btn px-8 py-4 rounded-full text-white text-[12px] font-bold capitalize tracking-wide transition-all duration-300 flex items-center justify-center w-full sm:w-auto"
           >
             View Archive
           </button>

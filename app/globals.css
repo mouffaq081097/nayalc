@@ -54,35 +54,35 @@
   --sidebar-ring: oklch(0.708 0 0);
   
   /* Cloud Luxe Design System */
-  --cl-purple: #9333ea;
-  --cl-purple-light: #a855f7;
-  --cl-purple-deep: #7e22ce;
+  --cl-purple: #7c3aed;
+  --cl-purple-light: #9333ea;
+  --cl-purple-deep: #5b21b6;
   --cl-pink: #db2777;
   --cl-pink-light: #ec4899;
   --cl-bg: #fdfaff;
   --cl-bg-rose: #fff0f8;
-  --cl-bg-lavender: #f4ebff;
-  --cl-glass: rgba(255, 255, 255, 0.72);
-  --cl-glass-dark: rgba(255, 255, 255, 0.45);
-  --cl-glass-border: rgba(216, 180, 254, 0.35);
-  --cl-glass-border-hover: rgba(167, 139, 250, 0.55);
-  --cl-glow-purple: rgba(147, 51, 234, 0.18);
-  --cl-glow-pink: rgba(219, 39, 119, 0.12);
-  --cl-glow-strong: rgba(147, 51, 234, 0.28);
-  --cl-text-deep: #3b0764;
-  --cl-text-mid: #6b21a8;
-  --cl-text-soft: #9333ea;
-  --cl-text-light: rgba(59, 7, 100, 0.50);
-  --cl-text-muted: rgba(59, 7, 100, 0.35);
-  --cl-aura-1: rgba(216, 180, 254, 0.45);
-  --cl-aura-2: rgba(249, 168, 212, 0.30);
-  --cl-aura-3: rgba(192, 132, 252, 0.20);
-  --cl-gradient: linear-gradient(135deg, #d8b4fe 0%, #a78bfa 100%);
-  --cl-gradient-soft: linear-gradient(135deg, #e9d5ff 0%, #c4b5fd 100%);
-  --cl-gradient-bg: linear-gradient(160deg, #fdfaff 0%, #fbf8ff 50%, #fdfaff 100%);
-  --cl-shadow-card: 0 8px 32px rgba(147, 51, 234, 0.10);
-  --cl-shadow-card-hover: 0 20px 48px rgba(147, 51, 234, 0.22);
-  --cl-shadow-glow: 0 0 40px rgba(147, 51, 234, 0.20);
+  --cl-bg-lavender: #ede4ff;
+  --cl-glass: rgba(255, 255, 255, 0.80);
+  --cl-glass-dark: rgba(255, 255, 255, 0.55);
+  --cl-glass-border: rgba(196, 167, 254, 0.50);
+  --cl-glass-border-hover: rgba(139, 92, 246, 0.68);
+  --cl-glow-purple: rgba(124, 58, 237, 0.22);
+  --cl-glow-pink: rgba(219, 39, 119, 0.15);
+  --cl-glow-strong: rgba(124, 58, 237, 0.36);
+  --cl-text-deep: #2e0669;
+  --cl-text-mid: #5b21b6;
+  --cl-text-soft: #7c3aed;
+  --cl-text-light: rgba(46, 6, 105, 0.55);
+  --cl-text-muted: rgba(46, 6, 105, 0.38);
+  --cl-aura-1: rgba(192, 132, 252, 0.58);
+  --cl-aura-2: rgba(249, 168, 212, 0.38);
+  --cl-aura-3: rgba(167, 139, 250, 0.28);
+  --cl-gradient: linear-gradient(135deg, #c084fc 0%, #8b5cf6 100%);
+  --cl-gradient-soft: linear-gradient(135deg, #ddb4fe 0%, #b48dfc 100%);
+  --cl-gradient-bg: linear-gradient(160deg, #fdfaff 0%, #faf5ff 50%, #fdfaff 100%);
+  --cl-shadow-card: 0 8px 32px rgba(124, 58, 237, 0.14);
+  --cl-shadow-card-hover: 0 20px 48px rgba(124, 58, 237, 0.28);
+  --cl-shadow-glow: 0 0 40px rgba(124, 58, 237, 0.28);
 
   /* Naya Lumiere Brand Colors — remapped to Cloud Luxe palette */
   --brand-blue: var(--cl-pink);                          /* #db2777 — CL secondary */
@@ -242,15 +242,20 @@
   .cl-gradient-btn {
     background: var(--cl-gradient);
     color: white;
-    border-radius: 9999px;
-    border: none;
-    box-shadow: 0 8px 20px -4px rgba(167, 139, 250, 0.3);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 1rem; /* Matches Proceed to Checkout */
+    border: 1px solid rgba(196,167,254,0.5);
+    box-shadow: none;
+    transition: box-shadow 0.3s ease, transform 0.2s ease, opacity 0.2s ease;
+    font-family: var(--font-instrument), var(--font-montserrat), sans-serif;
   }
   .cl-gradient-btn:hover {
-    opacity: 0.95;
     transform: translateY(-1px);
-    box-shadow: 0 12px 28px -4px rgba(167, 139, 250, 0.45);
+    box-shadow: 0 0 32px 8px rgba(167, 139, 250, 0.65);
+    opacity: 0.95;
+  }
+  .cl-gradient-btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 0 16px 4px rgba(167, 139, 250, 0.50);
   }
 
   /* Ghost button (Cloud Luxe) */
@@ -259,11 +264,12 @@
     border: 1px solid var(--cl-glass-border-hover);
     color: var(--cl-purple);
     border-radius: 9999px;
-    transition: background 0.2s, border-color 0.2s;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.25s ease;
   }
   .cl-ghost-btn:hover {
     background: rgba(147, 51, 234, 0.06);
     border-color: var(--cl-purple);
+    box-shadow: 0 0 16px 2px rgba(196, 167, 254, 0.3);
   }
 
   /* Aura orb */
@@ -294,15 +300,15 @@
 
   /* Lavender Glow Effect */
   .lavender-glow {
-    box-shadow: 0 0 15px rgba(196, 167, 254, 0.4);
+    box-shadow: 0 0 18px rgba(167, 139, 250, 0.50);
   }
-  
+
   .lavender-glow-hover:hover {
-    box-shadow: 0 0 25px rgba(196, 167, 254, 0.6);
+    box-shadow: 0 0 30px rgba(167, 139, 250, 0.70);
   }
 
   .lavender-glow-text {
-    text-shadow: 0 0 12px rgba(196, 167, 254, 0.5);
+    text-shadow: 0 0 14px rgba(167, 139, 250, 0.60);
   }
 }
 
@@ -325,16 +331,18 @@
     color: white;
     border-radius: 9999px;
     border: none;
-    box-shadow: 0 8px 20px -4px rgba(167, 139, 250, 0.3);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: none;
+    transition: box-shadow 0.3s ease, transform 0.2s ease, opacity 0.2s ease;
+    font-family: var(--font-instrument), var(--font-montserrat), sans-serif;
   }
   .cl-lavender-btn:hover {
-    opacity: 0.95;
     transform: translateY(-1px);
-    box-shadow: 0 12px 28px -4px rgba(167, 139, 250, 0.45);
+    box-shadow: 0 0 32px 8px rgba(167, 139, 250, 0.65);
+    opacity: 0.95;
   }
   .cl-lavender-btn:active {
     transform: scale(0.97);
+    box-shadow: 0 0 16px 4px rgba(167, 139, 250, 0.50);
   }
 }
 
@@ -419,6 +427,7 @@
       font-size: var(--text-base);
       font-weight: var(--font-weight-medium);
       line-height: 1.5;
+      font-family: var(--font-instrument), var(--font-montserrat), sans-serif;
     }
 
     input {

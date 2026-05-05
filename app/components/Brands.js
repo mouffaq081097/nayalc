@@ -81,12 +81,12 @@ const Brands = () => {
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/brand/2" passHref className="flex-1 sm:flex-none">
-                  <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-bold tracking-widest">
+                  <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-semibold">
                     Explore Gernétic
                   </button>
                 </Link>
                 <Link href="/all-products" passHref className="flex-1 sm:flex-none">
-                  <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-bold tracking-widest">
+                  <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-semibold">
                     View All Products
                   </button>
                 </Link>
@@ -147,12 +147,12 @@ const Brands = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link href="/brand/1" passHref className="flex-1 sm:flex-none">
-                    <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-bold tracking-widest">
+                    <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-semibold">
                       Explore Zorah Biocosmetics
                     </button>
                   </Link>
                   <Link href="/all-products" passHref className="flex-1 sm:flex-none">
-                    <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-bold tracking-widest">
+                    <button className="cl-gradient-btn w-full sm:w-auto h-12 px-8 text-sm font-semibold">
                       View All Products
                     </button>
                   </Link>
@@ -170,7 +170,7 @@ const Brands = () => {
                 <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">Full Collection</span>
               </h3>
               <p className="text-gray-600 mb-8 max-w-2xl mx-auto">Experience the complete range of premium products from our carefully selected partners. Each brand represents decades of expertise and innovation in luxury beauty.</p>
-              <Button onClick={() => router.push('/all-products')} className="cl-gradient-btn h-14 px-12 text-[12px] font-black tracking-widest">Shop All Brands</Button>
+              <Button onClick={() => router.push('/all-products')} className="cl-gradient-btn h-14 px-12 text-[15px] font-semibold">Shop All Brands</Button>
             </div>
           </div>
         </Container>

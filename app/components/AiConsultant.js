@@ -144,7 +144,7 @@ export default function AiConsultant({ isOpen, onClose }) {
                         </div>
                         <button 
                             onClick={() => setCurrentStepIndex(0)}
-                            className="px-12 py-5 bg-[#1d1d1f] text-white rounded-full text-[13px] font-bold uppercase tracking-widest hover:bg-brand-pink transition-all shadow-xl active:scale-95"
+                            className="cl-gradient-btn px-12 py-5 text-white rounded-full text-[13px] font-bold uppercase tracking-widest transition-all shadow-xl active:scale-95 border-none"
                         >
                             Start Consultation
                         </button>
@@ -196,7 +196,7 @@ export default function AiConsultant({ isOpen, onClose }) {
                                 />
                                 <button 
                                     onClick={nextStep}
-                                    className="w-full py-6 bg-[#1d1d1f] text-white rounded-full text-[13px] font-bold uppercase tracking-widest hover:bg-brand-pink transition-all shadow-xl"
+                                    className="cl-gradient-btn w-full py-6 text-white rounded-full text-[13px] font-bold uppercase tracking-widest transition-all shadow-xl border-none"
                                 >
                                     Reveal Selection
                                 </button>
@@ -261,7 +261,7 @@ export default function AiConsultant({ isOpen, onClose }) {
                                             router.push(`/product/${suggestedProduct.id}`);
                                             onClose();
                                         }}
-                                        className="flex-grow py-5 bg-[#1d1d1f] text-white rounded-full text-[13px] font-bold uppercase tracking-widest hover:bg-brand-pink transition-all shadow-xl"
+                                        className="cl-gradient-btn flex-grow py-5 text-white rounded-full text-[13px] font-bold uppercase tracking-widest transition-all shadow-xl border-none"
                                     >
                                         View Product
                                     </button>

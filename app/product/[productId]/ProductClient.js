@@ -137,7 +137,7 @@ export default function ProductClient({ params, initialProduct }) {
     <div className="min-h-screen bg-white flex items-center justify-center p-6 text-center">
       <div className="max-w-md space-y-6">
         <h2 className="text-3xl font-serif italic text-black font-black">Selection Offline</h2>
-        <Button onClick={() => router.push('/all-products')} className="bg-black text-white px-10 py-6 rounded-full text-[11px] font-black tracking-[0.3em] transition-all">
+        <Button onClick={() => router.push('/all-products')} className="cl-gradient-btn px-10 py-6 rounded-full text-[11px] font-black tracking-[0.3em] transition-all">
           Return to Boutique
         </Button>
       </div>
@@ -177,8 +177,7 @@ export default function ProductClient({ params, initialProduct }) {
                   </div>
                   <button
                     onClick={handleAddToCart}
-                    className={`flex items-center gap-2 h-8 px-5 rounded-full text-[10px] font-black tracking-tight transition-all duration-500 shadow-md text-white uppercase ${isAdded ? 'bg-green-600' : 'lavender-glow-hover'}`}
-                    style={!isAdded ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
+                    className={`cl-gradient-btn flex items-center gap-2 h-8 px-5 rounded-full text-[10px] font-black tracking-tight transition-all duration-500 shadow-md text-white uppercase ${isAdded ? 'bg-green-600' : ''}`}
                   >
                     {isAdded ? <><Check size={13} /> Secured</> : <><ShoppingBag size={13} /> Add to Bag</>}
                   </button>
@@ -422,8 +421,7 @@ export default function ProductClient({ params, initialProduct }) {
                 <div className="flex items-center gap-3 lg:hidden">
                     <button
                       onClick={handleAddToCart}
-                      className={`flex-grow h-12 rounded-full text-[11px] font-black tracking-tight uppercase transition-all duration-500 text-white active:scale-[0.98] ${isAdded ? 'bg-green-600' : 'lavender-glow-hover'}`}
-                      style={!isAdded ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
+                      className={`cl-gradient-btn flex-grow h-12 rounded-full text-[11px] font-black tracking-tight uppercase transition-all duration-500 text-white active:scale-[0.98] ${isAdded ? 'bg-green-600 shadow-none' : ''}`}
                     >
                         {isAdded ? 'Selection Secured' : 'Add to Bag'}
                     </button>
@@ -484,15 +482,13 @@ export default function ProductClient({ params, initialProduct }) {
                         <div className="space-y-3" ref={buyButtonRef}>
                             <button
                               onClick={handleAddToCart}
-                              className={`w-full h-14 rounded-xl text-[14px] font-bold tracking-wide transition-all duration-500 text-white shadow-md hover:-translate-y-0.5 hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 ${isAdded ? 'bg-green-600' : 'lavender-glow-hover'}`}
-                              style={!isAdded ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
+                              className={`cl-gradient-btn w-full h-14 rounded-xl text-[14px] font-bold tracking-wide transition-all duration-500 text-white shadow-md active:scale-95 flex items-center justify-center gap-2 ${isAdded ? 'bg-green-600 shadow-none' : ''}`}
                             >
                                 {isAdded ? <><Check size={18} /> Selection Secured</> : <><ShoppingBag size={16} /> Add to Bag</>}
                             </button>
                             <button
                               onClick={handleWishlistToggle}
-                              className="w-full h-12 rounded-xl border text-[11px] font-bold tracking-[0.1em] transition-all flex items-center justify-center gap-2"
-                              style={isWishlisted ? { background: 'rgba(196,167,254,0.1)', color: 'rgb(126,105,230)', borderColor: 'rgba(196,167,254,0.4)' } : { background: 'var(--cl-glass)', color: 'var(--cl-text-deep)', borderColor: 'var(--cl-glass-border)' }}
+                              className={`cl-gradient-btn w-full h-12 rounded-xl text-[11px] font-bold tracking-[0.1em] transition-all flex items-center justify-center gap-2 ${isWishlisted ? 'opacity-80' : ''}`}
                             >
                                 <Heart size={16} className={isWishlisted ? 'fill-current' : ''} /> {isWishlisted ? 'Saved to Vault' : 'Save for Later'}
                             </button>

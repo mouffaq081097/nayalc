@@ -83,7 +83,7 @@ export default function PairItWithSection({ currentCartItems }) {
                 <p className="text-[12px] font-black mb-2.5" style={{ color: '#3b0764' }}>AED {parseFloat(product.price).toFixed(2)}</p>
                 <button
                   onClick={() => handleAddToCart(product)}
-                  className="w-full py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.1em] transition-all active:scale-[0.97]"
+                  className="w-full py-2.5 rounded-full text-[12px] font-semibold transition-all active:scale-[0.97]"
                   style={{
                     background: 'rgba(196,167,254,0.18)',
                     border: '1px solid rgba(196,167,254,0.35)',

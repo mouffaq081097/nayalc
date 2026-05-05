@@ -131,7 +131,10 @@ export async function GET(request) {
         } catch (e) { console.warn('Could not hydrate concerns'); }
     }
 
-    return NextResponse.json(rows);
+    const headers = (!isAdmin && random !== 'true')
+      ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' }
+      : {};
+    return NextResponse.json(rows, { headers });
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json({ message: 'Error fetching products from database', error: error.message }, { status: 500 });

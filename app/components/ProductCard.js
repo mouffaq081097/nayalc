@@ -330,14 +330,11 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             <motion.button
               onClick={handleAddToCart}
               whileTap={{ scale: 0.97 }}
-              className={`w-full mt-2 h-11 text-[11px] font-bold flex items-center justify-center gap-2 rounded-xl transition-all duration-500 shadow-sm ${
+              className={`w-full mt-2 h-11 text-[11px] font-bold flex items-center justify-center gap-2 rounded-xl transition-all duration-500 ${
                 addedToCart
-                  ? 'bg-green-50 text-green-600 border border-green-100 cursor-default'
-                  : 'bg-[linear-gradient(135deg,#A78BFA,#C4A7FE)] text-white hover:shadow-[0_8px_25px_rgba(167,139,250,0.4)] active:translate-y-0.5'
+                  ? 'bg-green-50 text-green-600 border border-green-100 cursor-default shadow-sm'
+                  : 'cl-gradient-btn'
               }`}
-              style={{
-                border: addedToCart ? 'none' : '1px solid rgba(255,255,255,0.3)',
-              }}
             >
               {addedToCart ? (
                 <>

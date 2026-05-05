@@ -181,7 +181,7 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0
         <Button
             type="submit"
             disabled={!stripe || isProcessing}
-            className="w-full bg-gray-900 text-white hover:bg-brand-pink h-14 rounded-full text-[14px] font-semibold tracking-tight shadow-xl transition-all active:scale-[0.98]"
+            className="w-full h-14 rounded-full text-[14px] font-semibold tracking-tight shadow-xl transition-all active:scale-[0.98]"
         >
             {isProcessing ? (
                 <div className="flex items-center gap-3">

@@ -90,7 +90,7 @@ export function Newsletter() {
                         </div>
                         <button 
                             type="submit" 
-                            className="cl-gradient-btn h-14 px-10 text-[10px] font-bold flex items-center justify-center gap-3 shadow-lg shadow-black/5"
+                            className="cl-gradient-btn h-14 px-10 text-[14px] font-semibold flex items-center justify-center gap-3"
                         >
                             Subscribe
                             <ArrowRight size={14} />

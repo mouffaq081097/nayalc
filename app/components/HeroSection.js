@@ -75,7 +75,7 @@ const CTA_CLASS = {
   'solid-dark':    'bg-[#3b0764] text-white hover:bg-[#6b21a8]',
   'outlined-dark': 'border border-gray-800 text-gray-800 hover:bg-gray-900 hover:text-white',
   'solid-white':   'bg-white text-black hover:bg-gray-100',
-  'lavender-cloud': 'bg-transparent border-2 border-[#c4b5fd] text-white hover:bg-white/10 hover:border-[#a78bfa] shadow-[0_0_15px_rgba(196,167,254,0.3)] transform hover:-translate-y-0.5 transition-all duration-300 rounded-full flex items-center justify-center gap-2 group',
+  'lavender-cloud': 'bg-[var(--cl-gradient)] text-white border border-[rgb(196,167,254)] hover:bg-white hover:text-[#7e69e6] hover:shadow-[0_12px_32px_-8px_rgba(167,139,250,0.5)] active:scale-[0.98] transition-all duration-500 rounded-full flex items-center justify-center gap-2 group',
 };
 
 // ─── Animation variants ───────────────────────────────────────────────────────

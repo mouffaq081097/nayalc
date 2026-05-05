@@ -135,7 +135,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full h-16 bg-gradient-to-r from-[rgb(216,180,254)] to-[rgb(147,104,236)] text-white rounded-full font-black uppercase tracking-widest text-[13px] shadow-lg hover:opacity-90 transition-all duration-300 flex items-center justify-center gap-4"
+            className="cl-gradient-btn w-full h-16 rounded-full text-[15px] font-semibold flex items-center justify-center gap-4"
           >
             {isLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />

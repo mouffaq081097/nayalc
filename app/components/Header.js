@@ -288,30 +288,27 @@ const Header = forwardRef((_, ref) => {
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                   className="overflow-hidden whitespace-nowrap"
                 >
-                    <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
-                        <div
+                    <div className="flex flex-col text-left leading-tight">
+                        <span
+                          className="text-[17px] md:text-[19px] font-bold tracking-[0.08em] uppercase"
                           style={{ 
-                            fontSize: '18px', 
-                            fontWeight: '600', 
-                            letterSpacing: '0.05em', 
                             color: '#3b0764', 
-                            textTransform: 'uppercase', 
-                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                            textShadow: 'none',
                           }}
                         >
                           NAYA
-                        </div>
-                        <div
+                        </span>
+                        <span
+                          className="text-[11px] md:text-[12px] italic mt-0.5"
                           style={{ 
-                            fontSize: '12px', 
-                            fontStyle: 'italic', 
                             fontFamily: "Georgia, 'Times New Roman', serif", 
                             color: '#6b21a8',
-                            marginTop: '1px'
+                            textShadow: 'none',
                           }}
                         >
                           Lumière Cosmetics
-                        </div>
+                        </span>
                     </div>
                 </motion.div>
             </Link>
@@ -387,7 +384,7 @@ const Header = forwardRef((_, ref) => {
                 <Button
                 type="button"
                 onClick={() => router.push('/cart')}
-                className="relative shadow-md bg-[#3b0764] border border-[#3b0764] size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 hover:bg-[#581c87] group"
+                className="cl-gradient-btn relative size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 border-none shadow-md"
                 aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
                 >
                 <ShoppingBag size={18} strokeWidth={2} className="text-white group-hover:text-purple-100 transition-colors" />
@@ -571,30 +568,27 @@ const Header = forwardRef((_, ref) => {
                     <div className="p-6 md:p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/20">
                         <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2.5 transition-all active:scale-95 group">
                             <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Cosmetics" height={40} width={130} className="h-9 w-auto object-contain shrink-0" />
-                            <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
-                                <div
-                                style={{
-                                    fontSize: '18px',
-                                    fontWeight: '600',
-                                    letterSpacing: '0.05em',
-                                    color: '#3b0764',
-                                    textTransform: 'uppercase',
-                                    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
-                                }}
+                            <div className="flex flex-col text-left leading-tight">
+                                <span
+                                  className="text-[17px] md:text-[19px] font-bold tracking-[0.08em] uppercase"
+                                  style={{ 
+                                    color: '#3b0764', 
+                                    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                                    textShadow: 'none',
+                                  }}
                                 >
-                                NAYA
-                                </div>
-                                <div
-                                style={{
-                                    fontSize: '12px',
-                                    fontStyle: 'italic',
-                                    fontFamily: "Georgia, 'Times New Roman', serif",
+                                  NAYA
+                                </span>
+                                <span
+                                  className="text-[11px] md:text-[12px] italic mt-0.5"
+                                  style={{ 
+                                    fontFamily: "Georgia, 'Times New Roman', serif", 
                                     color: '#6b21a8',
-                                    marginTop: '1px'
-                                }}
+                                    textShadow: 'none',
+                                  }}
                                 >
-                                Lumière Cosmetics
-                                </div>
+                                  Lumière Cosmetics
+                                </span>
                             </div>
                         </Link>
                         <Button type="button" variant="pillSecondary" size="pillIcon" onClick={() => setIsMenuOpen(false)} className="active:scale-95 bg-white shadow-sm border border-gray-100" aria-label="Close menu">
@@ -698,8 +692,7 @@ const Header = forwardRef((_, ref) => {
                             {user?.role === 'admin' && (
                                 <button 
                                     onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}
-                                    className="w-full bg-white border border-[#e8d5ff] text-[#9333ea] rounded-full h-14 font-medium tracking-tight text-[13px] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-[0_4px_12px_rgba(147,51,234,0.05)]"
-                                    style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+                                    className="cl-gradient-btn w-full rounded-full h-14 text-[13px] flex items-center justify-center gap-3 border-none shadow-md"
                                 >
                                     <ShieldCheck size={16} strokeWidth={2.5} />
                                     Admin panel
@@ -708,8 +701,7 @@ const Header = forwardRef((_, ref) => {
                             
                             <button 
                                 onClick={() => { router.push(user ? '/account' : '/auth'); setIsMenuOpen(false); }}
-                                className="w-full bg-gradient-to-r from-[#d8b4fe] to-[#a78bfa] text-white rounded-full h-14 font-medium tracking-tight text-[13px] active:scale-[0.98] transition-all shadow-[0_10px_25px_-5px_rgba(167,139,250,0.4)] flex items-center justify-center gap-3"
-                                style={{ fontFamily: "'Instrument Sans', sans-serif" }}
+                                className="cl-gradient-btn w-full rounded-full h-14 text-[13px] flex items-center justify-center gap-3 border-none shadow-md"
                             >
                                 <User size={16} strokeWidth={2.5} />
                                 {user ? 'My account' : 'Sign in'}

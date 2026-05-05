@@ -118,7 +118,7 @@ const WishlistCard = ({ item, onRemove }) => {
                             added 
                             ? 'bg-green-500 text-white' 
                             : item.stockQuantity > 0 
-                                ? 'bg-gray-900 text-white hover:bg-purple-400' 
+                                ? 'cl-gradient-btn' 
                                 : 'bg-gray-100 text-gray-300 cursor-not-allowed shadow-none'
                         }`}
                     >
@@ -248,8 +248,7 @@ const WishlistContent = () => {
                             <p className="text-gray-400 text-[15px] font-medium mb-12 max-w-sm mx-auto">Discover and curate the products that resonate with your frequency.</p>
                             <button 
                                 onClick={() => router.push('/all-products')}
-                                className="px-12 py-5 text-white rounded-2xl text-[12px] font-bold shadow-2xl transition-all active:scale-95 duration-300"
-                                style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
+                                className="cl-gradient-btn px-12 py-5 text-white rounded-2xl text-[12px] font-bold shadow-2xl transition-all active:scale-95 duration-300"
                             >
                                 Explore Collection
                             </button>
@@ -270,13 +269,13 @@ const WishlistContent = () => {
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                                 <button 
                                     onClick={() => router.push('/all-products')}
-                                    className="w-full sm:w-auto px-10 py-5 bg-white text-gray-900 rounded-2xl text-[11px] font-bold hover:bg-purple-400 hover:text-white transition-all shadow-xl"
+                                    className="cl-gradient-btn w-full sm:w-auto px-10 py-5 text-white rounded-2xl text-[11px] font-bold transition-all shadow-xl"
                                 >
                                     Shop All
                                 </button>
                                 <button 
                                     onClick={() => router.push('/skin-quiz')}
-                                    className="w-full sm:w-auto px-10 py-5 bg-white/10 text-white rounded-2xl text-[11px] font-bold border border-white/10 hover:bg-white/20 transition-all backdrop-blur-md"
+                                    className="cl-gradient-btn w-full sm:w-auto px-10 py-5 text-white rounded-2xl text-[11px] font-bold transition-all shadow-xl"
                                 >
                                     Take Skin Quiz
                                 </button>

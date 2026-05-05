@@ -641,8 +641,7 @@ export default function AllProductsPage() {
 
                 <button 
                     onClick={() => setIsFilterOpen(true)}
-                    className="flex items-center gap-2 px-6 h-[46px] text-white rounded-2xl text-[12px] font-bold active:scale-95 group transition-all duration-500 shadow-md"
-                    style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
+                    className="cl-gradient-btn flex items-center gap-2 px-6 h-[46px] text-white rounded-2xl text-[12px] font-bold active:scale-95 group transition-all duration-500 shadow-md border-none"
                 >
                     <Filter size={14} className="group-hover:rotate-12 transition-transform" />
                     <span>Filter</span>
@@ -675,8 +674,7 @@ export default function AllProductsPage() {
                 <p className="text-gray-400 mb-8 max-w-xs mx-auto text-[14px]">Try adjusting your filters or search terms to find what you're looking for.</p>
                 <button 
                   onClick={clearFilters}
-                  className="px-10 py-4 text-white rounded-2xl text-[11px] font-bold transition-all active:scale-95 shadow-lg shadow-purple-200"
-                  style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
+                  className="cl-gradient-btn px-10 py-4 text-white rounded-2xl text-[11px] font-bold transition-all active:scale-95 shadow-lg border-none"
                 >
                   Clear All Filters
                 </button>
@@ -734,8 +732,7 @@ export default function AllProductsPage() {
                         </div>
                         <button
                             onClick={loadMore}
-                            className="group flex items-center gap-2 px-8 py-4 text-white rounded-2xl text-[12px] font-bold active:scale-95 transition-all duration-500 shadow-md hover:shadow-xl shadow-purple-100"
-                            style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
+                            className="cl-gradient-btn group flex items-center gap-2 px-8 py-4 text-white rounded-2xl text-[12px] font-bold active:scale-95 transition-all duration-500 shadow-md border-none"
                         >
                             View More Products
                             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />

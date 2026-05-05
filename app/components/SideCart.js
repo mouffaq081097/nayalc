@@ -107,8 +107,7 @@ export default function SideCart() {
                   </div>
                   <button
                     onClick={closeCart}
-                    className="mt-1 px-8 py-3 rounded-full text-white text-[10px] font-black uppercase tracking-[0.18em] transition-all active:scale-[0.97] shadow-lg"
-                    style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))', boxShadow: '0 8px 24px rgba(147,51,234,0.25)' }}
+                    className="cl-gradient-btn mt-1 px-8 py-3 rounded-full text-[13px] font-semibold active:scale-[0.97]"
                   >
                     Explore Collection
                   </button>
@@ -221,11 +220,7 @@ export default function SideCart() {
                 <Link
                   href="/cart"
                   onClick={closeCart}
-                  className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.18em] transition-all active:scale-[0.98]"
-                  style={{
-                    background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
-                    boxShadow: '0 8px 28px rgba(147,51,234,0.3)',
-                  }}
+                  className="cl-gradient-btn flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-[14px] font-semibold active:scale-[0.98]"
                 >
                   <Sparkles size={13} />
                   Review My Order
@@ -235,7 +230,7 @@ export default function SideCart() {
                 {/* Continue shopping */}
                 <button
                   onClick={closeCart}
-                  className="w-full py-2 text-[10px] font-bold uppercase tracking-[0.15em] transition-all hover:opacity-60"
+                  className="w-full py-2 text-[12px] font-medium transition-all hover:opacity-60"
                   style={{ color: 'rgba(107,33,168,0.45)' }}
                 >
                   Continue Shopping

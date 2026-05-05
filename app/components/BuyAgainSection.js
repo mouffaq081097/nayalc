@@ -162,7 +162,7 @@ export default function BuyAgainSection({ products }) {
                     <motion.button
                       onClick={() => handleAddToCart(product)}
                       whileTap={{ scale: 0.96 }}
-                      className="mt-2.5 w-full py-2.5 rounded-xl text-white text-[9px] font-black uppercase tracking-[0.1em] flex items-center justify-center gap-1.5 transition-all"
+                      className="mt-2.5 w-full py-2.5 rounded-xl text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all"
                       style={{
                         background: added
                           ? 'linear-gradient(135deg,rgb(134,239,172),rgb(52,211,153))'

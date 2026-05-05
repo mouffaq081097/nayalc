@@ -158,8 +158,7 @@ export default function AccountDashboardPage() {
                       </div>
                       <button
                         onClick={() => router.push('/all-products')}
-                        className="mt-7 px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-full transition-all self-start"
-                        style={{ background: CL.gradient, boxShadow: '0 4px 16px rgba(147,51,234,0.3)' }}
+                        className="cl-gradient-btn mt-7 px-7 py-3 text-[13px] font-semibold rounded-full self-start"
                       >
                         Shop Now
                       </button>

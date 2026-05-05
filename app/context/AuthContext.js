@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
   const loading = status === 'loading';
   const isAuthenticated = status === 'authenticated';
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email, password, callbackUrl = '/') => {
     const result = await signIn('credentials', {
       redirect: false,
       email,
@@ -29,11 +29,11 @@ export const AuthProvider = ({ children }) => {
 
     if (result?.ok) {
       // Logged in successfully (toast removed per user request)
-      router.push('/'); // Redirect after successful login
+      router.push(callbackUrl); // Redirect after successful login
     }
   }, [router]);
 
-  const register = useCallback(async (username, email, password, firstName, lastName) => {
+  const register = useCallback(async (username, email, password, firstName, lastName, callbackUrl = '/') => {
     const response = await fetch(`/api/auth/signup`, {
       method: 'POST',
       headers: {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     // After successful registration, log the user in
-    await login(email, password);
+    await login(email, password, callbackUrl);
   }, [login]);
 
   const logout = useCallback(() => {

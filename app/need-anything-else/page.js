@@ -89,7 +89,7 @@ function ProductCard({ product, imageUrl, added, onAdd }) {
         <motion.button
           onClick={onAdd}
           whileTap={{ scale: 0.94 }}
-          className="absolute inset-x-3 bottom-3 py-2 rounded-xl text-white text-[9px] font-black uppercase tracking-[0.1em] flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
+          className="absolute inset-x-3 bottom-3 py-2 rounded-xl text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300"
           style={{
             background: added
               ? 'linear-gradient(135deg,rgb(134,239,172),rgb(52,211,153))'
@@ -117,7 +117,7 @@ function ProductCard({ product, imageUrl, added, onAdd }) {
         <motion.button
           onClick={onAdd}
           whileTap={{ scale: 0.96 }}
-          className="mt-2 w-full py-2.5 rounded-xl text-white text-[9px] font-black uppercase tracking-[0.1em] flex items-center justify-center gap-1.5 transition-colors duration-300"
+          className="mt-2 w-full py-2.5 rounded-xl text-white text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors duration-300"
           style={{
             background: added
               ? 'linear-gradient(135deg,rgb(134,239,172),rgb(52,211,153))'
@@ -227,6 +227,14 @@ export default function NeedAnythingElsePage() {
 
   const visibleBuyAgain = buyAgainProducts.slice(buyAgainPage * ITEMS_PER_PAGE, (buyAgainPage + 1) * ITEMS_PER_PAGE);
   const visibleSuggest  = suggestions.slice(suggestPage * ITEMS_PER_PAGE, (suggestPage + 1) * ITEMS_PER_PAGE);
+  const handleContinueToCheckout = () => {
+    if (!isAuthenticated) {
+      router.push('/auth?callbackUrl=/checkout');
+      return;
+    }
+
+    router.push('/checkout');
+  };
 
   return (
     <div className="min-h-screen" style={{ background: '#fdf8ff', paddingBottom: '120px' }}>
@@ -266,20 +274,16 @@ export default function NeedAnythingElsePage() {
           {/* Right: CTAs stacked like Amazon */}
           <div className="flex flex-col gap-2 shrink-0 items-end">
             <motion.button
-              onClick={() => router.push('/checkout')}
+              onClick={handleContinueToCheckout}
               whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-6 md:px-8 py-3 rounded-full text-white text-[11px] font-black uppercase tracking-[0.15em] transition-all"
-              style={{
-                background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
-                boxShadow: '0 6px 22px rgba(147,51,234,0.3)',
-              }}
+              className="cl-gradient-btn flex items-center gap-2 px-6 md:px-8 py-3 rounded-full text-[13px] font-semibold"
             >
               Continue
               <ArrowRight size={13} />
             </motion.button>
             <button
               onClick={() => router.push('/cart')}
-              className="text-[10px] font-bold uppercase tracking-[0.12em] transition-all hover:opacity-60"
+              className="text-[12px] font-medium transition-all hover:opacity-60"
               style={{ color: 'rgba(107,33,168,0.45)' }}
             >
               ← Back to Cart
@@ -363,7 +367,7 @@ export default function NeedAnythingElsePage() {
         <div className="max-w-lg mx-auto flex gap-3">
           <button
             onClick={() => router.push('/cart')}
-            className="px-6 py-3.5 rounded-full text-[11px] font-bold uppercase tracking-[0.12em] transition-all active:scale-[0.97]"
+            className="px-6 py-3.5 rounded-full text-[13px] font-medium transition-all active:scale-[0.97]"
             style={{
               border: '1px solid rgba(216,180,254,0.5)',
               color: 'rgb(126,105,230)',
@@ -373,13 +377,9 @@ export default function NeedAnythingElsePage() {
             ← Cart
           </button>
           <motion.button
-            onClick={() => router.push('/checkout')}
+            onClick={handleContinueToCheckout}
             whileTap={{ scale: 0.97 }}
-            className="flex-1 py-3.5 rounded-full text-white text-[11px] font-black uppercase tracking-[0.18em] flex items-center justify-center gap-2 transition-all"
-            style={{
-              background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
-              boxShadow: '0 8px 28px rgba(147,51,234,0.3)',
-            }}
+            className="cl-gradient-btn flex-1 py-3.5 rounded-full text-[14px] font-semibold flex items-center justify-center gap-2"
           >
             Continue to Checkout
             <ArrowRight size={13} />

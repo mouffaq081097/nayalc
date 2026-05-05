@@ -139,8 +139,7 @@ export default function OrderConfirmation() {
             <p className="text-sm mb-6" style={{ color: 'rgba(59,7,100,0.55)' }}>{message}</p>
             <button
               onClick={() => router.push('/account/orders')}
-              className="px-8 py-3 rounded-full text-[11px] font-black uppercase tracking-widest text-white transition-all"
-              style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))', boxShadow: '0 4px 14px rgba(168,85,247,0.28)' }}
+              className="cl-gradient-btn px-8 py-3 rounded-full text-[14px] font-semibold text-white"
             >
               View my orders
             </button>

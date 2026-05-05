@@ -235,7 +235,7 @@ export default function FragranceClient() {
                         </div>
             <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
                 {['All', 'For Her', 'For Him', 'Unisex'].map((cat) => (
-                    <button key={cat} className="px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-all hover:bg-gray-50 first:bg-gray-900 first:text-white first:shadow-lg">
+                    <button key={cat} className="px-6 py-2.5 rounded-xl text-[12px] font-semibold text-gray-400 hover:text-gray-900 transition-all hover:bg-gray-50 first:bg-gray-900 first:text-white first:shadow-lg">
                         {cat}
                     </button>
                 ))}
@@ -362,7 +362,7 @@ export default function FragranceClient() {
                     <p className="text-white/60 text-sm font-light leading-relaxed italic">
                         "Finding a signature scent is a synchronization of soul and science. Our experts are ready to curate your journey."
                     </p>
-                    <button className="w-full bg-white text-gray-900 py-5 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-brand-pink hover:text-white transition-all duration-500 shadow-xl">
+                    <button className="w-full bg-white text-gray-900 py-5 rounded-2xl text-[14px] font-semibold hover:bg-brand-pink hover:text-white transition-all duration-500">
                         Book Consultation
                     </button>
                 </div>

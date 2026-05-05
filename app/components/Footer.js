@@ -23,30 +23,27 @@ export default function Footer() {
                   width={130}
                   className="h-10 w-auto object-contain shrink-0"
                 />
-                <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
-                    <div
+                <div className="flex flex-col text-left leading-tight">
+                    <span
+                      className="text-[17px] md:text-[19px] font-bold tracking-[0.08em] uppercase"
                       style={{ 
-                        fontSize: '18px', 
-                        fontWeight: '600', 
-                        letterSpacing: '0.05em', 
                         color: '#3b0764', 
-                        textTransform: 'uppercase', 
-                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" 
+                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                        textShadow: 'none',
                       }}
                     >
                       NAYA
-                    </div>
-                    <div
+                    </span>
+                    <span
+                      className="text-[11px] md:text-[12px] italic mt-0.5"
                       style={{ 
-                        fontSize: '12px', 
-                        fontStyle: 'italic', 
                         fontFamily: "Georgia, 'Times New Roman', serif", 
                         color: '#6b21a8',
-                        marginTop: '1px'
+                        textShadow: 'none',
                       }}
                     >
                       Lumière Cosmetics
-                    </div>
+                    </span>
                 </div>
             </Link>
             <p className="text-[13px] text-gray-500 max-w-md leading-relaxed mb-8 font-medium">
@@ -61,8 +58,7 @@ export default function Footer() {
               />
               <button 
                 type="submit" 
-                className="absolute right-2 w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform hover:scale-105"
-                style={{ background: 'var(--cl-gradient)' }}
+                className="cl-gradient-btn absolute right-2 w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110 border-none shadow-none"
               >
                 <ArrowRight size={16} />
               </button>

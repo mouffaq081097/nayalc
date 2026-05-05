@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useCallback, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { createFetchWithAuth } from '../lib/api';
 import { toast } from 'react-toastify';
@@ -12,6 +12,7 @@ export const CartProvider = ({ children }) => {
     const [cart, setCart] = useState([]); // Manage cart state locally
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [discountAmount, setDiscountAmount] = useState(0);
+    const cartLoadedRef = useRef(false);
     const [isCartOpen, setIsCartOpen] = useState(false); // New state for side cart
     const [selectedShippingAddressId, setSelectedShippingAddressId] = useState(null);
     const [couponError, setCouponError] = useState(null); // New state for coupon error
@@ -44,12 +45,15 @@ export const CartProvider = ({ children }) => {
                     shade: item.shade || undefined, // Handle optional shade
                     stock_quantity: item.stock_quantity, // Add stock_quantity
                 }));
+                cartLoadedRef.current = true;
                 setCart(parsedCart);
             } catch (error) {
                 console.error('Error fetching user cart:', error);
+                cartLoadedRef.current = true;
                 setCart([]); // Clear cart on error
             }
         } else {
+            cartLoadedRef.current = true;
             setCart([]); // Clear cart if user logs out
         }
     }, [isAuthenticated, user, fetchWithAuth]);
@@ -76,8 +80,9 @@ export const CartProvider = ({ children }) => {
         }
     }, [isAuthenticated, user, fetchWithAuth]);
 
-    // Effect to save cart to backend whenever cart changes
+    // Effect to save cart to backend whenever cart changes (skip until initial load completes)
     useEffect(() => {
+        if (!cartLoadedRef.current) return;
         saveCartToBackend(cart);
     }, [cart, saveCartToBackend]);
 

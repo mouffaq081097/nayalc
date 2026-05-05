@@ -287,7 +287,7 @@ export default function BrandClient({ brand: serverBrand }) {
                 <h3 className="font-serif text-4xl text-gray-900 mb-6 italic">Selection Not Found</h3>
                 <button 
                   onClick={clearFilters} 
-                  className="px-12 py-4 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-brand-pink transition-all active:scale-95 shadow-lg"
+                  className="px-12 py-4 bg-gray-900 text-white rounded-xl text-[13px] font-semibold hover:bg-brand-pink transition-all active:scale-95"
                 >
                   Reset Parameters
                 </button>
@@ -405,7 +405,7 @@ export default function BrandClient({ brand: serverBrand }) {
                 <div className="p-10 pt-6 pb-12 sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-gray-100">
                     <button 
                         onClick={() => setIsFilterOpen(false)}
-                        className="w-full bg-gray-900 text-white py-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.4em] shadow-2xl hover:bg-brand-pink transition-all active:scale-95 duration-300"
+                        className="w-full bg-gray-900 text-white py-5 rounded-2xl text-[14px] font-semibold hover:bg-brand-pink transition-all active:scale-95 duration-300"
                     >
                         Reveal Selection ({filteredAndSortedProducts.length})
                     </button>

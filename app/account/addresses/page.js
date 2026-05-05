@@ -176,8 +176,7 @@ export default function AccountAddressesPage() {
                     </div>
                     <button
                       onClick={() => openModal()}
-                      className="flex items-center gap-2 px-6 py-3 text-white text-[11px] font-bold uppercase tracking-widest rounded-full transition-all flex-shrink-0 mt-1"
-                      style={{ background: CL.gradient, boxShadow: '0 4px 16px rgba(147,51,234,0.3)' }}
+                      className="cl-gradient-btn flex items-center gap-2 px-6 py-3 text-[13px] font-semibold rounded-full flex-shrink-0 mt-1"
                     >
                       <Plus size={14} /> Add Address
                     </button>
@@ -188,7 +187,7 @@ export default function AccountAddressesPage() {
                       <MapPin size={44} strokeWidth={1} className="mx-auto mb-5" style={{ color: 'rgba(147,51,234,0.3)' }} />
                       <h3 className="text-xl font-bold mb-2" style={{ color: CL.textDeep }}>No Addresses Saved</h3>
                       <p className="text-xs uppercase tracking-widest mb-6" style={{ color: CL.textSoft }}>Add your first delivery address above</p>
-                      <button onClick={() => openModal()} className="px-8 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-full" style={{ background: CL.gradient, boxShadow: '0 4px 16px rgba(147,51,234,0.3)' }}>
+                      <button onClick={() => openModal()} className="cl-gradient-btn px-8 py-3 text-[13px] font-semibold rounded-full">
                         Add New Address
                       </button>
                     </div>

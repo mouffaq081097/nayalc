@@ -43,7 +43,7 @@ export function FeaturedProducts() {
 
           <Link
             href="/all-products"
-            className="bg-transparent border-2 border-[#c4b5fd] text-[#a78bfa] hover:bg-[#f5f3ff] hover:border-[#a78bfa] hover:text-[#7e22ce] shadow-sm px-4 py-2.5 md:px-8 md:py-3.5 text-[11px] md:text-[13px] font-black tracking-tight rounded-full transition-all duration-300 group shrink-0"
+            className="cl-gradient-btn px-4 py-2.5 md:px-8 md:py-3.5 text-[11px] md:text-[13px] font-black tracking-tight rounded-full transition-all duration-300 group shrink-0 border-none shadow-none"
           >
             <span className="flex items-center gap-2 md:gap-3">
                 View All

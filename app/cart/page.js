@@ -79,6 +79,14 @@ export default function CartPage() {
   const shipping = subtotal >= FREE_SHIPPING ? 0 : SHIP_COST;
   const total = finalTotal + shipping;
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
+  const handleCheckoutClick = () => {
+    if (!isAuthenticated) {
+      router.push('/auth?callbackUrl=/checkout');
+      return;
+    }
+
+    router.push('/need-anything-else');
+  };
 
   return (
     <div className="min-h-screen pb-28" style={{ background: '#fdf8ff' }}>
@@ -121,8 +129,7 @@ export default function CartPage() {
             <p className="text-[15px] mb-10 max-w-sm" style={{ color: 'rgba(59,7,100,0.45)' }}>Discover transformative beauty in our latest collections.</p>
             <button
               onClick={() => router.push('/all-products')}
-              className="px-10 py-4 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98]"
-              style={{ background: 'var(--cl-gradient)', boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
+              className="cl-gradient-btn px-10 py-4 rounded-full text-[15px] font-semibold active:scale-[0.98]"
             >
               Explore Collection
             </button>
@@ -366,7 +373,7 @@ export default function CartPage() {
                       <button
                         onClick={() => couponCode.trim() && applyCoupon(couponCode.trim())}
                         disabled={!!appliedCoupon || !couponCode.trim()}
-                        className="px-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.1em] text-white transition-all disabled:opacity-30"
+                        className="px-4 rounded-xl text-[12px] font-semibold text-white transition-all disabled:opacity-30"
                         style={{ background: 'var(--cl-gradient)' }}
                       >
                         Apply
@@ -397,10 +404,9 @@ export default function CartPage() {
 
                   {/* CTA */}
                   <button
-                    onClick={() => router.push('/checkout')}
+                    onClick={handleCheckoutClick}
                     disabled={hasStockIssues}
-                    className="w-full py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50 mb-3"
-                    style={{ background: 'var(--cl-gradient)', boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
+                    className="cl-gradient-btn w-full py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] disabled:opacity-50 mb-3"
                   >
                     Proceed to Checkout
                   </button>

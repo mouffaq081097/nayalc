@@ -111,8 +111,7 @@ function TabbyReturn() {
           <div className="flex flex-col gap-3 pt-2">
             <button
               onClick={() => router.push('/checkout')}
-              className="w-full py-3.5 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em]"
-              style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' }}
+              className="cl-gradient-btn w-full py-3.5 rounded-full text-[14px] font-semibold"
             >
               Return to Checkout
             </button>

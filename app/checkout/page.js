@@ -30,7 +30,7 @@ const lavGradient = 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))';
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -56,6 +56,12 @@ export default function CheckoutPage() {
   const giftWrapFee = formData.giftWrap ? 100 : 0;
   const pointsDiscount = usePoints ? Math.floor(loyaltyPoints / 100) * 5 : 0;
   const total = Math.max(0, finalTotal + shipping + tax + giftWrapFee - pointsDiscount);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/auth?callbackUrl=/checkout');
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const fetchShippingAddresses = useCallback(async () => {
     if (!user?.id) return;
@@ -301,6 +307,10 @@ export default function CheckoutPage() {
     : formData.paymentMethod === 'tabby' && currentStep === 2 ? `Pay with Tabby`
     : formData.paymentMethod === 'card' && currentStep === 2 ? 'Authorize Card'
     : 'Continue';
+
+  if (!authLoading && !isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen pb-28 lg:pb-12" style={{ background: '#fdf8ff' }}>
@@ -634,8 +644,7 @@ export default function CheckoutPage() {
                   <button
                     onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()}
                     disabled={isPlacingOrder || isTabbyLoading || hasStockIssues}
-                    className="px-12 py-4 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
-                    style={{ background: lavGradient, boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
+                    className="cl-gradient-btn px-12 py-4 rounded-full text-[15px] font-semibold active:scale-[0.98] disabled:opacity-50"
                   >
                     {btnLabel}
                   </button>
@@ -733,8 +742,7 @@ export default function CheckoutPage() {
           <button
             onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()}
             disabled={isPlacingOrder || isTabbyLoading || hasStockIssues}
-            className="flex-1 h-14 rounded-full text-white text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] disabled:opacity-50"
-            style={{ background: lavGradient, boxShadow: '0 8px 32px rgba(147,51,234,0.25)' }}
+            className="cl-gradient-btn flex-1 h-14 rounded-full text-[15px] font-semibold active:scale-[0.98] disabled:opacity-50"
           >
             {btnLabel}
           </button>

@@ -23,7 +23,6 @@ export const AppProvider = ({ children }) => {
   const [brands, setBrands] = useState([]);
   const [adminBrands, setAdminBrands] = useState([]);
  // New state for brands
-  const [featuredProducts, setFeaturedProducts] = useState([]); // New state for featured products
   const [isChatOpen, setIsChatOpen] = useState(false); // Global chat widget state
   const [loading, setLoading] = useState(true);
   const [loyaltyData, setLoyaltyData] = useState({ stats: { points: 0, tier: 'Member', nextTierPoints: 2000 }, transactions: [] });
@@ -231,28 +230,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Function to fetch random featured products
-  const fetchFeaturedProducts = async () => {
-    try {
-      const response = await fetch(`/api/products?random=true&limit=4`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch featured products');
-      }
-      const data = await response.json();
-      const processedProducts = data.map(product => ({
-        ...product,
-        price: parseFloat(product.price), // Ensure price is a number
-        originalPrice: product.comparedprice ? parseFloat(product.comparedprice) : null,
-        imageUrls: product.imageUrl ? [product.imageUrl] : ['/placeholder-image.jpg'], // Convert imageUrl string to imageUrls array
-        image: product.imageUrl || '/placeholder-image.jpg',
-        stock_quantity: product.stock_quantity, // Add stock_quantity
-      }));
-      setFeaturedProducts(processedProducts);
-    } catch (error) {
-      console.error('Error fetching featured products:', error);
-      setFeaturedProducts([]);
-    }
-  };
+  const featuredProducts = useMemo(() => products.slice(0, 4), [products]);
 
   const processCategoryData = (data) => data.map(category => ({
     ...category,
@@ -501,6 +479,9 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const userId = user?.id;
+  const userRole = user?.role;
+
   // Fetch data on component mount
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -508,15 +489,14 @@ export const AppProvider = ({ children }) => {
       try {
         await Promise.all([
           fetchProducts(),
-          fetchFeaturedProducts(),
           fetchCategories(),
           fetchConcerns(),
           fetchBrands()
         ]);
-        
-        if (isAuthenticated && user?.id) {
+
+        if (isAuthenticated && userId) {
           const promises = [fetchOrders(), fetchLoyalty()];
-          if (user.role === 'admin') {
+          if (userRole === 'admin') {
             promises.push(fetchAdminProducts(), fetchAdminBrands(), fetchAdminCategories());
           }
           await Promise.all(promises);
@@ -530,7 +510,7 @@ export const AppProvider = ({ children }) => {
 
     fetchInitialData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user, fetchOrders, fetchLoyalty, fetchCategories]);
+  }, [isAuthenticated, userId, fetchOrders, fetchLoyalty, fetchCategories]);
 
 
 
@@ -549,7 +529,7 @@ export const AppProvider = ({ children }) => {
       concerns, setConcerns,
       brands, setBrands,
       adminBrands,
-      featuredProducts, setFeaturedProducts,
+      featuredProducts,
       addBrand, updateBrand, deleteBrand,
       addCategory, updateCategory, deleteCategory,
       updateOrderStatus,
