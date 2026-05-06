@@ -411,7 +411,8 @@ const Header = forwardRef((_, ref) => {
                 <Button
                 type="button"
                 onClick={() => router.push('/cart')}
-                className="cl-gradient-btn relative size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 border-none shadow-md"
+                className="relative size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 border-none"
+                style={{ background: 'linear-gradient(90deg, #C087FC 0%, #9869F7 100%)', boxShadow: '0 6px 16px rgba(152,105,247,.35)' }}
                 aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
                 >
                 <ShoppingBag size={18} strokeWidth={2} className="text-white group-hover:text-purple-100 transition-colors" />

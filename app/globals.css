@@ -10,6 +10,9 @@
   --brand-gradient: linear-gradient(90deg, var(--brand-purple-1) 0%, var(--brand-purple-2) 100%);
   --brand-gradient-hover: linear-gradient(90deg, #b577fb 0%, var(--brand-purple-dark) 100%);
 
+  /* ── Cloud Luxe ────────────────────────────────────────────────── */
+  --cl-gradient: linear-gradient(135deg, rgb(216,180,254) 0%, rgb(147,104,236) 100%);
+
   /* ── Neutrals ──────────────────────────────────────────────────── */
   --white: #ffffff;
   --ink-900: #111114;
@@ -149,5 +152,55 @@ body {
 
   .btn.ghost:hover {
     background: var(--ink-100);
+  }
+
+  /* ──── Cloud Luxe utility classes ───────────────────────────── */
+  .cl-gradient-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgb(216,180,254) 0%, rgb(147,104,236) 100%);
+    color: #fff;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(147,104,236,0.28);
+    transition: filter 150ms ease, transform 120ms ease, box-shadow 150ms ease;
+  }
+
+  .cl-gradient-btn:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 6px 24px rgba(147,104,236,0.38);
+  }
+
+  .cl-gradient-btn:active {
+    transform: translateY(1px) scale(0.98);
+  }
+
+  .cl-gradient-btn:disabled,
+  .cl-gradient-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .cl-ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: rgb(147,104,236);
+    font-weight: 700;
+    border: 1.5px solid rgba(196,167,254,0.55);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease;
+  }
+
+  .cl-ghost-btn:hover {
+    background: rgba(196,167,254,0.10);
+    border-color: rgba(196,167,254,0.8);
   }
 }

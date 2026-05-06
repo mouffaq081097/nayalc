@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { Input } from '../components/ui/input';
-import { ArrowLeft, Plus, Minus, X, ShoppingBag, ShieldCheck, Truck, RotateCcw, Tag, Sparkles, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus, Minus, X, ShoppingBag, ShieldCheck, Truck, RotateCcw, Tag, Sparkles, Star } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
@@ -406,9 +406,9 @@ export default function CartPage() {
                   <button
                     onClick={handleCheckoutClick}
                     disabled={hasStockIssues}
-                    className="cl-gradient-btn w-full py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] disabled:opacity-50 mb-3"
+                    className="btn block mb-3"
                   >
-                    Proceed to Checkout
+                    Proceed to Checkout <ArrowRight size={16} strokeWidth={1.75} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 6 }} />
                   </button>
                   <button
                     onClick={() => router.push('/')}
