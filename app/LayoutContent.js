@@ -38,10 +38,12 @@ export default function LayoutContent({ children }) {
   const isAuthPage = pathname === '/auth';
   const isAdminPage = pathname.startsWith('/admin');
   const isCartPage = pathname === '/cart';
-  const isCheckoutPage = pathname === '/checkout'; // New line
+  const isCheckoutPage = pathname === '/checkout';
+  const isNeedAnythingElsePage  = pathname === '/need-anything-else';
+  const isOrderConfirmedPage    = pathname.startsWith('/order-confirmed');
 
   const showMobileChrome =
-    !isAuthPage && !isAdminPage && !isCartPage && !isCheckoutPage;
+    !isAuthPage && !isAdminPage && !isCartPage && !isCheckoutPage && !isNeedAnythingElsePage && !isOrderConfirmedPage;
 
   return (
     <>

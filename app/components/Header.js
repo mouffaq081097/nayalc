@@ -5,12 +5,10 @@ import { ShoppingBag, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, Ar
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from './ui/button';
-import { cn } from './ui/utils';
 
 const CONCERN_META = {
   'anti-aging':    { icon: Clock,     desc: 'Restore your youthful glow' },
@@ -30,709 +28,504 @@ function getConcernMeta(name = '') {
   return { icon: Sparkles, desc: 'Targeted skincare solutions' };
 }
 
-function toSentenceCase(value = '') {
-  const text = String(value).trim().toLowerCase();
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
-}
+const NAV_LINKS = [
+  { label: 'Shop',        href: '/all-products', hasDropdown: 'shop' },
+  { label: 'Collections', href: '/collections' },
+  { label: 'Skin Quiz',   href: '/skin-quiz' },
+  { label: 'Brands',      href: '/brands', hasDropdown: 'brands' },
+  { label: 'Journal',     href: '/journal' },
+];
 
 const Header = forwardRef((_, ref) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuOpen,   setIsMenuOpen]   = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { cartItems, openCart } = useCart();
+  const [searchQuery,  setSearchQuery]  = useState('');
+  const [isScrolled,   setIsScrolled]   = useState(false);
+
+  const { cartItems } = useCart();
   const { user, logout } = useAuth();
   const { loyaltyData, concerns, brands } = useAppContext();
-  const router = useRouter();
+  const router   = useRouter();
+  const pathname = usePathname();
+
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  const handleAccountClick = () => {
-    if (user) router.push('/account');
-    else router.push('/auth');
-  };
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${searchQuery}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
       setIsSearchOpen(false);
     }
   };
 
+  /* ── icon button base classes ─────────────────────────────────── */
+  const iconBtn = 'relative w-[38px] h-[38px] rounded-full border border-[#e5e5ea] bg-white flex items-center justify-center text-[#2a2a31] cursor-pointer transition-colors duration-[120ms] hover:bg-[#f3f3f5]';
+
+  /* ── nav link classes ─────────────────────────────────────────── */
+  const navLink = (active) =>
+    `text-[13px] font-medium text-[#2a2a31] pb-[6px] border-b-2 transition-colors duration-[120ms] hover:text-[#111114] ${
+      active ? 'border-[#111114] text-[#111114]' : 'border-transparent'
+    }`;
+
   return (
     <>
+      {/* ── Main Header ─────────────────────────────────────────── */}
       <header
         ref={ref}
-        className={`fixed top-0 left-0 right-0 z-[150] transition-all duration-500 ease-in-out ${
-          isScrolled ? 'pt-4 px-4' : 'pt-0 px-0'
+        className={`fixed top-0 left-0 right-0 z-[150] transition-all duration-300 ${
+          isScrolled ? 'pt-3 px-4' : 'pt-0 px-0'
         }`}
       >
-        <div className={`mx-auto transition-all duration-500 ease-in-out flex flex-col ${isScrolled ? 'max-w-5xl rounded-[var(--r-lg)] overflow-hidden relative' : 'max-w-full'} bg-white`}
-          style={isScrolled ? {
-            boxShadow: 'var(--shadow-2)',
-          } : {}}
+        <div
+          className={`mx-auto bg-white transition-all duration-300 ${
+            isScrolled ? 'max-w-5xl rounded-2xl overflow-hidden' : 'max-w-full'
+          }`}
+          style={{
+            borderBottom: isScrolled ? 'none' : '1px solid #e5e5ea',
+            boxShadow: isScrolled ? '0 4px 14px rgba(17,17,20,.06)' : 'none',
+          }}
         >
-            <div
-            className={`w-full flex items-center justify-between gap-4 md:gap-8 px-5 md:px-10 transition-all duration-500 ease-in-out relative ${
-                isScrolled ? 'h-13 md:h-14' : 'h-13 md:h-16'
-            }`}
+          <div className="flex items-center gap-6 px-5 md:px-8 h-[56px] md:h-[60px]">
+
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className={`${iconBtn} md:hidden shrink-0`}
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             >
+              {isMenuOpen ? <X size={17} /> : <Menu size={17} />}
+            </button>
 
-            {/* Left: Mobile Menu & Desktop Nav */}
-            <div className="flex items-center gap-6 flex-1">
-                <Button
-                    type="button"
-                    variant="pillGlass"
-                    size="pillIcon"
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className={cn(
-                      'md:hidden shrink-0',
-                      isScrolled
-                        ? 'border-black/10 bg-white/90 text-[#1d1d1f]'
-                        : 'border-white/25 bg-white/20 text-black hover:bg-white/35'
-                    )}
-                    aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-                >
-                    {isMenuOpen ? <X size={18} /> : <Menu size={18} />}
-                </Button>
-
-                <nav className="hidden md:flex items-center gap-8">
-                    {/* Shop Dropdown */}
-                    <div className="relative group/shop">
-                        <button onClick={() => router.push('/all-products')} className={`text-[12px] md:text-[13px] font-medium tracking-tight transition-all flex items-center gap-1 ${isScrolled ? 'text-gray-800' : 'text-gray-900'}`} onMouseEnter={e => e.currentTarget.style.color='var(--cl-purple)'} onMouseLeave={e => e.currentTarget.style.color=''}>
-                            Shop
-                            <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-300 group-hover/shop:rotate-[270deg]" />
-                        </button>
-                        
-                        {/* Invisible bridge to prevent hover loss */}
-                        <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
-                        
-                        <div className="absolute top-[calc(100%+0.6rem)] left-0 w-[304px] bg-white/95 backdrop-blur-3xl rounded-[22px] shadow-[0_28px_70px_-22px_rgba(59,7,100,0.32),0_0_0_1px_rgba(216,180,254,0.38)] border border-[#eadcff] opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-300 transform translate-y-3 group-hover/shop:translate-y-0 z-[200] p-3 overflow-hidden before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,rgba(245,243,255,0.92),transparent_62%)] before:pointer-events-none">
-                            
-                            <div className="relative z-10 px-2.5 pt-1 pb-2.5 border-b border-[#eadcff] mb-2 flex items-center justify-between">
-                                <p className="text-[11px] font-bold tracking-normal text-[#4c1d95]">Discover</p>
-                                <Sparkles size={12} className="text-[#7c3aed]" />
-                            </div>
-
-                            <div className="flex flex-col gap-1 relative z-10">
-                                {[
-                                    { name: 'All products', href: '/all-products', desc: 'Explore the full collection', icon: ShoppingBag },
-                                    { name: 'Skincare', href: '/SkinCare', desc: 'Nourish & protect', icon: Droplets },
-                                    { name: 'Fragrance', href: '/fragrance', desc: 'Signature scents', icon: Sparkles },
-                                ].map((link) => {
-                                    const Icon = link.icon;
-                                    return (
-                                    <Link
-                                        key={link.name}
-                                        href={link.href}
-                                        className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/shop-item relative overflow-hidden"
-                                    >
-                                        <div className="w-9 h-9 rounded-xl bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/shop-item:bg-[#7c3aed] group-hover/shop-item:text-white transition-all duration-300 z-10">
-                                            <Icon size={15} strokeWidth={1.8} />
-                                        </div>
-                                        <div className="flex-1 z-10">
-                                            <span className="block text-[13px] font-bold tracking-normal text-[#1e0a3c] leading-tight group-hover/shop-item:text-[#5b21b6] transition-colors">{toSentenceCase(link.name)}</span>
-                                            <span className="block text-[11px] font-medium tracking-normal text-gray-500 mt-0.5 leading-snug">{toSentenceCase(link.desc)}</span>
-                                        </div>                                        <div className="w-5 h-5 rounded-full bg-white shadow-sm flex items-center justify-center opacity-0 -translate-x-2 group-hover/shop-item:opacity-100 group-hover/shop-item:translate-x-0 transition-all duration-300 z-10">
-                                            <ArrowRight size={10} className="text-[#6b21a8]" />
-                                        </div>
-                                        
-                                        {/* Hover background effect */}
-                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover/shop-item:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none" />
-                                    </Link>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Brands Dropdown */}
-                    {brands && brands.length > 0 && (
-                        <div className="relative group/brands">
-                            <button className={`text-[12px] md:text-[13px] font-medium tracking-tight transition-all flex items-center gap-1 ${isScrolled ? 'text-gray-800' : 'text-gray-900'}`} onMouseEnter={e => e.currentTarget.style.color='var(--cl-purple)'} onMouseLeave={e => e.currentTarget.style.color=''}>
-                                Brands
-                                <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-300 group-hover/brands:rotate-[270deg]" />
-                            </button>
-
-                            {/* Invisible bridge to prevent hover loss */}
-                            <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
-
-                            <div className="absolute top-[calc(100%+0.6rem)] left-0 w-[304px] bg-white/95 backdrop-blur-3xl rounded-[22px] shadow-[0_28px_70px_-22px_rgba(59,7,100,0.32),0_0_0_1px_rgba(216,180,254,0.38)] border border-[#eadcff] opacity-0 invisible group-hover/brands:opacity-100 group-hover/brands:visible transition-all duration-300 transform translate-y-3 group-hover/brands:translate-y-0 z-[200] p-3 overflow-hidden before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,rgba(245,243,255,0.92),transparent_62%)] before:pointer-events-none">
-
-                                <div className="relative z-10 px-2.5 pt-1 pb-2.5 border-b border-[#eadcff] mb-2 flex items-center justify-between">
-                                    <p className="text-[11px] font-bold tracking-normal text-[#4c1d95]">Featured collections</p>
-                                    <Star size={12} className="text-[#7c3aed] fill-[#c4b5fd]/30" />
-                                </div>
-
-                                <div className="flex flex-col gap-1 relative z-10">
-                                    {brands.map((brand) => (
-                                        <Link
-                                            key={brand.id}
-                                            href={`/brand/${brand.slug || brand.id}`}
-                                            className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/brand-item relative overflow-hidden"
-                                        >
-                                            <div className="w-9 h-9 rounded-full bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] font-serif italic text-base group-hover/brand-item:bg-[#7c3aed] group-hover/brand-item:text-white transition-all duration-300 z-10">
-                                                {toSentenceCase(brand.name).charAt(0)}
-                                            </div>
-                                            <div className="flex-1 z-10">
-                                                <span className="block text-[13px] font-bold tracking-normal text-[#1e0a3c] leading-tight group-hover/brand-item:text-[#5b21b6] transition-colors">{toSentenceCase(brand.name)}</span>
-                                            </div>
-                                            <div className="w-5 h-5 rounded-full bg-white shadow-sm flex items-center justify-center opacity-0 -translate-x-2 group-hover/brand-item:opacity-100 group-hover/brand-item:translate-x-0 transition-all duration-300 z-10">
-                                                <ArrowRight size={10} className="text-[#5b21b6]" />
-                                            </div>
-
-                                            {/* Hover background effect */}
-                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover/brand-item:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none" />
-                                        </Link>
-                                    ))}
-                                </div>
-
-                                <div className="relative z-10 mt-1.5 pt-2.5 border-t border-[#e9d5ff] px-3">
-                                    <Link href="/brands" className="flex items-center gap-1.5 text-[11px] font-bold tracking-normal text-[#5b21b6] hover:text-[#4c1d95] hover:gap-2.5 transition-all duration-200">
-                                        View all brands <ArrowRight size={10} />
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Shop by Concern — Mega-Menu */}
-                    {concerns && concerns.length > 0 && (
-                        <div className="relative group/concerns">
-                            <button className={`text-[12px] md:text-[13px] font-medium tracking-tight transition-all flex items-center gap-1 ${isScrolled ? 'text-gray-800' : 'text-gray-900'}`} onMouseEnter={e => e.currentTarget.style.color='var(--cl-purple)'} onMouseLeave={e => e.currentTarget.style.color=''}>
-                                Concerns
-                                <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-300 group-hover/concerns:rotate-[270deg]" />
-                            </button>
-                            
-                            {/* Invisible bridge to prevent hover loss */}
-                            <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]"></div>
-                            
-                            <div className="absolute top-[calc(100%+0.6rem)] left-1/2 -translate-x-1/2 w-[500px] bg-white/95 backdrop-blur-3xl rounded-[22px] shadow-[0_28px_70px_-22px_rgba(59,7,100,0.32),0_0_0_1px_rgba(216,180,254,0.38)] border border-[#eadcff] opacity-0 invisible group-hover/concerns:opacity-100 group-hover/concerns:visible transition-all duration-300 transform translate-y-3 group-hover/concerns:translate-y-0 z-[200] p-3 overflow-hidden before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,rgba(245,243,255,0.92),transparent_62%)] before:pointer-events-none">
-                                
-                                <div className="relative z-10 px-2.5 pt-1 pb-2.5 border-b border-[#eadcff] mb-2 flex items-center justify-between">
-                                    <p className="text-[11px] font-bold tracking-normal text-[#4c1d95]">Targeted solutions</p>
-                                    <Layers size={12} className="text-[#7c3aed]" />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-1 relative z-10">
-                                    {concerns.map(concern => {
-                                        const { icon: Icon, desc } = getConcernMeta(concern.name);
-                                        return (
-                                            <Link
-                                                key={concern.id}
-                                                href={`/search?q=${concern.name}`}
-                                                className="flex items-start gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/concern-item relative overflow-hidden"
-                                            >
-                                                <div className="w-9 h-9 rounded-xl bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center shrink-0 transition-all duration-300 group-hover/concern-item:bg-[#7c3aed] group-hover/concern-item:text-white group-hover/concern-item:border-transparent text-[#5b21b6] z-10">
-                                                    <Icon size={14} strokeWidth={1.5} />
-                                                </div>
-                                                <div className="flex-1 z-10">
-                                                    <p className="text-[13px] font-bold tracking-normal text-[#1e0a3c] leading-tight group-hover/concern-item:text-[#5b21b6] transition-colors">{toSentenceCase(concern.name)}</p>
-                                                    <p className="text-[11px] text-gray-500 font-medium tracking-normal mt-0.5 leading-snug">{toSentenceCase(desc)}</p>
-                                                </div>
-
-                                                {/* Hover background effect */}
-                                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent translate-x-[-100%] group-hover/concern-item:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none" />
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-
-                                <div className="relative z-10 mt-2 pt-2.5 border-t border-[#e9d5ff] px-3 flex justify-between items-center">
-                                    <Link href="/all-products" className="flex items-center gap-1.5 text-[11px] font-bold tracking-normal text-[#5b21b6] hover:text-[#4c1d95] hover:gap-2.5 transition-all duration-300">
-                                        Browse all products <ArrowRight size={10} />
-                                    </Link>
-                                    <div className="flex items-center gap-1">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#e9d5ff]"></div>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#d8b4fe]"></div>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#c084fc]"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </nav>
-            </div>
-
-            {/* Center: Logo + Brand Name — absolute center on mobile, static on desktop */}
-            <Link href="/" className="md:static absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5 shrink-0 transition-all active:scale-95 group">
-                <Image
-                  src="/Adobe Express - file (5).png"
-                  alt="Naya Lumière Lotus Mark"
-                  height={28}
-                  width={28}
-                  className="h-7 w-7 md:h-7 w-auto object-contain shrink-0"
-                  priority
-                />
-                <div className="flex flex-col text-left leading-tight">
-                    <span
-                      className="text-[15px] md:text-[16px] font-bold tracking-[0.06em] uppercase text-ink-900"
-                      style={{
-                        fontFamily: 'var(--font-sans)',
-                      }}
-                    >
-                      NAYA LUMIÈRE
-                    </span>
-                    <span
-                      className="text-[9px] tracking-[0.32em] uppercase text-ink-500 mt-0.5 block leading-none"
-                      style={{
-                        fontFamily: 'var(--font-sans)',
-                      }}
-                    >
-                      COSMETICS
-                    </span>
-                </div>
+            {/* Logo */}
+            <Link
+              href="/"
+              className="flex items-center gap-[10px] shrink-0 group transition-opacity hover:opacity-80 active:opacity-60 md:static absolute left-1/2 -translate-x-1/2 md:translate-x-0"
+            >
+              <Image
+                src="/Adobe Express - file (5).png"
+                alt="Naya Lumière"
+                width={28}
+                height={28}
+                className="w-7 h-7 object-contain shrink-0"
+                priority
+              />
+              <div className="flex flex-col leading-tight font-semibold tracking-[0.06em] text-[#111114]">
+                <span className="text-[16px] leading-none">NAYA LUMIÈRE</span>
+                <span className="text-[9px] tracking-[0.32em] text-[#5a5a64] uppercase mt-[2px] leading-none">
+                  COSMETICS
+                </span>
+              </div>
             </Link>
 
-            {/* Right: Actions */}
-            <div className="flex items-center gap-2 md:gap-4 flex-1 justify-end">
-                {/* Search — desktop only (mobile uses bottom nav) */}
-                <Button
-                    type="button"
-                    variant="pillGlass"
-                    size="pillIcon"
-                    onClick={() => setIsSearchOpen(!isSearchOpen)}
-                    className={cn(
-                      'hidden md:flex',
-                      isScrolled ? 'text-gray-700' : 'text-black border-white/20 bg-white/15 hover:bg-white/25'
-                    )}
-                    aria-label="Search"
-                >
-                    <Search size={18} strokeWidth={2} className="text-[#3b0764]" />
-                </Button>
+            {/* Desktop nav */}
+            <nav className="hidden md:flex items-center gap-7 ml-7">
+              {NAV_LINKS.map((item) => {
+                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
 
-                <div className="flex items-center gap-2">
-                    {/* Account button — desktop only (mobile uses bottom nav) */}
-                    <div className="relative group/account hidden md:block">
-                        <button
-                          type="button"
-                          onClick={handleAccountClick}
-                          className="flex items-center gap-3 rounded-full px-1.5 py-1.5 transition-all hover:bg-white/50 backdrop-blur-sm group/btn"
-                        >
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/40 shadow-sm transition-all group-hover/btn:bg-white group-hover/btn:shadow-md group-hover/btn:scale-105 overflow-hidden relative">
-                              {user?.profile_image ? (
-                                <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
-                              ) : (
-                                <User size={18} strokeWidth={2} className="text-[#3b0764] transition-transform" />
-                              )}
-                          </div>
-                          {user && (
-                              <div className="hidden lg:flex flex-col items-start justify-center pr-3">
-                                  <span className="text-[12px] font-black tracking-widest text-[#3b0764] uppercase leading-none">
-                                      {user.first_name}
-                                  </span>
-                                  <div className="flex items-center gap-1 mt-0.5">
-                                      <Star size={10} style={{ color: 'var(--cl-purple)', fill: 'var(--cl-purple)' }} />
-                                      <span className="text-[10px] font-bold tracking-widest text-brand-pink uppercase">
-                                          {loyaltyData?.stats?.points?.toLocaleString() || 0} Points
-                                      </span>
-                                  </div>
-                              </div>
-                          )}
-                        </button>
+                if (item.hasDropdown === 'shop') {
+                  return (
+                    <div key={item.label} className="relative group/shop">
+                      <button
+                        onClick={() => router.push(item.href)}
+                        className={navLink(isActive) + ' flex items-center gap-1'}
+                      >
+                        {item.label}
+                        <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-200 group-hover/shop:rotate-[270deg]" />
+                      </button>
 
-                        {/* Account Menu on Hover */}
-                        {user && (
-                            <div className="absolute top-[calc(100%+0.6rem)] right-0 w-56 pt-2 z-[200] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-300 transform translate-y-3 group-hover/account:translate-y-0">
-                                <div className="bg-white/95 backdrop-blur-3xl rounded-[22px] shadow-[0_28px_70px_-22px_rgba(59,7,100,0.32),0_0_0_1px_rgba(216,180,254,0.38)] border border-[#eadcff] p-3 overflow-hidden">
-                                    <div className="flex flex-col gap-1">
-                                        <Link
-                                            href="/account"
-                                            className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/acc-item relative overflow-hidden"
-                                        >
-                                            <div className="w-8 h-8 rounded-lg bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/acc-item:bg-[#7c3aed] group-hover/acc-item:text-white transition-all duration-300 z-10">
-                                                <User size={14} strokeWidth={2} />
-                                            </div>
-                                            <span className="flex-1 text-[13px] font-bold text-[#1e0a3c] group-hover/acc-item:text-[#5b21b6] transition-colors">My Profile</span>
-                                        </Link>
+                      {/* bridge */}
+                      <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]" />
 
-                                        <Link
-                                            href="/wishlist"
-                                            className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/acc-item relative overflow-hidden"
-                                        >
-                                            <div className="w-8 h-8 rounded-lg bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/acc-item:bg-[#7c3aed] group-hover/acc-item:text-white transition-all duration-300 z-10">
-                                                <Heart size={14} strokeWidth={2} />
-                                            </div>
-                                            <span className="flex-1 text-[13px] font-bold text-[#1e0a3c] group-hover/acc-item:text-[#5b21b6] transition-colors">Wishlist</span>
-                                        </Link>
-
-                                        <Link
-                                            href="/loyalty"
-                                            className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/acc-item relative overflow-hidden"
-                                        >
-                                            <div className="w-8 h-8 rounded-lg bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/acc-item:bg-[#7c3aed] group-hover/acc-item:text-white transition-all duration-300 z-10">
-                                                <Star size={14} strokeWidth={2} />
-                                            </div>
-                                            <span className="flex-1 text-[13px] font-bold text-[#1e0a3c] group-hover/acc-item:text-[#5b21b6] transition-colors">Loyalty Points</span>
-                                        </Link>
-
-                                        {user?.role === 'admin' && (
-                                            <Link
-                                                href="/admin"
-                                                className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/acc-item relative overflow-hidden"
-                                            >
-                                                <div className="w-8 h-8 rounded-lg bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/acc-item:bg-[#7c3aed] group-hover/acc-item:text-white transition-all duration-300 z-10">
-                                                    <ShieldCheck size={14} strokeWidth={2} />
-                                                </div>
-                                                <span className="flex-1 text-[13px] font-bold text-[#1e0a3c] group-hover/acc-item:text-[#5b21b6] transition-colors">Admin Panel</span>
-                                            </Link>
-                                        )}
-
-                                        <div className="my-1 border-t border-[#eadcff]" />
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                logout();
-                                            }}
-                                            className="w-full flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-red-100 hover:bg-red-50 group/acc-item relative overflow-hidden"
-                                        >
-                                            <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 shadow-sm flex items-center justify-center text-red-500 group-hover/acc-item:bg-red-500 group-hover/acc-item:text-white transition-all duration-300 z-10">
-                                                <LogOut size={14} strokeWidth={2} />
-                                            </div>
-                                            <span className="flex-1 text-[13px] font-bold text-red-600 group-hover/acc-item:text-red-700 transition-colors">Sign Out</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
+                      <div className="absolute top-[calc(100%+1rem)] left-0 w-[240px] bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_8px_32px_rgba(17,17,20,.10)] opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-200 translate-y-2 group-hover/shop:translate-y-0 z-[200] p-2">
+                        {[
+                          { name: 'All Products', href: '/all-products' },
+                          { name: 'Skincare',     href: '/SkinCare' },
+                          { name: 'Fragrance',    href: '/fragrance' },
+                          { name: 'New Arrivals', href: '/new-arrivals' },
+                        ].map((link) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            className="flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] hover:text-[#111114] transition-colors"
+                          >
+                            {link.name}
+                            <ArrowRight size={12} className="text-[#8a8a93]" />
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                </div>
+                  );
+                }
 
-                <Button
+                if (item.hasDropdown === 'brands' && brands?.length > 0) {
+                  return (
+                    <div key={item.label} className="relative group/brands">
+                      <button className={navLink(isActive) + ' flex items-center gap-1'}>
+                        {item.label}
+                        <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-200 group-hover/brands:rotate-[270deg]" />
+                      </button>
+
+                      <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]" />
+
+                      <div className="absolute top-[calc(100%+1rem)] left-0 w-[220px] bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_8px_32px_rgba(17,17,20,.10)] opacity-0 invisible group-hover/brands:opacity-100 group-hover/brands:visible transition-all duration-200 translate-y-2 group-hover/brands:translate-y-0 z-[200] p-2">
+                        {brands.map((brand) => (
+                          <Link
+                            key={brand.id}
+                            href={`/brand/${brand.slug || brand.id}`}
+                            className="flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] hover:text-[#111114] transition-colors"
+                          >
+                            {brand.name}
+                            <ArrowRight size={12} className="text-[#8a8a93]" />
+                          </Link>
+                        ))}
+                        <div className="mt-1 pt-2 border-t border-[#e5e5ea] px-3">
+                          <Link href="/brands" className="text-[12px] font-medium text-[#9869f7] hover:text-[#7a4fe0] transition-colors">
+                            View all brands →
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link key={item.label} href={item.href} className={navLink(isActive)}>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Actions — push to right */}
+            <div className="ml-auto flex items-center gap-2">
+              {/* Search */}
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(true)}
+                className={`${iconBtn} hidden md:flex`}
+                aria-label="Search"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="11" cy="11" r="7"/>
+                  <path d="m20 20-3.5-3.5"/>
+                </svg>
+              </button>
+
+              {/* Account */}
+              <div className="relative group/account hidden md:block">
+                <button
+                  type="button"
+                  onClick={() => { if (user) router.push('/account'); else router.push('/auth'); }}
+                  className={iconBtn}
+                  aria-label="Account"
+                >
+                  {user?.profile_image ? (
+                    <Image src={user.profile_image} alt={user.first_name} fill className="object-cover rounded-full" />
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <circle cx="12" cy="8" r="4"/>
+                      <path d="M4 21a8 8 0 0 1 16 0"/>
+                    </svg>
+                  )}
+                </button>
+
+                {/* Account dropdown */}
+                {user && (
+                  <div className="absolute top-[calc(100%+0.75rem)] right-0 w-52 bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_8px_32px_rgba(17,17,20,.10)] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-200 translate-y-2 group-hover/account:translate-y-0 z-[200] p-2">
+                    <div className="px-3 py-2 border-b border-[#e5e5ea] mb-1">
+                      <p className="text-[13px] font-semibold text-[#111114]">{user.first_name}</p>
+                      {loyaltyData?.stats?.points != null && (
+                        <p className="text-[11px] text-[#8a8a93] mt-0.5">{loyaltyData.stats.points.toLocaleString()} points</p>
+                      )}
+                    </div>
+                    {[
+                      { label: 'My Profile',     href: '/account',  Icon: User },
+                      { label: 'Wishlist',        href: '/wishlist', Icon: Heart },
+                      { label: 'Loyalty Points',  href: '/loyalty',  Icon: Star },
+                    ].map(({ label, href, Icon }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
+                      >
+                        <Icon size={14} strokeWidth={2} className="text-[#5a5a64]" />
+                        {label}
+                      </Link>
+                    ))}
+                    {user?.role === 'admin' && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
+                      >
+                        <ShieldCheck size={14} strokeWidth={2} className="text-[#5a5a64]" />
+                        Admin Panel
+                      </Link>
+                    )}
+                    <div className="mt-1 pt-1 border-t border-[#e5e5ea]">
+                      <button
+                        type="button"
+                        onClick={logout}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut size={14} strokeWidth={2} />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cart */}
+              <button
                 type="button"
                 onClick={() => router.push('/cart')}
-                className="relative size-11 flex items-center justify-center rounded-full p-0 transition-all active:scale-95 border-none"
-                style={{ background: 'linear-gradient(90deg, #C087FC 0%, #9869F7 100%)', boxShadow: '0 6px 16px rgba(152,105,247,.35)' }}
+                className={iconBtn}
                 aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
-                >
-                <ShoppingBag size={18} strokeWidth={2} className="text-white group-hover:text-purple-100 transition-colors" />
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M6 7h12l-1 13H7L6 7Z"/>
+                  <path d="M9 7a3 3 0 0 1 6 0"/>
+                </svg>
                 {cartCount > 0 && (
-                    <>
-                    <span className="absolute inset-0 rounded-full animate-ping bg-brand-pink/20 pointer-events-none" />
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white text-[9px] font-bold text-white z-10" style={{ background: 'var(--cl-gradient)' }}>
+                  <span
+                    className="absolute -right-[3px] -top-[3px] w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-semibold text-white"
+                    style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                  >
                     {cartCount > 9 ? '9+' : cartCount}
-                    </span>
-                    </>
+                  </span>
                 )}
-                </Button>
+              </button>
+
+              {/* Sign In — desktop, only when logged out */}
+              {!user && (
+                <button
+                  type="button"
+                  onClick={() => router.push('/auth')}
+                  className="hidden md:inline-flex items-center gap-2 h-9 px-[18px] rounded-full text-[11px] font-semibold tracking-[0.14em] uppercase text-white cursor-pointer transition-all active:scale-[.98]"
+                  style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                >
+                  Sign In
+                  <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                    <path d="M5 12h14M13 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              )}
             </div>
-        </div>
+          </div>
         </div>
 
-        {/* Full-Screen Search Overlay — Redesigned for Premium Luxury */}
-        <AnimatePresence mode="wait">
-            {isSearchOpen && <motion.div
-                key="search-overlay"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="fixed inset-0 z-[300] bg-white/60 backdrop-blur-2xl flex flex-col overflow-hidden"
-                onClick={(e) => { if (e.target === e.currentTarget) setIsSearchOpen(false); }}
+        {/* ── Search Overlay ─────────────────────────────────────── */}
+        <AnimatePresence>
+          {isSearchOpen && (
+            <motion.div
+              key="search"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-[300] bg-white/80 backdrop-blur-xl flex flex-col"
+              onClick={(e) => { if (e.target === e.currentTarget) setIsSearchOpen(false); }}
             >
-                {/* Static background atmosphere — no infinite animation on mobile */}
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[#c4b5fd]/20 rounded-full blur-[120px]" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#f9a8d4]/15 rounded-full blur-[100px]" />
-                </div>
-
-                <div className="max-w-4xl mx-auto w-full px-6 md:px-10 pt-24 md:pt-40 relative z-10">
-                    {/* ── Header Area ── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1, duration: 0.6 }}
-                        className="mb-12"
+              <div className="max-w-3xl mx-auto w-full px-6 md:px-10 pt-24 md:pt-36">
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08, duration: 0.4 }}
+                >
+                  <div className="flex justify-between items-center mb-10">
+                    <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-[#111114]">
+                      What are you{' '}
+                      <span
+                        className="font-semibold"
+                        style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', background: 'linear-gradient(90deg,#c087fc,#9869f7)', backgroundClip: 'text' }}
+                      >
+                        looking for?
+                      </span>
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => setIsSearchOpen(false)}
+                      className={iconBtn + ' shrink-0'}
+                      aria-label="Close"
                     >
-                        <div className="flex items-center gap-3 mb-6">
-                            <span className="w-10 h-px bg-gradient-to-r from-[#9333ea] to-transparent"></span>
-                            <span className="text-[10px] font-black tracking-[0.3em] uppercase text-[#9333ea]">Discover Luxury Care</span>
-                        </div>
-                        
-                        <div className="flex justify-between items-start gap-10">
-                            <h2 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">
-                                Find Your{' '}
-                                <span className="font-sans not-italic font-black text-transparent bg-clip-text bg-gradient-to-r from-[#c4b5fd] via-[#9333ea] to-[#7e22ce]">Radiance.</span>
-                            </h2>
-                            <Button 
-                                type="button" 
-                                variant="pillGlass" 
-                                size="pillIcon" 
-                                onClick={() => setIsSearchOpen(false)} 
-                                className="shrink-0 bg-white/50 border-gray-100/50 hover:bg-white hover:scale-110 shadow-lg transition-all duration-300" 
-                                aria-label="Close search"
-                            >
-                                <X size={20} className="text-gray-900" />
-                            </Button>
-                        </div>
-                    </motion.div>
+                      <X size={18} />
+                    </button>
+                  </div>
 
-                    {/* ── Input Composition ── */}
-                    <motion.form 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2, duration: 0.6 }}
-                        onSubmit={handleSearch} 
-                        className="relative flex items-center gap-6 group mb-20"
-                    >
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none transition-transform duration-500 group-focus-within:scale-110">
-                            <Search size={32} strokeWidth={1.5} className="text-[#9333ea]" />
-                        </div>
-                        <input
-                            autoFocus
-                            type="text"
-                            placeholder="What are you looking for?"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full text-2xl md:text-5xl font-bold bg-transparent border-none pl-14 pr-4 py-4 focus:ring-0 focus:outline-none placeholder:text-gray-200 text-gray-900 tracking-tight transition-all duration-500"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-100 overflow-hidden rounded-full">
-                            <motion.div 
-                                initial={{ x: '-100%' }}
-                                whileInView={{ x: 0 }}
-                                className="h-full w-full bg-gradient-to-r from-[#c4b5fd] via-[#9333ea] to-[#7e22ce]"
-                            />
-                        </div>
-                    </motion.form>
+                  <form onSubmit={handleSearch} className="relative mb-12">
+                    <Search size={20} strokeWidth={1.5} className="absolute left-0 top-1/2 -translate-y-1/2 text-[#8a8a93]" />
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Serums, moisturisers, fragrance…"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full text-xl md:text-3xl font-medium bg-transparent border-none pl-8 pr-4 py-3 focus:ring-0 focus:outline-none placeholder:text-[#c8c8cf] text-[#111114]"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-[#e5e5ea]" />
+                  </form>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24">
-                        {/* ── Popular Searches ── */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
-                            className="space-y-6"
-                        >
-                            <p className="text-[10px] font-black tracking-[0.3em] uppercase text-gray-400 flex items-center gap-3">
-                                <span className="w-4 h-4 rounded-full bg-[#f5f3ff] flex items-center justify-center text-[#9333ea]">
-                                    <Sparkles size={8} />
-                                </span>
-                                Popular Trends
-                            </p>
-                            <div className="flex flex-wrap gap-3">
-                                {['Anti-Aging', 'Serums', 'Hydration', 'Fragrance', 'Gift Sets', 'GERnétic'].map((q) => (
-                                    <motion.button
-                                        key={q}
-                                        whileHover={{ y: -4, scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => { setSearchQuery(q); router.push(`/search?q=${q}`); setIsSearchOpen(false); }}
-                                        className="px-5 py-2.5 bg-white/50 backdrop-blur-md border border-[#f3e8ff] rounded-2xl text-[11px] font-black tracking-widest uppercase text-gray-600 hover:text-[#9333ea] hover:border-[#c4b5fd] hover:bg-white shadow-sm hover:shadow-xl transition-all duration-300"
-                                    >
-                                        {q}
-                                    </motion.button>
-                                ))}
-                            </div>
-                        </motion.div>
-
-                        {/* ── Quick Exploration ── */}
-                        <motion.div 
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4, duration: 0.6 }}
-                            className="space-y-6"
-                        >
-                            <p className="text-[10px] font-black tracking-[0.3em] uppercase text-gray-400 flex items-center gap-3">
-                                <span className="w-4 h-4 rounded-full bg-[#f5f3ff] flex items-center justify-center text-[#9333ea]">
-                                    <Layers size={8} />
-                                </span>
-                                Quick Links
-                            </p>
-                            <div className="grid grid-cols-1 gap-2">
-                                {[
-                                    { label: 'New Arrivals', href: '/new-arrivals', desc: 'Shop the latest innovations' },
-                                    { label: 'All Products', href: '/all-products', desc: 'Explore the full collection' },
-                                    { label: 'Gift Sets', href: '/gift-sets', desc: 'Luxury for someone special' },
-                                ].map((link) => (
-                                    <motion.button
-                                        key={link.href}
-                                        whileHover={{ x: 8 }}
-                                        onClick={() => { router.push(link.href); setIsSearchOpen(false); }}
-                                        className="flex items-center gap-4 w-full text-left p-4 rounded-2xl hover:bg-white/60 transition-all duration-300 group"
-                                    >
-                                        <div className="w-10 h-10 rounded-xl bg-[#f5f3ff] flex items-center justify-center text-[#9333ea] group-hover:scale-110 group-hover:bg-[#9333ea] group-hover:text-white transition-all duration-500">
-                                            <ArrowRight size={14} />
-                                        </div>
-                                        <div>
-                                            <p className="text-[13px] font-black text-gray-900 group-hover:text-[#9333ea] transition-colors">{link.label}</p>
-                                            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest mt-0.5">{link.desc}</p>
-                                        </div>
-                                    </motion.button>
-                                ))}
-                            </div>
-                        </motion.div>
-                    </div>
-                </div>
-            </motion.div>}
+                  <div className="flex flex-wrap gap-2">
+                    {['Anti-Aging', 'Serums', 'Hydration', 'Fragrance', 'Gift Sets', 'GERnétic'].map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => { router.push(`/search?q=${encodeURIComponent(q)}`); setIsSearchOpen(false); }}
+                        className="px-4 py-2 rounded-full border border-[#e5e5ea] bg-white text-[12px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] hover:border-[#c8c8cf] transition-colors"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </header>
 
-      {/* Persistent Spacer - Reserves header space in document flow */}
-      <div className="h-14 md:h-16 w-full" />
+      {/* Spacer */}
+      <div className="h-14 md:h-[60px] w-full" />
 
-      {/* Mobile Sidebar */}
+      {/* ── Mobile Sidebar ─────────────────────────────────────── */}
       <AnimatePresence>
         {isMenuOpen && (
-            <div className="md:hidden fixed inset-0 z-[150]">
-                <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                    onClick={() => setIsMenuOpen(false)}
-                />
-                <motion.nav
-                    initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                    className="absolute top-0 left-0 bottom-0 w-[85%] max-w-[400px] bg-white shadow-2xl flex flex-col rounded-r-[2.5rem]"
-                >
-                    <div className="p-6 md:p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/20">
-                        <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2.5 transition-all active:scale-95 group">
-                            <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Lotus Mark" height={28} width={28} className="h-7 w-7 object-contain shrink-0" />
-                            <div className="flex flex-col text-left leading-tight">
-                                <span
-                                  className="text-[15px] font-bold tracking-[0.06em] uppercase text-ink-900"
-                                  style={{ fontFamily: 'var(--font-sans)' }}
-                                >
-                                  NAYA LUMIÈRE
-                                </span>
-                                <span
-                                  className="text-[9px] tracking-[0.32em] uppercase text-ink-500 mt-0.5 block leading-none"
-                                  style={{ fontFamily: 'var(--font-sans)' }}
-                                >
-                                  COSMETICS
-                                </span>
-                            </div>
-                        </Link>
-                        <Button type="button" variant="pillSecondary" size="pillIcon" onClick={() => setIsMenuOpen(false)} className="active:scale-95 bg-white shadow-sm border border-gray-100" aria-label="Close menu">
-                            <X size={18} className="text-[#3b0764]" />
-                        </Button>
-                    </div>
-                    
-                    <div className="flex-1 flex flex-col py-6 overflow-y-auto">
-                        <div className="px-4 gap-2 flex flex-col mb-4">
-                            {[
-                                { label: 'Store', path: '/all-products' },
-                                { label: 'New Arrivals', path: '/new-arrivals' },
-                                { label: 'Skincare', path: '/SkinCare' },
-                                { label: 'Fragrance', path: '/fragrance' },
-                                { label: 'Collections', path: '/collections' },
-                            ].map((item) => (
-                                <button 
-                                    key={item.path}
-                                    onClick={() => { router.push(item.path); setIsMenuOpen(false); }} 
-                                    className="flex items-center justify-between px-6 py-4 rounded-2xl text-[15px] font-medium tracking-tight text-gray-900 active:bg-[#f5f3ff] hover:bg-gray-50 transition-all group"
-                                    style={{ fontFamily: "'Instrument Sans', sans-serif" }}
-                                >
-                                    <span className="group-active:translate-x-1 transition-transform capitalize">{item.label.toLowerCase()}</span>
-                                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-active:text-[#9333ea] transition-all">
-                                        <ChevronRight size={14} />
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
+          <div className="md:hidden fixed inset-0 z-[150]">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setIsMenuOpen(false)}
+            />
+            <motion.nav
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+              className="absolute top-0 left-0 bottom-0 w-[85%] max-w-[360px] bg-white shadow-2xl flex flex-col rounded-r-[28px] overflow-hidden"
+            >
+              {/* Sidebar header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5e5ea]">
+                <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-[10px]">
+                  <Image src="/Adobe Express - file (5).png" alt="Naya Lumière" width={26} height={26} className="w-6.5 h-6.5 object-contain" />
+                  <div className="flex flex-col leading-tight font-semibold tracking-[0.06em] text-[#111114]">
+                    <span className="text-[15px] leading-none">NAYA LUMIÈRE</span>
+                    <span className="text-[9px] tracking-[0.32em] text-[#5a5a64] uppercase mt-[2px] leading-none">COSMETICS</span>
+                  </div>
+                </Link>
+                <button type="button" onClick={() => setIsMenuOpen(false)} className={iconBtn} aria-label="Close">
+                  <X size={17} />
+                </button>
+              </div>
 
-                        {/* Mobile Concerns Section */}
-                        {concerns && concerns.length > 0 && (
-                            <div className="bg-white/80 px-6 py-8 rounded-[2rem] mx-4 mb-4 border border-gray-100">
-                                <span className="text-[9px] font-black tracking-[0.4em] uppercase text-[#9333ea]/60 mb-6 block px-2">Targeted Concerns</span>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {concerns.map((concern) => {
-                                        const { icon: Icon } = getConcernMeta(concern.name);
-                                        return (
-                                            <button
-                                                key={concern.id}
-                                                onClick={() => { router.push(`/search?q=${concern.name}`); setIsMenuOpen(false); }}
-                                                className="flex items-center gap-4 p-3 rounded-xl bg-white/40 border border-transparent active:border-[#c4b5fd] active:bg-white transition-all group"
-                                            >
-                                                <div className="w-10 h-10 rounded-xl bg-white border border-[#f3e8ff] flex items-center justify-center text-[#9333ea] shadow-sm group-active:scale-95 transition-transform">
-                                                    <Icon size={16} strokeWidth={1.5} />
-                                                </div>
-                                                <div className="text-left">
-                                                    <p className="text-[12px] font-bold text-gray-900">{concern.name}</p>
-                                                    <p className="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Shop Solution</p>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div className="px-4 gap-2 flex flex-col mb-10">
-                            {[
-                                { label: 'Wishlist', path: '/wishlist' },
-                                { label: 'Sales', path: '/sales' },
-                            ].map((item) => (
-                                <button 
-                                    key={item.path}
-                                    onClick={() => { router.push(item.path); setIsMenuOpen(false); }} 
-                                    className="flex items-center justify-between px-6 py-4 rounded-2xl text-[15px] font-medium tracking-tight text-gray-900 active:bg-[#f5f3ff] hover:bg-gray-50 transition-all group"
-                                    style={{ fontFamily: "'Instrument Sans', sans-serif" }}
-                                >
-                                    <span className="group-active:translate-x-1 transition-transform capitalize">{item.label.toLowerCase()}</span>
-                                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-active:text-[#9333ea] transition-all">
-                                        <ChevronRight size={14} />
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+              {/* Nav links */}
+              <div className="flex-1 overflow-y-auto py-4 px-3">
+                {[
+                  { label: 'Shop',        href: '/all-products' },
+                  { label: 'Collections', href: '/collections' },
+                  { label: 'Skin Quiz',   href: '/skin-quiz' },
+                  { label: 'Brands',      href: '/brands' },
+                  { label: 'Journal',     href: '/journal' },
+                  { label: 'Wishlist',    href: '/wishlist' },
+                ].map((item) => (
+                  <button
+                    key={item.href}
+                    type="button"
+                    onClick={() => { router.push(item.href); setIsMenuOpen(false); }}
+                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
+                  >
+                    {item.label}
+                    <ChevronRight size={14} className="text-[#8a8a93]" />
+                  </button>
+                ))}
 
-                    <div className="mt-auto p-6 bg-white/80 backdrop-blur-xl rounded-t-[3rem] border-t border-[#f3e8ff]/50 shadow-[0_-20px_40px_-20px_rgba(147,51,234,0.1)]">
-                        {user && (
-                            <div className="mb-6 flex items-center gap-4 px-2">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#c4b5fd] to-[#9333ea] text-white flex items-center justify-center font-black text-xl shadow-lg overflow-hidden relative">
-                                    {user?.profile_image ? (
-                                        <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
-                                    ) : (
-                                        <>{user.first_name?.[0]}</>
-                                    )}
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-lg font-black tracking-tight text-gray-900 leading-tight">{user.first_name}</span>
-                                    <Link href="/loyalty" className="flex items-center gap-1.5 mt-1" onClick={() => setIsMenuOpen(false)}>
-                                        <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center">
-                                            <Star size={8} className="text-brand-pink fill-brand-pink" />
-                                        </div>
-                                        <span className="text-[11px] font-black tracking-widest text-brand-pink uppercase">{loyaltyData?.stats?.points?.toLocaleString() || 0} Points</span>
-                                    </Link>
-                                </div>
-                            </div>
+                {/* Concerns */}
+                {concerns?.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-[#e5e5ea]">
+                    <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-widest px-4 mb-2">Skin Concerns</p>
+                    {concerns.map((concern) => {
+                      const { icon: Icon } = getConcernMeta(concern.name);
+                      return (
+                        <button
+                          key={concern.id}
+                          type="button"
+                          onClick={() => { router.push(`/search?q=${concern.name}`); setIsMenuOpen(false); }}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
+                        >
+                          <Icon size={15} strokeWidth={1.5} className="text-[#5a5a64]" />
+                          {concern.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar footer */}
+              <div className="p-4 border-t border-[#e5e5ea]">
+                {user ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3 px-2 mb-1">
+                      <div className="w-10 h-10 rounded-full overflow-hidden relative bg-[#f3f3f5] flex items-center justify-center font-semibold text-[#2a2a31]">
+                        {user.profile_image
+                          ? <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
+                          : <span>{user.first_name?.[0]}</span>
+                        }
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-semibold text-[#111114]">{user.first_name}</p>
+                        {loyaltyData?.stats?.points != null && (
+                          <p className="text-[11px] text-[#8a8a93]">{loyaltyData.stats.points.toLocaleString()} points</p>
                         )}
-                        
-                        <div className="flex flex-col gap-3">
-                            {user?.role === 'admin' && (
-                                <button 
-                                    onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}
-                                    className="cl-gradient-btn w-full rounded-full h-14 text-[13px] flex items-center justify-center gap-3 border-none shadow-md"
-                                >
-                                    <ShieldCheck size={16} strokeWidth={2.5} />
-                                    Admin panel
-                                </button>
-                            )}
-                            
-                            <button 
-                                onClick={() => { router.push(user ? '/account' : '/auth'); setIsMenuOpen(false); }}
-                                className="cl-gradient-btn w-full rounded-full h-14 text-[13px] flex items-center justify-center gap-3 border-none shadow-md"
-                            >
-                                <User size={16} strokeWidth={2.5} />
-                                {user ? 'My account' : 'Sign in'}
-                            </button>
-                        </div>
+                      </div>
                     </div>
-                </motion.nav>
-            </div>
+                    <button
+                      type="button"
+                      onClick={() => { router.push('/account'); setIsMenuOpen(false); }}
+                      className="w-full h-11 rounded-full text-[13px] font-semibold tracking-[0.1em] uppercase text-white"
+                      style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                    >
+                      My Account
+                    </button>
+                    {user?.role === 'admin' && (
+                      <button
+                        type="button"
+                        onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}
+                        className="w-full h-11 rounded-full border border-[#e5e5ea] text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
+                      >
+                        Admin Panel
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="text-[13px] font-medium text-red-500 py-2 text-center"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { router.push('/auth'); setIsMenuOpen(false); }}
+                    className="w-full h-12 rounded-full flex items-center justify-center gap-2 text-[13px] font-semibold tracking-[0.14em] uppercase text-white"
+                    style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                  >
+                    Sign In
+                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                      <path d="M5 12h14M13 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </motion.nav>
+          </div>
         )}
       </AnimatePresence>
-
     </>
   );
 });

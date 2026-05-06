@@ -19,20 +19,12 @@ import TabbyCard from '../components/TabbyCard';
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
 const AddressInputForm = dynamic(() => import('../components/AddressInputForm'), { ssr: false });
 
-const glass = {
-  background: 'rgba(255,255,255,0.72)',
-  border: '1px solid var(--ink-200)',
-  backdropFilter: 'blur(20px)',
-  boxShadow: '0 2px 24px rgba(147,51,234,0.07)',
-};
-
-const lavGradient = 'var(--brand-gradient)';
-
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
   const router = useRouter();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [shippingAddresses, setShippingAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(selectedShippingAddressId);
@@ -48,7 +40,7 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({ paymentMethod: 'cashOnDelivery', giftWrap: false, giftMessage: '', newsletter: false });
   const [loyaltyLoaded, setLoyaltyLoaded] = useState(false);
   const [isTabbyLoading, setIsTabbyLoading] = useState(false);
-  const piCreatedRef = useRef(false); // prevents duplicate PI creation during re-renders
+  const piCreatedRef = useRef(false);
 
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
   const shipping = subtotal > 200 ? 0 : 30;
@@ -58,9 +50,7 @@ export default function CheckoutPage() {
   const total = Math.max(0, finalTotal + shipping + tax + giftWrapFee - pointsDiscount);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/auth?callbackUrl=/checkout');
-    }
+    if (!authLoading && !isAuthenticated) router.replace('/auth?callbackUrl=/checkout');
   }, [authLoading, isAuthenticated, router]);
 
   const fetchShippingAddresses = useCallback(async () => {
@@ -82,22 +72,14 @@ export default function CheckoutPage() {
       fetchWithAuth(`/api/users/${user.id}/loyalty`)
         .then(r => r.json())
         .then(d => { setLoyaltyPoints(d.stats?.points || 0); setLoyaltyLoaded(true); })
-        .catch(() => { setLoyaltyLoaded(true); }); // mark loaded even on failure so checkout isn't blocked
+        .catch(() => setLoyaltyLoaded(true));
     }
   }, [user, fetchShippingAddresses, fetchWithAuth]);
 
   useEffect(() => { setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)); }, []);
 
-  // Create the payment intent only once, after ALL async data (loyalty points, cart) has
-  // finished loading. Using a ref guard prevents duplicate PIs when total re-renders.
   useEffect(() => {
-    if (
-      formData.paymentMethod !== 'card' ||
-      total <= 0 ||
-      !loyaltyLoaded ||
-      piCreatedRef.current
-    ) return;
-
+    if (formData.paymentMethod !== 'card' || total <= 0 || !loyaltyLoaded || piCreatedRef.current) return;
     piCreatedRef.current = true;
     fetch('/api/create-payment-intent', {
       method: 'POST',
@@ -106,20 +88,12 @@ export default function CheckoutPage() {
     })
       .then(r => r.json())
       .then(d => setClientSecret(d.clientSecret))
-      .catch(() => { piCreatedRef.current = false; }); // allow retry on network error
+      .catch(() => { piCreatedRef.current = false; });
   }, [formData.paymentMethod, total, loyaltyLoaded]);
 
-  // When anything that changes the total is toggled AFTER a PI was already created,
-  // reset so a fresh PI is created with the correct new amount.
-  useEffect(() => {
-    piCreatedRef.current = false;
-    setClientSecret('');
-  }, [formData.giftWrap, usePoints, appliedCoupon]);
-
+  useEffect(() => { piCreatedRef.current = false; setClientSecret(''); }, [formData.giftWrap, usePoints, appliedCoupon]);
   useEffect(() => { setSelectedShippingAddressId(selectedAddressId); }, [selectedAddressId, setSelectedShippingAddressId]);
 
-  // Persist order payload to sessionStorage so the /order-confirmation redirect handler
-  // can create the order after a 3D-Secure redirect (when React state is lost).
   useEffect(() => {
     if (formData.paymentMethod !== 'card' || !selectedAddressId || !user?.id || cartItems.length === 0) return;
     const shippingDate = new Date();
@@ -185,13 +159,11 @@ export default function CheckoutPage() {
     if (!selectedAddressId) { toast.error('Please select a shipping address.'); return; }
     const addr = shippingAddresses.find(a => a.id === selectedAddressId);
     if (!addr) { toast.error('Selected address not found.'); return; }
-
     setIsTabbyLoading(true);
     try {
-      // Save pending order data so /tabby-return can create the order
       const shippingDate = new Date();
       shippingDate.setDate(shippingDate.getDate() + 7);
-      const pendingOrder = {
+      sessionStorage.setItem('pendingTabbyOrder', JSON.stringify({
         user_address_id: selectedAddressId,
         subtotal: parseFloat(subtotal.toFixed(2)),
         shipping_cost: parseFloat(shipping.toFixed(2)),
@@ -206,42 +178,20 @@ export default function CheckoutPage() {
         points_discount: pointsDiscount,
         gift_wrap: formData.giftWrap,
         gift_wrap_cost: giftWrapFee,
-      };
-      sessionStorage.setItem('pendingTabbyOrder', JSON.stringify(pendingOrder));
-
+      }));
       const res = await fetch('/api/tabby/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: total,
-          items: cartItems.map(i => ({
-            id: i.id,
-            productId: i.id,
-            name: i.name,
-            price: i.price,
-            quantity: i.quantity,
-            image: i.image || '',
-            productUrl: `${window.location.origin}/product/${i.id}`,
-          })),
-          buyer: {
-            email: user.email,
-            name: user.name || user.first_name || '',
-            phone: addr.customer_phone || '',
-          },
-          shippingAddress: {
-            city: addr.city || 'Dubai',
-            address: addr.shipping_address || addr.addressLine1 || '',
-            zip: addr.zip_code || '00000',
-          },
-          taxAmount: tax,
-          shippingAmount: shipping,
-          discountAmount: discountAmount || 0,
+          items: cartItems.map(i => ({ id: i.id, productId: i.id, name: i.name, price: i.price, quantity: i.quantity, image: i.image || '', productUrl: `${window.location.origin}/product/${i.id}` })),
+          buyer: { email: user.email, name: user.name || user.first_name || '', phone: addr.customer_phone || '' },
+          shippingAddress: { city: addr.city || 'Dubai', address: addr.shipping_address || addr.addressLine1 || '', zip: addr.zip_code || '00000' },
+          taxAmount: tax, shippingAmount: shipping, discountAmount: discountAmount || 0,
         }),
       });
-
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || 'Tabby checkout failed.'); setIsTabbyLoading(false); return; }
-
       window.location.href = data.webUrl;
     } catch {
       toast.error('Could not connect to Tabby. Please try another payment method.');
@@ -260,7 +210,7 @@ export default function CheckoutPage() {
     setAuthorizedPaymentIntentId(piId);
     setPaymentAuthorization(true);
     setCurrentStep(3);
-    toast.success('Payment Authorized!');
+    toast.success('Payment authorized!');
   };
 
   const handlePlaceOrder = async () => {
@@ -289,19 +239,10 @@ export default function CheckoutPage() {
     try {
       const res = await fetchWithAuth('/api/orders', { method: 'POST', body: JSON.stringify(orderData) });
       const result = await res.json();
-      if (res.status === 409) {
-        // Duplicate — order was already created (e.g. double-click). Send to existing order.
-        clearCart();
-        router.push(`/account/orders/${result.orderId}`);
-        return;
-      }
-      if (!res.ok) {
-        toast.error(result.message || 'Error placing order. Please contact support.');
-        setIsPlacingOrder(false);
-        return;
-      }
+      if (res.status === 409) { clearCart(); router.push(`/order-confirmed/${result.orderId}`); return; }
+      if (!res.ok) { toast.error(result.message || 'Error placing order. Please contact support.'); setIsPlacingOrder(false); return; }
       clearCart();
-      router.push(`/account/orders/${result.orderId}`);
+      router.push(`/order-confirmed/${result.orderId}`);
     } catch { toast.error('Error placing order. Please contact support.'); setIsPlacingOrder(false); }
   };
 
@@ -313,61 +254,68 @@ export default function CheckoutPage() {
 
   const btnLabel = isPlacingOrder ? 'Processing…'
     : isTabbyLoading ? 'Redirecting to Tabby…'
-    : currentStep === 3 ? `Finalize · AED ${total.toFixed(2)}`
-    : formData.paymentMethod === 'tabby' && currentStep === 2 ? `Pay with Tabby`
-    : formData.paymentMethod === 'card' && currentStep === 2 ? 'Authorize Card'
+    : currentStep === 3 ? `Place Order · AED ${total.toFixed(2)}`
+    : formData.paymentMethod === 'tabby' && currentStep === 2 ? 'Pay with Tabby'
+    : formData.paymentMethod === 'card'  && currentStep === 2 ? 'Authorize Card'
     : 'Continue';
 
-  if (!authLoading && !isAuthenticated) {
-    return null;
-  }
+  if (!authLoading && !isAuthenticated) return null;
+
+  /* ── shared card style ── */
+  const card = 'bg-white border border-[#e5e5ea] rounded-2xl';
 
   return (
-    <div className="min-h-screen pb-28 lg:pb-12" style={{ background: '#ffffff' }}>
-      {/* Auras */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-15%] left-[-8%] w-[45%] h-[45%] rounded-full blur-[120px]" style={{ background: 'rgba(196,167,254,0.15)' }} />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full blur-[100px]" style={{ background: 'rgba(216,180,254,0.1)' }} />
-      </div>
+    <div className="min-h-screen bg-white pb-28 lg:pb-12">
 
       {/* Header */}
-      <div className="sticky top-0 z-50 backdrop-blur-2xl" style={{ background: 'rgba(253,248,255,0.88)', borderBottom: '1px solid rgba(216,180,254,0.25)' }}>
+      <div className="sticky top-0 z-50 bg-white border-b border-[#e5e5ea]">
         <div className="max-w-7xl mx-auto px-5 py-4 flex items-center justify-between">
-          <button onClick={() => router.push('/cart')} className="flex items-center gap-2 text-[13px] font-semibold transition-all group" style={{ color: 'rgba(59,7,100,0.55)' }}>
-            <ArrowLeft size={15} className="group-hover:-translate-x-1 transition-transform" /> Return to Cart
+          <button
+            onClick={() => router.push('/cart')}
+            className="flex items-center gap-2 text-[13px] font-medium text-[#5a5a64] hover:text-[#111114] transition-colors group"
+          >
+            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+            Back to Cart
           </button>
           <div className="text-center">
-            <h1 className="text-[16px] font-bold tracking-tight" style={{ color: '#3b0764' }}>Checkout</h1>
-            <p className="text-[11px] font-medium" style={{ color: 'rgba(59,7,100,0.4)' }}>Step {currentStep} of 3</p>
+            <h1 className="text-[16px] font-semibold text-[#111114]">Checkout</h1>
+            <p className="text-[11px] text-[#8a8a93] mt-0.5">Step {currentStep} of 3</p>
           </div>
           <div className="w-[120px] hidden sm:block" />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* Left column */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-5">
 
             {/* Step progress */}
-            <div className="rounded-2xl p-5 overflow-hidden" style={glass}>
-              <div className="flex items-center justify-between max-w-sm mx-auto relative">
+            <div className={card + ' p-5'}>
+              <div className="flex items-center justify-between max-w-xs mx-auto relative">
                 {steps.map((step, idx) => (
                   <div key={step.id} className="flex flex-col items-center gap-1.5 relative z-10">
                     <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-500"
+                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 text-white"
                       style={currentStep >= step.id
-                        ? { background: lavGradient, color: '#fff', boxShadow: '0 4px 16px rgba(147,51,234,0.25)' }
-                        : { background: 'rgba(196,167,254,0.15)', color: 'rgba(196,167,254,0.5)' }}
+                        ? { background: 'linear-gradient(90deg,#c087fc,#9869f7)', boxShadow: '0 2px 8px rgba(152,105,247,.3)' }
+                        : { background: '#f3f3f5', color: '#c8c8cf' }}
                     >
-                      <step.Icon size={15} strokeWidth={currentStep === step.id ? 2.5 : 1.5} />
+                      <step.Icon
+                        size={15}
+                        strokeWidth={currentStep === step.id ? 2.5 : 1.5}
+                        className={currentStep >= step.id ? 'text-white' : 'text-[#c8c8cf]'}
+                      />
                     </div>
-                    <span className="text-[10px] font-semibold" style={{ color: currentStep >= step.id ? '#3b0764' : 'rgba(59,7,100,0.3)' }}>
+                    <span className={`text-[11px] font-medium ${currentStep >= step.id ? 'text-[#111114]' : 'text-[#c8c8cf]'}`}>
                       {step.label}
                     </span>
                     {idx < steps.length - 1 && (
-                      <div className="absolute left-[calc(50%+22px)] right-[calc(-50%+22px)] top-4 h-px" style={{ background: currentStep > step.id ? 'rgba(196,167,254,0.6)' : 'rgba(216,180,254,0.25)' }} />
+                      <div
+                        className="absolute left-[calc(50%+22px)] right-[calc(-50%+22px)] top-4 h-px"
+                        style={{ background: currentStep > step.id ? '#9869f7' : '#e5e5ea' }}
+                      />
                     )}
                   </div>
                 ))}
@@ -378,78 +326,89 @@ export default function CheckoutPage() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="rounded-3xl p-6 lg:p-10 min-h-[420px] flex flex-col"
-                style={glass}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+                className={card + ' p-6 lg:p-8 min-h-[400px] flex flex-col'}
               >
 
                 {/* Step 1 — Shipping */}
                 {currentStep === 1 && (
-                  <div className="space-y-7 flex-grow">
+                  <div className="space-y-6 flex-grow">
                     <div>
-                      <h2 className="text-2xl font-bold tracking-tight" style={{ color: '#3b0764' }}>Destination</h2>
-                      <p className="text-[13px] mt-1" style={{ color: 'rgba(59,7,100,0.45)' }}>Where should your selection be delivered?</p>
+                      <h2 className="text-[20px] font-semibold text-[#111114]">Shipping address</h2>
+                      <p className="text-[13px] text-[#5a5a64] mt-1">Where should your order be delivered?</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {shippingAddresses.map((addr) => {
                         const isSelected = selectedAddressId === addr.id;
                         return (
-                          <motion.div
-                            layout
+                          <div
                             key={addr.id}
                             onClick={() => setSelectedAddressId(addr.id)}
-                            className="relative p-5 cursor-pointer rounded-2xl transition-all duration-400 group"
-                            style={isSelected
-                              ? { border: '1.5px solid rgba(196,167,254,0.7)', background: 'rgba(196,167,254,0.1)', boxShadow: '0 4px 20px rgba(147,51,234,0.12)' }
-                              : { border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.5)' }}
+                            className={`relative p-5 cursor-pointer rounded-xl border transition-all duration-200 ${
+                              isSelected
+                                ? 'border-[#9869f7] bg-[#f9f9fb] shadow-sm'
+                                : 'border-[#e5e5ea] bg-white hover:border-[#c8c8cf]'
+                            }`}
                           >
                             {isSelected && (
-                              <div className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: lavGradient }}>
-                                <Check size={11} strokeWidth={3} color="#fff" />
+                              <div
+                                className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full flex items-center justify-center text-white"
+                                style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                              >
+                                <Check size={11} strokeWidth={3} />
                               </div>
                             )}
-                            <div className="space-y-2">
+                            <div className="space-y-1.5 pr-6">
                               <div className="flex items-center gap-2">
-                                <h3 className="text-[14px] font-bold tracking-tight" style={{ color: '#3b0764' }}>
+                                <p className="text-[14px] font-semibold text-[#111114]">
                                   {addr.addressLabel || addr.customerName || user?.name}
-                                </h3>
+                                </p>
                                 {addr.isDefault && (
-                                  <span className="text-[8px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full text-white" style={{ background: lavGradient }}>Primary</span>
+                                  <span
+                                    className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full text-white"
+                                    style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                                  >
+                                    Default
+                                  </span>
                                 )}
                               </div>
-                              <div className="text-[12px] leading-relaxed space-y-0.5" style={{ color: 'rgba(59,7,100,0.55)' }}>
-                                <p className="truncate">{addr.shipping_address || addr.addressLine1}</p>
-                                <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'rgba(59,7,100,0.4)' }}>
-                                  <MapPin size={10} /> {addr.city}, {addr.country}
-                                </p>
-                              </div>
-                              <div className="pt-1.5 flex items-center gap-4">
-                                <button onClick={(e) => { e.stopPropagation(); openAddressModal(addr); }} className="text-[10px] font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all" style={{ color: 'rgb(126,105,230)', background: 'rgba(196,167,254,0.12)', border: '1px solid rgba(196,167,254,0.3)' }}>
-                                  <Pencil size={10} /> Edit
-                                </button>
-                                <button onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }} className="text-[10px] font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all text-red-400 hover:text-red-600" style={{ background: 'rgba(254,226,226,0.5)', border: '1px solid rgba(252,165,165,0.3)' }}>
-                                  <Trash2 size={10} /> Remove
-                                </button>
-                              </div>
+                              <p className="text-[12px] text-[#5a5a64] truncate">{addr.shipping_address || addr.addressLine1}</p>
+                              <p className="text-[11px] text-[#8a8a93] flex items-center gap-1">
+                                <MapPin size={10} /> {addr.city}, {addr.country}
+                              </p>
                             </div>
-                          </motion.div>
+                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#e5e5ea]">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); openAddressModal(addr); }}
+                                className="flex items-center gap-1.5 text-[11px] font-medium text-[#5a5a64] hover:text-[#111114] transition-colors"
+                              >
+                                <Pencil size={11} /> Edit
+                              </button>
+                              <span className="text-[#e5e5ea]">·</span>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }}
+                                className="flex items-center gap-1.5 text-[11px] font-medium text-red-400 hover:text-red-600 transition-colors"
+                              >
+                                <Trash2 size={11} /> Remove
+                              </button>
+                            </div>
+                          </div>
                         );
                       })}
 
-                      {/* Add address */}
+                      {/* Add new address */}
                       <button
                         onClick={() => openAddressModal(null)}
-                        className="min-h-[130px] rounded-2xl flex flex-col items-center justify-center gap-2.5 transition-all"
-                        style={{ border: '1.5px dashed rgba(216,180,254,0.4)', color: 'rgba(196,167,254,0.7)' }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(196,167,254,0.7)'; e.currentTarget.style.color = 'rgb(126,105,230)'; e.currentTarget.style.background = 'rgba(196,167,254,0.06)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(216,180,254,0.4)'; e.currentTarget.style.color = 'rgba(196,167,254,0.7)'; e.currentTarget.style.background = 'transparent'; }}
+                        className="min-h-[120px] rounded-xl border-2 border-dashed border-[#e5e5ea] flex flex-col items-center justify-center gap-2 text-[#8a8a93] hover:border-[#9869f7] hover:text-[#9869f7] hover:bg-[#f9f9fb] transition-all duration-200"
                       >
-                        <FaPlus size={14} />
-                        <span className="text-[11px] font-bold uppercase tracking-[0.12em]">New Address</span>
+                        <div className="w-8 h-8 rounded-lg border border-current flex items-center justify-center">
+                          <Plus size={14} />
+                        </div>
+                        <span className="text-[12px] font-medium">Add new address</span>
                       </button>
                     </div>
                   </div>
@@ -457,14 +416,13 @@ export default function CheckoutPage() {
 
                 {/* Step 2 — Payment */}
                 {currentStep === 2 && (
-                  <div className="space-y-7 flex-grow">
+                  <div className="space-y-6 flex-grow">
                     <div>
-                      <h2 className="text-2xl font-bold tracking-tight" style={{ color: '#3b0764' }}>Payment</h2>
-                      <p className="text-[13px] mt-1" style={{ color: 'rgba(59,7,100,0.45)' }}>Secure your acquisition with your preferred method.</p>
+                      <h2 className="text-[20px] font-semibold text-[#111114]">Payment</h2>
+                      <p className="text-[13px] text-[#5a5a64] mt-1">Choose your preferred payment method.</p>
                     </div>
 
-                    <div className="space-y-3">
-                      {/* Credit Card */}
+                    <div className="space-y-2.5">
                       {[
                         { id: 'card',           label: 'Credit Card',      Icon: CreditCard, desc: 'Visa, Mastercard, Amex' },
                         { id: 'cashOnDelivery', label: 'Cash on Delivery', Icon: Truck,      desc: 'Payment upon delivery'  },
@@ -474,55 +432,58 @@ export default function CheckoutPage() {
                           <div
                             key={id}
                             onClick={() => setFormData(p => ({ ...p, paymentMethod: id }))}
-                            className="flex items-center justify-between p-5 rounded-2xl cursor-pointer transition-all duration-400"
-                            style={sel
-                              ? { border: '1.5px solid rgba(196,167,254,0.7)', background: 'rgba(196,167,254,0.1)', boxShadow: '0 4px 20px rgba(147,51,234,0.1)' }
-                              : { border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.5)' }}
+                            className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
+                              sel ? 'border-[#9869f7] bg-[#f9f9fb]' : 'border-[#e5e5ea] bg-white hover:border-[#c8c8cf]'
+                            }`}
                           >
-                            <div className="flex items-center gap-4">
-                              <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: sel ? 'rgba(196,167,254,0.2)' : 'rgba(196,167,254,0.1)', color: 'rgb(126,105,230)' }}>
-                                <Icon size={20} strokeWidth={1.5} />
+                            <div className="flex items-center gap-3.5">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${sel ? 'text-[#9869f7] bg-white border border-[#e5e5ea]' : 'bg-[#f3f3f5] text-[#5a5a64]'}`}>
+                                <Icon size={18} strokeWidth={1.5} />
                               </div>
                               <div>
-                                <p className="text-[14px] font-bold" style={{ color: '#3b0764' }}>{label}</p>
-                                <p className="text-[11px] uppercase tracking-[0.1em]" style={{ color: 'rgba(59,7,100,0.4)' }}>{desc}</p>
+                                <p className="text-[14px] font-semibold text-[#111114]">{label}</p>
+                                <p className="text-[11px] text-[#8a8a93]">{desc}</p>
                               </div>
                             </div>
-                            <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all" style={sel ? { borderColor: 'rgb(126,105,230)', background: lavGradient } : { borderColor: 'rgba(216,180,254,0.5)' }}>
-                              {sel && <Check size={11} strokeWidth={3} color="#fff" />}
+                            <div
+                              className="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
+                              style={sel
+                                ? { borderColor: '#9869f7', background: 'linear-gradient(90deg,#c087fc,#9869f7)' }
+                                : { borderColor: '#e5e5ea' }}
+                            >
+                              {sel && <Check size={10} strokeWidth={3} className="text-white" />}
                             </div>
                           </div>
                         );
                       })}
 
-                      {/* Tabby — branded row */}
+                      {/* Tabby */}
                       {(() => {
                         const sel = formData.paymentMethod === 'tabby';
                         return (
                           <div
                             onClick={() => setFormData(p => ({ ...p, paymentMethod: 'tabby' }))}
-                            className="flex items-center justify-between p-5 rounded-2xl cursor-pointer transition-all duration-400"
-                            style={sel
-                              ? { border: '1.5px solid rgba(61,255,160,0.5)', background: 'rgba(61,255,160,0.06)', boxShadow: '0 4px 20px rgba(61,255,160,0.12)' }
-                              : { border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.5)' }}
+                            className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
+                              sel ? 'border-[#3DFFA0] bg-[#f0fff8]' : 'border-[#e5e5ea] bg-white hover:border-[#c8c8cf]'
+                            }`}
                           >
-                            <div className="flex items-center gap-4">
-                              {/* Official Tabby brand icon */}
-                              <div className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0">
-                                <Image src="/0x0.png" alt="Tabby" width={44} height={44} className="w-full h-full object-cover" />
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                                <Image src="/0x0.png" alt="Tabby" width={40} height={40} className="w-full h-full object-cover" />
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <p className="text-[14px] font-bold" style={{ color: '#3b0764' }}>Pay in 4</p>
-                                  <span className="text-[9px] font-black uppercase tracking-[0.12em] px-1.5 py-0.5 rounded" style={{ background: '#3DFFA0', color: '#1A1A2E' }}>tabby</span>
+                                  <p className="text-[14px] font-semibold text-[#111114]">Pay in 4</p>
+                                  <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: '#3DFFA0', color: '#1A1A2E' }}>tabby</span>
                                 </div>
-                                <p className="text-[11px] uppercase tracking-[0.1em]" style={{ color: 'rgba(59,7,100,0.4)' }}>
-                                  4 × AED {(total / 4).toFixed(2)} · No interest
-                                </p>
+                                <p className="text-[11px] text-[#8a8a93]">4 × AED {(total / 4).toFixed(2)} · No interest</p>
                               </div>
                             </div>
-                            <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all" style={sel ? { borderColor: '#3DFFA0', background: '#3DFFA0' } : { borderColor: 'rgba(216,180,254,0.5)' }}>
-                              {sel && <Check size={11} strokeWidth={3} color="#1A1A2E" />}
+                            <div
+                              className="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                              style={sel ? { borderColor: '#3DFFA0', background: '#3DFFA0' } : { borderColor: '#e5e5ea' }}
+                            >
+                              {sel && <Check size={10} strokeWidth={3} style={{ color: '#1A1A2E' }} />}
                             </div>
                           </div>
                         );
@@ -533,38 +494,35 @@ export default function CheckoutPage() {
                     <AnimatePresence mode="wait">
                       {formData.paymentMethod === 'card' && (
                         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
-                          <div className="rounded-3xl p-6 lg:p-8 relative overflow-hidden" style={{ background: 'var(--brand-gradient)', boxShadow: '0 12px 40px rgba(147,51,234,0.3)' }}>
-                            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[70px]" style={{ background: 'rgba(249,168,212,0.2)' }} />
-                            <div className="relative z-10 space-y-6">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <h3 className="text-lg font-bold text-white">Secure Payment</h3>
-                                  <p className="text-[10px] text-white/50 uppercase tracking-[0.2em] font-bold mt-0.5">Encrypted</p>
-                                </div>
-                                <div className="flex gap-2 opacity-50">
-                                  <ShieldCheck size={16} color="#fff" />
-                                  <Lock size={16} color="#fff" />
-                                </div>
+                          <div className="rounded-2xl border border-[#e5e5ea] overflow-hidden">
+                            <div className="px-5 py-3 border-b border-[#e5e5ea] bg-[#f9f9fb] flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <ShieldCheck size={14} className="text-green-500" />
+                                <p className="text-[12px] font-semibold text-[#2a2a31]">Secure Payment</p>
                               </div>
-                              <div className="rounded-2xl p-5 lg:p-7" style={{ background: 'rgba(255,255,255,0.95)' }}>
-                                {clientSecret && stripePromise ? (
-                                  <Elements stripe={stripePromise} options={{ clientSecret }}>
-                                    <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" amount={Math.round(total * 100)} clientSecret={clientSecret} />
-                                  </Elements>
-                                ) : (
-                                  <div className="flex flex-col items-center justify-center py-10 gap-4">
-                                    <Loader2 className="animate-spin" size={24} style={{ color: 'rgb(126,105,230)' }} />
-                                    <p className="text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: 'rgba(59,7,100,0.4)' }}>Initializing secure gateway…</p>
-                                  </div>
-                                )}
+                              <div className="flex items-center gap-1.5 text-[#8a8a93]">
+                                <Lock size={11} />
+                                <span className="text-[10px] font-medium uppercase tracking-wide">Encrypted</span>
                               </div>
+                            </div>
+                            <div className="p-5">
+                              {clientSecret && stripePromise ? (
+                                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                                  <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" amount={Math.round(total * 100)} clientSecret={clientSecret} />
+                                </Elements>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                                  <Loader2 className="animate-spin text-[#9869f7]" size={22} />
+                                  <p className="text-[11px] text-[#8a8a93] uppercase tracking-widest font-medium">Initializing secure gateway…</p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
 
-                    {/* Official Tabby card widget */}
+                    {/* Tabby card */}
                     <AnimatePresence mode="wait">
                       {formData.paymentMethod === 'tabby' && (
                         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
@@ -574,22 +532,22 @@ export default function CheckoutPage() {
                     </AnimatePresence>
 
                     {/* Gift wrap */}
-                    <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.6)' }}>
+                    <div className="rounded-xl border border-[#e5e5ea] p-4">
                       <label className="flex items-center gap-4 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={formData.giftWrap}
                           onChange={e => setFormData(p => ({ ...p, giftWrap: e.target.checked }))}
                           className="w-4 h-4 rounded"
-                          style={{ accentColor: 'rgb(126,105,230)' }}
+                          style={{ accentColor: '#9869f7' }}
                         />
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(196,167,254,0.18)', color: 'rgb(126,105,230)' }}>
-                            <Gift size={16} strokeWidth={1.75} />
+                          <div className="w-9 h-9 rounded-lg bg-[#f3f3f5] flex items-center justify-center text-[#5a5a64]">
+                            <Gift size={15} strokeWidth={1.75} />
                           </div>
                           <div>
-                            <p className="text-[13px] font-bold" style={{ color: '#3b0764' }}>Gift Wrap Selection</p>
-                            <p className="text-[11px]" style={{ color: 'rgba(59,7,100,0.45)' }}>+AED 100 · Naya Signature Packaging</p>
+                            <p className="text-[13px] font-semibold text-[#111114]">Gift wrap</p>
+                            <p className="text-[11px] text-[#8a8a93]">+AED 100 · Naya Signature Packaging</p>
                           </div>
                         </div>
                       </label>
@@ -599,62 +557,62 @@ export default function CheckoutPage() {
 
                 {/* Step 3 — Review */}
                 {currentStep === 3 && (
-                  <div className="space-y-6 flex-grow">
+                  <div className="space-y-5 flex-grow">
                     <div>
-                      <h2 className="text-2xl font-bold tracking-tight" style={{ color: '#3b0764' }}>Review</h2>
-                      <p className="text-[13px] mt-1" style={{ color: 'rgba(59,7,100,0.45)' }}>Final check before we finalize your order.</p>
+                      <h2 className="text-[20px] font-semibold text-[#111114]">Review your order</h2>
+                      <p className="text-[13px] text-[#5a5a64] mt-1">Check everything looks right before placing your order.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {/* Shipping */}
-                      <div className="rounded-2xl p-5 space-y-3" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.6)' }}>
-                        <div className="flex items-center gap-2">
-                          <MapPin size={13} style={{ color: 'rgb(196,167,254)' }} />
-                          <h3 className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgba(59,7,100,0.45)' }}>Shipping Address</h3>
+                      <div className="rounded-xl border border-[#e5e5ea] p-4 space-y-2">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MapPin size={13} className="text-[#8a8a93]" />
+                          <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-widest">Shipping address</p>
                         </div>
                         {(() => {
                           const addr = shippingAddresses.find(a => a.id === selectedAddressId);
                           return addr ? (
-                            <div className="text-[13px] leading-relaxed space-y-0.5">
-                              <p className="font-bold" style={{ color: '#3b0764' }}>{addr.customerName || user?.name}</p>
-                              <p style={{ color: 'rgba(59,7,100,0.55)' }}>{addr.shipping_address || addr.addressLine1}</p>
-                              <p style={{ color: 'rgba(59,7,100,0.45)' }}>{addr.city}, {addr.country}</p>
+                            <div className="text-[13px] space-y-0.5">
+                              <p className="font-semibold text-[#111114]">{addr.customerName || user?.name}</p>
+                              <p className="text-[#5a5a64]">{addr.shipping_address || addr.addressLine1}</p>
+                              <p className="text-[#8a8a93]">{addr.city}, {addr.country}</p>
                             </div>
                           ) : null;
                         })()}
                       </div>
 
                       {/* Payment */}
-                      <div className="rounded-2xl p-5 space-y-3" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.6)' }}>
-                        <div className="flex items-center gap-2">
-                          <CreditCard size={13} style={{ color: 'rgb(196,167,254)' }} />
-                          <h3 className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgba(59,7,100,0.45)' }}>Payment</h3>
+                      <div className="rounded-xl border border-[#e5e5ea] p-4 space-y-2">
+                        <div className="flex items-center gap-2 mb-3">
+                          <CreditCard size={13} className="text-[#8a8a93]" />
+                          <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-widest">Payment</p>
                         </div>
-                        <p className="text-[13px] font-bold" style={{ color: '#3b0764' }}>
-                          {formData.paymentMethod === 'card' ? 'Authorized Credit Card' : 'Cash on Delivery'}
+                        <p className="text-[14px] font-semibold text-[#111114]">
+                          {formData.paymentMethod === 'card' ? 'Credit card (authorized)' : 'Cash on delivery'}
                         </p>
-                        <div className="flex items-center gap-2 text-[11px]" style={{ color: 'rgba(59,7,100,0.4)' }}>
-                          <ShieldCheck size={12} className="text-green-500" /> Secure Protocol Active
+                        <div className="flex items-center gap-1.5 text-[12px] text-[#8a8a93]">
+                          <ShieldCheck size={12} className="text-green-500" /> Secure checkout
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Desktop navigation */}
-                <div className="hidden lg:flex items-center justify-between mt-10 pt-7" style={{ borderTop: '1px solid rgba(216,180,254,0.2)' }}>
+                {/* Desktop nav */}
+                <div className="hidden lg:flex items-center justify-between mt-8 pt-6 border-t border-[#e5e5ea]">
                   <button
                     onClick={() => currentStep > 1 && setCurrentStep(s => s - 1)}
                     disabled={currentStep === 1}
-                    className="text-[13px] font-semibold transition-colors disabled:opacity-0"
-                    style={{ color: 'rgba(59,7,100,0.5)' }}
+                    className="text-[13px] font-medium text-[#5a5a64] hover:text-[#111114] transition-colors disabled:opacity-0"
                   >
-                    Back
+                    ← Back
                   </button>
                   <button
                     onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()}
                     disabled={isPlacingOrder || isTabbyLoading || hasStockIssues}
-                    className="cl-gradient-btn px-12 py-4 rounded-full text-[15px] font-semibold active:scale-[0.98] disabled:opacity-50"
+                    className="h-12 px-10 rounded-full text-[13px] font-semibold tracking-[0.1em] uppercase text-white disabled:opacity-40 transition-opacity"
+                    style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
                   >
                     {btnLabel}
                   </button>
@@ -663,27 +621,24 @@ export default function CheckoutPage() {
             </AnimatePresence>
           </div>
 
-          {/* Right: Order summary */}
+          {/* Right: order summary */}
           <div className="lg:col-span-4">
-            <div className="lg:sticky lg:top-28 space-y-4">
-              <div className="rounded-3xl p-6" style={glass}>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-[16px] font-bold tracking-tight" style={{ color: '#3b0764' }}>Summary</h3>
-                  <Sparkles size={15} strokeWidth={1.5} style={{ color: 'rgba(196,167,254,0.6)' }} />
-                </div>
+            <div className="lg:sticky lg:top-24 space-y-4">
+              <div className={card + ' p-6'}>
+                <h3 className="text-[15px] font-semibold text-[#111114] mb-5">Order Summary</h3>
 
                 {/* Items */}
-                <div className="max-h-[220px] overflow-y-auto pr-1 no-scrollbar mb-6 space-y-4">
+                <div className="max-h-[200px] overflow-y-auto pr-1 no-scrollbar mb-5 space-y-3">
                   {cartItems.map(item => (
-                    <div key={item.id} className="flex gap-3 group">
-                      <div className="w-13 h-13 rounded-xl overflow-hidden flex-shrink-0 p-1.5" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(216,180,254,0.25)', width: 48, height: 48 }}>
+                    <div key={item.id} className="flex gap-3">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-[#f9f9fb] border border-[#e5e5ea] p-1">
                         <ImageWithFallback src={item.image} alt={item.name} className="w-full h-full object-contain mix-blend-multiply" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-bold truncate" style={{ color: '#3b0764' }}>{item.name}</p>
+                        <p className="text-[12px] font-semibold text-[#111114] truncate">{item.name}</p>
                         <div className="flex items-center justify-between mt-0.5">
-                          <p className="text-[10px]" style={{ color: 'rgba(59,7,100,0.4)' }}>Qty: {item.quantity}</p>
-                          <p className="text-[12px] font-bold" style={{ color: '#3b0764' }}>AED {(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-[11px] text-[#8a8a93]">Qty: {item.quantity}</p>
+                          <p className="text-[12px] font-semibold text-[#111114]">AED {(item.price * item.quantity).toFixed(2)}</p>
                         </div>
                       </div>
                     </div>
@@ -691,43 +646,33 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Breakdown */}
-                <div className="space-y-2.5 text-[13px] mb-6">
-                  <div className="flex justify-between" style={{ color: 'rgba(59,7,100,0.55)' }}>
-                    <span>Subtotal</span><span className="font-semibold" style={{ color: '#3b0764' }}>AED {subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between" style={{ color: 'rgba(59,7,100,0.55)' }}>
-                    <span>Shipping</span>
-                    <span className={shipping === 0 ? 'text-green-600 font-semibold' : 'font-semibold'} style={shipping !== 0 ? { color: '#3b0764' } : {}}>
+                <div className="space-y-2.5 text-[13px] mb-5">
+                  <div className="flex justify-between"><span className="text-[#5a5a64]">Subtotal</span><span className="font-semibold text-[#111114]">AED {subtotal.toFixed(2)}</span></div>
+                  <div className="flex justify-between">
+                    <span className="text-[#5a5a64]">Shipping</span>
+                    <span className={shipping === 0 ? 'font-semibold text-green-600' : 'font-semibold text-[#111114]'}>
                       {shipping === 0 ? 'Free' : `AED ${shipping.toFixed(2)}`}
                     </span>
                   </div>
-                  <div className="flex justify-between" style={{ color: 'rgba(59,7,100,0.55)' }}>
-                    <span>Tax (5%)</span><span className="font-semibold" style={{ color: '#3b0764' }}>AED {tax.toFixed(2)}</span>
-                  </div>
-                  {giftWrapFee > 0 && (
-                    <div className="flex justify-between" style={{ color: 'rgba(59,7,100,0.55)' }}>
-                      <span>Gift Wrap</span><span className="font-semibold" style={{ color: '#3b0764' }}>AED {giftWrapFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {discountAmount > 0 && (
-                    <div className="flex justify-between font-semibold text-green-600">
-                      <span>Discount</span><span>−AED {discountAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-baseline pt-4" style={{ borderTop: '1px solid rgba(216,180,254,0.25)' }}>
-                    <span className="text-[15px] font-bold" style={{ color: '#3b0764' }}>Total</span>
-                    <p className="text-2xl font-black tabular-nums" style={{ color: '#3b0764' }}>AED {total.toFixed(2)}</p>
+                  <div className="flex justify-between"><span className="text-[#5a5a64]">Tax (5%)</span><span className="font-semibold text-[#111114]">AED {tax.toFixed(2)}</span></div>
+                  {giftWrapFee > 0 && <div className="flex justify-between"><span className="text-[#5a5a64]">Gift wrap</span><span className="font-semibold text-[#111114]">AED {giftWrapFee.toFixed(2)}</span></div>}
+                  {discountAmount > 0 && <div className="flex justify-between font-semibold text-green-600"><span>Discount</span><span>−AED {discountAmount.toFixed(2)}</span></div>}
+                  {pointsDiscount > 0 && <div className="flex justify-between font-semibold text-green-600"><span>Points discount</span><span>−AED {pointsDiscount.toFixed(2)}</span></div>}
+
+                  <div className="flex justify-between items-baseline pt-4 border-t border-[#e5e5ea]">
+                    <span className="text-[15px] font-semibold text-[#111114]">Total</span>
+                    <p className="text-[22px] font-bold text-[#111114] tabular-nums">AED {total.toFixed(2)}</p>
                   </div>
                 </div>
 
                 {/* Trust */}
-                <div className="pt-5 space-y-3" style={{ borderTop: '1px solid rgba(216,180,254,0.2)' }}>
+                <div className="pt-4 border-t border-[#e5e5ea] space-y-2.5">
                   {[
-                    { Icon: Lock,       text: 'Secured Transaction',  color: 'text-green-500' },
-                    { Icon: ShieldCheck, text: 'Authentic Selection',  color: 'text-blue-400' },
-                    { Icon: RotateCcw,  text: '30-day Returns',        color: 'text-purple-400' },
+                    { Icon: Lock,        text: 'Secured transaction',  color: 'text-green-500' },
+                    { Icon: ShieldCheck, text: 'Authentic products',   color: 'text-blue-400'  },
+                    { Icon: RotateCcw,   text: '30-day returns',       color: 'text-[#9869f7]' },
                   ].map(({ Icon, text, color }) => (
-                    <div key={text} className="flex items-center gap-2.5 text-[11px]" style={{ color: 'rgba(59,7,100,0.45)' }}>
+                    <div key={text} className="flex items-center gap-2.5 text-[12px] text-[#5a5a64]">
                       <Icon size={12} className={color} /> {text}
                     </div>
                   ))}
@@ -739,20 +684,20 @@ export default function CheckoutPage() {
       </div>
 
       {/* Mobile sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden backdrop-blur-2xl p-4" style={{ background: 'rgba(253,248,255,0.92)', borderTop: '1px solid rgba(216,180,254,0.3)' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden bg-white border-t border-[#e5e5ea] p-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => currentStep > 1 && setCurrentStep(s => s - 1)}
             disabled={currentStep === 1}
-            className="w-12 h-12 rounded-full flex items-center justify-center disabled:opacity-0 transition-all"
-            style={{ border: '1px solid rgba(216,180,254,0.45)', color: 'rgb(126,105,230)' }}
+            className="w-12 h-12 rounded-full flex items-center justify-center border border-[#e5e5ea] text-[#5a5a64] hover:bg-[#f3f3f5] transition-colors disabled:opacity-0"
           >
             <ArrowLeft size={16} />
           </button>
           <button
             onClick={() => currentStep < 3 ? handleNextStep() : handlePlaceOrder()}
             disabled={isPlacingOrder || isTabbyLoading || hasStockIssues}
-            className="cl-gradient-btn flex-1 h-14 rounded-full text-[15px] font-semibold active:scale-[0.98] disabled:opacity-50"
+            className="flex-1 h-12 rounded-full text-[13px] font-semibold tracking-[0.1em] uppercase text-white disabled:opacity-40"
+            style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
           >
             {btnLabel}
           </button>
@@ -760,7 +705,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* Address modal */}
-      <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit Address' : 'New Address'} size="max-w-3xl">
+      <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit address' : 'New address'} size="max-w-3xl">
         <AddressInputForm initialData={editingAddress} onSave={handleCheckoutAddressSave} onCancel={closeAddressModal} />
       </Modal>
     </div>

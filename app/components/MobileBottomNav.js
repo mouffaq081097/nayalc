@@ -5,159 +5,116 @@ import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { Button } from './ui/button';
-import { cn } from './ui/utils';
+import Image from 'next/image';
 
-const navItems = [
-  { id: 'home', icon: Home, label: 'Home' },
-  { id: 'wishlist', icon: Heart, label: 'Wishlist' },
-  { id: 'search', icon: Search, label: 'Search' },
-  { id: 'chat', icon: MessageSquare, label: 'Chat' },
-  { id: 'account', icon: User, label: 'Account' },
+const NAV_ITEMS = [
+  { id: 'home',     Icon: Home,          label: 'Home'    },
+  { id: 'wishlist', Icon: Heart,         label: 'Wishlist'},
+  { id: 'search',   Icon: Search,        label: 'Search'  },
+  { id: 'chat',     Icon: MessageSquare, label: 'Chat'    },
+  { id: 'account',  Icon: User,          label: 'Account' },
 ];
 
 function MobileBottomNav() {
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
   const { isChatOpen, setIsChatOpen } = useAppContext();
 
   const [isVisible, setIsVisible] = useState(true);
-  const lastScrollYRef = useRef(0);
+  const lastYRef   = useRef(0);
   const tickingRef = useRef(false);
 
   useEffect(() => {
-    lastScrollYRef.current = typeof window !== 'undefined' ? window.scrollY : 0;
-
+    lastYRef.current = window.scrollY;
     const onScroll = () => {
       if (tickingRef.current) return;
       tickingRef.current = true;
       window.requestAnimationFrame(() => {
         tickingRef.current = false;
         const y = window.scrollY;
-        const prev = lastScrollYRef.current;
-        if (Math.abs(y - prev) <= 10) return;
-        if (y > prev && y > 50) setIsVisible(false);
-        else setIsVisible(true);
-        lastScrollYRef.current = y;
+        if (Math.abs(y - lastYRef.current) > 10) {
+          setIsVisible(y < lastYRef.current || y <= 50);
+        }
+        lastYRef.current = y;
       });
     };
-
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const handleItemClick = (itemId) => {
-    if (itemId === 'chat') {
-      setIsChatOpen(!isChatOpen);
-      return;
-    }
-
-    const routeMap = {
-      home: '/',
-      account: '/account',
-      search: '/search',
-      wishlist: '/wishlist',
-    };
-
-    if (['account', 'wishlist'].includes(itemId) && !isAuthenticated) {
-      router.push('/auth');
-      return;
-    }
-
-    if (itemId === 'account') {
-      router.push('/account');
-      return;
-    }
-
-    router.push(routeMap[itemId] || `/${itemId}`);
+  const handleClick = (id) => {
+    if (id === 'chat') { setIsChatOpen(!isChatOpen); return; }
+    if (['account', 'wishlist'].includes(id) && !isAuthenticated) { router.push('/auth'); return; }
+    const map = { home: '/', account: '/account', search: '/search', wishlist: '/wishlist' };
+    router.push(map[id] || `/${id}`);
   };
 
-  const getActiveTab = () => {
-    if (isChatOpen) return 'chat';
-    if (pathname === '/') return 'home';
-    if (pathname.includes('wishlist')) return 'wishlist';
-    if (pathname.includes('search')) return 'search';
-    if (pathname.includes('account')) return 'account';
-    return 'home';
-  };
-
-  const activeTab = getActiveTab();
+  const activeId = isChatOpen ? 'chat'
+    : pathname === '/'              ? 'home'
+    : pathname.includes('wishlist') ? 'wishlist'
+    : pathname.includes('search')   ? 'search'
+    : pathname.includes('account')  ? 'account'
+    : 'home';
 
   return (
     <motion.div
       initial={{ y: 0 }}
       animate={{ y: isVisible ? 0 : 120 }}
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       className="pointer-events-none fixed left-0 right-0 z-[70] px-3 md:hidden"
-      style={{
-        bottom: 'max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.35rem))',
-      }}
+      style={{ bottom: 'max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.35rem))' }}
     >
       <nav
-        className="pointer-events-auto mx-auto flex h-14 max-w-md items-stretch justify-between rounded-[var(--radius-card)] px-1 backdrop-blur-xl"
-        style={{
-          WebkitBackdropFilter: 'blur(20px)',
-          background: 'rgba(253,248,255,0.88)',
-          border: '1px solid var(--cl-glass-border)',
-          boxShadow: '0 4px 20px rgba(147,51,234,0.08), 0 1px 6px rgba(196,167,254,0.15)',
-          borderTop: '1px solid rgba(216,180,254,0.5)',
-        }}
+        className="pointer-events-auto mx-auto flex h-[60px] max-w-md items-stretch justify-between rounded-2xl px-1 bg-white border border-[#e5e5ea]"
+        style={{ boxShadow: '0 4px 14px rgba(17,17,20,.08)' }}
       >
-        {navItems.map((item) => {
-          const isActive = activeTab === item.id;
-          const Icon = item.icon;
-
+        {NAV_ITEMS.map(({ id, Icon, label }) => {
+          const active = activeId === id;
           return (
-            <Button
-              key={item.id}
+            <button
+              key={id}
               type="button"
-              variant="navTab"
-              onClick={() => handleItemClick(item.id)}
-              className={cn(
-                isActive ? 'text-[#1d1d1f]' : 'text-gray-400 hover:text-gray-500'
-              )}
+              onClick={() => handleClick(id)}
+              className="flex flex-1 flex-col items-center justify-center gap-[3px] rounded-xl transition-colors duration-[120ms] active:bg-[#f3f3f5]"
             >
+              {/* icon container */}
               <span
-                className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-200',
-                  isActive ? 'text-white shadow-md' : 'bg-transparent'
-                )}
-              style={isActive ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' } : {}}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-[150ms]"
+                style={active
+                  ? { background: 'linear-gradient(90deg,#c087fc,#9869f7)', boxShadow: '0 2px 8px rgba(152,105,247,.35)' }
+                  : {}}
               >
-                {item.id === 'account' && user ? (
-                  <div
-                    className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded-full overflow-hidden border border-white/20',
-                      !user.profile_image && (isActive ? 'bg-white/25' : 'bg-gradient-to-br from-[#c4a7fe] to-[#7e69e6]')
-                    )}
-                  >
+                {id === 'account' && user ? (
+                  <div className="w-[22px] h-[22px] rounded-full overflow-hidden relative bg-[#f3f3f5] flex items-center justify-center">
                     {user.profile_image ? (
-                      <img 
-                        src={user.profile_image} 
-                        alt="Profile" 
-                        className="h-full w-full object-cover"
-                      />
+                      <Image src={user.profile_image} alt="Profile" fill className="object-cover" />
                     ) : (
-                      <span className="text-[10px] font-black text-white">
-                        {(user.name || user.first_name || 'U').charAt(0).toUpperCase()}
+                      <span className={`text-[11px] font-semibold ${active ? 'text-white' : 'text-[#5a5a64]'}`}>
+                        {(user.first_name || 'U').charAt(0).toUpperCase()}
                       </span>
                     )}
                   </div>
                 ) : (
-                  <Icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2.25 : 2} />
+                  <Icon
+                    size={18}
+                    strokeWidth={active ? 2.25 : 1.8}
+                    className={active ? 'text-white' : 'text-[#5a5a64]'}
+                  />
                 )}
               </span>
+
+              {/* label */}
               <span
-                className={cn(
-                  'max-w-[4.25rem] truncate text-center leading-tight',
-                  isActive ? 'font-bold' : 'font-semibold text-gray-400'
-                )}
-              style={isActive ? { color: 'rgb(126,105,230)' } : {}}
+                className="text-[10px] leading-none truncate"
+                style={{
+                  fontWeight: active ? 600 : 500,
+                  color: active ? '#9869f7' : '#8a8a93',
+                }}
               >
-                {item.label}
+                {label}
               </span>
-            </Button>
+            </button>
           );
         })}
       </nav>

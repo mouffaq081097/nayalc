@@ -95,7 +95,7 @@ export default function OrderConfirmation() {
         }
 
         // 5. Redirect to the order confirmation page
-        router.push(`/account/orders/${orderId}`);
+        router.push(`/order-confirmed/${orderId}`);
       } catch (err) {
         setStatus('error');
         setMessage(`Payment succeeded but order creation failed: ${err.message}. Please contact support with payment ID: ${paymentIntentId}`);
