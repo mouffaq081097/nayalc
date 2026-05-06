@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "[background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))] text-white hover:opacity-95 hover:shadow-[0_0_32px_8px_rgba(167,139,250,0.65)] rounded-full border-none transition-all duration-300 font-sans",
+        default: "[background:var(--brand-gradient)] text-white hover:opacity-95 hover:shadow-[0_0_32px_8px_rgba(167,139,250,0.65)] rounded-full border-none transition-all duration-300 font-sans",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
@@ -20,9 +20,9 @@ const buttonVariants = cva(
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         pillPrimary:
-          "rounded-full border-none [background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))] text-white hover:opacity-95 hover:shadow-[0_0_32px_8px_rgba(167,139,250,0.65)] active:scale-[0.97] transition-all duration-300 font-sans",
+          "rounded-full border-none [background:var(--brand-gradient)] text-white hover:opacity-95 hover:shadow-[0_0_32px_8px_rgba(167,139,250,0.65)] active:scale-[0.97] transition-all duration-300 font-sans",
         pillSecondary:
-          "rounded-full border-none [background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))] text-white hover:opacity-95 hover:shadow-[0_0_32px_8px_rgba(167,139,250,0.65)] active:scale-[0.98] transition-all duration-300 font-sans",
+          "rounded-full border-none [background:var(--brand-gradient)] text-white hover:opacity-95 hover:shadow-[0_0_32px_8px_rgba(167,139,250,0.65)] active:scale-[0.98] transition-all duration-300 font-sans",
         pillGlass:
           "rounded-full border border-black/10 bg-white/70 text-[#1d1d1f] shadow-sm backdrop-blur-md hover:bg-white/90 active:scale-[0.98] focus-visible:ring-black/15 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20",
         navTab:

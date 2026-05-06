@@ -9,6 +9,7 @@ import {
     EyeOff, Eye, Video
 } from 'lucide-react';
 import Modal from '../../components/Modal';
+import PageLoader from '@/app/components/PageLoader';
 import { Button } from '@/app/components/ui/button';
 import AutoResizeTextarea from '../../components/AutoResizeTextarea';
 import { truncateText } from '@/app/lib/utils';
@@ -142,12 +143,7 @@ const ManageProducts = () => {
 
     const filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    if (isDataLoading) return (
-        <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
-            <div className="w-10 h-10 border-4 border-purple-100 border-t-[#9333ea] rounded-full animate-spin" />
-            <p className="text-sm text-gray-400">Loading…</p>
-        </div>
-    );
+    if (isDataLoading) return <PageLoader />;
 
     return (
         <div className="space-y-6 pb-8">
@@ -155,7 +151,7 @@ const ManageProducts = () => {
             {/* Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={15} style={{ color: 'rgba(147,51,234,0.4)' }} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={15} style={{ color: 'rgba(152,105,247,0.4)' }} />
                     <input
                         type="text" placeholder="Search products…"
                         className="w-full pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all rounded-full"
@@ -173,12 +169,12 @@ const ManageProducts = () => {
                     <div className="flex rounded-full p-1" style={{ background: 'rgba(243,232,255,0.6)', border: '1px solid rgba(216,180,254,0.4)' }}>
                         <button onClick={() => setViewMode('grid')}
                             className="p-1.5 rounded-full transition-all"
-                            style={viewMode==='grid' ? { background: '#fff', color: '#9333ea', boxShadow: '0 1px 4px rgba(147,51,234,0.2)' } : { color: 'rgba(107,33,168,0.5)' }}>
+                            style={viewMode==='grid' ? { background: '#fff', color: 'var(--brand-purple-2)', boxShadow: '0 1px 4px rgba(152,105,247,0.2)' } : { color: 'rgba(107,33,168,0.5)' }}>
                             <LayoutGrid size={15} />
                         </button>
                         <button onClick={() => setViewMode('list')}
                             className="p-1.5 rounded-full transition-all"
-                            style={viewMode==='list' ? { background: '#fff', color: '#9333ea', boxShadow: '0 1px 4px rgba(147,51,234,0.2)' } : { color: 'rgba(107,33,168,0.5)' }}>
+                            style={viewMode==='list' ? { background: '#fff', color: 'var(--brand-purple-2)', boxShadow: '0 1px 4px rgba(152,105,247,0.2)' } : { color: 'rgba(107,33,168,0.5)' }}>
                             <List size={15} />
                         </button>
                     </div>
@@ -188,10 +184,10 @@ const ManageProducts = () => {
                         onClick={handleOpenAddModal}
                         className="flex items-center gap-2 text-white text-[12px] font-semibold transition-all duration-200 active:scale-95 hover:shadow-lg"
                         style={{
-                            background: 'linear-gradient(135deg, #9333ea 0%, #db2777 100%)',
+                            background: 'var(--brand-gradient)',
                             borderRadius: '99px',
                             padding: '9px 22px',
-                            boxShadow: '0 4px 16px rgba(147,51,234,0.35)',
+                            boxShadow: '0 4px 16px rgba(152,105,247,0.35)',
                             letterSpacing: '0.02em',
                         }}
                     >
@@ -274,7 +270,7 @@ const ManageProducts = () => {
                                 {/* Info */}
                                 <div className="px-4 pt-3 pb-4 flex flex-col flex-grow">
                                     {brandName && (
-                                        <p className="text-[10px] font-bold mb-1" style={{ color: '#9333ea' }}>
+                                        <p className="text-[10px] font-bold mb-1" style={{ color: 'var(--brand-purple-darker)' }}>
                                             {brandName}
                                         </p>
                                     )}
@@ -313,7 +309,7 @@ const ManageProducts = () => {
                         className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(216,180,254,0.35)' }}>
                         <table className="w-full">
                             <thead>
-                                <tr style={{ background: 'rgba(248,240,255,0.7)' }}>
+                                <tr style={{ background: 'rgba(255,255,255,0.7)' }}>
                                     {['Product','Brand','Status','Stock','Price',''].map((h, i) => (
                                         <th key={i} className={`px-6 py-4 text-[10px] font-black text-purple-400 ${i>=4 ? 'text-right' : 'text-left'}`}>{h}</th>
                                     ))}
@@ -481,7 +477,7 @@ const ManageProducts = () => {
                                         </div>
                                     </div>
                                     <div className="flex flex-col justify-center">
-                                        <div className="rounded-xl p-5 space-y-2.5" style={{ background: 'rgba(248,240,255,0.7)', border: '1px solid rgba(216,180,254,0.3)' }}>
+                                        <div className="rounded-xl p-5 space-y-2.5" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.3)' }}>
                                             <p className="text-[11px] font-bold text-purple-600 mb-3">Image guidelines</p>
                                             {['Product centered in frame','Soft, uniform lighting','High resolution (2000×2000px)','PNG with transparency preferred'].map((t, i) => (
                                                 <p key={i} className="text-xs text-gray-500 flex items-center gap-2">
@@ -616,7 +612,7 @@ const ManageProducts = () => {
                                         {categories.map(c => (
                                             <label key={c.id} className="flex items-center gap-3 cursor-pointer group/c">
                                                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                                                    formData.categoryIds.includes(c.id) ? 'bg-[#9333ea] border-[#9333ea]' : 'border-gray-200 group-hover/c:border-purple-300'
+                                                    formData.categoryIds.includes(c.id) ? 'bg-purple-500 border-purple-500' : 'border-gray-200 group-hover/c:border-purple-300'
                                                 }`}>
                                                     {formData.categoryIds.includes(c.id) && <CheckCircle2 size={12} className="text-white" />}
                                                 </div>
@@ -656,7 +652,7 @@ const ManageProducts = () => {
                 <div className="sticky bottom-0 left-0 right-0 px-8 py-5 bg-white/95 backdrop-blur-sm border-t border-purple-100 flex flex-row-reverse items-center gap-4 z-50">
                     <button type="submit" disabled={isSubmitting}
                         className="px-10 py-4 text-white text-sm font-bold rounded-2xl shadow-lg transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2 min-w-[200px]"
-                        style={{ background: '#9333ea', boxShadow: '0 4px 20px rgba(147,51,234,0.3)' }}>
+                        style={{ background: 'var(--brand-gradient)', boxShadow: '0 4px 20px rgba(152,105,247,0.3)' }}>
                         {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : isEditMode ? 'Update Product' : 'Save Product'}
                     </button>
                     <button type="button" onClick={handleCloseModal} disabled={isSubmitting}

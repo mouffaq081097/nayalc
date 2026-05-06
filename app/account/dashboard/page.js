@@ -14,8 +14,8 @@ import { useAuth } from '../../context/AuthContext';
 
 const CL = {
   glass:       'rgba(255,255,255,0.72)',
-  glassBorder: 'rgba(216,180,254,0.35)',
-  gradient:    'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+  glassBorder: 'var(--ink-200)',
+  gradient:    'var(--brand-gradient)',
   purple:      'rgb(126,105,230)',
   purpleLight: 'rgba(196,167,254,0.18)',
   bgPage:      'var(--cl-bg)',
@@ -108,8 +108,7 @@ export default function AccountDashboardPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: CL.glowShadow }}>
-                <div className="absolute top-0 right-0 w-36 h-36 rounded-full blur-[60px]" style={{ background: 'rgba(249,168,212,0.25)' }} />
+              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
                 <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-[50px]" style={{ background: 'rgba(196,167,254,0.2)' }} />
                 <div className="relative z-10 space-y-4">
                   <div className="flex items-center gap-2">
@@ -183,8 +182,7 @@ export default function AccountDashboardPage() {
                   </div>
 
                   {/* Loyalty progress */}
-                  <div className="rounded-3xl p-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: CL.glowShadow }}>
-                    <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[70px]" style={{ background: 'rgba(249,168,212,0.25)' }} />
+                  <div className="rounded-3xl p-8 relative overflow-hidden" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">

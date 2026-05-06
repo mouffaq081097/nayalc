@@ -95,7 +95,7 @@ export default function OrderConfirmation() {
         }
 
         // 5. Redirect to the order confirmation page
-        router.push(`/orders/${orderId}`);
+        router.push(`/account/orders/${orderId}`);
       } catch (err) {
         setStatus('error');
         setMessage(`Payment succeeded but order creation failed: ${err.message}. Please contact support with payment ID: ${paymentIntentId}`);
@@ -104,7 +104,7 @@ export default function OrderConfirmation() {
   }, [stripe, clientSecret, paymentIntentId, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden w-full max-w-[100vw]" style={{ background: '#fdf8ff' }}>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden w-full max-w-[100vw]" style={{ background: '#ffffff' }}>
       <div className="absolute top-[-80px] left-[-80px] w-96 h-96 rounded-full blur-[120px] pointer-events-none" style={{ background: 'rgba(196,167,254,0.2)' }} />
       <div className="absolute bottom-[-60px] right-[-60px] w-80 h-80 rounded-full blur-[100px] pointer-events-none" style={{ background: 'rgba(216,180,254,0.15)' }} />
 

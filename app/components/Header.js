@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, forwardRef } from 'react';
-import { ShoppingBag, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, ArrowRight, Droplets, Clock, Zap, Heart, Layers, Sun, Sparkles, Gift } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, ArrowRight, Droplets, Clock, Zap, Heart, Layers, Sun, Sparkles, Gift, LogOut } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -39,7 +39,7 @@ const Header = forwardRef((_, ref) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { cartItems, openCart } = useCart();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { loyaltyData, concerns, brands } = useAppContext();
   const router = useRouter();
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
@@ -75,15 +75,10 @@ const Header = forwardRef((_, ref) => {
           isScrolled ? 'pt-4 px-4' : 'pt-0 px-0'
         }`}
       >
-        <div className={`mx-auto transition-all duration-500 ease-in-out flex flex-col ${isScrolled ? 'max-w-5xl backdrop-blur-3xl rounded-[var(--radius-card)] overflow-hidden relative' : 'max-w-full backdrop-blur-md border-b'}`}
+        <div className={`mx-auto transition-all duration-500 ease-in-out flex flex-col ${isScrolled ? 'max-w-5xl rounded-[var(--r-lg)] overflow-hidden relative' : 'max-w-full'} bg-white`}
           style={isScrolled ? {
-            background: 'rgba(253,248,255,0.88)',
-            border: '1px solid var(--cl-glass-border)',
-            boxShadow: 'var(--cl-shadow-card)',
-          } : {
-            background: 'rgba(253,248,255,0.15)',
-            borderColor: 'rgba(216,180,254,0.12)',
-          }}
+            boxShadow: 'var(--shadow-2)',
+          } : {}}
         >
             <div
             className={`w-full flex items-center justify-between gap-4 md:gap-8 px-5 md:px-10 transition-all duration-500 ease-in-out relative ${
@@ -271,46 +266,30 @@ const Header = forwardRef((_, ref) => {
             <Link href="/" className="md:static absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5 shrink-0 transition-all active:scale-95 group">
                 <Image
                   src="/Adobe Express - file (5).png"
-                  alt="Naya Lumière Cosmetics"
-                  height={40}
-                  width={130}
-                  className="h-[32px] md:h-10 w-auto object-contain shrink-0"
+                  alt="Naya Lumière Lotus Mark"
+                  height={28}
+                  width={28}
+                  className="h-7 w-7 md:h-7 w-auto object-contain shrink-0"
                   priority
                 />
-                {/* Brand name text — collapses when scrolled */}
-                <motion.div
-                  initial={false}
-                  animate={{
-                    opacity: isScrolled ? 0 : 1,
-                    maxWidth: isScrolled ? 0 : 250,
-                    marginLeft: isScrolled ? 0 : 0,
-                  }}
-                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                  className="overflow-hidden whitespace-nowrap"
-                >
-                    <div className="flex flex-col text-left leading-tight">
-                        <span
-                          className="text-[17px] md:text-[19px] font-bold tracking-[0.08em] uppercase"
-                          style={{ 
-                            color: '#3b0764', 
-                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-                            textShadow: 'none',
-                          }}
-                        >
-                          NAYA
-                        </span>
-                        <span
-                          className="text-[11px] md:text-[12px] italic mt-0.5"
-                          style={{ 
-                            fontFamily: "Georgia, 'Times New Roman', serif", 
-                            color: '#6b21a8',
-                            textShadow: 'none',
-                          }}
-                        >
-                          Lumière Cosmetics
-                        </span>
-                    </div>
-                </motion.div>
+                <div className="flex flex-col text-left leading-tight">
+                    <span
+                      className="text-[15px] md:text-[16px] font-bold tracking-[0.06em] uppercase text-ink-900"
+                      style={{
+                        fontFamily: 'var(--font-sans)',
+                      }}
+                    >
+                      NAYA LUMIÈRE
+                    </span>
+                    <span
+                      className="text-[9px] tracking-[0.32em] uppercase text-ink-500 mt-0.5 block leading-none"
+                      style={{
+                        fontFamily: 'var(--font-sans)',
+                      }}
+                    >
+                      COSMETICS
+                    </span>
+                </div>
             </Link>
 
             {/* Right: Actions */}
@@ -360,24 +339,72 @@ const Header = forwardRef((_, ref) => {
                           )}
                         </button>
 
-                        {/* Admin Dropdown on Hover */}
-                        {user?.role === 'admin' && (
-                            <div className="absolute top-full right-0 w-48 pt-2 z-[200] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-300">
-                                <div className="bg-white/95 backdrop-blur-2xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-white/40 overflow-hidden transform translate-y-2 group-hover/account:translate-y-0 transition-all duration-300">
-                                    <Link
-                                        href="/admin"
-                                        className="flex items-center gap-3 px-6 py-4 hover:bg-gray-50 transition-all group/admin"
-                                    >
-                                        <div className="w-8 h-8 rounded-full bg-brand-pink/10 flex items-center justify-center text-brand-pink group-hover/admin:bg-brand-pink group-hover:text-white transition-all">
-                                            <ShieldCheck size={16} strokeWidth={2} />
-                                        </div>
-                                        <span className="text-[11px] font-black tracking-widest text-gray-900">
-                                            Admin Panel
-                                        </span>
-                                    </Link>
+                        {/* Account Menu on Hover */}
+                        {user && (
+                            <div className="absolute top-[calc(100%+0.6rem)] right-0 w-56 pt-2 z-[200] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-300 transform translate-y-3 group-hover/account:translate-y-0">
+                                <div className="bg-white/95 backdrop-blur-3xl rounded-[22px] shadow-[0_28px_70px_-22px_rgba(59,7,100,0.32),0_0_0_1px_rgba(216,180,254,0.38)] border border-[#eadcff] p-3 overflow-hidden">
+                                    <div className="flex flex-col gap-1">
+                                        <Link
+                                            href="/account"
+                                            className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/acc-item relative overflow-hidden"
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/acc-item:bg-[#7c3aed] group-hover/acc-item:text-white transition-all duration-300 z-10">
+                                                <User size={14} strokeWidth={2} />
+                                            </div>
+                                            <span className="flex-1 text-[13px] font-bold text-[#1e0a3c] group-hover/acc-item:text-[#5b21b6] transition-colors">My Profile</span>
+                                        </Link>
+
+                                        <Link
+                                            href="/wishlist"
+                                            className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/acc-item relative overflow-hidden"
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/acc-item:bg-[#7c3aed] group-hover/acc-item:text-white transition-all duration-300 z-10">
+                                                <Heart size={14} strokeWidth={2} />
+                                            </div>
+                                            <span className="flex-1 text-[13px] font-bold text-[#1e0a3c] group-hover/acc-item:text-[#5b21b6] transition-colors">Wishlist</span>
+                                        </Link>
+
+                                        <Link
+                                            href="/loyalty"
+                                            className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/acc-item relative overflow-hidden"
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/acc-item:bg-[#7c3aed] group-hover/acc-item:text-white transition-all duration-300 z-10">
+                                                <Star size={14} strokeWidth={2} />
+                                            </div>
+                                            <span className="flex-1 text-[13px] font-bold text-[#1e0a3c] group-hover/acc-item:text-[#5b21b6] transition-colors">Loyalty Points</span>
+                                        </Link>
+
+                                        {user?.role === 'admin' && (
+                                            <Link
+                                                href="/admin"
+                                                className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-[#e9d5ff] hover:bg-[#fbf7ff] hover:shadow-[0_12px_28px_-18px_rgba(147,51,234,0.5)] group/acc-item relative overflow-hidden"
+                                            >
+                                                <div className="w-8 h-8 rounded-lg bg-[#ede9fe] border border-[#ddd6fe] shadow-sm flex items-center justify-center text-[#5b21b6] group-hover/acc-item:bg-[#7c3aed] group-hover/acc-item:text-white transition-all duration-300 z-10">
+                                                    <ShieldCheck size={14} strokeWidth={2} />
+                                                </div>
+                                                <span className="flex-1 text-[13px] font-bold text-[#1e0a3c] group-hover/acc-item:text-[#5b21b6] transition-colors">Admin Panel</span>
+                                            </Link>
+                                        )}
+
+                                        <div className="my-1 border-t border-[#eadcff]" />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                logout();
+                                            }}
+                                            className="w-full flex items-center gap-3 rounded-2xl border border-transparent bg-white/75 px-3 py-2.5 transition-all duration-300 hover:border-red-100 hover:bg-red-50 group/acc-item relative overflow-hidden"
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 shadow-sm flex items-center justify-center text-red-500 group-hover/acc-item:bg-red-500 group-hover/acc-item:text-white transition-all duration-300 z-10">
+                                                <LogOut size={14} strokeWidth={2} />
+                                            </div>
+                                            <span className="flex-1 text-[13px] font-bold text-red-600 group-hover/acc-item:text-red-700 transition-colors">Sign Out</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
+
                     </div>
                 </div>
 
@@ -567,27 +594,19 @@ const Header = forwardRef((_, ref) => {
                 >
                     <div className="p-6 md:p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/20">
                         <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2.5 transition-all active:scale-95 group">
-                            <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Cosmetics" height={40} width={130} className="h-9 w-auto object-contain shrink-0" />
+                            <Image src="/Adobe Express - file (5).png" alt="Naya Lumière Lotus Mark" height={28} width={28} className="h-7 w-7 object-contain shrink-0" />
                             <div className="flex flex-col text-left leading-tight">
                                 <span
-                                  className="text-[17px] md:text-[19px] font-bold tracking-[0.08em] uppercase"
-                                  style={{ 
-                                    color: '#3b0764', 
-                                    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-                                    textShadow: 'none',
-                                  }}
+                                  className="text-[15px] font-bold tracking-[0.06em] uppercase text-ink-900"
+                                  style={{ fontFamily: 'var(--font-sans)' }}
                                 >
-                                  NAYA
+                                  NAYA LUMIÈRE
                                 </span>
                                 <span
-                                  className="text-[11px] md:text-[12px] italic mt-0.5"
-                                  style={{ 
-                                    fontFamily: "Georgia, 'Times New Roman', serif", 
-                                    color: '#6b21a8',
-                                    textShadow: 'none',
-                                  }}
+                                  className="text-[9px] tracking-[0.32em] uppercase text-ink-500 mt-0.5 block leading-none"
+                                  style={{ fontFamily: 'var(--font-sans)' }}
                                 >
-                                  Lumière Cosmetics
+                                  COSMETICS
                                 </span>
                             </div>
                         </Link>
@@ -621,7 +640,7 @@ const Header = forwardRef((_, ref) => {
 
                         {/* Mobile Concerns Section */}
                         {concerns && concerns.length > 0 && (
-                            <div className="bg-[#fdfaff]/50 px-6 py-8 rounded-[2rem] mx-4 mb-4 border border-[#f3e8ff]/50">
+                            <div className="bg-white/80 px-6 py-8 rounded-[2rem] mx-4 mb-4 border border-gray-100">
                                 <span className="text-[9px] font-black tracking-[0.4em] uppercase text-[#9333ea]/60 mb-6 block px-2">Targeted Concerns</span>
                                 <div className="grid grid-cols-1 gap-2">
                                     {concerns.map((concern) => {
@@ -679,7 +698,7 @@ const Header = forwardRef((_, ref) => {
                                 <div className="flex flex-col">
                                     <span className="text-lg font-black tracking-tight text-gray-900 leading-tight">{user.first_name}</span>
                                     <Link href="/loyalty" className="flex items-center gap-1.5 mt-1" onClick={() => setIsMenuOpen(false)}>
-                                        <div className="w-4 h-4 rounded-full bg-[#fdf2f8] flex items-center justify-center">
+                                        <div className="w-4 h-4 rounded-full bg-white flex items-center justify-center">
                                             <Star size={8} className="text-brand-pink fill-brand-pink" />
                                         </div>
                                         <span className="text-[11px] font-black tracking-widest text-brand-pink uppercase">{loyaltyData?.stats?.points?.toLocaleString() || 0} Points</span>

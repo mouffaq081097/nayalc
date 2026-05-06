@@ -22,15 +22,16 @@ import Modal from '../components/Modal';
 import AddressInputForm from '../components/AddressInputForm';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
+import PageLoader from '@/app/components/PageLoader';
 
 const stripePromise = getStripe();
 
 // ── Design tokens (Cloud Luxe) ──────────────────────────────────────────────
 const CL = {
   glass:      'rgba(255,255,255,0.72)',
-  glassBorder:'rgba(216,180,254,0.35)',
-  gradient:   'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
-  gradientSoft:'linear-gradient(135deg,rgba(196,167,254,0.25),rgba(167,139,250,0.18))',
+  glassBorder:'var(--ink-200)',
+  gradient:   'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))',
+  gradientSoft:'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))',
   purple:     'rgb(126,105,230)',
   purpleMid:  'rgb(147,104,236)',
   purpleLight:'rgba(196,167,254,0.18)',
@@ -143,14 +144,7 @@ const AccountPageContent = () => {
     setIsAddressModalOpen(true);
   };
 
-  if (isLoading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: CL.bgPage }}>
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-2 rounded-full animate-spin" style={{ borderColor: CL.purpleLight, borderTopColor: CL.purple }}></div>
-        <p className="text-[10px] font-bold tracking-[0.4em] uppercase animate-pulse" style={{ color: CL.textSoft }}>Loading your sanctuary</p>
-      </div>
-    </div>
-  );
+  if (isLoading) return <PageLoader />;
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard',  icon: Sparkles },
@@ -186,18 +180,22 @@ const AccountPageContent = () => {
               {/* Avatar */}
               <div className="flex flex-col items-center text-center gap-3 mb-7">
                 <div className="relative">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black shadow-lg" style={{ background: CL.gradient }}>
-                    {user.first_name?.[0]}{user.last_name?.[0]}
+                  <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg overflow-hidden" style={{ background: CL.gradient }}>
+                    {user?.profile_image ? (
+                      <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
+                    ) : (
+                      <>{user.first_name?.[0]}{user.last_name?.[0]}</>
+                    )}
                   </div>
-                  <button className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-colors"
+                  <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors"
                     style={{ background: CL.glass, border: `1px solid ${CL.glassBorder}`, color: CL.purple }}>
-                    <Camera size={12} />
+                    <Camera size={14} />
                   </button>
                   <div className="absolute inset-0 rounded-full -z-10" style={{ boxShadow: CL.glowShadow, opacity: 0.3 }} />
                 </div>
-                <div>
-                  <h3 className="text-base font-bold tracking-tight" style={{ color: CL.textDeep }}>{user.first_name} {user.last_name}</h3>
-                  <p className="text-[9px] font-black uppercase tracking-[0.12em] mt-0.5" style={{ color: CL.purple }}>{loyaltyData?.stats?.tier ?? 'Silver'} Member</p>
+                <div className="mt-2">
+                  <h3 className="text-lg font-bold tracking-tight" style={{ color: CL.textDeep }}>{user.first_name} {user.last_name}</h3>
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] mt-1" style={{ color: CL.purple }}>{loyaltyData?.stats?.tier ?? 'Silver'} Member</p>
                 </div>
               </div>
 
@@ -237,10 +235,7 @@ const AccountPageContent = () => {
             </div>
 
             {/* Loyalty card */}
-            <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: CL.glowShadow }}>
-              {/* Decorative aura */}
-              <div className="absolute top-0 right-0 w-36 h-36 rounded-full blur-[60px]" style={{ background: 'rgba(249,168,212,0.25)' }} />
-              <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-[50px]" style={{ background: 'rgba(196,167,254,0.2)' }} />
+            <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
 
               <div className="relative z-10 space-y-4">
                 <div className="flex items-center gap-2">
@@ -297,7 +292,7 @@ const AccountPageContent = () => {
                       <div className="flex gap-3 mt-7 flex-wrap">
                         <button
                           onClick={() => router.push('/all-products')}
-                          className="px-7 py-3 text-white text-[11px] font-bold uppercase tracking-widest rounded-full transition-all"
+                          className="px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-full transition-all active:scale-95"
                           style={{ background: CL.gradient, boxShadow: '0 4px 16px rgba(147,51,234,0.3)' }}
                         >
                           Shop Now
@@ -405,7 +400,7 @@ const AccountPageContent = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between md:justify-end gap-8 pt-4 md:pt-0" style={{ borderTop: '1px solid transparent' }}>
+                        <div className="flex items-center justify-between md:justify-end gap-8 pt-4 md:pt-0" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
                           <div className="text-left md:text-right">
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-1">Total</p>
                             <p className="text-xl font-black" style={{ color: CL.textDeep }}>AED {Number(order.totalAmount).toFixed(2)}</p>
@@ -471,9 +466,7 @@ const AccountPageContent = () => {
                   <SectionTitle title="Loyalty" subtitle="My Account" />
 
                   {/* Hero points card */}
-                  <div className="rounded-3xl p-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: CL.glowShadow }}>
-                    <div className="absolute top-0 right-0 w-48 h-48 rounded-full blur-[80px]" style={{ background: 'rgba(249,168,212,0.28)' }} />
-                    <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full blur-[60px]" style={{ background: 'rgba(196,167,254,0.2)' }} />
+                  <div className="rounded-3xl p-8 relative overflow-hidden" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
                     <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-4">
                         <Crown size={14} style={{ color: 'rgba(253,224,71,0.85)' }} />

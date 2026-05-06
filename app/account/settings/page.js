@@ -7,6 +7,7 @@ import {
   User, Sparkles, Package, Heart, Star, MapPin, Settings,
   Camera, Crown, LogOut, ChevronRight, Bell, ShieldCheck, Lock, CreditCard,
 } from 'lucide-react';
+import Image from 'next/image';
 import { AccountMobileTopBar } from '../_components/AccountMobileTopBar';
 import { setAccountNavDirection } from '../_components/navDirection';
 import { useAccountData } from '../_components/useAccountData';
@@ -14,8 +15,8 @@ import { useAuth } from '../../context/AuthContext';
 
 const CL = {
   glass:       'rgba(255,255,255,0.72)',
-  glassBorder: 'rgba(216,180,254,0.35)',
-  gradient:    'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+  glassBorder: 'var(--ink-200)',
+  gradient:    'var(--brand-gradient)',
   purple:      'rgb(126,105,230)',
   purpleLight: 'rgba(196,167,254,0.18)',
   bgPage:      'var(--cl-bg)',
@@ -64,12 +65,7 @@ export default function AccountSettingsPage() {
     <>
       <AccountMobileTopBar title="Settings" />
 
-      <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
-        <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-[-15%] right-[-10%] w-[55%] h-[55%] rounded-full blur-[140px]" style={{ background: 'rgba(196,167,254,0.18)' }} />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px]" style={{ background: 'rgba(249,168,212,0.12)' }} />
-          <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] rounded-full blur-[100px]" style={{ background: 'rgba(216,180,254,0.10)' }} />
-        </div>
+      <div className="min-h-screen font-sans antialiased relative" style={{ background: '#ffffff' }}>
 
         <div className="max-w-[1400px] mx-auto px-6 pt-10 pb-28 relative z-10">
           <div className="grid lg:grid-cols-12 gap-8">
@@ -78,8 +74,12 @@ export default function AccountSettingsPage() {
               <div className="rounded-3xl p-7" style={glassCard}>
                 <div className="flex flex-col items-center text-center gap-3 mb-7">
                   <div className="relative">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black shadow-lg" style={{ background: CL.gradient }}>
-                      {user?.first_name?.[0]}{user?.last_name?.[0]}
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black shadow-lg overflow-hidden relative" style={{ background: CL.gradient }}>
+                      {user?.profile_image ? (
+                        <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
+                      ) : (
+                        <>{user?.first_name?.[0]}{user?.last_name?.[0]}</>
+                      )}
                     </div>
                     <button className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md" style={{ background: CL.glass, border: `1px solid ${CL.glassBorder}`, color: CL.purple }}>
                       <Camera size={12} />
@@ -115,9 +115,7 @@ export default function AccountSettingsPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: CL.glowShadow }}>
-                <div className="absolute top-0 right-0 w-36 h-36 rounded-full blur-[60px]" style={{ background: 'rgba(249,168,212,0.25)' }} />
-                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-[50px]" style={{ background: 'rgba(196,167,254,0.2)' }} />
+              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
                 <div className="relative z-10 space-y-4">
                   <div className="flex items-center gap-2">
                     <Star size={14} className="fill-yellow-300 text-yellow-300" />

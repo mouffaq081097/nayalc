@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Lock, Eye, EyeOff, Check, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import PageLoader from '@/app/components/PageLoader';
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -161,7 +162,7 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-lg">
           <div className="bg-white/80 backdrop-blur-3xl rounded-[3.5rem] p-10 md:p-14 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.1)] border border-purple-100 relative overflow-hidden">
             <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[url('/textures/natural-paper.png')]"></div>
-            <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin text-purple-400" /></div>}>
+            <Suspense fallback={<PageLoader />}>
               <ResetPasswordForm />
             </Suspense>
           </div>

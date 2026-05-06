@@ -73,16 +73,8 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
   };
 
   return (
-    <div className="min-h-screen bg-[#fdf8ff] w-full max-w-[100vw] overflow-x-hidden font-sans selection:bg-[rgba(216,180,254,0.3)]">
+    <div className="min-h-screen bg-[#ffffff] w-full max-w-[100vw] overflow-x-hidden font-sans selection:bg-[rgba(216,180,254,0.3)]">
       
-      {/* --- Immersive Background --- */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-10%] -left-[10%] w-[50vw] h-[50vw] rounded-full blur-[140px] bg-[rgba(196,167,254,0.15)] animate-cl-aura-float" />
-        <div className="absolute top-[20%] -right-[15%] w-[60vw] h-[60vw] rounded-full blur-[160px] bg-[rgba(249,168,212,0.12)] animate-cl-aura-float-slow" />
-        <div className="absolute -bottom-[20%] left-[10%] w-[40vw] h-[40vw] rounded-full blur-[120px] bg-[rgba(147,104,236,0.1)] animate-cl-aura-float" style={{ animationDelay: '2s' }} />
-        {/* Subtle noise texture */}
-        <div className="absolute inset-0 opacity-[0.015] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }} />
-      </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 flex flex-col min-h-screen">
         
@@ -104,7 +96,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
             <span className="italic font-light">Order </span>
             <span 
               className="font-sans font-black not-italic"
-              style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+              style={{ backgroundImage: 'var(--brand-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
             >
               Confirmed
             </span>
@@ -199,7 +191,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
               <div className="space-y-6 mt-6">
                 {order.items.map((item, index) => (
                   <div key={index} className="group flex gap-5 items-center pb-6 border-b border-[rgba(216,180,254,0.15)] last:border-0 last:pb-0 min-w-0">
-                    <div className="w-20 h-24 md:w-24 md:h-28 rounded-xl bg-[#fdf8ff] border border-[rgba(216,180,254,0.2)] flex items-center justify-center p-2 shrink-0 overflow-hidden relative">
+                    <div className="w-20 h-24 md:w-24 md:h-28 rounded-xl bg-[#ffffff] border border-[rgba(216,180,254,0.2)] flex items-center justify-center p-2 shrink-0 overflow-hidden relative">
                       <ImageWithFallback
                         src={item.product?.imageUrl || '/placeholder-image.jpg'}
                         alt={item.product?.name || 'Product'}
@@ -291,7 +283,7 @@ export function OrderConfirmationPage({ order, onContinueShopping, onViewAccount
               </div>
 
               {/* Resend Email Block */}
-              <div className="pt-6 border-t border-[rgba(216,180,254,0.15)] bg-gradient-to-b from-transparent to-[rgba(248,240,255,0.5)] -mx-8 -mb-8 p-8 rounded-b-[2rem]">
+              <div className="pt-6 border-t border-[rgba(216,180,254,0.15)] bg-gradient-to-b from-transparent to-[rgba(255,255,255,0.5)] -mx-8 -mb-8 p-8 rounded-b-[2rem]">
                 <p className="text-xs text-[#6b21a8]/70 text-center mb-4 break-words">
                   Receipt dispatched to <strong className="text-[#3b0764] break-all">{order.customerEmail}</strong>.
                 </p>

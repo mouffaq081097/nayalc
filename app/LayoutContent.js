@@ -45,13 +45,6 @@ export default function LayoutContent({ children }) {
 
   return (
     <>
-      {/* ── Global Background Sanctuary Atmosphere (Account Page Match) ── */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-15%] right-[-10%] w-[55%] h-[55%] rounded-full blur-[80px]" style={{ background: 'rgba(196,167,254,0.18)' }} />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[80px]" style={{ background: 'rgba(249,168,212,0.12)' }} />
-        <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] rounded-full blur-[60px]" style={{ background: 'rgba(216,180,254,0.10)' }} />
-      </div>
-
       <GlobalLoader isLoading={isTransitioning} />
       {showMobileChrome && chatReady && <Suspense fallback={null}><ChatWidget /></Suspense>}
       {showMobileChrome && <Header />}

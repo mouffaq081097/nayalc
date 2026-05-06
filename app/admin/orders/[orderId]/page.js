@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/app/components/ui/button';
 import { Loader2, ArrowLeft, Package, Truck, XCircle, CheckCircle, User, MapPin, CreditCard, Receipt, Info, ShieldCheck, Printer } from 'lucide-react';
+import PageLoader from '@/app/components/PageLoader';
 import Link from 'next/link';
 import {
     Select,
@@ -111,14 +112,7 @@ const OrderDetailsPage = () => {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
-                <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm font-medium text-purple-400">Loading order...</p>
-            </div>
-        );
-    }
+    if (isLoading) return <PageLoader />;
 
     if (error || !order) {
         return (
@@ -190,7 +184,7 @@ const OrderDetailsPage = () => {
                         <Printer size={14} />
                         Print packing slip
                     </a>
-                    <Button className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}>
+                    <Button className="rounded-xl px-4 py-2 text-sm font-medium text-white" style={{ background: 'var(--brand-gradient)' }}>
                         Message client
                     </Button>
                 </div>
@@ -306,7 +300,7 @@ const OrderDetailsPage = () => {
                                     onClick={handleUpdateStatus}
                                     disabled={isSubmitting}
                                     className="px-8 py-2.5 text-sm font-semibold text-white rounded-xl shadow-lg shadow-purple-200 active:scale-95 transition-all"
-                                    style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}
+                                    style={{ background: 'var(--brand-gradient)' }}
                                 >
                                     {isSubmitting ? (
                                         <>

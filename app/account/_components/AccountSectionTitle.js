@@ -7,8 +7,8 @@ export function AccountSectionTitle({ eyebrow, title, subtitle }) {
     <div className="mb-6">
       {eyebrow ? (
         <div className="flex items-center gap-2 mb-2">
-          <span className="w-5 h-px" style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' }} />
-          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgb(147,51,234)' }}>
+          <span className="w-5 h-px" style={{ background: 'var(--brand-gradient)' }} />
+          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--brand-purple-darker)' }}>
             {eyebrow}
           </p>
         </div>

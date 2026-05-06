@@ -174,7 +174,7 @@ const WishlistContent = () => {
     };
 
     if (isLoading) return (
-        <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+        <div className="min-h-screen bg-[#ffffff] flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
                 <LoaderSpinner size="lg" />
                 <p className="text-[14px] font-serif italic text-cl-deep animate-pulse">Curating your collection...</p>
@@ -297,7 +297,7 @@ const WishlistContent = () => {
 export default function WishlistPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+            <div className="min-h-screen bg-[#ffffff] flex items-center justify-center">
                 <LoaderSpinner size="lg" />
             </div>
         }>

@@ -8,6 +8,7 @@ import {
     EyeOff, Archive, ExternalLink, MapPin, Home, ChevronDown, Circle, Star,
     X, TrendingUp, Award, Clock, ArrowUpRight, ArrowDownLeft, Gift
 } from 'lucide-react';
+import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -138,14 +139,7 @@ const AllUsersPage = () => {
         (user.email?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
     );
 
-    if (loading) {
-        return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
-                <div className="w-10 h-10 border-4 border-purple-100 border-t-[#9333ea] rounded-full animate-spin" />
-                <p className="text-sm text-gray-400">Loading…</p>
-            </div>
-        );
-    }
+    if (loading) return <PageLoader />;
 
     if (error) {
         return (
@@ -369,7 +363,7 @@ const AllUsersPage = () => {
                         className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(216,180,254,0.35)' }}>
                         <table className="w-full">
                             <thead>
-                                <tr style={{ background: 'rgba(248,240,255,0.7)' }}>
+                                <tr style={{ background: 'rgba(255,255,255,0.7)' }}>
                                     {['Client','Contact','Addresses','Loyalty','Status','Joined',''].map((h, i) => (
                                         <th key={i} className={`px-6 py-4 text-[10px] font-black text-purple-400 ${i>=6 ? 'text-right' : 'text-left'}`}>{h}</th>
                                     ))}
@@ -500,10 +494,10 @@ const AllUsersPage = () => {
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                             className="fixed top-0 right-0 h-full w-full max-w-md z-50 flex flex-col overflow-hidden"
-                            style={{ background: '#fdf8ff', borderLeft: '1px solid rgba(216,180,254,0.4)' }}
+                            style={{ background: '#ffffff', borderLeft: '1px solid rgba(216,180,254,0.4)' }}
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: 'rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.8)' }}>
+                            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: 'rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.8)' }}>
                                 <div className="flex items-center gap-3">
                                     <div className="relative w-10 h-10 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-400 overflow-hidden flex-shrink-0">
                                         {selectedUser.profile_image ? (
@@ -526,7 +520,7 @@ const AllUsersPage = () => {
                             </div>
 
                             {/* Tabs */}
-                            <div className="flex border-b" style={{ borderColor: 'rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.5)' }}>
+                            <div className="flex border-b" style={{ borderColor: 'rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.5)' }}>
                                 {[
                                     { key: 'overview', label: 'Overview' },
                                     { key: 'addresses', label: 'Addresses' },
@@ -672,7 +666,7 @@ const AllUsersPage = () => {
 
                                             {/* Transactions */}
                                             <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(216,180,254,0.35)' }}>
-                                                <div className="px-4 py-3" style={{ background: 'rgba(248,240,255,0.7)' }}>
+                                                <div className="px-4 py-3" style={{ background: 'rgba(255,255,255,0.7)' }}>
                                                     <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Transactions</p>
                                                 </div>
                                                 <div className="divide-y" style={{ divideColor: 'rgba(216,180,254,0.2)' }}>

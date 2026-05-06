@@ -7,6 +7,7 @@ import {
     Search, Filter, ArrowUpRight, ChevronLeft, ChevronRight, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PageLoader from '@/app/components/PageLoader';
 
 const STATUS_STYLES = {
     pending:    'bg-orange-50 text-orange-700 border-orange-200',
@@ -70,12 +71,7 @@ const ManageOrders = () => {
     const pendingCount = (allOrders.orders || []).filter(o => o.status.toLowerCase() === 'pending').length;
     const totalPages   = Math.max(1, Math.ceil((allOrders.totalCount || 0) / ordersPerPage));
 
-    if (isLoading) return (
-        <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
-            <div className="w-10 h-10 border-4 border-purple-100 border-t-[#9333ea] rounded-full animate-spin" />
-            <p className="text-sm text-gray-400">Loading…</p>
-        </div>
-    );
+    if (isLoading) return <PageLoader />;
 
     return (
         <div className="space-y-6 pb-8">
@@ -117,7 +113,7 @@ const ManageOrders = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr style={{ background: 'rgba(248,240,255,0.6)' }}>
+                            <tr style={{ background: 'rgba(255,255,255,0.6)' }}>
                                 {['Order ID','Customer','Date','Status','Payment','Total',''].map((h, i) => (
                                     <th key={i} className={`px-6 py-4 text-[10px] font-black text-purple-400 ${i>=5 ? 'text-right' : 'text-left'}`}>{h}</th>
                                 ))}
@@ -170,7 +166,7 @@ const ManageOrders = () => {
                 </div>
 
                 {/* Pagination */}
-                <div className="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'rgba(216,180,254,0.2)', background: 'rgba(248,240,255,0.3)' }}>
+                <div className="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderColor: 'rgba(216,180,254,0.2)', background: 'rgba(255,255,255,0.3)' }}>
                     <p className="text-xs text-gray-400">
                         Showing <span className="font-bold text-gray-700">{filteredOrders.length}</span> of <span className="font-bold text-gray-700">{allOrders.totalCount || 0}</span> orders
                     </p>

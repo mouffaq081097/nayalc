@@ -37,7 +37,7 @@ const baseField = {
 const fieldStyle = (hasError) => ({
   ...baseField,
   border: hasError ? '1px solid rgba(252,165,165,0.9)' : '1px solid rgba(216,180,254,0.45)',
-  background: hasError ? 'rgba(255,242,242,0.7)' : 'rgba(248,240,255,0.6)',
+  background: hasError ? 'rgba(255,242,242,0.7)' : 'rgba(255,255,255,0.6)',
 });
 
 const focus = (hasError) => ({
@@ -311,7 +311,7 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
             style={{
               border: '1px solid rgba(216,180,254,0.45)',
               color: 'rgb(126,105,230)',
-              background: 'rgba(248,240,255,0.6)',
+              background: 'rgba(255,255,255,0.6)',
             }}
           >
             Cancel

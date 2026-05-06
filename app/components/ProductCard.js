@@ -123,16 +123,16 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
         onMouseLeave={() => setIsHovered(false)}
         className="group relative flex flex-col h-full w-full transition-all duration-500 overflow-hidden"
         style={{
-          borderRadius: '24px',
-          background: 'rgba(255, 255, 255, 0.65)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(216,180,254,0.6)',
-          boxShadow: '0 10px 30px rgba(167,139,250,0.05)',
+          borderRadius: 'var(--r-lg)',
+          background: 'var(--white)',
+          border: '1px solid var(--ink-200)',
+          boxShadow: isHovered ? 'var(--shadow-2)' : 'none',
+          transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+          borderColor: isHovered ? 'var(--ink-300)' : 'var(--ink-200)',
         }}
       >
         {/* Image area */}
-        <div className="relative aspect-square overflow-hidden rounded-t-[24px]">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-t-[var(--r-lg)]" style={{ background: 'var(--ink-50)' }}>
           <Link href={productUrl} className="block w-full h-full relative z-0">
             <motion.div className="w-full h-full p-0.5 relative" whileTap={{ scale: 0.98 }}>
               <AnimatePresence mode="wait">
@@ -142,7 +142,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.02 }}
                   transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-                  className="relative w-full h-full"
+                  className="relative w-full h-full flex items-center justify-center"
                 >
                   {imgError ? (
                     <div
@@ -242,12 +242,12 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
         </div>
 
         {/* Info section */}
-        <div className="flex flex-col flex-1 px-4 pt-3 pb-4 gap-2.5">
+        <div className="flex flex-col flex-1 px-4 py-3.5 gap-2">
           {/* Brand */}
           <div className="flex items-center justify-between">
             <span
-              className="text-[13px] md:text-[14px] font-semibold tracking-tight"
-              style={{ color: 'var(--cl-purple)', opacity: 0.95 }}
+              className="text-[12px] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: 'var(--ink-500)' }}
             >
               {brandName || 'Naya Lumière'}
             </span>
@@ -263,8 +263,8 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           </div>
 
           {/* Name */}
-          <Link href={productUrl} className="block transition-colors duration-200" style={{ color: 'var(--cl-text-deep)' }}>
-            <span className="font-serif text-lg italic leading-snug">
+          <Link href={productUrl} className="block transition-colors duration-200" style={{ color: 'var(--ink-900)' }}>
+            <span className="text-base font-semibold leading-[1.3]">
               {name}
             </span>
           </Link>
@@ -275,10 +275,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <div className="flex items-center gap-1.5">
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={9} className={i < Math.floor(averageRating || 5) ? 'fill-indigo-400 text-indigo-400' : 'text-gray-200'} />
+                    <Star key={i} size={9} className={i < Math.floor(averageRating || 5) ? 'fill-[#e0a800] text-[#e0a800]' : 'text-gray-200'} />
                   ))}
                 </div>
-                <p className="text-[10px] font-medium opacity-50">{reviewCount}</p>
+                <p className="text-[12px] font-medium" style={{ color: 'var(--ink-500)' }}>{reviewCount}</p>
               </div>
               {size && <span className="text-[10px] text-gray-400 font-medium italic">{size}</span>}
             </div>
@@ -290,31 +290,21 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           )}
 
           {/* Price row */}
-          <div className="flex items-center justify-between mt-auto pt-4 border-t border-purple-100/30">
+          <div className="flex items-center justify-between mt-auto pt-4 border-t" style={{ borderColor: 'var(--ink-100)' }}>
             {/* Price Block */}
             <div className="flex items-center gap-3">
               <div className="flex items-baseline gap-1">
-                <span className="text-[10px] font-bold" style={{ color: 'var(--cl-purple)', opacity: 0.5 }}>AED</span>
-                <span className="text-[24px] font-bold tracking-tight" style={{
-                  backgroundImage: 'linear-gradient(135deg, #7E57C2, #B39DDB)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                  {Math.floor(price)}
+                <span className="text-base font-semibold" style={{ color: 'var(--ink-900)' }}>
+                  AED {price}
                 </span>
-                {Number(price) % 1 !== 0 && (
-                  <span className="text-[14px] font-bold opacity-60" style={{ color: '#7E57C2' }}>
-                    .{ (Number(price) % 1).toFixed(2).split('.')[1] }
+
+                {/* Original Price */}
+                {showComparePrice && (
+                  <span className="text-[13px] line-through font-medium" style={{ color: 'var(--ink-400)' }}>
+                    AED {originalPrice}
                   </span>
                 )}
               </div>
-
-              {/* Original Price */}
-              {showComparePrice && (
-                <span className="text-[11px] line-through text-gray-300 font-medium translate-y-[2px]">
-                  AED {originalPrice}
-                </span>
-              )}
             </div>
 
             {/* Discount Badge */}
@@ -330,10 +320,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             <motion.button
               onClick={handleAddToCart}
               whileTap={{ scale: 0.97 }}
-              className={`w-full mt-2 h-11 text-[11px] font-bold flex items-center justify-center gap-2 rounded-xl transition-all duration-500 ${
+              className={`w-full mt-2 h-11 text-[11px] font-bold flex items-center justify-center gap-2 rounded-full transition-all duration-500 uppercase tracking-widest ${
                 addedToCart
                   ? 'bg-green-50 text-green-600 border border-green-100 cursor-default shadow-sm'
-                  : 'cl-gradient-btn'
+                  : 'btn sm block'
               }`}
             >
               {addedToCart ? (
@@ -342,14 +332,11 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   <span>Added to Bag</span>
                 </>
               ) : (
-                <>
-                  <ShoppingBag size={13} strokeWidth={2} />
-                  <span>Add to Bag</span>
-                </>
+                <span>Add to Bag</span>
               )}
             </motion.button>
           ) : (
-            <div className="w-full mt-2 h-11 flex items-center justify-center text-[11px] font-bold text-gray-400 rounded-xl border border-gray-100 bg-gray-50/50">
+            <div className="w-full mt-2 h-11 flex items-center justify-center text-[11px] font-bold text-gray-400 rounded-full border border-gray-100 bg-gray-50/50">
               Notify Me
             </div>
           )}
@@ -358,13 +345,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
       {/* ── AI Insights Modal ── */}
       <Modal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} title="" size="max-w-2xl" noBodyPadding>
-        <div className="relative overflow-hidden min-h-[500px] flex flex-col" style={{ background: 'var(--cl-bg)' }}>
-          {/* Aura bg */}
-          <div className="absolute inset-0 pointer-events-none z-0">
-            <div className="cl-aura cl-aura-purple" style={{ width: 300, height: 300, top: '-10%', left: '-10%', opacity: 0.5 }} />
-            <div className="cl-aura cl-aura-rose" style={{ width: 250, height: 250, bottom: '-10%', right: '-10%', opacity: 0.4 }} />
-          </div>
-
+        <div className="relative overflow-hidden min-h-[500px] flex flex-col" style={{ background: '#ffffff' }}>
           {/* Header */}
           <div className="relative z-10 px-8 pt-8 flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -436,7 +417,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                     <h4 className="text-[15px] font-semibold leading-tight" style={{ color: 'var(--cl-text-deep)' }}>{name}</h4>
                     <p
                       className="text-[11px] font-medium mt-0.5"
-                      style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+                      style={{ backgroundImage: 'var(--brand-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
                     >{brandName || 'Naya Lumière Cosmetics'}</p>
                   </div>
                 </div>
@@ -472,9 +453,8 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           {/* Left: image */}
           <div
             className="aspect-square relative flex items-center justify-center overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, var(--cl-bg-lavender), var(--cl-bg-rose))' }}
+            style={{ background: '#ffffff' }}
           >
-            <div className="cl-aura cl-aura-purple pointer-events-none" style={{ width: 300, height: 300, top: '-20%', left: '-20%', opacity: 0.5 }} />
             <motion.div
               initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -484,13 +464,13 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <Image src={image || '/placeholder-image.jpg'} alt={seoAlt} fill className="object-contain" />
             </motion.div>
             <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
-              {isNew && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}>New</Badge>}
-              {isBestseller && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(167,139,250))' }}>Bestseller</Badge>}
+              {isNew && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--brand-gradient)' }}>New</Badge>}
+              {isBestseller && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--brand-gradient)' }}>Bestseller</Badge>}
             </div>
           </div>
 
           {/* Right: info */}
-          <div className="p-10 md:p-14 flex flex-col justify-center" style={{ background: 'var(--cl-bg)' }}>
+          <div className="p-10 md:p-14 flex flex-col justify-center" style={{ background: '#ffffff' }}>
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
               <p
                 className="text-[9px] font-bold mb-4 flex items-center gap-3"
@@ -504,10 +484,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <div className="flex items-baseline gap-4 mb-8 pb-8" style={{ borderBottom: '1px solid var(--cl-glass-border)' }}>
                 <span
                   className="text-3xl font-bold"
-                  style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+                  style={{ backgroundImage: 'var(--brand-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
                 >AED {price}</span>                {showComparePrice && <span className="text-lg line-through" style={{ color: 'var(--cl-text-muted)' }}>AED {originalPrice}</span>}
                 {discount > 0 && (
-                  <span className="text-[10px] font-bold text-white px-3 py-1 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}>
+                  <span className="text-[10px] font-bold text-white px-3 py-1 rounded-full" style={{ background: 'var(--brand-gradient)' }}>
                     -{discount}%
                   </span>
                 )}

@@ -67,7 +67,7 @@ export const SocialFeed = () => {
                 key={i}
                 href={social.href}
                 whileHover={{ y: -5 }}
-                className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-[#fdf8ff] border border-[#f3e8ff] flex items-center justify-center text-[#9333ea] hover:bg-[#9333ea] hover:text-white transition-all duration-300 shadow-sm hover:shadow-xl"
+                className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-[#ffffff] border border-[#f3e8ff] flex items-center justify-center text-[#9333ea] hover:bg-[#9333ea] hover:text-white transition-all duration-300 shadow-sm hover:shadow-xl"
               >
                 {social.icon}
               </motion.a>

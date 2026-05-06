@@ -5,6 +5,7 @@ import { io } from 'socket.io-client';
 import { useAppContext } from '../../context/AppContext';
 import Link from 'next/link';
 import { MessageSquare, Trash2, Clock, ArrowRight, Search, Sparkles, ShieldCheck, Inbox, BotMessageSquare, CheckSquare, Square } from 'lucide-react';
+import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -215,14 +216,7 @@ const AdminChatPage = () => {
         all: searchFiltered.length,
     };
 
-    if (isLoading) {
-        return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
-                <div className="w-10 h-10 border-[3px] border-cl-purple border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-medium text-gray-400">Loading conversations...</p>
-            </div>
-        );
-    }
+    if (isLoading) return <PageLoader />;
 
     return (
         <div className="space-y-6 pb-20">

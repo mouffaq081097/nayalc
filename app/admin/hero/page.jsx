@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Loader2, MoreHorizontal, Image as ImageIcon, Edit, Eye, EyeOff, Film, ArrowUp, ArrowDown, Save, X } from 'lucide-react';
+import PageLoader from '@/app/components/PageLoader';
 import Modal from '../../components/Modal';
 import { Button } from '@/app/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
@@ -165,14 +166,7 @@ const ManageHeroSlides = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-12 h-12 text-cl-purple animate-spin" />
-        <p className="text-sm font-medium text-gray-400">Loading cinematic sequences...</p>
-      </div>
-    );
-  }
+  if (loading) return <PageLoader />;
 
   return (
     <div className="space-y-8 pb-20">

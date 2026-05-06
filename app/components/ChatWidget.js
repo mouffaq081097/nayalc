@@ -339,7 +339,7 @@ const ChatWidget = () => {
                         <button
                             onClick={() => setIsChatOpen(true)}
                             className="relative w-16 h-16 rounded-full text-white flex items-center justify-center shadow-luxury hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1"
-                            style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(147,104,236))' }}
+                            style={{ background: 'var(--brand-gradient)' }}
                         >
                             <MessageSquare className="w-7 h-7" />
                             <AnimatePresence>
@@ -370,7 +370,7 @@ const ChatWidget = () => {
                         className="fixed inset-0 md:inset-auto md:bottom-8 md:right-8 flex flex-col w-full h-full md:w-[350px] md:h-[540px] bg-white md:rounded-[24px] md:shadow-2xl overflow-hidden border border-gray-100 pointer-events-auto"
                     >
                         {/* Header */}
-                        <div className="relative px-5 py-4 shrink-0 shadow-sm z-10" style={{ background: 'linear-gradient(135deg, rgb(196,167,254) 0%, rgb(167,139,250) 50%, rgb(147,104,236) 100%)' }}>
+                        <div className="relative px-5 py-4 shrink-0 shadow-sm z-10" style={{ background: 'var(--brand-gradient)' }}>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="relative shrink-0">
@@ -456,7 +456,7 @@ const ChatWidget = () => {
                                                                     ? 'bg-white text-gray-800 border border-purple-200/30 rounded-[20px] rounded-bl-sm'
                                                                     : 'bg-white text-gray-800 border border-gray-100 rounded-[20px] rounded-bl-sm'
                                                         }`}
-                                                        style={isCustomer && !isFailed ? { background: 'linear-gradient(135deg, rgb(167,139,250), rgb(126,105,230))' } : undefined}
+                                                        style={isCustomer && !isFailed ? { background: 'var(--brand-gradient)' } : undefined}
                                                     >
                                                         {msg.messageText}
                                                     </div>
@@ -580,7 +580,7 @@ const ChatWidget = () => {
                                     onClick={() => handleSendMessage()}
                                     disabled={!newMessage.trim() || isSending}
                                     className="shrink-0 w-10 h-10 rounded-full text-white flex items-center justify-center hover:shadow-lg disabled:opacity-40 disabled:grayscale disabled:cursor-not-allowed transition-all mb-0.5"
-                                    style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(147,104,236))' }}
+                                    style={{ background: 'var(--brand-gradient)' }}
                                 >
                                     {isSending
                                         ? <Loader2 className="w-[18px] h-[18px] animate-spin" />

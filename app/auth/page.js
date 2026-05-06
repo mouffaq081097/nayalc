@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Button } from '../components/ui/button';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Chrome, Facebook, Sparkles, ShieldCheck, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -64,7 +65,7 @@ function ForgotPassword({ onBack }) {
         </button>
         <h3 className="font-sans font-bold text-[22px] text-[#3b0764] leading-snug">
           Reset your{' '}
-          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, rgb(168,85,247), rgb(126,105,230))' }}>
+          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--brand-gradient)' }}>
             password
           </span>
         </h3>
@@ -100,17 +101,17 @@ function ForgotPassword({ onBack }) {
           </p>
         )}
 
-        <button
+        <Button
           type="submit"
           disabled={isLoading}
-          className="cl-gradient-btn w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 mt-1 border-none shadow-none"
+          className="w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 mt-1 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>Send Reset Link <ArrowRight size={14} /></>
           )}
-        </button>
+        </Button>
       </form>
     </motion.div>
   );
@@ -148,7 +149,7 @@ function Login({ onForgotClick }) {
       <div className="space-y-2">
         <h3 className="font-sans font-bold text-[22px] text-[#3b0764] leading-snug">
           Welcome back to{' '}
-          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, rgb(168,85,247), rgb(126,105,230))' }}>
+          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--brand-gradient)' }}>
             Naya Lumière
           </span>
         </h3>
@@ -227,17 +228,17 @@ function Login({ onForgotClick }) {
           </motion.p>
         )}
 
-        <button
+        <Button
           type="submit"
           disabled={isLoading}
-          className="cl-gradient-btn w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 border-none shadow-none"
+          className="w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>Sign In <ArrowRight size={14} /></>
           )}
-        </button>
+        </Button>
       </form>
 
       <div className="flex items-center gap-3 pt-1">
@@ -247,11 +248,11 @@ function Login({ onForgotClick }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white text-[12px] font-semibold text-[#6b21a8] hover:bg-[#fdf8ff] hover:border-[rgba(147,51,234,0.3)] transition-all">
+        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.5)] bg-white/80 backdrop-blur-sm text-[12px] font-semibold text-[#6b21a8] hover:bg-white hover:border-[rgba(147,104,236,0.6)] hover:shadow-[0_2px_10px_rgba(147,104,236,0.1)] transition-all">
           <Chrome size={15} className="text-[rgba(196,167,254,0.8)]" />
           Google
         </button>
-        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white text-[12px] font-semibold text-[#6b21a8] hover:bg-[#fdf8ff] hover:border-[rgba(147,51,234,0.3)] transition-all">
+        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.5)] bg-white/80 backdrop-blur-sm text-[12px] font-semibold text-[#6b21a8] hover:bg-white hover:border-[rgba(147,104,236,0.6)] hover:shadow-[0_2px_10px_rgba(147,104,236,0.1)] transition-all">
           <Facebook size={15} className="text-[rgba(196,167,254,0.8)]" />
           Facebook
         </button>
@@ -295,7 +296,7 @@ function Register() {
       <div className="space-y-2">
         <h3 className="font-sans font-bold text-[22px] text-[#3b0764] leading-snug">
           Create your{' '}
-          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, rgb(168,85,247), rgb(126,105,230))' }}>
+          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--brand-gradient)' }}>
             account
           </span>
         </h3>
@@ -378,17 +379,17 @@ function Register() {
           </p>
         )}
 
-        <button
+        <Button
           type="submit"
           disabled={isLoading}
-          className="cl-gradient-btn w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 mt-1 border-none shadow-none"
+          className="w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 mt-1 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>Create Account <ArrowRight size={14} /></>
           )}
-        </button>
+        </Button>
       </form>
     </motion.div>
   );
@@ -557,7 +558,7 @@ export default function AuthPage() {
       {/* ═══════════════════════════════════════
           RIGHT PANEL — Form
           ═══════════════════════════════════════ */}
-      <div className="flex-1 lg:w-1/2 xl:w-[48%] min-h-screen lg:min-h-0 lg:h-screen lg:overflow-y-auto bg-[#fdf8ff] flex flex-col">
+      <div className="flex-1 lg:w-1/2 xl:w-[48%] min-h-screen lg:min-h-0 lg:h-screen lg:overflow-y-auto bg-[#ffffff] flex flex-col">
 
         {/* Desktop: back to store (top-right) */}
         <div className="hidden lg:flex items-center justify-end px-10 xl:px-14 pt-8">
@@ -586,13 +587,13 @@ export default function AuthPage() {
               <TabsList className="flex bg-white border border-[rgba(216,180,254,0.35)] rounded-full p-1 mb-8 shadow-sm">
                 <TabsTrigger
                   value="login"
-                  className="flex-1 py-2.5 rounded-full text-[12px] font-bold transition-all data-[state=active]:![background:var(--cl-gradient)] data-[state=active]:!text-white data-[state=active]:shadow-[0_4px_14px_rgba(147,104,236,0.35)] text-[rgba(107,33,168,0.45)]"
+                  className="flex-1 py-2.5 rounded-full text-[12px] font-bold transition-all data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#d8b4fe] data-[state=active]:to-[#9368ee] data-[state=active]:!text-white data-[state=active]:shadow-[0_4px_14px_rgba(147,104,236,0.35)] text-[rgba(107,33,168,0.45)]"
                 >
                   Sign In
                 </TabsTrigger>
                 <TabsTrigger
                   value="register"
-                  className="flex-1 py-2.5 rounded-full text-[12px] font-bold transition-all data-[state=active]:![background:var(--cl-gradient)] data-[state=active]:!text-white data-[state=active]:shadow-[0_4px_14px_rgba(147,104,236,0.35)] text-[rgba(107,33,168,0.45)]"
+                  className="flex-1 py-2.5 rounded-full text-[12px] font-bold transition-all data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#d8b4fe] data-[state=active]:to-[#9368ee] data-[state=active]:!text-white data-[state=active]:shadow-[0_4px_14px_rgba(147,104,236,0.35)] text-[rgba(107,33,168,0.45)]"
                 >
                   Register
                 </TabsTrigger>

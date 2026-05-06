@@ -60,7 +60,7 @@ function TabbyReturn() {
         sessionStorage.removeItem('pendingTabbyOrder');
         clearCart();
         setPhase('success');
-        setTimeout(() => router.push(`/orders/${result.orderId}`), 1500);
+        setTimeout(() => router.push(`/account/orders/${result.orderId}`), 1500);
       } catch (err) {
         console.error('Tabby return error:', err);
         setPhase('error');
@@ -82,7 +82,7 @@ function TabbyReturn() {
   const cfg = phaseConfig[phase];
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#fdf8ff' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#ffffff' }}>
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full blur-[100px]" style={{ background: 'rgba(196,167,254,0.15)' }} />
         <div className="absolute bottom-[-10%] right-[-5%] w-[35%] h-[35%] rounded-full blur-[90px]"  style={{ background: 'rgba(216,180,254,0.1)' }} />
@@ -132,7 +132,7 @@ function TabbyReturn() {
 export default function TabbyReturnPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#fdf8ff' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#ffffff' }}>
         <Loader2 size={32} className="animate-spin" style={{ color: 'rgb(126,105,230)' }} />
       </div>
     }>

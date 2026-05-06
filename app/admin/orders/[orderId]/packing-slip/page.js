@@ -65,7 +65,7 @@ const css = `
  position: fixed;
  inset: 0;
  z-index: 9999;
- background: #fdf8ff;
+ background: #ffffff;
  overflow-y: auto;
  font-family: 'Montserrat', sans-serif;
  color: #3b0764;
@@ -144,7 +144,7 @@ const css = `
  }
 
  .info-box {
- background: #f8f0ff;
+ background: #ffffff;
  border: 1px solid rgba(216,180,254,0.35);
  border-radius: 10px;
  padding: 16px 20px;

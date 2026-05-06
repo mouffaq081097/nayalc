@@ -47,7 +47,7 @@ const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false, size =
           animate-in slide-in-from-bottom-full md:slide-in-from-bottom-10 md:zoom-in-95
           duration-500 z-50`}
         style={{
-          background: 'linear-gradient(160deg, rgba(248,240,255,0.98), rgba(255,248,255,0.96))',
+          background: 'linear-gradient(160deg, rgba(255,255,255,0.98), rgba(255,248,255,0.96))',
           border: '1px solid rgba(216,180,254,0.45)',
           boxShadow: '0 24px 80px rgba(147,51,234,0.18), 0 4px 24px rgba(196,167,254,0.25)',
           backdropFilter: 'blur(24px)',
@@ -74,7 +74,7 @@ const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false, size =
           <div
             className="px-7 pt-6 pb-4 sticky top-0 z-50"
             style={{
-              background: 'linear-gradient(160deg, rgba(248,240,255,0.98), rgba(255,248,255,0.96))',
+              background: 'linear-gradient(160deg, rgba(255,255,255,0.98), rgba(255,248,255,0.96))',
               borderBottom: '1px solid rgba(216,180,254,0.25)',
             }}
           >

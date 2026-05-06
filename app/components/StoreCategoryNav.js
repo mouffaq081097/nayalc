@@ -73,11 +73,11 @@ export default function StoreCategoryNav({ onFilterClick }) {
   }, [categories]);
 
   if (isLoading) return (
-    <div className="w-full h-[68px] flex items-center px-6 md:px-10 border-b"
-      style={{ background: 'rgba(253,248,255,0.92)', borderColor: 'rgba(216,180,254,0.2)' }}>
+    <div className="w-full h-[68px] flex items-center px-6 md:px-10 border-b border-gray-100"
+      style={{ background: '#ffffff' }}>
       <div className="flex gap-2.5 animate-pulse">
         {[80, 140, 120, 100, 160, 130].map((w, i) => (
-          <div key={i} className="h-9 rounded-full bg-purple-100/60 flex-shrink-0" style={{ width: w }} />
+          <div key={i} className="h-9 rounded-full bg-gray-100 flex-shrink-0" style={{ width: w }} />
         ))}
       </div>
     </div>
@@ -87,22 +87,20 @@ export default function StoreCategoryNav({ onFilterClick }) {
 
   return (
     <nav
-      className="w-full sticky top-0 z-40 border-b"
+      className="w-full sticky top-0 z-40 border-b border-gray-100"
       style={{
-        background: 'rgba(253,248,255,0.94)',
+        background: 'rgba(255,255,255,0.96)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderColor: 'rgba(216,180,254,0.22)',
       }}
     >
-      {/* Scroll container with fade masks */}
       <div className="relative max-w-[1400px] mx-auto">
 
         {/* Left fade */}
         <div
           className="absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none transition-opacity duration-300"
           style={{
-            background: 'linear-gradient(to right, rgba(253,248,255,0.95) 0%, transparent 100%)',
+            background: 'linear-gradient(to right, rgba(255,255,255,0.97) 0%, transparent 100%)',
             opacity: showLeftFade ? 1 : 0,
           }}
         />
@@ -110,7 +108,7 @@ export default function StoreCategoryNav({ onFilterClick }) {
         <div
           className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none transition-opacity duration-300"
           style={{
-            background: 'linear-gradient(to left, rgba(253,248,255,0.95) 0%, transparent 100%)',
+            background: 'linear-gradient(to left, rgba(255,255,255,0.97) 0%, transparent 100%)',
             opacity: showRightFade ? 1 : 0,
           }}
         />
@@ -131,14 +129,14 @@ export default function StoreCategoryNav({ onFilterClick }) {
               href="/all-products"
               className="flex items-center px-6 py-2.5 rounded-full text-[12.5px] font-bold tracking-wide transition-all duration-300 border"
               style={isAllActive ? {
-                background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))',
+                background: 'var(--brand-gradient)',
                 color: '#fff',
                 borderColor: 'transparent',
                 boxShadow: '0 4px 14px rgba(167,139,250,0.35)',
               } : {
-                background: 'rgba(255,255,255,0.7)',
-                color: '#6b21a8',
-                borderColor: 'rgba(216,180,254,0.5)',
+                background: '#ffffff',
+                color: '#3b3b42',
+                borderColor: '#e5e5ea',
               }}
             >
               All
@@ -146,7 +144,7 @@ export default function StoreCategoryNav({ onFilterClick }) {
           </motion.div>
 
           {/* Divider */}
-          <div className="flex-shrink-0 w-px h-5 mx-1" style={{ background: 'rgba(216,180,254,0.35)' }} />
+          <div className="flex-shrink-0 w-px h-5 mx-1 bg-gray-200" />
 
           {categories.map((cat, index) => {
             const isActive = pathname.includes(cat.href) && cat.href !== '/all-products';
@@ -162,22 +160,22 @@ export default function StoreCategoryNav({ onFilterClick }) {
                   href={cat.href}
                   className="group flex items-center gap-2.5 px-4 py-2.5 rounded-full text-[12.5px] font-semibold tracking-wide transition-all duration-300 border"
                   style={isActive ? {
-                    background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))',
+                    background: 'var(--brand-gradient)',
                     color: '#fff',
                     borderColor: 'transparent',
                     boxShadow: '0 4px 14px rgba(167,139,250,0.32)',
                   } : {
-                    background: 'rgba(255,255,255,0.65)',
-                    color: '#4b2d7a',
-                    borderColor: 'rgba(216,180,254,0.45)',
+                    background: '#ffffff',
+                    color: '#3b3b42',
+                    borderColor: '#e5e5ea',
                   }}
                 >
                   {cat.image && (
                     <div
                       className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0 transition-transform duration-300"
                       style={{
-                        background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(248,240,255,0.9)',
-                        border: isActive ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(216,180,254,0.5)',
+                        background: isActive ? 'rgba(255,255,255,0.25)' : '#f3f3f5',
+                        border: isActive ? '1px solid rgba(255,255,255,0.4)' : '1px solid #e5e5ea',
                       }}
                     >
                       <Image

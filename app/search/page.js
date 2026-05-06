@@ -65,7 +65,7 @@ function SearchResults() {
   }, [query]);
 
   return (
-    <div className="min-h-screen bg-[#fdf8ff] px-4 pb-28 pt-6 md:pb-12 md:pt-12">
+    <div className="min-h-screen bg-[#ffffff] px-4 pb-28 pt-6 md:pb-12 md:pt-12">
       <div className="container mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6 flex flex-col items-center text-center md:mb-10">

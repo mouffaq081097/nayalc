@@ -21,12 +21,12 @@ const AddressInputForm = dynamic(() => import('../components/AddressInputForm'),
 
 const glass = {
   background: 'rgba(255,255,255,0.72)',
-  border: '1px solid rgba(216,180,254,0.35)',
+  border: '1px solid var(--ink-200)',
   backdropFilter: 'blur(20px)',
   boxShadow: '0 2px 24px rgba(147,51,234,0.07)',
 };
 
-const lavGradient = 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))';
+const lavGradient = 'var(--brand-gradient)';
 
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
@@ -289,10 +289,20 @@ export default function CheckoutPage() {
     try {
       const res = await fetchWithAuth('/api/orders', { method: 'POST', body: JSON.stringify(orderData) });
       const result = await res.json();
-      // Order Placed (toast removed)
+      if (res.status === 409) {
+        // Duplicate — order was already created (e.g. double-click). Send to existing order.
+        clearCart();
+        router.push(`/account/orders/${result.orderId}`);
+        return;
+      }
+      if (!res.ok) {
+        toast.error(result.message || 'Error placing order. Please contact support.');
+        setIsPlacingOrder(false);
+        return;
+      }
       clearCart();
-      router.push(`/orders/${result.orderId}`);
-    } catch { toast.error('Error placing order.'); setIsPlacingOrder(false); }
+      router.push(`/account/orders/${result.orderId}`);
+    } catch { toast.error('Error placing order. Please contact support.'); setIsPlacingOrder(false); }
   };
 
   const steps = [
@@ -313,7 +323,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen pb-28 lg:pb-12" style={{ background: '#fdf8ff' }}>
+    <div className="min-h-screen pb-28 lg:pb-12" style={{ background: '#ffffff' }}>
       {/* Auras */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-15%] left-[-8%] w-[45%] h-[45%] rounded-full blur-[120px]" style={{ background: 'rgba(196,167,254,0.15)' }} />
@@ -523,7 +533,7 @@ export default function CheckoutPage() {
                     <AnimatePresence mode="wait">
                       {formData.paymentMethod === 'card' && (
                         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}>
-                          <div className="rounded-3xl p-6 lg:p-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: '0 12px 40px rgba(147,51,234,0.3)' }}>
+                          <div className="rounded-3xl p-6 lg:p-8 relative overflow-hidden" style={{ background: 'var(--brand-gradient)', boxShadow: '0 12px 40px rgba(147,51,234,0.3)' }}>
                             <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[70px]" style={{ background: 'rgba(249,168,212,0.2)' }} />
                             <div className="relative z-10 space-y-6">
                               <div className="flex items-center justify-between">
@@ -536,7 +546,7 @@ export default function CheckoutPage() {
                                   <Lock size={16} color="#fff" />
                                 </div>
                               </div>
-                              <div className="rounded-2xl p-5 lg:p-7" style={{ background: 'rgba(248,240,255,0.95)' }}>
+                              <div className="rounded-2xl p-5 lg:p-7" style={{ background: 'rgba(255,255,255,0.95)' }}>
                                 {clientSecret && stripePromise ? (
                                   <Elements stripe={stripePromise} options={{ clientSecret }}>
                                     <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" amount={Math.round(total * 100)} clientSecret={clientSecret} />
@@ -564,7 +574,7 @@ export default function CheckoutPage() {
                     </AnimatePresence>
 
                     {/* Gift wrap */}
-                    <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.6)' }}>
+                    <div className="rounded-2xl p-5" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.6)' }}>
                       <label className="flex items-center gap-4 cursor-pointer">
                         <input
                           type="checkbox"
@@ -597,7 +607,7 @@ export default function CheckoutPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Shipping */}
-                      <div className="rounded-2xl p-5 space-y-3" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.6)' }}>
+                      <div className="rounded-2xl p-5 space-y-3" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.6)' }}>
                         <div className="flex items-center gap-2">
                           <MapPin size={13} style={{ color: 'rgb(196,167,254)' }} />
                           <h3 className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgba(59,7,100,0.45)' }}>Shipping Address</h3>
@@ -615,7 +625,7 @@ export default function CheckoutPage() {
                       </div>
 
                       {/* Payment */}
-                      <div className="rounded-2xl p-5 space-y-3" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.6)' }}>
+                      <div className="rounded-2xl p-5 space-y-3" style={{ border: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.6)' }}>
                         <div className="flex items-center gap-2">
                           <CreditCard size={13} style={{ color: 'rgb(196,167,254)' }} />
                           <h3 className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: 'rgba(59,7,100,0.45)' }}>Payment</h3>
@@ -666,7 +676,7 @@ export default function CheckoutPage() {
                 <div className="max-h-[220px] overflow-y-auto pr-1 no-scrollbar mb-6 space-y-4">
                   {cartItems.map(item => (
                     <div key={item.id} className="flex gap-3 group">
-                      <div className="w-13 h-13 rounded-xl overflow-hidden flex-shrink-0 p-1.5" style={{ background: 'rgba(248,240,255,0.8)', border: '1px solid rgba(216,180,254,0.25)', width: 48, height: 48 }}>
+                      <div className="w-13 h-13 rounded-xl overflow-hidden flex-shrink-0 p-1.5" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(216,180,254,0.25)', width: 48, height: 48 }}>
                         <ImageWithFallback src={item.image} alt={item.name} className="w-full h-full object-contain mix-blend-multiply" />
                       </div>
                       <div className="flex-1 min-w-0">

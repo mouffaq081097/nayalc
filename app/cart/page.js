@@ -89,7 +89,7 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: '#fdf8ff' }}>
+    <div className="min-h-screen pb-28" style={{ background: '#ffffff' }}>
       {/* Background auras */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-15%] right-[-8%] w-[50%] h-[50%] rounded-full blur-[120px]" style={{ background: 'rgba(196,167,254,0.18)' }} />
@@ -159,7 +159,7 @@ export default function CartPage() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      style={{ borderBottom: '1px solid rgba(216,180,254,0.2)', background: 'linear-gradient(to right, rgba(248,240,255,0.8), rgba(255,255,255,0.4))' }}
+                      style={{ borderBottom: '1px solid rgba(216,180,254,0.2)', background: 'linear-gradient(to right, rgba(255,255,255,0.8), rgba(255,255,255,0.4))' }}
                       className="overflow-hidden"
                     >
                       <div className="px-7 py-6 flex gap-4 items-start">
@@ -191,7 +191,7 @@ export default function CartPage() {
                       {/* Image */}
                       <div
                         className="relative w-28 h-28 rounded-2xl overflow-hidden flex-shrink-0 mx-auto sm:mx-0 p-3"
-                        style={{ background: 'rgba(248,240,255,0.8)', border: '1px solid rgba(216,180,254,0.25)' }}
+                        style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(216,180,254,0.25)' }}
                       >
                         <ImageWithFallback
                           src={item.image}
@@ -326,7 +326,7 @@ export default function CartPage() {
                             initial={{ width: 0 }}
                             animate={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING) * 100)}%` }}
                             className="h-full rounded-full"
-                            style={{ background: 'linear-gradient(90deg,rgb(196,167,254),rgb(126,105,230))' }}
+                            style={{ background: 'var(--brand-gradient)' }}
                           />
                         </div>
                       </div>
@@ -352,7 +352,7 @@ export default function CartPage() {
                   )}
 
                   {/* Coupon */}
-                  <div className="mb-6 rounded-2xl p-4 space-y-3" style={{ background: 'rgba(248,240,255,0.7)', border: '1px solid rgba(216,180,254,0.25)' }}>
+                  <div className="mb-6 rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.25)' }}>
                     <div className="flex items-center gap-2">
                       <Tag size={13} style={{ color: 'rgb(196,167,254)' }} />
                       <h4 className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'rgba(59,7,100,0.55)' }}>Promo Code</h4>

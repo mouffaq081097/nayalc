@@ -1,51 +1,17 @@
 import "./globals.css";
 import {
-  Cormorant_Garamond,
-  Montserrat,
-  Instrument_Sans,
-  Playfair_Display,
-  Cinzel,
+  Inter,
 } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 import Providers from './Providers';
 import LayoutContent from './LayoutContent';
 import { SpeedInsights } from "@vercel/speed-insights/next";
-
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-cormorant',
-  display: 'swap',
-});
-
-const montserrat = Montserrat({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-montserrat',
-  display: 'swap',
-});
-
-const instrumentSans = Instrument_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-instrument',
-  display: 'swap',
-});
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-playfair',
-  display: 'swap',
-});
-
-const cinzel = Cinzel({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800', '900'],
-  variable: '--font-cinzel',
-  display: 'swap',
-});
 
 export const metadata = {
   metadataBase: new URL('https://nayalc.com'),
@@ -131,7 +97,7 @@ export default function RootLayout({ children }) {
     },
   ];
 
-  const fontVars = [cormorant.variable, montserrat.variable, instrumentSans.variable, playfair.variable, cinzel.variable].join(' ');
+  const fontVars = [inter.variable].join(' ');
 
   return (
     <html lang="en" className={fontVars}>

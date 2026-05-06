@@ -99,7 +99,7 @@ export default function AddressDetailPage() {
           {/* Address overview card */}
           <div
             className="rounded-3xl p-6"
-            style={{ background: 'linear-gradient(135deg,rgba(196,167,254,0.18),rgba(167,139,250,0.10))', border: '1px solid rgba(216,180,254,0.35)' }}
+            style={{ background: 'var(--brand-gradient)', border: '1px solid var(--ink-200)' }}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(196,167,254,0.25)', color: 'rgb(126,105,230)' }}>
@@ -140,7 +140,7 @@ export default function AddressDetailPage() {
                 <div>
                   <p className="text-[16px] font-bold tracking-tight" style={{ color: '#3b0764' }}>{addr.addressLabel || 'Address'}</p>
                   {addr.isDefault && (
-                    <span className="text-[8px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full text-white inline-block mt-1" style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' }}>
+                    <span className="text-[8px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full text-white inline-block mt-1" style={{ background: 'var(--brand-gradient)' }}>
                       Primary
                     </span>
                   )}

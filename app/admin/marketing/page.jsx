@@ -238,7 +238,7 @@ const MarketingPage = () => {
                 case SECTION_TYPES.HERO:
                     html += `<div style="margin-bottom:40px;border-radius:20px;overflow:hidden;border:1px solid rgba(216,180,254,0.25);">
     ${s.data.image ? `<img src="${s.data.image}" alt="Hero Banner" style="width:100%;display:block;margin:0;" />` : ''}
-    <div style="background:linear-gradient(180deg,#fdf8ff 0%,#f3e8ff 100%);padding:36px 32px;text-align:center;">
+    <div style="background:linear-gradient(180deg,#ffffff 0%,#f3e8ff 100%);padding:36px 32px;text-align:center;">
         <h2 style="color:#3b0764;font-size:28px;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;margin:0 0 14px;line-height:1.2;">${s.data.title}</h2>
         <p style="color:rgba(59,7,100,0.65);font-size:16px;line-height:1.75;margin:0 auto 28px;max-width:420px;">${s.data.subtitle}</p>
         ${s.data.ctaText ? `<a href="${s.data.ctaLink}" style="display:inline-block;background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230));color:#ffffff;padding:15px 38px;text-decoration:none;border-radius:50px;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;box-shadow:0 6px 24px rgba(147,51,234,0.25);">${s.data.ctaText}</a>` : ''}
@@ -273,7 +273,7 @@ const MarketingPage = () => {
                     break;
 
                 case SECTION_TYPES.PRODUCT:
-                    html += `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf8ff;border:1px solid rgba(216,180,254,0.3);border-radius:20px;overflow:hidden;margin-bottom:32px;">
+                    html += `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid rgba(216,180,254,0.3);border-radius:20px;overflow:hidden;margin-bottom:32px;">
     <tr>
         <td width="150" valign="middle" style="padding:24px 0 24px 24px;text-align:center;">
             ${s.data.image ? `<img src="${s.data.image}" alt="${s.data.name}" style="width:120px;height:120px;object-fit:contain;display:block;margin:0 auto;" />` : `<div style="width:120px;height:120px;background:rgba(216,180,254,0.2);border-radius:12px;margin:0 auto;"></div>`}
@@ -665,7 +665,7 @@ const MarketingPage = () => {
 
                                                 {/* ── PRODUCT ── */}
                                                 {section.type === SECTION_TYPES.PRODUCT && (
-                                                    <div className="bg-[#fdf8ff] border border-purple-100 rounded-3xl p-5">
+                                                    <div className="bg-[#ffffff] border border-purple-100 rounded-3xl p-5">
                                                         <div className="flex gap-4 items-center">
                                                             <div className="w-20 h-20 bg-white rounded-2xl border border-purple-50 flex items-center justify-center p-1.5 flex-shrink-0">
                                                                 {section.data.image ? <img src={section.data.image} alt="Product" className="max-h-full max-w-full object-contain" /> : <Package className="text-purple-100" size={24} />}

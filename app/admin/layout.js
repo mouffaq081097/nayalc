@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { createFetchWithAuth } from '../lib/api';
+import PageLoader from '@/app/components/PageLoader';
 
 const SIDEBAR_W = '256px';
 
@@ -34,7 +35,7 @@ const navItems = [
 ];
 
 const SidebarContent = ({ pathname, isSidebarOpen, setIsSidebarOpen, notifications, onLogout }) => (
- <div className="flex flex-col h-full" style={{ background: '#fdf8ff', borderRight: '1px solid rgba(216,180,254,0.45)' }}>
+ <div className="flex flex-col h-full" style={{ background: '#ffffff', borderRight: '1px solid rgba(216,180,254,0.45)' }}>
 
  {/* Logo */}
  <div className="px-5 pt-6 pb-5" style={{ borderBottom: '1px solid rgba(216,180,254,0.35)' }}>
@@ -138,7 +139,7 @@ const AdminLayout = ({ children }) => {
  const { user, loading, logout, isAuthenticated } = useAuth();
  const router = useRouter();
  const pathname = usePathname();
- const fetchWithAuth = createFetchWithAuth(logout);
+ const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
 
  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
  const [notifications, setNotifications] = useState({
@@ -194,12 +195,7 @@ const AdminLayout = ({ children }) => {
  const pageTitle = current?.text ?? 'Admin';
 
  /* ── Loading state ── */
- if (loading) return (
- <div className="h-screen flex flex-col items-center justify-center gap-4" style={{ background: '#fdf8ff' }}>
- <div className="w-10 h-10 border-4 border-purple-200 border-t-[#9333ea] rounded-full animate-spin" />
- <p className="text-[11px] font-semibold text-purple-300 ">Verifying access…</p>
- </div>
- );
+ if (loading) return <PageLoader />;
 
  return (
  <div className="flex h-screen" style={{ background: 'var(--cl-bg)' }}>

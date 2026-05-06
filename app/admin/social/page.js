@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Loader2, MoreHorizontal, Instagram, Eye, EyeOff, ExternalLink, GripVertical, Image as ImageIcon, Link as LinkIcon, Heart } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { Button } from '@/app/components/ui/button';
+import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -131,14 +132,7 @@ const ManageSocial = () => {
  }
  };
 
- if (loading) {
- return (
- <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
- <div className="w-12 h-12 border-4 border-cl-purple border-t-transparent rounded-full animate-spin"></div>
- <p className="text-sm font-medium text-gray-400">Loading social posts...</p>
- </div>
- );
- }
+ if (loading) return <PageLoader />;
 
  return (
  <div className="space-y-10 pb-20">

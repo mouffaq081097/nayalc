@@ -48,7 +48,7 @@ export default function SideCart() {
             {/* Header */}
             <div className="px-6 py-5 flex items-center justify-between relative z-10" style={{ borderBottom: '1px solid rgba(216,180,254,0.3)' }}>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-md" style={{ background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' }}>
+                <div className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-md" style={{ background: 'var(--brand-gradient)' }}>
                   <ShoppingBag size={15} className="text-white" strokeWidth={2.5} />
                 </div>
                 <div>
@@ -69,7 +69,7 @@ export default function SideCart() {
 
             {/* Free shipping progress */}
             {cartItems.length > 0 && (
-              <div className="px-6 py-3 relative z-10" style={{ borderBottom: '1px solid rgba(216,180,254,0.18)', background: 'rgba(248,240,255,0.5)' }}>
+              <div className="px-6 py-3 relative z-10" style={{ borderBottom: '1px solid rgba(216,180,254,0.18)', background: 'rgba(255,255,255,0.5)' }}>
                 {toFreeShipping === 0 ? (
                   <p className="text-[11px] font-bold text-green-600 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
@@ -86,7 +86,7 @@ export default function SideCart() {
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING) * 100)}%` }}
                         className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg,rgb(196,167,254),rgb(126,105,230))' }}
+                        style={{ background: 'var(--brand-gradient)' }}
                       />
                     </div>
                   </div>
@@ -132,7 +132,7 @@ export default function SideCart() {
                       {/* Product image */}
                       <div
                         className="w-20 h-20 rounded-xl flex-shrink-0 p-2 overflow-hidden cursor-pointer"
-                        style={{ background: 'rgba(248,240,255,0.9)', border: '1px solid rgba(216,180,254,0.22)' }}
+                        style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(216,180,254,0.22)' }}
                         onClick={closeCart}
                       >
                         <Link href={`/product/${item.id}`}>
@@ -206,7 +206,7 @@ export default function SideCart() {
 
             {/* Footer */}
             {cartItems.length > 0 && (
-              <div className="px-5 pb-7 pt-5 space-y-3 relative z-10" style={{ borderTop: '1px solid rgba(216,180,254,0.3)', background: 'rgba(248,240,255,0.65)' }}>
+              <div className="px-5 pb-7 pt-5 space-y-3 relative z-10" style={{ borderTop: '1px solid rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.65)' }}>
                 {/* Subtotal row */}
                 <div className="flex justify-between items-baseline px-1">
                   <span className="text-[12px] font-semibold" style={{ color: 'rgba(59,7,100,0.5)' }}>Subtotal</span>

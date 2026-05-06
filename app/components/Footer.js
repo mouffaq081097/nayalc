@@ -19,30 +19,26 @@ export default function Footer() {
                 <Image
                   src="/Adobe Express - file (5).png"
                   alt="Naya Lumière Cosmetics"
-                  height={40}
-                  width={130}
-                  className="h-10 w-auto object-contain shrink-0"
+                  height={28}
+                  width={28}
+                  className="h-7 w-7 md:h-7 w-auto object-contain shrink-0"
                 />
                 <div className="flex flex-col text-left leading-tight">
                     <span
-                      className="text-[17px] md:text-[19px] font-bold tracking-[0.08em] uppercase"
-                      style={{ 
-                        color: '#3b0764', 
-                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-                        textShadow: 'none',
+                      className="text-[15px] md:text-[16px] font-bold tracking-[0.06em] uppercase text-ink-900"
+                      style={{
+                        fontFamily: 'var(--font-sans)',
                       }}
                     >
-                      NAYA
+                      NAYA LUMIÈRE
                     </span>
                     <span
-                      className="text-[11px] md:text-[12px] italic mt-0.5"
-                      style={{ 
-                        fontFamily: "Georgia, 'Times New Roman', serif", 
-                        color: '#6b21a8',
-                        textShadow: 'none',
+                      className="text-[9px] tracking-[0.32em] uppercase text-ink-500 mt-0.5 block leading-none"
+                      style={{
+                        fontFamily: 'var(--font-sans)',
                       }}
                     >
-                      Lumière Cosmetics
+                      COSMETICS
                     </span>
                 </div>
             </Link>

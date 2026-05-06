@@ -78,7 +78,7 @@ function ProductCard({ product, imageUrl, added, onAdd }) {
       {/* Image */}
       <div
         className="relative aspect-square overflow-hidden p-4 flex-shrink-0 cursor-pointer"
-        style={{ background: 'rgba(248,240,255,0.85)', borderBottom: '1px solid rgba(216,180,254,0.18)' }}
+        style={{ background: 'rgba(255,255,255,0.85)', borderBottom: '1px solid rgba(216,180,254,0.18)' }}
       >
         <ImageWithFallback
           src={imageUrl}
@@ -93,7 +93,7 @@ function ProductCard({ product, imageUrl, added, onAdd }) {
           style={{
             background: added
               ? 'linear-gradient(135deg,rgb(134,239,172),rgb(52,211,153))'
-              : 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+              : 'var(--brand-gradient)',
             boxShadow: '0 4px 14px rgba(147,51,234,0.3)',
           }}
         >
@@ -121,7 +121,7 @@ function ProductCard({ product, imageUrl, added, onAdd }) {
           style={{
             background: added
               ? 'linear-gradient(135deg,rgb(134,239,172),rgb(52,211,153))'
-              : 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+              : 'var(--brand-gradient)',
             boxShadow: added ? '0 4px 14px rgba(52,211,153,0.25)' : '0 4px 14px rgba(147,51,234,0.18)',
           }}
         >
@@ -237,7 +237,7 @@ export default function NeedAnythingElsePage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#fdf8ff', paddingBottom: '120px' }}>
+    <div className="min-h-screen" style={{ background: '#ffffff', paddingBottom: '120px' }}>
 
       {/* Background auras */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -350,7 +350,7 @@ export default function NeedAnythingElsePage() {
         {/* Edge case: no products to show */}
         {!loading && !hasBuyAgain && !hasSuggest && (
           <div className="py-24 text-center">
-            <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-5" style={{ background: 'rgba(196,167,254,0.18)', border: '1px solid rgba(216,180,254,0.35)' }}>
+            <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-5" style={{ background: 'rgba(196,167,254,0.18)', border: '1px solid var(--ink-200)' }}>
               <Star size={22} strokeWidth={1.25} style={{ color: 'rgba(196,167,254,0.6)' }} />
             </div>
             <h3 className="text-[18px] font-bold mb-2" style={{ color: '#3b0764' }}>You're all set</h3>
@@ -371,7 +371,7 @@ export default function NeedAnythingElsePage() {
             style={{
               border: '1px solid rgba(216,180,254,0.5)',
               color: 'rgb(126,105,230)',
-              background: 'rgba(248,240,255,0.8)',
+              background: 'rgba(255,255,255,0.8)',
             }}
           >
             ← Cart

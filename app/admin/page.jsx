@@ -10,6 +10,7 @@ import {
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import PageLoader from '@/app/components/PageLoader';
 
 const STATUS_STYLES = {
     Delivered:  'bg-green-50 text-green-700 border-green-200',
@@ -57,12 +58,7 @@ const AdminDashboard = () => {
         };
     }, [allOrders.orders]);
 
-    if (loading || !user || user.role !== 'admin') return (
-        <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
-            <div className="w-10 h-10 border-4 border-purple-100 border-t-[#9333ea] rounded-full animate-spin" />
-            <p className="text-sm text-gray-400 font-medium">Loading…</p>
-        </div>
-    );
+    if (loading || !user || user.role !== 'admin') return <PageLoader />;
 
     return (
         <div className="space-y-8 pb-8">
@@ -110,7 +106,7 @@ const AdminDashboard = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
-                                    <tr style={{ background: 'rgba(248,240,255,0.6)' }}>
+                                    <tr style={{ background: 'rgba(255,255,255,0.6)' }}>
                                         {['Order', 'Customer', 'Date', 'Status', 'Total'].map((h, i) => (
                                             <th key={h} className={`px-6 py-3.5 text-[10px] font-black text-purple-400 ${i === 4 ? 'text-right' : 'text-left'}`}>{h}</th>
                                         ))}
@@ -145,7 +141,7 @@ const AdminDashboard = () => {
                             </table>
                         </div>
 
-                        <div className="px-6 py-4" style={{ borderTop: '1px solid rgba(216,180,254,0.2)', background: 'rgba(248,240,255,0.3)' }}>
+                        <div className="px-6 py-4" style={{ borderTop: '1px solid rgba(216,180,254,0.2)', background: 'rgba(255,255,255,0.3)' }}>
                             <button
                                 onClick={() => router.push('/admin/orders')}
                                 className="w-full py-2.5 text-[11px] font-bold text-purple-500 hover:text-purple-700 transition-colors flex items-center justify-center gap-1.5"

@@ -4,10 +4,9 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../components/ProductCard';
-import StoreHeader from '../components/StoreHeader';
-import StoreCategoryNav from '../components/StoreCategoryNav';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Search, X, Filter, Sparkles, Check, ArrowRight, Minus, Plus as PlusIcon, Star, CreditCard } from 'lucide-react';
+import Link from 'next/link';
+import { Search, X, Filter, Check, ArrowRight, Minus, Plus as PlusIcon } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { Slider } from '../components/ui/slider';
@@ -121,7 +120,7 @@ const SidebarFilters = ({
                   <div className="flex items-center">
                     <div
                       className="w-5 h-5 rounded-lg border flex items-center justify-center transition-all"
-                      style={selectedCategories.includes(category) ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderColor: 'transparent' } : { background: 'white', borderColor: '#f3e8ff' }}
+                      style={selectedCategories.includes(category) ? { background: 'var(--brand-gradient)', borderColor: 'transparent' } : { background: 'white', borderColor: 'var(--ink-200)' }}
                     >
                         {selectedCategories.includes(category) && <Check size={12} className="text-white" strokeWidth={3} />}
                     </div>
@@ -158,7 +157,7 @@ const SidebarFilters = ({
                 <div className="flex items-center">
                     <div
                       className="w-5 h-5 rounded-lg border flex items-center justify-center transition-all"
-                      style={selectedBrands.includes(brand) ? { background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', borderColor: 'transparent' } : { background: 'white', borderColor: '#f3e8ff' }}
+                      style={selectedBrands.includes(brand) ? { background: 'var(--brand-gradient)', borderColor: 'transparent' } : { background: 'white', borderColor: 'var(--ink-200)' }}
                     >
                         {selectedBrands.includes(brand) && <Check size={12} className="text-white" strokeWidth={3} />}
                     </div>
@@ -340,270 +339,74 @@ export default function AllProductsPage() {
       
       {/* Global aura orbs are inherited from LayoutContent.js */}
 
-      <StoreHeader title="Store." />
-      <StoreCategoryNav />
+      {/* ── Hero Banner ── */}
+      <section className="w-full relative overflow-hidden" style={{ background: '#c4b5fd', height: '260px' }}>
 
-      {/* ── The Naya Lumière Difference ── */}
-      <section className="w-full pt-10 pb-12 bg-transparent border-y border-purple-100/40 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/textures/natural-paper.png')] opacity-[0.025] mix-blend-multiply pointer-events-none" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d8b4fe]/70 to-transparent" />
-        <div className="absolute left-1/2 top-0 h-[320px] w-[min(960px,90vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(216,180,254,0.18),transparent_68%)] pointer-events-none" />
-        <div className="max-w-[1400px] mx-auto relative z-10">
-          {/* Section header */}
-          <div className="px-6 md:px-10 mb-8 text-center">
-            <div className="flex items-center justify-center gap-3">
-              <span className="w-8 h-px bg-purple-200" />
-              <span className="text-[11px] font-bold text-cl-purple">Our Promise</span>
-              <span className="w-8 h-px bg-purple-200" />
+        {/* Flowing contour / topographic lines — full banner width */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="contour" x="0" y="0" width="160" height="160" patternUnits="userSpaceOnUse">
+              {/* Large swooping organic curves inspired by topographic maps */}
+              <path d="M0,80 C20,40 60,20 80,40 C100,60 120,100 160,80"        fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.4"/>
+              <path d="M0,110 C20,70 60,50 80,70 C100,90 120,130 160,110"      fill="none" stroke="rgba(255,255,255,0.13)" strokeWidth="1.2"/>
+              <path d="M0,50 C20,10 60,-10 80,10 C100,30 120,70 160,50"        fill="none" stroke="rgba(255,255,255,0.13)" strokeWidth="1.2"/>
+              <path d="M0,140 C20,100 60,80 80,100 C100,120 120,160 160,140"   fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="1"/>
+              <path d="M0,20 C20,-20 60,-40 80,-20 C100,0 120,40 160,20"       fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="1"/>
+              <path d="M0,160 C40,120 80,110 100,130 C120,150 140,170 160,160" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.9"/>
+              {/* Cross-hatch curves for depth */}
+              <path d="M40,0 C20,30 10,80 30,120 C50,160 70,140 80,160"        fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.8"/>
+              <path d="M100,0 C80,30 70,80 90,120 C110,160 130,140 140,160"    fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.8"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#contour)"/>
+        </svg>
+
+        {/* Soft vignette on the far left edge */}
+        <div className="absolute inset-y-0 left-0 w-16 pointer-events-none" style={{ background: 'linear-gradient(to right, rgba(167,139,250,0.25), transparent)' }} />
+
+        {/* Large image block — flush to right edge, curved left side only */}
+        <div
+          className="hidden md:block absolute top-0 bottom-0"
+          style={{
+            right: 0,
+            width: '44%',
+            borderRadius: '130px 0 0 130px',
+            overflow: 'hidden',
+            boxShadow: '-16px 0 48px rgba(109,40,217,0.20)',
+          }}
+        >
+          <Image
+            src="/Untitled design.png"
+            alt="All Products"
+            fill
+            className="object-cover"
+            style={{ objectPosition: 'center center' }}
+            priority
+          />
+          {/* Left-edge blend */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, #c4b5fd 0%, transparent 22%)' }}
+          />
+        </div>
+
+        {/* Breadcrumb + title */}
+        <div className="absolute inset-0 flex items-center" style={{ paddingLeft: '5%', paddingRight: '45%' }}>
+          <div>
+            <div className="flex items-center gap-1.5 mb-3 text-[11px] font-semibold" style={{ color: 'rgba(60,20,120,0.65)' }}>
+              <Link href="/" className="hover:opacity-100 transition-opacity">Home</Link>
+              <span>›</span>
+              <span>Shop Catalog</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-serif italic text-cl-deep leading-tight">
-              The Naya Lumière{' '}
-              <span className="font-sans not-italic font-bold" style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>difference.</span>
-            </h2>
-            <p className="text-[14px] font-medium text-gray-500">Excellence in every formulation.</p>
-          </div>
-
-          {/* Elegant Centered Cards */}
-          <div className="flex overflow-x-auto flex-nowrap gap-5 md:gap-6 px-6 md:px-10 pb-8 no-scrollbar snap-x snap-mandatory md:justify-center">
-            {/* Card 1 — Tabby */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex-shrink-0 w-[80vw] sm:w-[300px] md:w-[calc(25%-18px)] max-w-[340px] overflow-hidden transition-all duration-500 flex flex-col group relative snap-center"
-              style={{
-                borderRadius: '24px',
-                background: 'linear-gradient(160deg, #ffffff 0%, #f0fff8 45%, #d4fce8 100%)',
-                border: '1px solid rgba(0,217,126,0.18)',
-                boxShadow: '0 10px 40px rgba(61,255,160,0.10)',
-                minHeight: '480px',
-              }}
-            >
-              {/* Text — top left, Apple card style */}
-              <div className="px-7 pt-7 pb-0 relative z-10">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#00a86b' }}>Flexible Payments</span>
-                <h3 className="text-[20px] font-bold leading-snug mt-2" style={{ color: '#0d2b1a' }}>
-                  0% installment plan<br />with <span style={{ color: '#00d97e' }}>tabby</span>.
-                </h3>
-              </div>
-
-              {/* Large centered Tabby card visual */}
-              <div className="flex-1 flex items-center justify-center relative py-8">
-                {/* Green ambient glow */}
-                <div className="absolute w-64 h-64 rounded-full blur-[78px] pointer-events-none" style={{ background: 'rgba(61,255,160,0.24)' }} />
-
-                {/* The payment card — larger, more prominent */}
-                <div
-                  className="relative z-10 w-[270px] h-[164px] rounded-[24px] flex flex-col justify-between p-6 overflow-hidden group-hover:scale-[1.04] group-hover:-rotate-2 transition-transform duration-500"
-                  style={{
-                    background: 'linear-gradient(135deg, #3DFFA0 0%, #00d97e 100%)',
-                    boxShadow: '0 24px 60px rgba(61,255,160,0.32), 0 4px 16px rgba(0,180,100,0.18)',
-                  }}
-                >
-                  {/* Decorative circles */}
-                  <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-15" style={{ background: '#fff' }} />
-                  <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full opacity-10" style={{ background: '#fff' }} />
-
-                  <div className="flex justify-between items-start relative z-10">
-                    <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white/25 flex items-center justify-center backdrop-blur-sm">
-                      <Image src="/0x0.png" alt="Tabby" width={42} height={42} className="w-full h-full object-cover rounded-xl" />
-                    </div>
-                    <CreditCard size={20} color="rgba(26,46,26,0.45)" />
-                  </div>
-
-                  <div className="relative z-10">
-                    <div className="text-[7.5px] font-black uppercase tracking-[0.22em] mb-0.5" style={{ color: 'rgba(10,40,20,0.55)' }}>Tabby Pay Later</div>
-                    <div className="text-[13px] font-mono font-bold" style={{ color: '#0d2b1a' }}>•••• •••• •••• 4242</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 4 installments — bottom */}
-              <div className="px-7 pb-7 relative z-10">
-                <div className="flex items-center gap-2 pt-4 border-t" style={{ borderColor: 'rgba(0,200,100,0.15)' }}>
-                  {[1,2,3,4].map(n => (
-                    <div key={n} className="flex-1 flex flex-col items-center gap-1.5">
-                      <div className="w-full h-1.5 rounded-full" style={{ background: n === 1 ? '#3DFFA0' : 'rgba(61,255,160,0.22)' }} />
-                      <span className="text-[8px] font-bold" style={{ color: n === 1 ? '#00a86b' : 'rgba(13,43,26,0.3)' }}>
-                        {n === 1 ? 'Today' : `+${(n-1)*30}d`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 2 — AI Consultant */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] overflow-hidden transition-all duration-500 flex flex-col group relative snap-center"
-              style={{
-                borderRadius: '24px',
-                background: 'linear-gradient(160deg, #ffffff 0%, #f5f0ff 45%, #ede5ff 100%)',
-                border: '1px solid rgba(139,92,246,0.18)',
-                boxShadow: '0 10px 40px rgba(139,92,246,0.08)',
-                minHeight: '400px',
-              }}
-            >
-              {/* Text — top left */}
-              <div className="px-6 pt-6 pb-0 relative z-10">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#8b5cf6' }}>AI Consultant</span>
-                <h3 className="text-[20px] font-bold leading-snug mt-2" style={{ color: '#2d1b69' }}>
-                  Precision skin<br />diagnosis <span style={{ color: '#8b5cf6' }}>in seconds</span>.
-                </h3>
-              </div>
-
-              {/* Large centered neural-network visual */}
-              <div className="flex-1 flex items-center justify-center relative py-6">
-                <div className="absolute w-44 h-44 rounded-full blur-[64px] pointer-events-none" style={{ background: 'rgba(139,92,246,0.18)' }} />
-
-                <div className="relative z-10 w-32 h-32 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-                  {/* Outer orbit */}
-                  <div className="absolute w-32 h-32 rounded-full border border-[#c4b5fd]/40 animate-spin" style={{ animationDuration: '12s' }}>
-                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-[#c4b5fd] shadow-[0_0_8px_rgba(196,181,253,0.9)]" />
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full" style={{ background: 'rgba(167,139,250,0.5)' }} />
-                  </div>
-                  {/* Inner orbit */}
-                  <div className="absolute w-20 h-20 rounded-full border border-[#a78bfa]/50 animate-spin" style={{ animationDuration: '8s', animationDirection: 'reverse' }}>
-                    <div className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-[#7c3aed] shadow-[0_0_10px_rgba(124,58,237,0.8)]" />
-                    <div className="absolute bottom-0 left-0 w-2 h-2 rounded-full" style={{ background: 'rgba(167,139,250,0.6)' }} />
-                  </div>
-                  {/* Center orb */}
-                  <div className="relative w-14 h-14 rounded-full flex items-center justify-center"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.97), rgba(237,229,255,0.85))',
-                      boxShadow: '0 8px 32px rgba(124,58,237,0.22), inset 0 1px 0 rgba(255,255,255,0.9)',
-                      border: '1px solid rgba(196,181,253,0.5)',
-                    }}>
-                    <Sparkles size={22} style={{ color: '#7c3aed' }} strokeWidth={1.5} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom — live indicator */}
-              <div className="px-6 pb-6 relative z-10">
-                <div className="flex items-center gap-2.5 pt-4 border-t" style={{ borderColor: 'rgba(139,92,246,0.12)' }}>
-                  <div className="w-2 h-2 flex-shrink-0 rounded-full bg-[#8b5cf6] animate-pulse" />
-                  <span className="text-[9.5px] font-bold tracking-wide leading-tight" style={{ color: '#6d28d9' }}>Analyzing skin type · Recommending products</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 3 — Naya Rewards */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="flex-shrink-0 w-[85vw] sm:w-[280px] md:w-1/3 max-w-[320px] overflow-hidden transition-all duration-500 flex flex-col group relative snap-center"
-              style={{
-                borderRadius: '24px',
-                background: 'linear-gradient(160deg, #fffdf7 0%, #fff8e8 45%, #ffedbb 100%)',
-                border: '1px solid rgba(202,138,4,0.2)',
-                boxShadow: '0 10px 40px rgba(202,138,4,0.08)',
-                minHeight: '400px',
-              }}
-            >
-              {/* Text — top left */}
-              <div className="px-6 pt-6 pb-0 relative z-10">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#b45309' }}>Naya Rewards</span>
-                <h3 className="text-[20px] font-bold leading-snug mt-2" style={{ color: '#1c1000' }}>
-                  Earn points with<br />every <span style={{ color: '#d97706' }}>selection</span>.
-                </h3>
-              </div>
-
-              {/* Large centered membership card visual */}
-              <div className="flex-1 flex items-center justify-center relative py-6">
-                <div className="absolute w-44 h-44 rounded-full blur-[64px] pointer-events-none" style={{ background: 'rgba(251,191,36,0.22)' }} />
-
-                <div
-                  className="relative z-10 w-[200px] h-[122px] rounded-[18px] flex flex-col justify-between p-5 overflow-hidden group-hover:scale-[1.04] group-hover:rotate-2 transition-transform duration-500"
-                  style={{
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%)',
-                    boxShadow: '0 24px 60px rgba(202,138,4,0.30), 0 4px 16px rgba(180,83,9,0.18)',
-                  }}
-                >
-                  <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full opacity-15" style={{ background: '#fff' }} />
-                  <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full opacity-10" style={{ background: '#fff' }} />
-
-                  <div className="flex justify-between items-start relative z-10">
-                    <div>
-                      <div className="text-[7px] font-black uppercase tracking-[0.2em] mb-0.5" style={{ color: 'rgba(255,255,255,0.65)' }}>Naya Lumière</div>
-                      <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Silver Member</div>
-                    </div>
-                    <Star size={15} style={{ color: 'rgba(255,255,255,0.6)', fill: 'rgba(255,255,255,0.25)' }} />
-                  </div>
-
-                  <div className="relative z-10 flex justify-between items-end">
-                    <div>
-                      <div className="text-[7px] font-black uppercase tracking-[0.15em] mb-0.5" style={{ color: 'rgba(255,255,255,0.6)' }}>Points balance</div>
-                      <div className="text-[18px] font-bold font-mono leading-none" style={{ color: '#fff' }}>5,240 pts</div>
-                    </div>
-                    <div className="flex gap-0.5 items-center">
-                      {[1,2,3].map(n => (
-                        <Star key={n} size={8} style={{ color: n <= 2 ? '#fff' : 'rgba(255,255,255,0.35)', fill: n <= 2 ? '#fff' : 'rgba(255,255,255,0.25)' }} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom — progress to next tier */}
-              <div className="px-6 pb-6 relative z-10">
-                <div className="pt-4 border-t" style={{ borderColor: 'rgba(202,138,4,0.15)' }}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[9px] font-black uppercase tracking-wide" style={{ color: '#b45309' }}>To Gold tier</span>
-                    <span className="text-[9px] font-bold" style={{ color: '#b45309' }}>2,760 pts away</span>
-                  </div>
-                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(202,138,4,0.15)' }}>
-                    <div className="h-full rounded-full" style={{ width: '65%', background: 'linear-gradient(90deg, #f59e0b, #d97706)' }} />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 4 — Expert Consultation (full-bleed photo) */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="w-[80vw] sm:w-[300px] md:w-[calc(25%-18px)] max-w-[340px] flex-shrink-0 overflow-hidden group relative snap-center cursor-pointer"
-              style={{ borderRadius: '24px', minHeight: '400px' }}
-            >
-              {/* Full-bleed photo */}
-              <Image
-                src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
-                alt="Skin consultation at Naya Lumière"
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                style={{ objectPosition: 'center top' }}
-              />
-
-              {/* Top gradient for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/62 via-black/20 to-black/10 z-10" />
-
-              {/* Bottom vignette */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-10" />
-
-              {/* Text — top left, Apple card style */}
-              <div className="absolute top-0 left-0 right-0 z-20 px-6 pt-6">
-                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white/70">Expert Advice</span>
-                <h3 className="text-[20px] font-bold leading-snug mt-2 text-white">
-                  Meet our skin<br />specialists.
-                </h3>
-                <p className="text-[12px] text-white/75 font-medium mt-2 leading-relaxed max-w-[220px]">
-                  Personalized consultations tailored to your skin.
-                </p>
-              </div>
-
-              {/* CTA — bottom left */}
-              <div className="absolute bottom-0 left-0 right-0 z-20 px-6 pb-6 flex items-center justify-between">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-bold text-white backdrop-blur-md transition-all duration-300 group-hover:bg-white/25"
-                  style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)' }}>
-                  Book a session
-                  <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-                </div>
-              </div>
-            </motion.div>
+            <h1 className="text-[42px] md:text-[56px] font-black leading-none tracking-tight" style={{ color: '#1e0a3c' }}>
+              All Products
+            </h1>
           </div>
         </div>
       </section>
 
       <div className="container mx-auto px-4 md:px-10 relative z-30 pt-10">
-        
+
         {/* Modern Action Bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
             <div className="flex items-center gap-4 w-full md:w-auto">
@@ -723,7 +526,7 @@ export default function AllProductsPage() {
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(displayedProducts.length / filteredAndSortedProducts.length) * 100}%` }}
                                     className="h-full rounded-full"
-                                    style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(126,105,230))' }}
+                                    style={{ background: 'var(--brand-gradient)' }}
                                 />
                             </div>
                             <span className="text-[11px] text-gray-400 font-bold">
@@ -799,7 +602,7 @@ export default function AllProductsPage() {
                     <button 
                         onClick={() => setIsFilterOpen(false)}
                         className="w-full py-5 rounded-2xl text-[12px] font-bold text-white shadow-lg active:scale-95 transition-all"
-                        style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
+                        style={{ background: 'var(--brand-gradient)' }}
                     >
                         Apply Filters ({filteredAndSortedProducts.length})
                     </button>

@@ -12,22 +12,16 @@ export const ForYouSection = () => {
   const forYouProducts = products.slice(0, 8);
 
   return (
-    <section className="py-10 bg-transparent relative overflow-hidden border-t border-[var(--cl-glass-border)]/50">
+    <section className="py-10 bg-transparent relative overflow-hidden border-t border-gray-100">
       {/* Tactile Paper Texture */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
       
-      {/* Cloud Luxe aura orbs */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="cl-aura cl-aura-purple" style={{ width: 400, height: 400, top: '-10%', right: '-10%', opacity: 0.1 }} />
-        <div className="cl-aura cl-aura-rose" style={{ width: 300, height: 300, bottom: '-10%', left: '-10%', opacity: 0.15 }} />
-      </div>
-
       <Container className="relative z-10">
         {/* Section Header */}
         <div className="mb-10 space-y-3">
           <div className="flex items-center gap-3">
              <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
-             <span className="text-[10px] md:text-[12px] font-black tracking-widest uppercase" style={{ color: 'rgb(147,104,236)' }}>
+             <span className="text-[10px] md:text-[12px] font-black tracking-widest uppercase" style={{ color: 'var(--brand-purple-darker)' }}>
                 Tailored Experience
              </span>
           </div>
@@ -35,7 +29,7 @@ export const ForYouSection = () => {
             Just for{' '}
             <span
               className="font-sans not-italic font-black"
-              style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
+              style={{ backgroundImage: 'var(--brand-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
             >
               You
             </span>

@@ -4,6 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import { Plus, Edit, Trash2, Search, Loader2, Heart, MoreHorizontal, Award, Sparkles, LayoutGrid, Globe, ExternalLink, EyeOff, Eye, Image as ImageIcon } from 'lucide-react';
 import Modal from '../../components/Modal';
 import { Button } from '@/app/components/ui/button';
+import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -79,14 +80,7 @@ const ManageBrands = () => {
         brand.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (isDataLoading) {
-        return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 border-4 border-cl-purple border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm font-medium text-gray-400  ">Identifying Partner Maisons...</p>
-            </div>
-        );
-    }
+    if (isDataLoading) return <PageLoader />;
     
     return (
         <div className="space-y-10 pb-20">

@@ -60,7 +60,7 @@ export default function PairItWithSection({ currentCartItems }) {
             >
               <div
                 className="relative aspect-square rounded-2xl p-3 mb-3 transition-all duration-500 group-hover:-translate-y-1"
-                style={{ background: 'rgba(248,240,255,0.8)', border: '1px solid rgba(216,180,254,0.25)' }}
+                style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(216,180,254,0.25)' }}
               >
                 <ImageWithFallback
                   src={product.imageUrl}

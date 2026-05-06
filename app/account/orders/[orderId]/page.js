@@ -6,6 +6,7 @@ import { AccountMobileTopBar } from '../../_components/AccountMobileTopBar';
 import { ArrowLeft, Package, MapPin, CreditCard, CheckCircle, Clock, Truck, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '../../../context/AppContext';
+import PageLoader from '@/app/components/PageLoader';
 
 const glass = {
   background: 'rgba(255,255,255,0.72)',
@@ -63,17 +64,7 @@ export default function OrderDetailPage() {
       .catch(err => { setError(err.message); setLoading(false); });
   }, [orderId, fetchWithAuth]);
 
-  if (loading) {
-    return (
-      <>
-        <AccountMobileTopBar title="Order" />
-        <div className="px-4 pt-8 pb-28 flex flex-col items-center justify-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-purple-200 border-t-purple-400 animate-spin" />
-          <p className="text-sm" style={{ color: 'rgba(59,7,100,0.4)' }}>Loading order…</p>
-        </div>
-      </>
-    );
-  }
+  if (loading) return <PageLoader />;
 
   if (error || !order) {
     return (
@@ -151,7 +142,7 @@ export default function OrderDetailPage() {
               <div className="space-y-4">
                 {items.map((item, i) => (
                   <div key={item.productId || i} className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(248,240,255,0.8)', border: '1px solid rgba(216,180,254,0.25)' }}>
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(216,180,254,0.25)' }}>
                       {item.imageUrl ? (
                         <Image src={item.imageUrl} alt={item.name || 'Product'} width={56} height={56} className="object-contain p-1" />
                       ) : (
@@ -228,8 +219,8 @@ export default function OrderDetailPage() {
                   <div key={step.key} className="flex items-start gap-3">
                     <div className="flex flex-col items-center">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{
-                        background: done ? 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))' : 'rgba(196,167,254,0.15)',
-                        border: active ? '2px solid rgb(196,167,254)' : 'none',
+                        background: done ? 'var(--brand-gradient)' : 'rgba(152,105,247,0.12)',
+                        border: active ? '2px solid var(--brand-purple-1)' : 'none',
                       }}>
                         <CheckCircle size={13} strokeWidth={2.5} style={{ color: done ? '#fff' : 'rgba(196,167,254,0.4)' }} />
                       </div>

@@ -39,10 +39,20 @@ export async function POST(req) {
       );
     }
 
+    const webUrl = session.web_url
+      || session.configuration?.available_products?.installments?.[0]?.web_url;
+
+    if (!webUrl) {
+      return NextResponse.json(
+        { error: 'Tabby did not return a checkout URL. Please try again.' },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json({
       sessionId: session.id,
       paymentId: session.payment?.id,
-      webUrl: session.web_url,
+      webUrl,
     });
   } catch (error) {
     console.error('Tabby checkout error:', error);

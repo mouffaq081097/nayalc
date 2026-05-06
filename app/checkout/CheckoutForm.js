@@ -60,23 +60,31 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0
 
     setIsProcessing(true);
 
-    const { error: submitError, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/order-confirmation`,
-      },
-      redirect: 'if_required',
+    const cardElement = elements.getElement(CardElement);
+    const { error: submitError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: { card: cardElement },
     });
 
     if (submitError) {
       toast.error(submitError.message);
       setErrorMessage(submitError.message);
       setIsProcessing(false);
+    } else if (paymentIntent.status === 'succeeded') {
+      onSuccessfulPayment(paymentIntent.id);
+    } else if (paymentIntent.status === 'requires_action') {
+      // 3D Secure — let Stripe handle the redirect
+      const { error: actionError, paymentIntent: confirmedPI } = await stripe.handleCardAction(clientSecret);
+      if (actionError) {
+        toast.error(actionError.message);
+        setErrorMessage(actionError.message);
+      } else {
+        onSuccessfulPayment(confirmedPI.id);
+      }
+      setIsProcessing(false);
     } else {
-      // Payment authorized (toast removed)
-      onSuccessfulPayment(paymentIntent?.id);
+      toast.error('Payment could not be completed. Please try again.');
+      setIsProcessing(false);
     }
-    setIsProcessing(false);
   };
 
   const cardStyle = {

@@ -202,7 +202,7 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
     padding: '10px 36px 10px 36px',
     borderRadius: '12px',
     border: '1px solid rgba(216,180,254,0.45)',
-    background: 'rgba(248,240,255,0.6)',
+    background: 'rgba(255,255,255,0.6)',
     color: '#3b0764',
     fontSize: '13px',
     outline: 'none',
@@ -246,7 +246,7 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
           className="px-4 rounded-xl text-[11px] font-bold uppercase tracking-wide transition-all active:scale-95"
           style={{
             border: '1px solid rgba(216,180,254,0.45)',
-            background: 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+            background: 'var(--brand-gradient)',
             color: 'white',
             opacity: searching ? 0.7 : 1,
           }}
@@ -260,7 +260,7 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
           disabled={locating}
           title="Use my current location"
           className="px-3 rounded-xl border transition-all flex items-center justify-center active:scale-95"
-          style={{ border: '1px solid rgba(216,180,254,0.45)', background: 'rgba(248,240,255,0.6)', color: 'rgb(126,105,230)' }}
+          style={{ border: '1px solid rgba(216,180,254,0.45)', background: 'rgba(255,255,255,0.6)', color: 'rgb(126,105,230)' }}
         >
           <LocateFixed size={16} className={locating ? 'animate-pulse' : ''} />
         </button>
@@ -295,7 +295,7 @@ function MapPicker({ onPlaceSelect, initialAddress }) {
       {!ready && (
         <div
           className="flex-1 rounded-xl flex items-center justify-center"
-          style={{ minHeight: '200px', border: '1px solid rgba(216,180,254,0.35)', background: 'rgba(248,240,255,0.4)' }}
+          style={{ minHeight: '200px', border: '1px solid rgba(216,180,254,0.35)', background: 'rgba(255,255,255,0.4)' }}
         >
           <div className="flex flex-col items-center gap-2" style={{ color: 'rgba(147,51,234,0.5)' }}>
             <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />

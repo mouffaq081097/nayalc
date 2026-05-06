@@ -1,11 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { 
-    Wallet, ArrowUpRight, ArrowDownLeft, Clock, 
-    RefreshCcw, DollarSign, Loader2, AlertCircle, 
+import {
+    Wallet, ArrowUpRight, ArrowDownLeft, Clock,
+    RefreshCcw, DollarSign, Loader2, AlertCircle,
     ChevronRight, CheckCircle2, History, Banknote,
     Mail, X
 } from 'lucide-react';
+import PageLoader from '@/app/components/PageLoader';
 import { Button } from '@/app/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createFetchWithAuth } from '@/app/lib/api';
@@ -141,14 +142,7 @@ const PaymentsPage = () => {
         }
     };
 
-    if (loading && !data) {
-        return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
-                <Loader2 className="w-12 h-12 text-cl-purple animate-spin" />
-                <p className="text-sm font-medium text-gray-400 font-bold uppercase tracking-widest">Accessing Ledger...</p>
-            </div>
-        );
-    }
+    if (loading && !data) return <PageLoader />;
 
     const available = data?.balance?.available?.[0] || { amount: 0, currency: 'aed' };
     const pending = data?.balance?.pending?.[0] || { amount: 0, currency: 'aed' };
@@ -486,7 +480,7 @@ const PaymentsPage = () => {
 
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="bg-[#fdf8ff] p-8 rounded-[2.5rem] border border-purple-100/50 shadow-sm relative overflow-hidden group"
+                    className="bg-[#ffffff] p-8 rounded-[2.5rem] border border-purple-100/50 shadow-sm relative overflow-hidden group"
                 >
                     <div className="absolute top-0 right-0 p-8 text-purple-100/50">
                         <Clock size={80} strokeWidth={1} />

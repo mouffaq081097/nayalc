@@ -223,8 +223,8 @@ const CategoryHero = ({ category }) => {
             className="w-full h-full object-cover"
           />
           {/* Soft gradient fade — no dark overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#fff0f8] via-[#fff0f8]/30 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#fff0f8]/20 via-transparent to-[#fff0f8]/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#ffffff] via-[#ffffff]/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#ffffff]/20 via-transparent to-[#ffffff]/20" />
         </div>
       )}
 
@@ -362,7 +362,7 @@ export default function CollectionClient({ category: serverCategory }) {
   const loadMore = () => setVisibleCount(prev => prev + 12);
 
   return (
-    <div className="bg-[#fff0f8] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+    <div className="bg-[#ffffff] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       {/* Subtle Boutique Aura */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-brand-pink/[0.02] to-transparent"></div>
@@ -488,7 +488,7 @@ export default function CollectionClient({ category: serverCategory }) {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: "spring", damping: 35, stiffness: 300 }}
-                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[#fff0f8] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-gray-300 flex flex-col"
+                className="absolute right-0 top-0 bottom-0 w-[90%] max-w-sm bg-[#ffffff] shadow-2xl overflow-y-auto rounded-l-[3.5rem] border-l border-gray-300 flex flex-col"
             >
                 <div className="p-10 border-b border-gray-200 bg-white/50 backdrop-blur-md sticky top-0 z-20">
                     <div className="flex items-center justify-between mb-8">

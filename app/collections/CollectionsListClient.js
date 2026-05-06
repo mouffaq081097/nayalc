@@ -41,15 +41,15 @@ export default function CollectionsListClient() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--cl-bg)' }}>
       {/* Hero Section */}
-      <section className="py-20" style={{ background: 'linear-gradient(135deg, var(--cl-bg-lavender) 0%, var(--cl-bg) 50%, var(--cl-bg-rose) 100%)' }}>
+      <section className="py-20" style={{ background: '#ffffff' }}>
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-6 text-white text-xs font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, var(--cl-purple), var(--cl-pink))' }}>
+            <Badge className="mb-6 text-white text-xs font-semibold uppercase tracking-wide" style={{ background: 'var(--brand-gradient)' }}>
               Curated Collections
             </Badge>
             <h1 className="text-4xl md:text-6xl mb-6">
               <span style={{ color: 'var(--cl-text-deep)' }}>Signature </span>
-              <span className="font-black" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              <span className="font-black" style={{ backgroundImage: 'var(--brand-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                 Collections
               </span>
             </h1>

@@ -26,7 +26,7 @@ export const EditorialShowcase = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden border-t border-[var(--cl-glass-border)]/50 bg-transparent py-12 md:py-16">
+    <section className="relative overflow-hidden border-t border-gray-100 bg-transparent py-12 md:py-16">
       <div className="absolute inset-0 bg-[url('/textures/natural-paper.png')] opacity-[0.03] mix-blend-multiply pointer-events-none" />
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d8b4fe]/70 to-transparent" />
 
@@ -39,7 +39,7 @@ export const EditorialShowcase = () => {
             transition={{ duration: 0.7, ease: 'easeOut' }}
             className="relative"
           >
-            <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-[#eadcff] bg-[#fdf8ff] shadow-[0_28px_70px_-35px_rgba(59,7,100,0.38)] md:rounded-[34px]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-[#eadcff] bg-[#ffffff] shadow-[0_28px_70px_-35px_rgba(59,7,100,0.38)] md:rounded-[34px]">
               <Image
                 src="/Argini+MyMyoso_2x3.jpg"
                 alt="Master skincare collection"
@@ -80,7 +80,7 @@ export const EditorialShowcase = () => {
                 <span
                   className="font-sans not-italic font-black"
                   style={{
-                    backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))',
+                    backgroundImage: 'var(--brand-gradient)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',

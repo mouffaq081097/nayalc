@@ -43,12 +43,6 @@ export function Categories() {
 
   return (
     <section className="py-10 relative overflow-hidden bg-transparent">
-      {/* Cloud Luxe aura orbs */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="cl-aura cl-aura-purple" style={{ width: 400, height: 400, top: '-10%', left: '-10%', opacity: 0.35 }} />
-        <div className="cl-aura cl-aura-rose" style={{ width: 300, height: 300, bottom: '-10%', right: '-10%', opacity: 0.25 }} />
-      </div>
-
       <Container className="relative z-10">
         {/* Section Header */}
         <div className="mb-6 text-center space-y-3">
@@ -81,14 +75,12 @@ export function Categories() {
               <CarouselItem key={category.id} className="pl-4 basis-[85%] md:basis-1/3 lg:basis-1/4">
                 <Link href={category.slug ? `/collections/${category.slug}` : `/collections/${category.id}`} className="block h-full group">
                   <div
-                    className="relative h-[350px] w-full overflow-hidden transition-all duration-500"
+                    className="relative h-[350px] w-full overflow-hidden transition-all duration-500 group-hover:shadow-md"
                     style={{
                       borderRadius: '2rem',
-                      background: 'var(--cl-glass)',
-                      backdropFilter: 'blur(14px)',
-                      WebkitBackdropFilter: 'blur(14px)',
-                      border: '1px solid var(--cl-glass-border)',
-                      boxShadow: '0 4px 20px rgba(147,51,234,0.07), 0 1px 4px rgba(147,51,234,0.04)',
+                      background: '#ffffff',
+                      border: '1px solid #e5e5ea',
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
                     }}
                   >
                     
@@ -122,8 +114,8 @@ export function Categories() {
             ))}
           </CarouselContent>
           <div className="hidden md:block">
-            <CarouselPrevious className="left-[-20px] transition-colors" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }} />
-            <CarouselNext className="right-[-20px] transition-colors" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }} />
+            <CarouselPrevious className="left-[-20px] transition-colors" style={{ background: '#ffffff', border: '1px solid #e5e5ea' }} />
+            <CarouselNext className="right-[-20px] transition-colors" style={{ background: '#ffffff', border: '1px solid #e5e5ea' }} />
           </div>
         </Carousel>
       </Container>

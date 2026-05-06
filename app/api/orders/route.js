@@ -302,6 +302,15 @@ export async function POST(request) {
                 await client.query('ROLLBACK');
                 return NextResponse.json({ message: 'Card payment requires a payment intent.' }, { status: 400 });
             }
+            // Duplicate guard — prevent double-orders for the same payment
+            const dupCheck = await client.query(
+                'SELECT id FROM orders WHERE stripe_payment_intent_id = $1',
+                [stripe_payment_intent_id]
+            );
+            if (dupCheck.rows.length > 0) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: 'Order already created for this payment.', orderId: dupCheck.rows[0].id }, { status: 409 });
+            }
             try {
                 const paymentIntent = await stripe.paymentIntents.retrieve(stripe_payment_intent_id);
                 if (paymentIntent.status !== 'succeeded') {
@@ -429,15 +438,18 @@ export async function POST(request) {
             };
         });
 
-        // 1. Send Order Confirmation to Customer (if email exists)
-        if (userEmail) {
-            await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, subtotal, shipping_cost, itemsWithDetails, shippingAddress, gift_wrap_cost, couponCode);
+        // Emails are non-blocking — a failure must never prevent the success response
+        try {
+            if (userEmail) {
+                await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, subtotal, shipping_cost, itemsWithDetails, shippingAddress, gift_wrap_cost, couponCode);
+            }
+        } catch (emailErr) {
+            console.error(`Customer confirmation email failed for order #${orderId}:`, emailErr);
         }
-
-        // 2. Send Notification to Admin (always attempted if ADMIN_EMAIL is set)
-        const adminEmail = process.env.ADMIN_EMAIL;
-        if (adminEmail) {
-            await sendAdminNotificationEmail(adminEmail, orderId, userEmail || 'Guest/Missing Email', total_amount, shippingAddress);
+        try {
+            await sendAdminNotificationEmail(null, orderId, userEmail || 'Unknown', total_amount, shippingAddress);
+        } catch (emailErr) {
+            console.error(`Admin notification email failed for order #${orderId}:`, emailErr);
         }
 
         return NextResponse.json({ message: 'Order created successfully', orderId }, { status: 201 });

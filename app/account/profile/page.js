@@ -19,12 +19,12 @@ import { toast } from 'react-hot-toast';
 // ── Design tokens (Cloud Luxe) ──────────────────────────────────────────────
 const CL = {
   glass:       'rgba(255,255,255,0.72)',
-  glassBorder: 'rgba(216,180,254,0.35)',
-  gradient:    'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+  glassBorder: 'var(--ink-200)',
+  gradient:    'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))',
   purple:      'rgb(126,105,230)',
   purpleMid:   'rgb(147,104,236)',
   purpleLight: 'rgba(196,167,254,0.18)',
-  bgPage:      'var(--cl-bg)',
+  bgPage:      '#ffffff',
   bgLav:       'var(--cl-bg-lavender)',
   textDeep:    'var(--cl-text-deep)',
   textMid:     'var(--cl-text-mid)',
@@ -34,10 +34,9 @@ const CL = {
 };
 
 const glassCard = {
-  background:     CL.glass,
-  border:         `1px solid ${CL.glassBorder}`,
-  backdropFilter: 'blur(20px)',
-  boxShadow:      CL.cardShadow,
+  background:  '#ffffff',
+  border:      `1px solid ${CL.glassBorder}`,
+  boxShadow:   CL.cardShadow,
 };
 
 const NAV_ITEMS = [
@@ -180,12 +179,6 @@ export default function ProfilePage() {
 
       <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
 
-        {/* Aura background */}
-        <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-[-15%] right-[-10%] w-[55%] h-[55%] rounded-full blur-[140px]" style={{ background: 'rgba(196,167,254,0.18)' }} />
-          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px]" style={{ background: 'rgba(249,168,212,0.12)' }} />
-          <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] rounded-full blur-[100px]" style={{ background: 'rgba(216,180,254,0.10)' }} />
-        </div>
 
         <div className="max-w-[1400px] mx-auto px-6 pt-10 pb-28 relative z-10">
           <div className="grid lg:grid-cols-12 gap-8">
@@ -196,25 +189,14 @@ export default function ProfilePage() {
               {/* Profile card */}
               <div className="rounded-3xl p-7" style={glassCard}>
                 <div className="flex flex-col items-center text-center gap-3 mb-7">
-                  <div className="relative group/avatar">
-                    <input 
-                      type="file" 
-                      id="profile-upload" 
-                      className="hidden" 
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      disabled={uploading}
-                    />
-                    <div
-                      className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black shadow-lg overflow-hidden relative"
-                      style={{ background: CL.gradient }}
-                    >
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg overflow-hidden relative" style={{ background: CL.gradient }}>
                       {user?.profile_image ? (
                         <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
                       ) : (
                         <>{user?.first_name?.[0]}{user?.last_name?.[0]}</>
                       )}
-                      
+
                       {uploading && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -230,11 +212,11 @@ export default function ProfilePage() {
                     </label>
                     <div className="absolute inset-0 rounded-full -z-10" style={{ boxShadow: CL.glowShadow, opacity: 0.3 }} />
                   </div>
-                  <div>
-                    <h3 className="text-base font-bold tracking-tight" style={{ color: CL.textDeep }}>
+                  <div className="mt-2">
+                    <h3 className="text-lg font-bold tracking-tight" style={{ color: CL.textDeep }}>
                       {user?.first_name} {user?.last_name}
                     </h3>
-                    <p className="text-[9px] font-black uppercase tracking-[0.12em] mt-0.5" style={{ color: CL.purple }}>
+                    <p className="text-[10px] font-black uppercase tracking-[0.12em] mt-1" style={{ color: CL.purple }}>
                       {tier} Member
                     </p>
                   </div>
@@ -275,9 +257,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Loyalty card */}
-              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #4c1d95, #7e22ce, #9333ea)', boxShadow: CL.glowShadow }}>
-                <div className="absolute top-0 right-0 w-36 h-36 rounded-full blur-[60px]" style={{ background: 'rgba(249,168,212,0.25)' }} />
-                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-[50px]" style={{ background: 'rgba(196,167,254,0.2)' }} />
+              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
                 <div className="relative z-10 space-y-4">
                   <div className="flex items-center gap-2">
                     <Star size={14} className="fill-yellow-300 text-yellow-300" />

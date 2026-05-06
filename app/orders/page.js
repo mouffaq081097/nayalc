@@ -140,7 +140,7 @@ const OrdersPageContent = () => {
     });
 
     if (isLoading) return (
-        <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+        <div className="min-h-screen bg-[#ffffff] flex items-center justify-center">
             <div className="flex flex-col items-center gap-6">
                 <LoaderSpinner size="lg" />
                 <p className="text-[14px] font-serif italic text-cl-deep animate-pulse">Archiving Acquisitions...</p>
@@ -149,7 +149,7 @@ const OrdersPageContent = () => {
     );
 
     return (
-        <div className="bg-[#fdf8ff] min-h-screen font-sans text-gray-900 pb-32 relative overflow-hidden">
+        <div className="bg-[#ffffff] min-h-screen font-sans text-gray-900 pb-32 relative overflow-hidden">
             {/* Subtle Boutique Aura */}
             <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-purple-500/[0.02] to-transparent"></div>
@@ -223,7 +223,7 @@ const OrdersPageContent = () => {
                             <button 
                                 onClick={() => router.push('/all-products')}
                                 className="px-12 py-4 text-white rounded-xl text-[11px] font-bold transition-all active:scale-95 shadow-lg shadow-purple-100"
-                                style={{ background: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))' }}
+                                style={{ background: 'var(--brand-gradient)' }}
                             >
                                 Start Shopping
                             </button>
@@ -271,7 +271,7 @@ const OrdersPageContent = () => {
 export default function OrdersPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+            <div className="min-h-screen bg-[#ffffff] flex items-center justify-center">
                 <LoaderSpinner size="lg" />
             </div>
         }>

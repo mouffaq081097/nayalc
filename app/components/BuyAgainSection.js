@@ -125,7 +125,7 @@ export default function BuyAgainSection({ products }) {
                   transition={{ delay: i * 0.06, duration: 0.3 }}
                   className="group flex flex-col rounded-[20px] overflow-hidden"
                   style={{
-                    background: 'rgba(248,240,255,0.65)',
+                    background: 'rgba(255,255,255,0.65)',
                     border: '1px solid rgba(216,180,254,0.28)',
                   }}
                 >
@@ -166,7 +166,7 @@ export default function BuyAgainSection({ products }) {
                       style={{
                         background: added
                           ? 'linear-gradient(135deg,rgb(134,239,172),rgb(52,211,153))'
-                          : 'linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230))',
+                          : 'var(--brand-gradient)',
                         boxShadow: added
                           ? '0 4px 14px rgba(52,211,153,0.3)'
                           : '0 4px 14px rgba(147,51,234,0.2)',
@@ -203,7 +203,7 @@ export default function BuyAgainSection({ products }) {
                   width: i === page ? '20px' : '6px',
                   height: '6px',
                   background: i === page
-                    ? 'linear-gradient(90deg,rgb(196,167,254),rgb(126,105,230))'
+                    ? 'var(--brand-gradient)'
                     : 'rgba(216,180,254,0.4)',
                 }}
               />
