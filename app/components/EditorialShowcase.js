@@ -2,128 +2,153 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Star, Sparkles, ShieldCheck } from 'lucide-react';
+import { ArrowRight, FlaskConical, Leaf, Award } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+const pillars = [
+  { icon: FlaskConical, label: 'Bio-Cosmetic Science', detail: 'Cell-active formulas developed with dermatologists since 1971' },
+  { icon: Leaf, label: 'Natural Intelligence', detail: 'Plant-origin ingredients working in harmony with your skin' },
+  { icon: Award, label: 'Paris Expertise', detail: 'Trusted by skin professionals across 40+ countries worldwide' },
+];
+
 export const EditorialShowcase = () => {
-  const highlights = [
-    {
-      title: 'Swiss origin',
-      desc: 'Clinical formulas selected for a refined skincare ritual.',
-      icon: ShieldCheck,
-    },
-    {
-      title: 'Curated pairing',
-      desc: 'Layered textures chosen to support glow, firmness, and comfort.',
-      icon: Star,
-    },
-    {
-      title: 'Visible radiance',
-      desc: 'A polished routine built for skin that looks rested and luminous.',
-      icon: Sparkles,
-    },
-  ];
-
   return (
-    <section className="relative overflow-hidden border-t border-gray-100 bg-transparent py-12 md:py-16">
-      <div className="absolute inset-0 bg-[url('/textures/natural-paper.png')] opacity-[0.03] mix-blend-multiply pointer-events-none" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d8b4fe]/70 to-transparent" />
+    <section
+      className="relative overflow-hidden"
+      style={{ background: '#0f0520', minHeight: '520px' }}
+    >
+      {/* Lavender aura orbs */}
+      <div
+        className="absolute top-[-80px] left-[-80px] w-[420px] h-[420px] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(196,167,254,0.14) 0%, transparent 65%)',
+          filter: 'blur(40px)',
+        }}
+      />
+      <div
+        className="absolute bottom-[-60px] right-[-60px] w-[360px] h-[360px] rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(249,168,212,0.10) 0%, transparent 65%)',
+          filter: 'blur(36px)',
+        }}
+      />
+      <div
+        className="absolute top-1/2 left-1/3 w-[280px] h-[280px] rounded-full pointer-events-none -translate-y-1/2"
+        style={{
+          background: 'radial-gradient(circle, rgba(147,104,236,0.08) 0%, transparent 70%)',
+          filter: 'blur(48px)',
+        }}
+      />
 
-      <div className="container relative z-20 mx-auto px-6">
-        <div className="grid items-center gap-8 md:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-          <motion.div
-            initial={{ opacity: 0, x: -18 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-            className="relative"
+      {/* Top accent line */}
+      <div
+        className="absolute top-0 inset-x-0 h-px"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(196,167,254,0.5) 40%, rgba(216,180,254,0.5) 60%, transparent)' }}
+      />
+
+      <div className="relative z-10 flex flex-col md:flex-row items-stretch min-h-[520px]">
+
+        {/* Left — Image panel (55%) */}
+        <motion.div
+          initial={{ opacity: 0, x: -24 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.75, ease: 'easeOut' }}
+          className="relative w-full md:w-[55%] min-h-[320px] md:min-h-[520px] overflow-hidden"
+        >
+          <Image
+            src="/Argini+MyMyoso_2x3.jpg"
+            alt="GERnétic bio-cosmetic collection"
+            fill
+            sizes="(max-width: 768px) 100vw, 55vw"
+            className="object-cover object-center"
+            priority
+          />
+          {/* Dark gradient vignette on right edge (desktop) to blend with copy panel */}
+          <div
+            className="absolute inset-0 hidden md:block"
+            style={{ background: 'linear-gradient(to right, transparent 55%, #0f0520 100%)' }}
+          />
+          {/* Bottom gradient on mobile */}
+          <div
+            className="absolute inset-0 md:hidden"
+            style={{ background: 'linear-gradient(to top, #0f0520 0%, transparent 60%)' }}
+          />
+
+          {/* Floating badge */}
+          <div
+            className="absolute bottom-6 left-6 md:bottom-8 md:left-8 flex items-center gap-3 px-4 py-2.5 rounded-full"
+            style={{
+              background: 'rgba(255,255,255,0.09)',
+              backdropFilter: 'blur(14px)',
+              border: '1px solid rgba(216,180,254,0.25)',
+            }}
           >
-            <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-[#eadcff] bg-[#ffffff] shadow-[0_28px_70px_-35px_rgba(59,7,100,0.38)] md:rounded-[34px]">
-              <Image
-                src="/Argini+MyMyoso_2x3.jpg"
-                alt="Master skincare collection"
-                fill
-                sizes="(max-width: 768px) 100vw, 52vw"
-                className="object-cover object-center transition-transform duration-700 hover:scale-[1.03]"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#2f1646]/35 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl border border-white/50 bg-white/80 px-4 py-3 backdrop-blur-xl md:bottom-5 md:left-5 md:right-5">
-                <span className="text-[12px] font-semibold tracking-normal text-[#3b0764]">
-                  Complete ritual
-                </span>
-                <span className="text-[12px] font-medium tracking-normal text-gray-600">
-                  Skincare edit
-                </span>
-              </div>
-            </div>
-          </motion.div>
+            <span className="w-2 h-2 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))' }} />
+            <span className="text-[11px] font-black tracking-[0.18em] uppercase text-white/80">
+              GERnétic Paris
+            </span>
+          </div>
+        </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 18 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-            className="space-y-7"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="h-px w-8 bg-gradient-to-r from-[#c4a7fe] to-[#d8b4fe]" />
-                <span className="text-[11px] font-black uppercase tracking-widest text-[#9368ec]">
-                  Editorial spotlight
-                </span>
-              </div>
+        {/* Right — Copy panel (45%) */}
+        <motion.div
+          initial={{ opacity: 0, x: 24 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.75, ease: 'easeOut', delay: 0.15 }}
+          className="w-full md:w-[45%] flex flex-col justify-center px-8 py-12 md:px-12 md:py-16 lg:px-16 space-y-7"
+        >
+          {/* Body */}
+          <p className="text-[14px] md:text-[15px] leading-7 max-w-sm" style={{ color: 'rgba(255,255,255,0.50)' }}>
+            GERnétic bio-cosmetic formulas are built on 50 years of cellular research —
+            precision skincare that nourishes at the deepest level.
+          </p>
 
-              <h2 className="text-3xl font-serif italic leading-tight text-cl-deep md:text-5xl">
-                The master{' '}
-                <span
-                  className="font-sans not-italic font-black"
+          {/* Pillars */}
+          <div className="space-y-3">
+            {pillars.map(({ icon: Icon, label, detail }, i) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.25 + i * 0.1 }}
+                className="flex items-start gap-3.5"
+              >
+                <div
+                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
                   style={{
-                    backgroundImage: 'var(--brand-gradient)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    background: 'rgba(196,167,254,0.12)',
+                    border: '1px solid rgba(196,167,254,0.20)',
                   }}
                 >
-                  collection
-                </span>
-              </h2>
-
-              <p className="max-w-xl text-[15px] font-medium leading-7 text-gray-600 md:text-base">
-                A composed edit of high-performance skincare selected for customers who want a complete,
-                polished routine without visual noise.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {highlights.map(({ title, desc, icon: Icon }) => (
-                <div
-                  key={title}
-                  className="group flex items-start gap-4 rounded-2xl border border-[#eadcff] bg-white/70 p-4 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-[#d8b4fe] hover:bg-white"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f5f0ff] text-[#7e22ce] transition-colors duration-300 group-hover:bg-[#9333ea] group-hover:text-white">
-                    <Icon size={17} strokeWidth={1.8} />
-                  </div>
-                  <div>
-                    <h3 className="text-[13px] font-semibold tracking-normal text-[#24152f]">
-                      {title}
-                    </h3>
-                    <p className="mt-1 text-[13px] font-medium leading-6 text-gray-600">{desc}</p>
-                  </div>
+                  <Icon size={15} style={{ color: 'rgb(196,167,254)' }} strokeWidth={1.7} />
                 </div>
-              ))}
-            </div>
+                <div>
+                  <p className="text-[12px] font-black tracking-wide text-white/80">{label}</p>
+                  <p className="text-[11px] leading-5 mt-0.5" style={{ color: 'rgba(255,255,255,0.38)' }}>{detail}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
 
+          {/* CTA */}
+          <div className="pt-1">
             <Link
-              href="/all-products"
-              className="group inline-flex items-center gap-3 rounded-full border-2 border-[#c4b5fd] bg-white/40 px-6 py-3 text-[14px] font-semibold text-[#8b5cf6] transition-all duration-300 hover:border-[#a78bfa] hover:bg-[#f5f3ff] hover:text-[#6b21a8] hover:shadow-[0_0_16px_2px_rgba(196,167,254,0.4)] md:px-8"
+              href="/collections/gernetique"
+              className="inline-flex items-center gap-3 px-7 py-3.5 text-[12px] font-black tracking-widest uppercase rounded-full text-white transition-all duration-300 group border-none"
+              style={{
+                background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))',
+                boxShadow: '0 4px 24px rgba(147,104,236,0.35)',
+              }}
             >
-              Explore the collection
-              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+              Discover GERnétic
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

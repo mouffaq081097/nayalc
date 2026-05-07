@@ -58,13 +58,26 @@ export default function PairItWithSection({ currentCartItems }) {
               transition={{ delay: i * 0.07, duration: 0.25 }}
               className="flex-shrink-0 w-[168px] border border-[#e5e5ea] rounded-xl overflow-hidden bg-white hover:border-[#c8c8cf] hover:shadow-sm transition-all duration-200 group"
             >
-              {/* Image */}
-              <div className="aspect-square bg-[#f9f9fb] border-b border-[#e5e5ea] p-3 overflow-hidden">
+              {/* Image with hover quick-add */}
+              <div className="aspect-square bg-[#f9f9fb] border-b border-[#e5e5ea] p-3 overflow-hidden relative">
                 <ImageWithFallback
                   src={product.imageUrl}
                   alt={product.name}
                   className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-400"
                 />
+                {/* Hover quick-add */}
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button
+                    onClick={() => handleAdd(product)}
+                    className="flex items-center gap-1.5 text-[11px] font-semibold px-3 h-7 rounded-full shadow-md transition-all"
+                    style={added
+                      ? { background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }
+                      : { background: 'linear-gradient(90deg,#c087fc,#9869f7)', color: '#fff' }
+                    }
+                  >
+                    {added ? <><Check size={10} strokeWidth={3} /> Added</> : <><ShoppingBag size={10} /> Add</>}
+                  </button>
+                </div>
               </div>
 
               {/* Info */}
@@ -75,23 +88,10 @@ export default function PairItWithSection({ currentCartItems }) {
                 <p className="text-[13px] font-semibold text-[#111114] leading-snug line-clamp-2 mb-1">
                   {product.name}
                 </p>
-                <p className="text-[13px] font-semibold text-[#111114] tabular-nums mb-2.5">
+                <p className="text-[13px] font-semibold text-[#111114] tabular-nums">
                   AED {parseFloat(product.price).toFixed(0)}
                   {product.size && <span className="text-[11px] font-normal text-[#8a8a93] ml-1">· {product.size}</span>}
                 </p>
-                <button
-                  onClick={() => handleAdd(product)}
-                  className="w-full h-8 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all"
-                  style={added
-                    ? { background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }
-                    : { background: 'linear-gradient(90deg,#c087fc,#9869f7)', color: '#fff' }
-                  }
-                >
-                  {added
-                    ? <><Check size={11} strokeWidth={3} /> Added</>
-                    : <><ShoppingBag size={11} /> Add to cart</>
-                  }
-                </button>
               </div>
             </motion.div>
           );

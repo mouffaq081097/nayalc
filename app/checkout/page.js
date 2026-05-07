@@ -41,6 +41,7 @@ export default function CheckoutPage() {
   const [loyaltyLoaded, setLoyaltyLoaded] = useState(false);
   const [isTabbyLoading, setIsTabbyLoading] = useState(false);
   const piCreatedRef = useRef(false);
+  const prevClientSecretRef = useRef('');
 
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
   const shipping = subtotal > 200 ? 0 : 30;
@@ -87,12 +88,29 @@ export default function CheckoutPage() {
       body: JSON.stringify({ amount: Math.round(total * 100), currency: 'aed' }),
     })
       .then(r => r.json())
-      .then(d => setClientSecret(d.clientSecret))
+      .then(d => { prevClientSecretRef.current = d.clientSecret; setClientSecret(d.clientSecret); })
       .catch(() => { piCreatedRef.current = false; });
   }, [formData.paymentMethod, total, loyaltyLoaded]);
 
-  useEffect(() => { piCreatedRef.current = false; setClientSecret(''); }, [formData.giftWrap, usePoints, appliedCoupon]);
+  // When total-affecting options change, cancel old PI and create a new one (H5)
+  useEffect(() => {
+    const oldSecret = prevClientSecretRef.current;
+    if (oldSecret) {
+      const oldPiId = oldSecret.split('_secret_')[0];
+      fetch('/api/cancel-payment-intent', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentIntentId: oldPiId }) }).catch(() => {});
+      prevClientSecretRef.current = '';
+    }
+    piCreatedRef.current = false;
+    setClientSecret('');
+  }, [formData.giftWrap, usePoints, appliedCoupon]);
   useEffect(() => { setSelectedShippingAddressId(selectedAddressId); }, [selectedAddressId, setSelectedShippingAddressId]);
+  // Clear card authorization when switching away from card payment (H6)
+  useEffect(() => {
+    if (formData.paymentMethod !== 'card') {
+      setPaymentAuthorization(false);
+      setAuthorizedPaymentIntentId(null);
+    }
+  }, [formData.paymentMethod]);
 
   useEffect(() => {
     if (formData.paymentMethod !== 'card' || !selectedAddressId || !user?.id || cartItems.length === 0) return;
@@ -234,6 +252,7 @@ export default function CheckoutPage() {
       points_discount: pointsDiscount,
       gift_wrap: formData.giftWrap,
       gift_wrap_cost: giftWrapFee,
+      gift_message: formData.giftMessage || null,
       stripe_payment_intent_id: authorizedPaymentIntentId,
     };
     try {

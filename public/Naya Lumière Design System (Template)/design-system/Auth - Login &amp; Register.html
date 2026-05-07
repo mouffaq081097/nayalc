@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naya Lumière — Auth: Login &amp; Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===================================================================
+     AUTH — Naya Lumière
+     One white page. One column. One button.
+     No second pane, no decorative panel, no gradient backgrounds.
+     Tokens lifted directly from the master design system.
+     =================================================================== */
+  :root{
+    --brand-purple-1:#c087fc; --brand-purple-2:#9869f7;
+    --brand-purple-darker:#6536d4;
+    --brand-gradient:linear-gradient(90deg,#c087fc,#9869f7);
+    --brand-gradient-hover:linear-gradient(90deg,#b577fb,#7a4fe0);
+
+    --white:#fff;
+    --ink-50:#f9f9fb; --ink-100:#f3f3f5; --ink-200:#e5e5ea;
+    --ink-300:#c8c8cf; --ink-400:#8a8a93; --ink-500:#5a5a64;
+    --ink-700:#2a2a31; --ink-900:#111114;
+    --danger:#c8344b; --success:#2e8b57;
+
+    --font-sans:'Inter',-apple-system,system-ui,sans-serif;
+    --r-md:10px; --r-pill:999px;
+    --ease:cubic-bezier(.2,.7,.2,1); --t-fast:120ms; --t-med:200ms;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0;min-height:100%}
+  body{
+    font-family:var(--font-sans); color:var(--ink-900);
+    background:var(--white); -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+
+  /* canonical button — same on every page */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    min-height:48px; padding:0 28px;
+    border:0; border-radius:var(--r-pill);
+    background:var(--brand-gradient); color:#fff;
+    font:600 13px/1 var(--font-sans);
+    letter-spacing:.14em; text-transform:uppercase;
+    cursor:pointer;
+    transition:background var(--t-med) var(--ease), transform var(--t-fast) var(--ease);
+  }
+  .btn .arrow{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.75;
+    transition:transform var(--t-med) var(--ease)}
+  .btn:hover{background:var(--brand-gradient-hover)}
+  .btn:hover .arrow{transform:translateX(3px)}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:0; box-shadow:0 0 0 3px rgba(152,105,247,.30)}
+  .btn.block{display:flex;width:100%}
+  .btn.lg{min-height:56px;padding:0 36px;font-size:14px}
+
+  /* ── full-viewport shell (no empty space, but no clutter either) ── */
+  .auth{
+    min-height:100vh;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+  }
+
+  /* top: lotus + wordmark, centered, calm */
+  .auth-top{
+    display:flex; flex-direction:column; align-items:center;
+    padding:40px 24px 16px; gap:14px;
+  }
+  .auth-top img{width:40px;height:40px;object-fit:contain}
+  .auth-top .word{
+    font-size:11px; letter-spacing:.36em; text-transform:uppercase;
+    color:var(--ink-500); font-weight:500;
+  }
+
+  /* middle: form, vertically centered, narrow column */
+  .auth-main{
+    display:flex; align-items:center; justify-content:center;
+    padding:24px 24px 56px;
+  }
+  .form-shell{
+    width:100%; max-width:380px;
+  }
+  .form-shell h1{
+    font-size:34px; font-weight:600; letter-spacing:-.02em; line-height:1.1;
+    margin:0; text-align:center;
+  }
+  .form-shell .sub{
+    color:var(--ink-500); font-size:15px; line-height:1.5;
+    margin:10px 0 0; text-align:center;
+  }
+
+  /* segmented switcher — minimal underline, no pill */
+  .switch{
+    display:flex; justify-content:center; gap:32px;
+    margin:32px 0 28px;
+    border-bottom:1px solid var(--ink-200);
+  }
+  .switch button{
+    border:0; background:transparent; cursor:pointer;
+    font:600 12px/1 var(--font-sans);
+    letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ink-400);
+    padding:0 4px 14px; margin-bottom:-1px;
+    border-bottom:2px solid transparent;
+    transition:color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  }
+  .switch button:hover{color:var(--ink-700)}
+  .switch button.on{
+    color:var(--ink-900);
+    border-bottom-color:var(--brand-purple-2);
+  }
+
+  /* fields */
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field label{font-size:13px;font-weight:500;color:var(--ink-700)}
+  .field .control{position:relative}
+  .input{
+    height:48px; padding:0 14px; width:100%;
+    border:1px solid var(--ink-200); border-radius:var(--r-md);
+    background:#fff; color:var(--ink-900);
+    font:500 15px/1 var(--font-sans);
+    transition:border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+  }
+  .input::placeholder{color:var(--ink-400);font-weight:400}
+  .input:focus{outline:0;border-color:var(--brand-purple-2);box-shadow:0 0 0 3px rgba(152,105,247,.18)}
+  .input.has-eye{padding-right:44px}
+  .control .eye{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    width:32px;height:32px;border:0;background:transparent;cursor:pointer;
+    color:var(--ink-400); display:grid;place-items:center; border-radius:6px;
+  }
+  .control .eye:hover{color:var(--ink-700);background:var(--ink-100)}
+
+  .row-between{
+    display:flex;align-items:center;justify-content:space-between;
+    margin:4px 0 22px; gap:12px; flex-wrap:wrap;
+  }
+  .check{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-700);cursor:pointer;user-select:none}
+  .check input{appearance:none;width:16px;height:16px;border:1px solid var(--ink-300);border-radius:4px;background:#fff;display:grid;place-items:center;cursor:pointer;margin:0}
+  .check input:checked{background:var(--brand-purple-2);border-color:var(--brand-purple-2)}
+  .check input:checked::after{content:"";width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+  .link{color:var(--brand-purple-darker);font-size:13px;font-weight:600}
+  .link:hover{text-decoration:underline;text-underline-offset:3px}
+
+  /* strength meter */
+  .strength{display:flex;gap:4px;margin-top:8px}
+  .strength i{flex:1;height:3px;background:var(--ink-200);border-radius:2px}
+  .strength.s1 i:nth-child(-n+1){background:var(--danger)}
+  .strength.s2 i:nth-child(-n+2){background:#e08a2b}
+  .strength.s3 i:nth-child(-n+3){background:#b89d2b}
+  .strength.s4 i{background:var(--success)}
+  .strength-label{font-size:11px;color:var(--ink-500);margin-top:6px}
+
+  /* divider + social */
+  .or{
+    display:flex;align-items:center;gap:12px;margin:24px 0 16px;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-400);
+  }
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--ink-200)}
+  .social{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .social button{
+    height:44px; border:1px solid var(--ink-200); background:#fff; border-radius:var(--r-pill);
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    font:600 12px/1 var(--font-sans); letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-700); cursor:pointer;
+    transition:background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  }
+  .social button:hover{background:var(--ink-50);border-color:var(--ink-300)}
+
+  .terms{font-size:11px;color:var(--ink-400);text-align:center;margin:14px 0 0;line-height:1.6}
+  .terms a{color:var(--ink-700)}
+  .terms a:hover{text-decoration:underline;text-underline-offset:3px}
+
+  /* footer */
+  .auth-foot{
+    border-top:1px solid var(--ink-200);
+    padding:18px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-400);
+  }
+  .auth-foot a{color:var(--ink-500)}
+  .auth-foot a:hover{color:var(--ink-900)}
+  .auth-foot .links{display:flex; gap:22px}
+
+  /* views */
+  .view{display:none}
+  .view.on{display:block}
+
+  /* mobile */
+  @media (max-width: 600px){
+    .auth-top{padding:28px 20px 8px}
+    .auth-main{padding:16px 20px 40px}
+    .form-shell h1{font-size:26px}
+    .form-shell .sub{font-size:14px}
+    .switch{gap:24px; margin:24px 0 22px}
+    .auth-foot{flex-direction:column; gap:10px; padding:16px 20px; text-align:center}
+    .auth-foot .links{gap:18px}
+  }
+</style>
+</head>
+<body>
+
+<main class="auth">
+
+  <header class="auth-top" style="height: 18px">
+    <img src="lotus.png" alt="Naya Lumière" style="opacity: 0.99; width: 96px; height: 53px">
+    <div class="word">Naya Lumière</div>
+  </header>
+
+  <section class="auth-main">
+    <div class="form-shell">
+
+      <!-- ── LOGIN ──────────────────────────────────────────────── -->
+      <div class="view on" id="v-login">
+        <h1>Welcome back.</h1>
+        <p class="sub">Sign in to continue your ritual.</p>
+
+        <div class="switch" role="tablist">
+          <button class="on" type="button" data-go="login">Sign In</button>
+          <button type="button" data-go="register">Register</button>
+        </div>
+
+        <form onsubmit="event.preventDefault();">
+          <div class="field">
+            <label for="l-email">Email</label>
+            <div class="control">
+              <input id="l-email" class="input" type="email" placeholder="you@example.com" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="l-pass">Password</label>
+            <div class="control">
+              <input id="l-pass" class="input has-eye" type="password" placeholder="••••••••" autocomplete="current-password">
+              <button type="button" class="eye" aria-label="Show password" onclick="togglePw('l-pass', this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="row-between">
+            <label class="check"><input type="checkbox"> Remember me</label>
+            <a href="#" class="link">Forgot password?</a>
+          </div>
+
+          <button class="btn block lg" type="submit">
+            Sign In <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+
+          <div class="or">or continue with</div>
+          <div class="social">
+            <button type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#EA4335" d="M12 11v3.2h5.5a4.7 4.7 0 0 1-2 3.1l3.2 2.5c1.9-1.7 3-4.3 3-7.4 0-.7-.1-1.3-.2-2H12Z"/>
+                <path fill="#34A853" d="M5.6 14.3 4 15.5 1.7 17.4A11 11 0 0 0 12 23c2.7 0 5-.9 6.7-2.4l-3.2-2.5c-.9.6-2.1 1-3.5 1a5.4 5.4 0 0 1-5.1-3.7Z"/>
+                <path fill="#4A90E2" d="M1.7 6.6A11 11 0 0 0 1 12c0 1.8.4 3.5 1.2 5l3.4-2.6a5.4 5.4 0 0 1 0-3.5L1.7 6.6Z"/>
+                <path fill="#FBBC05" d="M12 5.4c1.5 0 2.8.5 3.9 1.5l2.9-2.9A11 11 0 0 0 12 1 11 11 0 0 0 1.7 6.6l3.4 2.6A5.4 5.4 0 0 1 12 5.4Z"/>
+              </svg>
+              Google
+            </button>
+            <button type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 1c.1 1.3-.4 2.5-1.2 3.4-.8.9-2 1.6-3.2 1.5-.1-1.2.5-2.5 1.3-3.3.8-.9 2.1-1.5 3.1-1.6Zm4.1 16.5c-.7 1.6-1 2.3-1.9 3.7-1.2 1.9-2.9 4.2-5 4.2-1.9 0-2.4-1.2-5-1.2s-3.1 1.2-5 1.3c-2.1 0-3.7-2-4.9-3.9C-.6 18.7-1 11.6 2 8.1c1.4-1.7 3.7-2.7 5.7-2.7 2 0 3.3 1.1 5 1.1 1.6 0 2.6-1.1 5-1.1 1.7 0 3.6 1 5 2.7-4.4 2.4-3.7 8.7-2.2 11.4Z"/></svg>
+              Apple
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ── REGISTER ───────────────────────────────────────────── -->
+      <div class="view" id="v-register">
+        <h1>Create your account.</h1>
+        <p class="sub">It takes about thirty seconds.</p>
+
+        <div class="switch" role="tablist">
+          <button type="button" data-go="login">Sign In</button>
+          <button class="on" type="button" data-go="register">Register</button>
+        </div>
+
+        <form onsubmit="event.preventDefault();">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="field">
+              <label for="r-first">First name</label>
+              <div class="control"><input id="r-first" class="input" type="text" placeholder="Layla" autocomplete="given-name"></div>
+            </div>
+            <div class="field">
+              <label for="r-last">Last name</label>
+              <div class="control"><input id="r-last" class="input" type="text" placeholder="Ahmed" autocomplete="family-name"></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="r-email">Email</label>
+            <div class="control"><input id="r-email" class="input" type="email" placeholder="you@example.com" autocomplete="email"></div>
+          </div>
+
+          <div class="field">
+            <label for="r-pass">Password</label>
+            <div class="control">
+              <input id="r-pass" class="input has-eye" type="password" placeholder="At least 8 characters" autocomplete="new-password" oninput="rate(this.value)">
+              <button type="button" class="eye" aria-label="Show password" onclick="togglePw('r-pass', this)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <div class="strength s1" id="meter"><i></i><i></i><i></i><i></i></div>
+            <div class="strength-label" id="meter-l">Use 8+ characters with a number and a symbol.</div>
+          </div>
+
+          <label class="check" style="margin:14px 0 22px;">
+            <input type="checkbox" checked>
+            <span>Email me launches, restocks and rituals.</span>
+          </label>
+
+          <button class="btn block lg" type="submit">
+            Create Account <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+
+          <p class="terms">
+            By creating an account you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+          </p>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="auth-foot">
+    <div>© Naya Lumière</div>
+    <div class="links">
+      <a href="#">Help</a>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  // view switching (no top-bar pill — keeps the page free of duplicated chrome)
+  const views = {
+    login: document.getElementById('v-login'),
+    register: document.getElementById('v-register'),
+  };
+  function go(name){
+    Object.entries(views).forEach(([k,el]) => el.classList.toggle('on', k===name));
+    history.replaceState(null,'','#'+name);
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  document.querySelectorAll('[data-go]').forEach(el => {
+    el.addEventListener('click', e => { e.preventDefault(); go(el.dataset.go); });
+  });
+  if (location.hash === '#register') go('register');
+
+  function togglePw(id, btn){
+    const i = document.getElementById(id);
+    i.type = i.type === 'password' ? 'text' : 'password';
+    btn.setAttribute('aria-label', i.type==='password' ? 'Show password' : 'Hide password');
+  }
+  function rate(v){
+    const m = document.getElementById('meter');
+    const l = document.getElementById('meter-l');
+    let s = 0;
+    if(v.length >= 8) s++;
+    if(/[A-Z]/.test(v)) s++;
+    if(/[0-9]/.test(v)) s++;
+    if(/[^A-Za-z0-9]/.test(v)) s++;
+    m.className = 'strength s' + Math.max(s,1);
+    l.textContent = ['Very weak','Weak','Okay','Good','Strong'][s];
+    l.style.color = ['var(--danger)','var(--danger)','#b97a00','var(--success)','var(--success)'][s];
+  }
+</script>
+</body>
+</html>

@@ -12,7 +12,7 @@ export async function POST(request) {
     const { rows } = await db.query('SELECT * FROM coupons WHERE UPPER(code) = UPPER($1)', [code]);
 
     if (rows.length === 0) {
-      return NextResponse.json({ message: 'Invalid coupon code.' }, { status: 404 });
+      return NextResponse.json({ message: 'Invalid coupon code.' }, { status: 400 });
     }
 
     const coupon = rows[0];

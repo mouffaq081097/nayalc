@@ -22,7 +22,8 @@ export async function GET(request, { params }) {
             SELECT DISTINCT oi.product_id
             FROM order_items oi
             JOIN orders o ON oi.order_id = o.id
-            WHERE o.user_id = $1;
+            WHERE o.user_id = $1
+            LIMIT 20;
         `;
         const { rows: productIdsRows } = await db.query(productIdsSql, [userId]);
 

@@ -13,6 +13,7 @@ export const CartProvider = ({ children }) => {
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [discountAmount, setDiscountAmount] = useState(0);
     const cartLoadedRef = useRef(false);
+    const saveDebounceRef = useRef(null);
     const [isCartOpen, setIsCartOpen] = useState(false); // New state for side cart
     const [selectedShippingAddressId, setSelectedShippingAddressId] = useState(null);
     const [couponError, setCouponError] = useState(null); // New state for coupon error
@@ -80,10 +81,14 @@ export const CartProvider = ({ children }) => {
         }
     }, [isAuthenticated, user, fetchWithAuth]);
 
-    // Effect to save cart to backend whenever cart changes (skip until initial load completes)
+    // Debounced save — prevents concurrent PUT requests on rapid cart changes (M2)
     useEffect(() => {
         if (!cartLoadedRef.current) return;
-        saveCartToBackend(cart);
+        if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+        saveDebounceRef.current = setTimeout(() => {
+            saveCartToBackend(cart);
+        }, 400);
+        return () => clearTimeout(saveDebounceRef.current);
     }, [cart, saveCartToBackend]);
 
 
@@ -178,8 +183,10 @@ export const CartProvider = ({ children }) => {
             } else {
                 updatedItems = prevItems.map(item => {
                     if (item.id === productId) {
-                        // Prevent adding more than available stock
                         const validatedQuantity = Math.min(newQuantity, item.stock_quantity);
+                        if (validatedQuantity < newQuantity) {
+                            toast.info(`Only ${item.stock_quantity} available — quantity adjusted.`);
+                        }
                         return { ...item, quantity: validatedQuantity };
                     }
                     return item;

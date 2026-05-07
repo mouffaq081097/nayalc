@@ -1,11 +1,27 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import crypto from 'crypto';
 
 // Tabby sends webhook events when payment status changes.
 // Supported events: payment.authorized, payment.closed, payment.rejected, payment.expired
 export async function POST(req) {
   try {
-    const payload = await req.json();
+    const rawBody = await req.text();
+
+    // Verify Tabby webhook signature (C7)
+    const webhookSecret = process.env.TABBY_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const signature = req.headers.get('x-tabby-signature') || req.headers.get('x-webhook-signature');
+      if (!signature) {
+        return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
+      }
+      const expected = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    }
+
+    const payload = JSON.parse(rawBody);
     const { id: paymentId, status, reference_id: referenceId } = payload;
 
     if (!paymentId || !status) {

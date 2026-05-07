@@ -1,5 +1,15 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+
+async function assertOwnership(userId) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id || String(session.user.id) !== String(userId)) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+    return null;
+}
 
 /**
  * @swagger
@@ -14,8 +24,10 @@ import db from '@/lib/db';
  *         description: Server error.
  */
 export async function GET(request, context) {
-    const params = await context.params; // Explicitly await params
+    const params = await context.params;
     const userId = params.userId;
+    const forbidden = await assertOwnership(userId);
+    if (forbidden) return forbidden;
 
     try {
         const sql = "SELECT p.id as \"productId\", uc.quantity, p.name, p.price, p.description, p.vendor as \"brand\", p.stock_quantity as \"stock_quantity\", (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as \"imageUrl\" FROM user_carts uc JOIN products p ON uc.product_id = p.id WHERE uc.user_id = $1;";
@@ -56,6 +68,8 @@ export async function GET(request, context) {
 export async function POST(request, context) {
     const params = await context.params;
     const { userId } = params;
+    const forbidden = await assertOwnership(userId);
+    if (forbidden) return forbidden;
     const { productId, quantity } = await request.json();
 
     if (!productId || !quantity) {
@@ -113,6 +127,8 @@ export async function POST(request, context) {
 export async function PUT(request, context) {
     const params = await context.params;
     const { userId } = params;
+    const forbidden = await assertOwnership(userId);
+    if (forbidden) return forbidden;
     const userIdInt = parseInt(userId, 10);
     const client = await db.connect();
     try {
@@ -188,7 +204,9 @@ export async function PUT(request, context) {
 export async function DELETE(request, context) {
     const params = await context.params;
     const { userId } = params;
-    
+    const forbidden = await assertOwnership(userId);
+    if (forbidden) return forbidden;
+
     try {
         const { productId } = await request.json();
 

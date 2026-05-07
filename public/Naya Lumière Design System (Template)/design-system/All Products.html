@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naya Lumière — All Products</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     ALL PRODUCTS — Naya Lumière
+     Pure white. One typeface. One canonical button.
+     Tokens lifted from the master design system.
+     ============================================================ */
+  :root{
+    --brand-purple-1:#c087fc; --brand-purple-2:#9869f7;
+    --brand-purple-darker:#6536d4;
+    --brand-gradient:linear-gradient(90deg,#c087fc,#9869f7);
+    --brand-gradient-hover:linear-gradient(90deg,#b577fb,#7a4fe0);
+
+    --white:#fff;
+    --ink-50:#f9f9fb; --ink-100:#f3f3f5; --ink-200:#e5e5ea;
+    --ink-300:#c8c8cf; --ink-400:#8a8a93; --ink-500:#5a5a64;
+    --ink-700:#2a2a31; --ink-900:#111114;
+    --success:#2e8b57;
+
+    --font-sans:'Inter',-apple-system,system-ui,sans-serif;
+    --r-sm:6px; --r-md:10px; --r-lg:16px; --r-pill:999px;
+    --ease:cubic-bezier(.2,.7,.2,1); --t-fast:120ms; --t-med:200ms;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font-sans); color:var(--ink-900);
+    background:var(--white); -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  a{color:inherit;text-decoration:none}
+  img{display:block;max-width:100%}
+
+  /* canonical button */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    min-height:48px; padding:0 28px;
+    border:0; border-radius:var(--r-pill);
+    background:var(--brand-gradient); color:#fff;
+    font:600 13px/1 var(--font-sans);
+    letter-spacing:.14em; text-transform:uppercase;
+    cursor:pointer;
+    transition:background var(--t-med) var(--ease), transform var(--t-fast) var(--ease);
+  }
+  .btn .arrow{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.75;
+    transition:transform var(--t-med) var(--ease)}
+  .btn:hover{background:var(--brand-gradient-hover)}
+  .btn:hover .arrow{transform:translateX(3px)}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:0; box-shadow:0 0 0 3px rgba(152,105,247,.30)}
+  .btn.sm{min-height:36px; padding:0 18px; font-size:11px}
+  .btn.ghost{background:#fff;color:var(--ink-900);border:1px solid var(--ink-200)}
+  .btn.ghost:hover{background:var(--ink-100)}
+
+  /* ── header ──────────────────────────────────────────────── */
+  .nav{
+    position:sticky; top:0; z-index:30; background:#fff;
+    border-bottom:1px solid var(--ink-200);
+  }
+  .nav-inner{
+    max-width:1320px; margin:0 auto;
+    display:flex; align-items:center; gap:28px;
+    padding:18px 32px;
+  }
+  .nav .brand{display:flex;align-items:center;gap:10px}
+  .nav .brand img{width:30px;height:30px;object-fit:contain}
+  .nav .brand .word{
+    font-size:11px; letter-spacing:.32em; text-transform:uppercase;
+    color:var(--ink-700); font-weight:600;
+  }
+  .nav ul{
+    list-style:none; display:flex; gap:26px; padding:0; margin:0;
+    font-size:13px; color:var(--ink-700); font-weight:500;
+  }
+  .nav ul a:hover{color:var(--brand-purple-darker)}
+  .nav .right{margin-left:auto; display:flex; align-items:center; gap:18px}
+  .nav .right button{
+    border:0;background:transparent;cursor:pointer;color:var(--ink-700);
+    width:36px;height:36px;display:grid;place-items:center;border-radius:8px;
+    transition:background var(--t-fast) var(--ease);
+  }
+  .nav .right button:hover{background:var(--ink-100)}
+  .nav .cart{position:relative}
+  .nav .cart .pip{
+    position:absolute; top:6px; right:6px;
+    background:var(--brand-purple-2); color:#fff;
+    font-size:9px; font-weight:700;
+    width:14px; height:14px; border-radius:999px;
+    display:grid; place-items:center;
+  }
+
+  /* ── hero (letterbox banner) ─────────────────────────────── */
+  .hero{
+    position:relative; width:100%;
+    height:240px; overflow:hidden;
+    background:#f1e8ff;
+    border-bottom:1px solid var(--ink-200);
+  }
+  /* decorative pattern wash across the whole banner */
+  .hero::before{
+    content:""; position:absolute; inset:0;
+    background:
+      linear-gradient(90deg, #faf6ff 0%, #f1e8ff 55%, #e9dcff 100%);
+  }
+  .hero::after{
+    content:""; position:absolute; inset:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180' fill='none' stroke='%239869f7' stroke-width='1.2' opacity='0.18'><path d='M0 90 Q45 90 45 45 Q45 0 90 0 Q135 0 135 45 Q135 90 180 90'/><path d='M0 130 Q45 130 45 85 Q45 40 90 40 Q135 40 135 85 Q135 130 180 130'/><path d='M0 50 Q45 50 45 5 Q45 -40 90 -40 Q135 -40 135 5 Q135 50 180 50'/></svg>");
+    background-repeat:repeat;
+    opacity:.55;
+    mask-image:linear-gradient(90deg, #000 0%, #000 60%, transparent 78%);
+    -webkit-mask-image:linear-gradient(90deg, #000 0%, #000 60%, transparent 78%);
+  }
+  .hero-copy{
+    position:relative; z-index:2;
+    max-width:1320px; margin:0 auto;
+    padding:0 32px; height:100%;
+    display:flex; flex-direction:column; justify-content:center;
+    gap:14px;
+  }
+  .hero .crumbs{
+    font-size:13px; color:var(--ink-500); font-weight:500;
+    letter-spacing:.01em;
+  }
+  .hero .crumbs a:hover{color:var(--ink-900)}
+  .hero .crumbs .sep{margin:0 6px; color:var(--ink-400)}
+  .hero h1{
+    font-size:48px; font-weight:700; letter-spacing:-.025em; line-height:1;
+    margin:0; color:var(--ink-900);
+  }
+  /* circular cutout on the right with product image */
+  .hero-art{
+    position:absolute; top:0; right:0; height:100%;
+    width:46%; z-index:1; pointer-events:none;
+  }
+  .hero-art .ring-outer,
+  .hero-art .ring-inner,
+  .hero-art .stage{
+    position:absolute; top:50%; transform:translateY(-50%);
+    border-radius:999px;
+  }
+  .hero-art .ring-outer{
+    right:-22%; width:140%; aspect-ratio:1/1;
+    background:#ecdcff;
+  }
+  .hero-art .ring-inner{
+    right:-26%; width:128%; aspect-ratio:1/1;
+    background:#f6ecff;
+  }
+  .hero-art .stage{
+    right:-34%; width:118%; aspect-ratio:1/1;
+    background:
+      radial-gradient(circle at 30% 30%, #faf3ff 0%, #e6d2fb 60%, #c9a9f3 100%);
+    overflow:hidden;
+  }
+  .hero-art .stage .lotus{
+    position:absolute; left:8%; top:14%;
+    width:46%; aspect-ratio:1/1;
+    background:url('lotus.png') center/contain no-repeat;
+    opacity:.55; transform:rotate(-12deg);
+  }
+  .hero-art .stage .bottle{
+    position:absolute; left:18%; top:22%;
+    width:30%; aspect-ratio:1/2.2;
+    border-radius:14px 14px 26px 26px;
+    background:linear-gradient(180deg,#f6efff 0%,#d8c6f8 55%,#a983ec 100%);
+    border:1px solid rgba(152,105,247,.45);
+    box-shadow:0 30px 60px -30px rgba(101,54,212,.35);
+  }
+  .hero-art .stage .bottle::before{
+    content:""; position:absolute; left:50%; top:-18px;
+    width:42%; height:20px; transform:translateX(-50%);
+    background:#1a1a1f; border-radius:6px 6px 3px 3px;
+  }
+
+  /* ── category pills ──────────────────────────────────────── */
+  .cats{
+    max-width:1320px; margin:0 auto;
+    padding:24px 32px 8px;
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .cats button{
+    height:38px; padding:0 16px;
+    border:1px solid var(--ink-200); background:#fff; border-radius:var(--r-pill);
+    font:500 12px/1 var(--font-sans); color:var(--ink-700); cursor:pointer;
+    letter-spacing:.04em;
+    transition:border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+  }
+  .cats button:hover{border-color:var(--ink-700)}
+  .cats button.on{background:var(--ink-900); border-color:var(--ink-900); color:#fff; font-weight:600}
+
+  /* ── shell ───────────────────────────────────────────────── */
+  .shell{
+    max-width:1320px; margin:0 auto;
+    padding:24px 32px 80px;
+    display:grid;
+    grid-template-columns:240px 1fr;
+    gap:48px;
+    align-items:start;
+  }
+
+  /* ── filter sidebar ──────────────────────────────────────── */
+  .filters{
+    position:sticky; top:88px;
+    border:1px solid var(--ink-200); border-radius:var(--r-lg);
+    padding:8px 0;
+  }
+  .filters .group{
+    padding:18px 20px;
+    border-bottom:1px solid var(--ink-200);
+  }
+  .filters .group:last-child{border-bottom:0}
+  .filters h3{
+    font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--ink-500); font-weight:600;
+    margin:0 0 12px;
+  }
+  .filters .item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 0; font-size:13px; color:var(--ink-700);
+    cursor:pointer; user-select:none;
+  }
+  .filters .item:hover{color:var(--ink-900)}
+  .filters .item .count{color:var(--ink-400); font-size:12px}
+  .filters .check{display:inline-flex;align-items:center;gap:10px}
+  .filters .check input{
+    appearance:none;width:16px;height:16px;border:1px solid var(--ink-300);
+    border-radius:4px;background:#fff;display:grid;place-items:center;cursor:pointer;margin:0;
+  }
+  .filters .check input:checked{background:var(--brand-purple-2);border-color:var(--brand-purple-2)}
+  .filters .check input:checked::after{content:"";width:8px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+
+  .price-range{display:flex;align-items:center;gap:10px}
+  .price-range input[type=number]{
+    width:100%; height:36px; padding:0 10px;
+    border:1px solid var(--ink-200); border-radius:var(--r-md);
+    font:500 13px/1 var(--font-sans); color:var(--ink-900);
+  }
+  .price-range input:focus{outline:0;border-color:var(--brand-purple-2);box-shadow:0 0 0 3px rgba(152,105,247,.18)}
+  .price-range span{color:var(--ink-400); font-size:13px}
+
+  .swatches{display:flex; gap:8px; flex-wrap:wrap}
+  .sw{
+    width:24px; height:24px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--ink-200); position:relative;
+  }
+  .sw.on{border-color:var(--ink-900); box-shadow:0 0 0 2px #fff inset}
+  .clear{
+    width:100%; padding:14px 20px;
+    font:600 11px/1 var(--font-sans); letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ink-500); background:transparent; border:0; cursor:pointer; text-align:left;
+  }
+  .clear:hover{color:var(--ink-900)}
+
+  /* ── list area ───────────────────────────────────────────── */
+  .toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding-bottom:18px; border-bottom:1px solid var(--ink-200);
+    margin-bottom:28px; flex-wrap:wrap;
+  }
+  .toolbar .count{font-size:13px; color:var(--ink-500)}
+  .toolbar .count b{color:var(--ink-900); font-weight:600}
+  .toolbar .right{display:flex; align-items:center; gap:14px}
+  .toolbar .sort{
+    height:40px; padding:0 36px 0 14px;
+    border:1px solid var(--ink-200); border-radius:var(--r-pill);
+    font:500 13px/1 var(--font-sans); color:var(--ink-700); background:#fff;
+    appearance:none; cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a5a64' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center;
+  }
+  .toolbar .view-tog{display:flex; gap:4px; background:var(--ink-100); padding:4px; border-radius:var(--r-pill)}
+  .toolbar .view-tog button{
+    width:34px;height:30px;border:0;background:transparent;cursor:pointer;
+    border-radius:999px; color:var(--ink-500); display:grid;place-items:center;
+  }
+  .toolbar .view-tog button.on{background:#fff; color:var(--ink-900); box-shadow:0 1px 2px rgba(17,17,20,.05)}
+
+  /* active filter chips */
+  .chips{
+    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px;
+  }
+  .chips .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    height:30px; padding:0 12px;
+    border:1px solid var(--ink-200); border-radius:var(--r-pill);
+    font:500 12px/1 var(--font-sans); color:var(--ink-700);
+  }
+  .chips .chip button{
+    border:0;background:transparent;cursor:pointer;color:var(--ink-400);
+    font-size:14px; line-height:1; padding:0;
+  }
+  .chips .chip button:hover{color:var(--ink-900)}
+  .chips .clear-all{color:var(--brand-purple-darker); font-weight:600; align-self:center; font-size:12px; cursor:pointer; background:transparent; border:0; padding:0}
+
+  /* ── product grid ────────────────────────────────────────── */
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:28px 24px;
+  }
+  .card{
+    border:1px solid var(--ink-200); border-radius:var(--r-lg);
+    background:#fff; overflow:hidden;
+    display:flex; flex-direction:column;
+    transition:border-color var(--t-fast) var(--ease);
+    position:relative;
+  }
+  .card:hover{border-color:var(--ink-300)}
+  .card .img{
+    aspect-ratio:1/1;
+    background:var(--ink-50);
+    display:grid; place-items:center;
+    border-bottom:1px solid var(--ink-200);
+    position:relative; overflow:hidden;
+  }
+  .card .b{
+    width:34%; aspect-ratio:1/2.6;
+    border-radius:14px 14px 22px 22px;
+    background:linear-gradient(180deg,#f6efff,#d8c6f8);
+    border:1px solid rgba(152,105,247,.35);
+    box-shadow:0 24px 40px -28px rgba(101,54,212,.25);
+  }
+  .card.alt .b{background:linear-gradient(180deg,#fff,#f3f3f5);border-color:var(--ink-300)}
+  .card.gold .b{background:linear-gradient(180deg,#fff7e6,#f1d68a);border-color:#e6c577}
+  .card.ink .b{background:linear-gradient(180deg,#2a2a31,#111114);border-color:#0f0f12}
+  .card.rose .b{background:linear-gradient(180deg,#fff0f3,#f5c6cf);border-color:#eaa8b3}
+  .card.green .b{background:linear-gradient(180deg,#eef7ee,#bfdcc1);border-color:#9cc4a0}
+  .card.amber .b{background:linear-gradient(180deg,#fff5e6,#f3c98e);border-color:#dfae6b}
+
+  .card .tag{
+    position:absolute; top:14px; left:14px;
+    font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--ink-700); font-weight:600;
+    background:#fff; border:1px solid var(--ink-200);
+    border-radius:var(--r-pill);
+    padding:6px 10px;
+  }
+  .card .tag.new{color:var(--brand-purple-darker); border-color:#e3d3ff; background:#f8f3ff}
+  .card .tag.sale{color:#a01f3a; border-color:#f4cdd5; background:#fff5f7}
+
+  .card .heart{
+    position:absolute; top:12px; right:12px;
+    width:34px; height:34px; border-radius:999px;
+    background:#fff; border:1px solid var(--ink-200);
+    display:grid; place-items:center; cursor:pointer;
+    color:var(--ink-500);
+    transition:color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  }
+  .card .heart:hover{color:var(--brand-purple-darker); border-color:var(--brand-purple-2)}
+  .card .heart.on{color:var(--brand-purple-darker); border-color:var(--brand-purple-2)}
+
+  .card .body{padding:18px 18px 18px}
+  .card .cat{
+    font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--ink-400); font-weight:600;
+  }
+  .card .name{
+    font-size:16px; font-weight:600; color:var(--ink-900);
+    margin:6px 0 4px; letter-spacing:-.005em;
+  }
+  .card .desc{
+    font-size:13px; color:var(--ink-500); line-height:1.5;
+    margin:0 0 14px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .card .row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-top:auto;
+  }
+  .card .price{display:flex; align-items:baseline; gap:8px}
+  .card .price .now{font-size:15px; font-weight:600; color:var(--ink-900)}
+  .card .price .was{font-size:12px; color:var(--ink-400); text-decoration:line-through}
+  .card .stars{font-size:12px; color:var(--ink-500)}
+  .card .stars b{color:#e0a800}
+
+  .card .add{
+    width:100%; margin-top:14px;
+  }
+
+  /* out of stock */
+  .card.oos .img::after{
+    content:""; position:absolute; inset:0;
+    background:rgba(255,255,255,.55);
+  }
+  .card.oos .tag{color:var(--ink-500); background:#fff}
+
+  /* ── pagination ──────────────────────────────────────────── */
+  .pager{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    margin-top:48px;
+  }
+  .pager button{
+    width:40px; height:40px; border:1px solid var(--ink-200); background:#fff;
+    border-radius:var(--r-pill); cursor:pointer;
+    font:500 13px/1 var(--font-sans); color:var(--ink-700);
+    display:grid; place-items:center;
+    transition:border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+  }
+  .pager button:hover{border-color:var(--ink-700)}
+  .pager button.on{background:var(--ink-900); color:#fff; border-color:var(--ink-900); font-weight:600}
+  .pager button[disabled]{opacity:.4; cursor:not-allowed}
+  .pager .gap{color:var(--ink-400); padding:0 8px}
+
+  /* ── footer ──────────────────────────────────────────────── */
+  .foot{
+    border-top:1px solid var(--ink-200);
+    padding:24px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-400);
+    max-width:1320px; margin:0 auto;
+  }
+  .foot .links{display:flex; gap:22px}
+  .foot a:hover{color:var(--ink-900)}
+
+  /* mobile filter trigger */
+  .mobi-filter{display:none}
+
+  /* ── responsive ──────────────────────────────────────────── */
+  @media (max-width: 1100px){
+    .grid{grid-template-columns:repeat(2, 1fr)}
+  }
+  @media (max-width: 900px){
+    .nav ul{display:none}
+    .shell{grid-template-columns:1fr; padding:18px 22px 56px}
+    .filters{display:none; position:static}
+    .filters.open{display:block}
+    .mobi-filter{
+      display:inline-flex; align-items:center; gap:8px;
+      height:40px; padding:0 16px;
+      border:1px solid var(--ink-200); background:#fff; border-radius:var(--r-pill);
+      font:600 12px/1 var(--font-sans); letter-spacing:.1em; text-transform:uppercase;
+      color:var(--ink-700); cursor:pointer;
+    }
+    .hero{height:180px}
+    .hero-copy{padding:0 22px}
+    .hero h1{font-size:34px}
+    .hero-art{width:55%}
+    .hero::after{mask-image:linear-gradient(90deg, #000 0%, #000 40%, transparent 70%); -webkit-mask-image:linear-gradient(90deg, #000 0%, #000 40%, transparent 70%)}
+    .cats{padding:18px 22px 4px}
+    .nav-inner{padding:14px 22px}
+    .foot{padding:20px 22px; flex-direction:column; gap:10px; text-align:center}
+  }
+  @media (max-width: 540px){
+    .grid{grid-template-columns:1fr 1fr; gap:16px}
+    .card .body{padding:14px 12px}
+    .card .name{font-size:14px}
+    .card .desc{display:none}
+    .card .add{display:none}
+    .toolbar{gap:10px}
+    .toolbar .right{width:100%; justify-content:space-between}
+    .hero h1{font-size:28px}
+    .hero p{font-size:15px}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#">
+      <img src="lotus.png" alt="">
+      <span class="word">Naya Lumière</span>
+    </a>
+    <ul>
+      <li><a href="#">Shop</a></li>
+      <li><a href="#">Rituals</a></li>
+      <li><a href="#">Skin Quiz</a></li>
+      <li><a href="#">Journal</a></li>
+    </ul>
+    <div class="right">
+      <button aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+      <button aria-label="Account">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+      </button>
+      <button class="cart" aria-label="Cart">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 7h12l-1.5 12H7.5L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+        <span class="pip">2</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-art" aria-hidden="true">
+    <div class="ring-outer"></div>
+    <div class="ring-inner"></div>
+    <div class="stage">
+      <div class="lotus"></div>
+      <div class="bottle"></div>
+    </div>
+  </div>
+  <div class="hero-copy">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="#">Home</a><span class="sep">›</span><a href="#">Shop Catalog</a>
+    </nav>
+    <h1>All Products</h1>
+  </div>
+</section>
+
+<div class="cats" role="tablist" aria-label="Categories">
+  <button class="on">All · 48</button>
+  <button>Cleansers · 8</button>
+  <button>Toners · 5</button>
+  <button>Serums · 12</button>
+  <button>Moisturisers · 9</button>
+  <button>Masks · 6</button>
+  <button>Sun · 4</button>
+  <button>Tools · 4</button>
+</div>
+
+<main class="shell">
+
+  <!-- Filters -->
+  <aside class="filters" id="filters">
+
+    <div class="group">
+      <h3>Skin concern</h3>
+      <label class="item"><span class="check"><input type="checkbox" checked> Dullness</span><span class="count">14</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Dark spots</span><span class="count">11</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Fine lines</span><span class="count">9</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Dryness</span><span class="count">15</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Sensitivity</span><span class="count">8</span></label>
+    </div>
+
+    <div class="group">
+      <h3>Skin type</h3>
+      <label class="item"><span class="check"><input type="checkbox"> Oily</span><span class="count">12</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Dry</span><span class="count">14</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Combination</span><span class="count">19</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Sensitive</span><span class="count">10</span></label>
+    </div>
+
+    <div class="group">
+      <h3>Price (AED)</h3>
+      <div class="price-range">
+        <input type="number" placeholder="0" min="0">
+        <span>—</span>
+        <input type="number" placeholder="500" min="0">
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Free of</h3>
+      <label class="item"><span class="check"><input type="checkbox" checked> Fragrance</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Sulfates</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Parabens</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> Silicones</span></label>
+    </div>
+
+    <div class="group">
+      <h3>Rating</h3>
+      <label class="item"><span class="check"><input type="checkbox"> 4.5 &amp; up</span><span class="count">31</span></label>
+      <label class="item"><span class="check"><input type="checkbox"> 4.0 &amp; up</span><span class="count">42</span></label>
+    </div>
+
+    <button class="clear" type="button">Clear all filters</button>
+  </aside>
+
+  <!-- List -->
+  <section>
+    <div class="toolbar">
+      <div class="count"><b>48 products</b> · curated this season</div>
+      <div class="right">
+        <button class="mobi-filter" type="button" onclick="document.getElementById('filters').classList.toggle('open')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+          Filters
+        </button>
+        <select class="sort" aria-label="Sort">
+          <option>Featured</option>
+          <option>Newest first</option>
+          <option>Best selling</option>
+          <option>Price · low to high</option>
+          <option>Price · high to low</option>
+          <option>Rating · highest</option>
+        </select>
+        <div class="view-tog" role="tablist" aria-label="View">
+          <button class="on" aria-label="Grid">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </button>
+          <button aria-label="List">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip">Dullness <button aria-label="Remove">×</button></span>
+      <span class="chip">Fragrance free <button aria-label="Remove">×</button></span>
+      <button class="clear-all">Clear all</button>
+    </div>
+
+    <div class="grid">
+
+      <!-- 1 -->
+      <article class="card">
+        <div class="img">
+          <span class="tag new">New</span>
+          <button class="heart" aria-label="Save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Serum</div>
+          <div class="name">Lumière Glow Serum</div>
+          <p class="desc">Vitamin C + niacinamide for soft, even, lit-from-within skin.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 245</span><span class="was">AED 295</span></div>
+            <div class="stars"><b>★</b> 4.9</div>
+          </div>
+          <button class="btn sm add" type="button">Add to bag</button>
+        </div>
+      </article>
+
+      <!-- 2 -->
+      <article class="card alt">
+        <div class="img">
+          <button class="heart on" aria-label="Saved"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Cleanser</div>
+          <div class="name">Quiet Gel Wash</div>
+          <p class="desc">A featherweight gel that lifts SPF and city haze without stripping.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 135</span></div>
+            <div class="stars"><b>★</b> 4.9</div>
+          </div>
+          <button class="btn sm add" type="button">Add to bag</button>
+        </div>
+      </article>
+
+      <!-- 3 -->
+      <article class="card gold">
+        <div class="img">
+          <span class="tag">Bestseller</span>
+          <button class="heart" aria-label="Save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Oil</div>
+          <div class="name">Golden Hour Oil</div>
+          <p class="desc">A nine-botanical oil that melts into nourished, dewy skin overnight.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 290</span></div>
+            <div class="stars"><b>★</b> 4.9</div>
+          </div>
+          <button class="btn sm add" type="button">Add to bag</button>
+        </div>
+      </article>
+
+      <!-- 4 -->
+      <article class="card rose">
+        <div class="img">
+          <button class="heart" aria-label="Save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Toner</div>
+          <div class="name">Soft Lotion 03</div>
+          <p class="desc">A milky essence-toner that calms redness and softens texture overnight.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 165</span></div>
+            <div class="stars"><b>★</b> 4.8</div>
+          </div>
+          <button class="btn sm add" type="button">Add to bag</button>
+        </div>
+      </article>
+
+      <!-- 5 -->
+      <article class="card ink">
+        <div class="img">
+          <span class="tag sale">−20%</span>
+          <button class="heart" aria-label="Save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Mask</div>
+          <div class="name">Midnight Repair Mask</div>
+          <p class="desc">A leave-on retinaldehyde mask that resurfaces while you sleep.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 220</span><span class="was">AED 275</span></div>
+            <div class="stars"><b>★</b> 4.7</div>
+          </div>
+          <button class="btn sm add" type="button">Add to bag</button>
+        </div>
+      </article>
+
+      <!-- 6 -->
+      <article class="card green">
+        <div class="img">
+          <button class="heart" aria-label="Save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Moisturiser</div>
+          <div class="name">Botanical Day Cream</div>
+          <p class="desc">A weightless ceramide cream that holds moisture for twelve hours.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 195</span></div>
+            <div class="stars"><b>★</b> 4.8</div>
+          </div>
+          <button class="btn sm add" type="button">Add to bag</button>
+        </div>
+      </article>
+
+      <!-- 7 -->
+      <article class="card amber">
+        <div class="img">
+          <span class="tag new">New</span>
+          <button class="heart" aria-label="Save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Sun</div>
+          <div class="name">Daily Veil SPF 50</div>
+          <p class="desc">An invisible mineral SPF that wears beautifully under makeup.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 175</span></div>
+            <div class="stars"><b>★</b> 4.9</div>
+          </div>
+          <button class="btn sm add" type="button">Add to bag</button>
+        </div>
+      </article>
+
+      <!-- 8 -->
+      <article class="card oos">
+        <div class="img">
+          <span class="tag">Sold out</span>
+          <button class="heart" aria-label="Save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Serum</div>
+          <div class="name">Petal Peptide Concentrate</div>
+          <p class="desc">A firming peptide blend for tired, late-night skin.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 310</span></div>
+            <div class="stars"><b>★</b> 4.9</div>
+          </div>
+          <button class="btn sm ghost add" type="button">Notify me</button>
+        </div>
+      </article>
+
+      <!-- 9 -->
+      <article class="card">
+        <div class="img">
+          <button class="heart" aria-label="Save"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-4.3-7-10a5 5 0 0 1 7-4.6A5 5 0 0 1 19 11c0 5.7-7 10-7 10Z"/></svg></button>
+          <div class="b"></div>
+        </div>
+        <div class="body">
+          <div class="cat">Eye</div>
+          <div class="name">Bright Eye Serum</div>
+          <p class="desc">A caffeine-and-peptide tap-on serum that wakes tired under-eyes.</p>
+          <div class="row">
+            <div class="price"><span class="now">AED 185</span></div>
+            <div class="stars"><b>★</b> 4.7</div>
+          </div>
+          <button class="btn sm add" type="button">Add to bag</button>
+        </div>
+      </article>
+
+    </div>
+
+    <nav class="pager" aria-label="Pages">
+      <button disabled aria-label="Previous">‹</button>
+      <button class="on">1</button>
+      <button>2</button>
+      <button>3</button>
+      <button>4</button>
+      <span class="gap">…</span>
+      <button>6</button>
+      <button aria-label="Next">›</button>
+    </nav>
+
+  </section>
+</main>
+
+<footer class="foot">
+  <div>© Naya Lumière</div>
+  <div class="links">
+    <a href="#">Help</a>
+    <a href="#">Shipping</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+  </div>
+</footer>
+
+<script>
+  // category pills
+  document.querySelectorAll('.cats button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.cats button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    });
+  });
+  // wishlist heart toggle
+  document.querySelectorAll('.heart').forEach(h => {
+    h.addEventListener('click', e => {
+      e.preventDefault();
+      h.classList.toggle('on');
+      const svg = h.querySelector('svg');
+      if(h.classList.contains('on')){
+        svg.setAttribute('fill','currentColor');
+        svg.setAttribute('stroke','none');
+      } else {
+        svg.setAttribute('fill','none');
+        svg.setAttribute('stroke','currentColor');
+      }
+    });
+  });
+  // pager
+  document.querySelectorAll('.pager button').forEach(b => {
+    b.addEventListener('click', () => {
+      if(b.disabled) return;
+      if(!/[0-9]/.test(b.textContent)) return;
+      document.querySelectorAll('.pager button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    });
+  });
+  // view toggle
+  document.querySelectorAll('.view-tog button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.view-tog button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    });
+  });
+  // chip remove
+  document.querySelectorAll('.chips .chip button').forEach(b => {
+    b.addEventListener('click', () => b.parentElement.remove());
+  });
+</script>
+</body>
+</html>

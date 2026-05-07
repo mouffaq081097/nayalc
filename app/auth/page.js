@@ -56,27 +56,18 @@ function ForgotPassword({ onBack }) {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="space-y-3">
+      <div>
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-[11px] font-semibold text-[rgba(107,33,168,0.5)] hover:text-[#9333ea] transition-colors mb-2"
+          className="flex items-center gap-2 text-[11px] font-semibold text-[#999] hover:text-[#9368ee] transition-colors mb-4"
         >
           <ArrowLeft size={12} /> Back to Sign In
         </button>
-        <h3 className="font-sans font-bold text-[22px] text-[#3b0764] leading-snug">
-          Reset your{' '}
-          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--brand-gradient)' }}>
-            password
-          </span>
-        </h3>
-        <p className="text-[13px] text-[rgba(107,33,168,0.55)] font-normal leading-relaxed">
-          Enter your email and we'll send you a secure reset link.
-        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label className="text-[11px] font-semibold text-[rgba(107,33,168,0.6)] uppercase tracking-wide">Email Address</label>
+          <label className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Email Address</label>
           <div className="relative group">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
@@ -85,7 +76,7 @@ function ForgotPassword({ onBack }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#3b0764] placeholder:text-[rgba(107,33,168,0.3)]"
+              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
             />
           </div>
         </div>
@@ -146,21 +137,9 @@ function Login({ onForgotClick }) {
       transition={{ duration: 0.3 }}
       className="space-y-5"
     >
-      <div className="space-y-2">
-        <h3 className="font-sans font-bold text-[22px] text-[#3b0764] leading-snug">
-          Welcome back to{' '}
-          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--brand-gradient)' }}>
-            Naya Lumière
-          </span>
-        </h3>
-        <p className="text-[13px] text-[rgba(107,33,168,0.5)] font-normal leading-relaxed">
-          Sign in to continue your luxury beauty journey.
-        </p>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <label htmlFor="signin-email" className="text-[11px] font-semibold text-[rgba(107,33,168,0.6)] uppercase tracking-wide">Email Address</label>
+          <label htmlFor="signin-email" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Email Address</label>
           <div className="relative group">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
@@ -170,18 +149,18 @@ function Login({ onForgotClick }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#3b0764] placeholder:text-[rgba(107,33,168,0.3)]"
+              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
             />
           </div>
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label htmlFor="signin-password" className="text-[11px] font-semibold text-[rgba(107,33,168,0.6)] uppercase tracking-wide">Password</label>
+            <label htmlFor="signin-password" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Password</label>
             <button
               type="button"
               onClick={onForgotClick}
-              className="text-[11px] font-semibold text-[rgba(147,51,234,0.6)] hover:text-[#9333ea] transition-colors"
+              className="text-[11px] font-semibold text-[#9368ee] hover:text-[#7c3aed] transition-colors"
             >
               Forgot password?
             </button>
@@ -195,7 +174,7 @@ function Login({ onForgotClick }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#3b0764] placeholder:text-[rgba(107,33,168,0.3)]"
+              className="w-full h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
             />
             <button
               type="button"
@@ -213,7 +192,7 @@ function Login({ onForgotClick }) {
             id="remember-me"
             className="w-4 h-4 rounded-md border-[rgba(196,167,254,0.5)] bg-white text-[#9333ea] focus:ring-[rgba(196,167,254,0.2)] cursor-pointer"
           />
-          <label htmlFor="remember-me" className="text-[12px] font-medium text-[rgba(107,33,168,0.55)] group-hover:text-[#6b21a8] transition-colors cursor-pointer">
+          <label htmlFor="remember-me" className="text-[12px] font-medium text-[#555] group-hover:text-[#111] transition-colors cursor-pointer">
             Remember me
           </label>
         </div>
@@ -243,22 +222,34 @@ function Login({ onForgotClick }) {
 
       <div className="flex items-center gap-3 pt-1">
         <div className="flex-1 h-px bg-[rgba(216,180,254,0.3)]" />
-        <span className="text-[11px] font-medium text-[rgba(147,51,234,0.4)]">or continue with</span>
+        <span className="text-[11px] font-medium text-[#aaa]">or continue with</span>
         <div className="flex-1 h-px bg-[rgba(216,180,254,0.3)]" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.5)] bg-white/80 backdrop-blur-sm text-[12px] font-semibold text-[#6b21a8] hover:bg-white hover:border-[rgba(147,104,236,0.6)] hover:shadow-[0_2px_10px_rgba(147,104,236,0.1)] transition-all">
+        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.5)] bg-white/80 backdrop-blur-sm text-[12px] font-semibold text-[#444] hover:bg-white hover:border-[rgba(147,104,236,0.6)] hover:shadow-[0_2px_10px_rgba(147,104,236,0.1)] transition-all">
           <Chrome size={15} className="text-[rgba(196,167,254,0.8)]" />
           Google
         </button>
-        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.5)] bg-white/80 backdrop-blur-sm text-[12px] font-semibold text-[#6b21a8] hover:bg-white hover:border-[rgba(147,104,236,0.6)] hover:shadow-[0_2px_10px_rgba(147,104,236,0.1)] transition-all">
+        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.5)] bg-white/80 backdrop-blur-sm text-[12px] font-semibold text-[#444] hover:bg-white hover:border-[rgba(147,104,236,0.6)] hover:shadow-[0_2px_10px_rgba(147,104,236,0.1)] transition-all">
           <Facebook size={15} className="text-[rgba(196,167,254,0.8)]" />
           Facebook
         </button>
       </div>
     </motion.div>
   );
+}
+
+function getPasswordStrength(password) {
+  if (!password) return { score: 0, label: '', segments: [false, false, false, false] };
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+  if (password.length >= 12) score++;
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const segments = [score >= 1, score >= 2, score >= 3, score >= 4];
+  return { score, label: labels[score], segments };
 }
 
 function Register() {
@@ -269,7 +260,11 @@ function Register() {
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [emailOptIn, setEmailOptIn] = useState(true);
   const { register } = useAuth();
+
+  const strength = getPasswordStrength(password);
+  const segmentColors = ['#ef4444', '#f97316', '#a78bfa', '#7c68ee'];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -293,75 +288,63 @@ function Register() {
       transition={{ duration: 0.3 }}
       className="space-y-5"
     >
-      <div className="space-y-2">
-        <h3 className="font-sans font-bold text-[22px] text-[#3b0764] leading-snug">
-          Create your{' '}
-          <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'var(--brand-gradient)' }}>
-            account
-          </span>
-        </h3>
-        <p className="text-[13px] text-[rgba(107,33,168,0.5)] font-normal leading-relaxed">
-          Join the world of clinical botanical luxury.
-        </p>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <label htmlFor="register-firstname" className="text-[11px] font-semibold text-[rgba(107,33,168,0.6)] uppercase tracking-wide">First Name</label>
+          <div className="space-y-1.5">
+            <label htmlFor="register-firstname" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">First Name</label>
             <input
               id="register-firstname"
               type="text"
-              placeholder="First name"
+              placeholder="Layla"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              className="w-full h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#3b0764] placeholder:text-[rgba(107,33,168,0.3)]"
+              className="w-full h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="register-lastname" className="text-[11px] font-semibold text-[rgba(107,33,168,0.6)] uppercase tracking-wide">Last Name</label>
+          <div className="space-y-1.5">
+            <label htmlFor="register-lastname" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Last Name</label>
             <input
               id="register-lastname"
               type="text"
-              placeholder="Last name"
+              placeholder="Ahmed"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
-              className="w-full h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#3b0764] placeholder:text-[rgba(107,33,168,0.3)]"
+              className="w-full h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="register-email" className="text-[11px] font-semibold text-[rgba(107,33,168,0.6)] uppercase tracking-wide">Email Address</label>
+        <div className="space-y-1.5">
+          <label htmlFor="register-email" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Email</label>
           <div className="relative group">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
               id="register-email"
               type="email"
-              placeholder="name@example.com"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#3b0764] placeholder:text-[rgba(107,33,168,0.3)]"
+              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="register-password" className="text-[11px] font-semibold text-[rgba(107,33,168,0.6)] uppercase tracking-wide">Password</label>
+        <div className="space-y-1.5">
+          <label htmlFor="register-password" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Password</label>
           <div className="relative group">
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
               id="register-password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Min. 8 characters"
+              placeholder="At least 8 characters"
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#3b0764] placeholder:text-[rgba(107,33,168,0.3)]"
+              className="w-full h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
             />
             <button
               type="button"
@@ -371,6 +354,67 @@ function Register() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
+          {/* Password strength bar */}
+          <div className="flex gap-1.5 pt-0.5">
+            {strength.segments.map((active, i) => (
+              <div
+                key={i}
+                className="h-[3px] flex-1 rounded-full transition-all duration-300"
+                style={{
+                  backgroundColor: active ? segmentColors[strength.score - 1] : 'rgba(216,180,254,0.25)',
+                }}
+              />
+            ))}
+          </div>
+          {password && (
+            <p className="text-[11px]" style={{ color: segmentColors[strength.score - 1] }}>
+              {strength.label} — Use 8+ characters{' '}
+              <span className="text-[rgba(107,33,168,0.6)]">with a number and a symbol.</span>
+            </p>
+          )}
+          {!password && (
+            <p className="text-[11px] text-[#999]">
+              Use 8+ characters <span className="text-[#9368ee]">with a number and a symbol.</span>
+            </p>
+          )}
+        </div>
+
+        {/* Marketing opt-in */}
+        <div className="flex items-start gap-2.5 pt-1">
+          <div className="relative mt-0.5 flex-shrink-0">
+            <input
+              type="checkbox"
+              id="email-optin"
+              checked={emailOptIn}
+              onChange={(e) => setEmailOptIn(e.target.checked)}
+              className="sr-only"
+            />
+            <button
+              type="button"
+              onClick={() => setEmailOptIn(!emailOptIn)}
+              className="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center transition-all duration-200 border-2"
+              style={{
+                background: emailOptIn ? 'linear-gradient(135deg, #d8b4fe, #9368ee)' : 'white',
+                borderColor: emailOptIn ? '#9368ee' : 'rgba(216,180,254,0.5)',
+              }}
+            >
+              {emailOptIn && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
+          </div>
+          <label
+            htmlFor="email-optin"
+            onClick={() => setEmailOptIn(!emailOptIn)}
+            className="text-[13px] font-medium text-[#333] leading-snug cursor-pointer"
+          >
+            Email me launches, restocks and{' '}
+            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #d8b4fe, #9368ee)' }}>
+              rituals.
+            </span>
+          </label>
         </div>
 
         {error && (
@@ -390,6 +434,13 @@ function Register() {
             <>Create Account <ArrowRight size={14} /></>
           )}
         </Button>
+
+        <p className="text-center text-[11px] text-[#aaa]">
+          By creating an account you agree to our{' '}
+          <Link href="/terms" className="text-[#9333ea] hover:underline">Terms</Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="text-[#9333ea] hover:underline">Privacy Policy</Link>.
+        </p>
       </form>
     </motion.div>
   );
@@ -402,55 +453,130 @@ export default function AuthPage() {
   const [authMode, setAuthMode] = useState('login');
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row font-sans">
-
-      {/* ═══════════════════════════════════════
-          LEFT PANEL — Image Hero (desktop only)
-          ═══════════════════════════════════════ */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-[52%] h-screen sticky top-0 flex-col relative overflow-hidden">
-        {/* Hero image — swap src for your provided photo */}
-        <Image
-          src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
-          alt="Naya Lumière Cosmetics"
-          fill
-          className="object-cover object-center"
-          priority
-        />
-
-        {/* Deep overlay — rich purple/indigo gradient */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(160deg, rgba(26,8,56,0.55) 0%, rgba(59,7,100,0.72) 45%, rgba(26,8,56,0.90) 100%)',
-          }}
-        />
-
-        {/* Lavender aura orb — bottom right */}
-        <div
-          className="absolute bottom-0 right-0 w-96 h-96 rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(216,180,254,0.18) 0%, transparent 70%)', transform: 'translate(30%, 30%)' }}
-        />
-
-        {/* Top bar: logo + back to store */}
-        <div className="relative z-10 flex items-center justify-end p-8 xl:p-10">
+    <div className="min-h-screen font-sans bg-[#f8f7fb]">
+      <header className="sticky top-0 z-40 border-b border-white/60 bg-white/80 backdrop-blur-xl shadow-sm">
+        <div className="mx-auto relative flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-[11px] font-semibold text-white/60 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#4f46e5] hover:text-[#312e81] transition-colors"
           >
-            <ArrowLeft size={12} />
+            <ArrowLeft size={14} />
             Back to store
           </button>
+
+          <div className="pointer-events-none absolute inset-x-0 flex justify-center">
+            <Link href="/" className="pointer-events-auto inline-flex items-center gap-3 transition-opacity hover:opacity-90">
+              <Image
+                src="/Adobe Express - file (5).png"
+                alt="Naya Lumière"
+                width={38}
+                height={38}
+                className="w-[38px] h-[38px] object-contain"
+              />
+              <div className="hidden sm:flex flex-col leading-tight font-semibold tracking-[0.06em] text-[#111114]">
+                <span className="text-sm">NAYA LUMIÈRE</span>
+                <span className="text-[8px] tracking-[0.3em] uppercase text-[#5a5a64]">COSMETICS</span>
+              </div>
+            </Link>
+          </div>
+
+          <div className="w-24" />
+        </div>
+      </header>
+
+      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)]">
+        <div className="hidden lg:flex lg:w-1/2 xl:w-[52%] h-screen sticky top-16 flex-col relative overflow-hidden">
+          <Image
+            src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
+            alt="Naya Lumière Cosmetics"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(160deg, rgba(26,8,56,0.55) 0%, rgba(59,7,100,0.72) 45%, rgba(26,8,56,0.90) 100%)',
+            }}
+          />
+          <div
+            className="absolute bottom-0 right-0 w-96 h-96 rounded-full pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(216,180,254,0.18) 0%, transparent 70%)', transform: 'translate(30%, 30%)' }}
+          />
+          <div className="relative z-10 mt-auto p-8 xl:p-10 pb-12 space-y-8">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[rgba(216,180,254,0.7)] mb-4 font-sans">
+                Your Beauty Sanctuary
+              </p>
+              <h1
+                className="text-5xl xl:text-[56px] leading-[1.1] text-white"
+                style={{ fontFamily: 'var(--font-cormorant), serif', fontStyle: 'italic', fontWeight: 600 }}
+              >
+                Discover your <br />
+                <em
+                  className="not-italic font-black"
+                  style={{
+                    fontFamily: 'var(--font-cormorant), serif',
+                    backgroundImage: 'linear-gradient(135deg, rgb(245,235,255), rgb(216,180,254))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  radiance
+                </em>
+              </h1>
+              <p className="mt-4 text-[13px] text-white/55 font-normal leading-relaxed font-sans max-w-[320px]">
+                Clinical precision meets botanical luxury. Exclusive access to bespoke formulations crafted for the UAE.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3.5">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
+                >
+                  <Sparkles size={14} className="text-[rgb(216,180,254)]" />
+                </div>
+                <span className="text-[12px] font-semibold text-white/75 font-sans">AI-powered skin consultations</span>
+              </div>
+              <div className="flex items-center gap-3.5">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
+                >
+                  <ShieldCheck size={14} className="text-[rgb(216,180,254)]" />
+                </div>
+                <span className="text-[12px] font-semibold text-white/75 font-sans">Clinically proven formulas</span>
+              </div>
+              <div className="flex items-center gap-3.5">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
+                >
+                  <Star size={14} className="text-[rgb(216,180,254)]" />
+                </div>
+                <span className="text-[12px] font-semibold text-white/75 font-sans">Exclusive member rewards</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Bottom content: headline + features */}
-        <div className="relative z-10 mt-auto p-8 xl:p-10 pb-12 space-y-8">
-          {/* Display headline — uses Cormorant Garamond (display font) */}
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[rgba(216,180,254,0.7)] mb-4 font-sans">
-              Your Beauty Sanctuary
-            </p>
+        <div className="lg:hidden relative h-[28vh] overflow-hidden flex-shrink-0">
+          <Image
+            src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
+            alt="Naya Lumière Cosmetics"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(180deg, rgba(26,8,56,0.45) 0%, rgba(59,7,100,0.80) 100%)' }}
+          />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 px-6 pt-8">
             <h1
-              className="text-5xl xl:text-[56px] leading-[1.1] text-white"
+              className="text-[30px] md:text-[36px] leading-[1.1] text-white"
               style={{ fontFamily: 'var(--font-cormorant), serif', fontStyle: 'italic', fontWeight: 600 }}
             >
               Discover your <br />
@@ -467,159 +593,78 @@ export default function AuthPage() {
                 radiance
               </em>
             </h1>
-            <p className="mt-4 text-[13px] text-white/55 font-normal leading-relaxed font-sans max-w-[320px]">
-              Clinical precision meets botanical luxury. Exclusive access to bespoke formulations crafted for the UAE.
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[rgba(216,180,254,0.85)] mt-2 font-sans">
+              Your Beauty Sanctuary
             </p>
           </div>
+        </div>
 
-          {/* Feature badges */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3.5">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
-              >
-                <Sparkles size={14} className="text-[rgb(216,180,254)]" />
+        <div className="flex-1 lg:w-1/2 xl:w-[48%] min-h-screen lg:min-h-0 lg:h-screen lg:overflow-y-auto bg-[#ffffff] flex flex-col">
+          <div className="flex-1 flex items-start lg:items-center justify-center px-6 pt-6 pb-6 lg:py-6">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[420px]"
+            >
+              <div className="text-center mb-5">
+                <h2 className="text-[32px] font-black text-[#111114] leading-tight tracking-tight">
+                  {authMode === 'register'
+                    ? 'Create your account.'
+                    : authMode === 'forgot-password'
+                    ? 'Reset your password.'
+                    : 'Welcome back.'}
+                </h2>
+                <p className="text-[13px] text-[#888] mt-1.5 font-normal">
+                  {authMode === 'register'
+                    ? 'It takes about thirty seconds.'
+                    : authMode === 'forgot-password'
+                    ? "We'll send a secure reset link."
+                    : 'Sign in to continue your beauty journey.'}
+                </p>
               </div>
-              <span className="text-[12px] font-semibold text-white/75 font-sans">AI-powered skin consultations</span>
-            </div>
-            <div className="flex items-center gap-3.5">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
+
+              <Tabs
+                value={authMode === 'forgot-password' ? 'login' : authMode}
+                onValueChange={setAuthMode}
+                className="w-full"
               >
-                <ShieldCheck size={14} className="text-[rgb(216,180,254)]" />
-              </div>
-              <span className="text-[12px] font-semibold text-white/75 font-sans">Clinically proven formulas</span>
-            </div>
-            <div className="flex items-center gap-3.5">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
-              >
-                <Star size={14} className="text-[rgb(216,180,254)]" />
-              </div>
-              <span className="text-[12px] font-semibold text-white/75 font-sans">Exclusive member rewards</span>
-            </div>
+                <TabsList className="flex bg-transparent border-0 border-b border-[rgba(216,180,254,0.4)] rounded-none p-0 mb-5 gap-0 relative">
+                  <TabsTrigger
+                    value="login"
+                    className="flex-1 pb-3 pt-0 rounded-none bg-transparent border-0 text-[11px] font-bold uppercase tracking-widest transition-all data-[state=active]:text-[#111114] data-[state=active]:shadow-none data-[state=active]:[box-shadow:inset_0_-2px_0_0_#9368ee] text-[#aaa] shadow-none"
+                  >
+                    Sign In
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="register"
+                    className="flex-1 pb-3 pt-0 rounded-none bg-transparent border-0 text-[11px] font-bold uppercase tracking-widest transition-all data-[state=active]:text-[#111114] data-[state=active]:shadow-none data-[state=active]:[box-shadow:inset_0_-2px_0_0_#9368ee] text-[#aaa] shadow-none"
+                  >
+                    Register
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="login" className="mt-0 outline-none">
+                  <AnimatePresence mode="wait">
+                    {authMode === 'forgot-password' ? (
+                      <ForgotPassword key="forgot" onBack={() => setAuthMode('login')} />
+                    ) : (
+                      <Login key="login" onForgotClick={() => setAuthMode('forgot-password')} />
+                    )}
+                  </AnimatePresence>
+                </TabsContent>
+                <TabsContent value="register" className="mt-0 outline-none">
+                  <Register />
+                </TabsContent>
+              </Tabs>
+            </motion.div>
           </div>
-        </div>
-      </div>
 
-      {/* ═══════════════════════════════════════
-          MOBILE HERO — Image on top (mobile only)
-          ═══════════════════════════════════════ */}
-      <div className="lg:hidden relative h-[46vh] overflow-hidden flex-shrink-0">
-        <Image
-          src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
-          alt="Naya Lumière Cosmetics"
-          fill
-          className="object-cover object-center"
-          priority
-        />
-        {/* Overlay */}
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(180deg, rgba(26,8,56,0.45) 0%, rgba(59,7,100,0.80) 100%)' }}
-        />
-        {/* Mobile logo centered */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 px-6 pt-8">
-          <h1
-            className="text-[40px] md:text-[48px] leading-[1.1] text-white"
-            style={{ fontFamily: 'var(--font-cormorant), serif', fontStyle: 'italic', fontWeight: 600 }}
-          >
-            Discover your <br />
-            <em
-              className="not-italic font-black"
-              style={{
-                fontFamily: 'var(--font-cormorant), serif',
-                backgroundImage: 'linear-gradient(135deg, rgb(245,235,255), rgb(216,180,254))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              radiance
-            </em>
-          </h1>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[rgba(216,180,254,0.85)] mt-4 font-sans">
-            Your Beauty Sanctuary
-          </p>
-        </div>
-        {/* Mobile: back to store */}
-        <button
-          onClick={() => router.push('/')}
-          className="absolute top-4 left-4 z-10 flex items-center gap-1.5 text-[11px] font-semibold text-white/60 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={12} />
-          Back
-        </button>
-      </div>
-
-      {/* ═══════════════════════════════════════
-          RIGHT PANEL — Form
-          ═══════════════════════════════════════ */}
-      <div className="flex-1 lg:w-1/2 xl:w-[48%] min-h-screen lg:min-h-0 lg:h-screen lg:overflow-y-auto bg-[#ffffff] flex flex-col">
-
-        {/* Desktop: back to store (top-right) */}
-        <div className="hidden lg:flex items-center justify-end px-10 xl:px-14 pt-8">
-          <button
-            onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-[11px] font-semibold text-[rgba(107,33,168,0.45)] hover:text-[#9333ea] transition-colors"
-          >
-            ← Back to store
-          </button>
-        </div>
-
-        {/* Form centered vertically */}
-        <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-6">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-[420px]"
-          >
-            {/* Tabs */}
-            <Tabs
-              value={authMode === 'forgot-password' ? 'login' : authMode}
-              onValueChange={setAuthMode}
-              className="w-full"
-            >
-              <TabsList className="flex bg-white border border-[rgba(216,180,254,0.35)] rounded-full p-1 mb-8 shadow-sm">
-                <TabsTrigger
-                  value="login"
-                  className="flex-1 py-2.5 rounded-full text-[12px] font-bold transition-all data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#d8b4fe] data-[state=active]:to-[#9368ee] data-[state=active]:!text-white data-[state=active]:shadow-[0_4px_14px_rgba(147,104,236,0.35)] text-[rgba(107,33,168,0.45)]"
-                >
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger
-                  value="register"
-                  className="flex-1 py-2.5 rounded-full text-[12px] font-bold transition-all data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#d8b4fe] data-[state=active]:to-[#9368ee] data-[state=active]:!text-white data-[state=active]:shadow-[0_4px_14px_rgba(147,104,236,0.35)] text-[rgba(107,33,168,0.45)]"
-                >
-                  Register
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login" className="mt-0 outline-none">
-                <AnimatePresence mode="wait">
-                  {authMode === 'forgot-password' ? (
-                    <ForgotPassword key="forgot" onBack={() => setAuthMode('login')} />
-                  ) : (
-                    <Login key="login" onForgotClick={() => setAuthMode('forgot-password')} />
-                  )}
-                </AnimatePresence>
-              </TabsContent>
-              <TabsContent value="register" className="mt-0 outline-none">
-                <Register />
-              </TabsContent>
-            </Tabs>
-          </motion.div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-6 text-center">
-          <p className="text-[10px] font-medium text-[rgba(107,33,168,0.3)]">
-            © 2026 Naya Lumière Cosmetics · UAE
-          </p>
+          <div className="px-6 py-6 text-center">
+            <p className="text-[10px] font-medium text-[#bbb]">
+              © 2026 Naya Lumière Cosmetics · UAE
+            </p>
+          </div>
         </div>
       </div>
     </div>

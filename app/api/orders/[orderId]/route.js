@@ -2,13 +2,16 @@ import { NextResponse } from 'next/server';
 import db from '../../../../lib/db';
 import { sendOrderStatusUpdateEmail } from '../../../../lib/mail';
 import Stripe from 'stripe';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../../../lib/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mouffaq@nayalc.com';
 
 export async function GET(request, context) {
     const { orderId } = await context.params;
-    const { searchParams } = new URL(request.url);
-    const isAdmin = searchParams.get('admin') === 'true';
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.email === ADMIN_EMAIL;
 
     const client = await db.connect();
     try {
@@ -203,6 +206,10 @@ export async function GET(request, context) {
 
 export async function PUT(request, context) {
     const { orderId } = await context.params;
+    const session = await getServerSession(authOptions);
+    if (session?.user?.email !== ADMIN_EMAIL) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
     const client = await db.connect();
 
     let pointsEarned = 0;

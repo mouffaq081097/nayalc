@@ -237,72 +237,147 @@ export async function GET(request) {
  *       500:
  *         description: Server error.
  */
+const GIFT_WRAP_FEE = 100; // AED — authoritative server constant
+
 export async function POST(request) {
-    
+
     const client = await db.connect();
     try {
         const {
             user_address_id, payment_method, total_amount, shipping_scheduled_date,
-            user_id, items, taxAmount, applied_coupon_id, discount_amount, subtotal,
-            shipping_cost, gift_wrap = false, gift_wrap_cost = 0,
+            user_id, items,
+            applied_coupon_id,
+            gift_wrap = false,
             stripe_payment_intent_id = null,
             tabby_payment_id = null,
-            redeemed_points = 0, points_discount = 0
+            redeemed_points = 0,
+            gift_message = null,
         } = await request.json();
 
-        if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0 || taxAmount === undefined || subtotal === undefined || shipping_cost === undefined) {
+        if (!user_address_id || !payment_method || !total_amount || !user_id || !Array.isArray(items) || items.length === 0) {
             return NextResponse.json({ message: 'Missing required order information or items.' }, { status: 400 });
+        }
+
+        // Validate quantities are positive integers (L7)
+        for (const item of items) {
+            if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+                return NextResponse.json({ message: `Invalid quantity for product ${item.productId}.` }, { status: 400 });
+            }
         }
 
         await client.query('BEGIN');
 
-        // --- Loyalty Redemption Logic ---
-        if (redeemed_points > 0) {
-            const userRes = await client.query('SELECT loyalty_points FROM users WHERE id = $1', [user_id]);
-            if (userRes.rows[0].loyalty_points < redeemed_points) {
-                await client.query('ROLLBACK');
-                return NextResponse.json({ message: 'Insufficient loyalty points' }, { status: 400 });
-            }
-            
-            // Deduct points
-            await client.query('UPDATE users SET loyalty_points = loyalty_points - $1 WHERE id = $2', [redeemed_points, user_id]);
-            
-            // Record transaction
-            await client.query(
-                'INSERT INTO loyalty_transactions (user_id, type, points, description) VALUES ($1, $2, $3, $4)',
-                [user_id, 'redeem', -redeemed_points, 'Redeemed during Checkout']
-            );
+        // --- Address Ownership Check (H4) ---
+        const { rows: addrRows } = await client.query(
+            'SELECT id FROM user_addresses WHERE id = $1 AND user_id = $2',
+            [user_address_id, user_id]
+        );
+        if (addrRows.length === 0) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ message: 'Invalid shipping address.' }, { status: 400 });
         }
-        // --- End Loyalty Redemption ---
 
-        // --- Stock Validation ---
+        // --- Stock Validation + Real Price Fetch (C1, C3, L6) ---
+        // SELECT FOR UPDATE acquires row locks, preventing concurrent oversell
+        const dbPriceMap = {};
         for (const item of items) {
-            const { rows: productRows } = await client.query(
-                "SELECT stock_quantity FROM products WHERE id = $1",
-                [item.productId]
-            );
+            let productRows;
+            try {
+                ({ rows: productRows } = await client.query(
+                    'SELECT stock_quantity, price, is_active FROM products WHERE id = $1 FOR UPDATE',
+                    [item.productId]
+                ));
+            } catch (colErr) {
+                // Fallback if is_active column doesn't exist (L6 best-effort)
+                ({ rows: productRows } = await client.query(
+                    'SELECT stock_quantity, price FROM products WHERE id = $1 FOR UPDATE',
+                    [item.productId]
+                ));
+            }
 
             if (productRows.length === 0) {
                 await client.query('ROLLBACK');
                 return NextResponse.json({ message: `Product with ID ${item.productId} not found.` }, { status: 400 });
             }
 
-            const availableStock = productRows[0].stock_quantity;
+            const product = productRows[0];
 
-            if (availableStock < item.quantity) {
+            if (product.is_active === false) {
                 await client.query('ROLLBACK');
-                return NextResponse.json({ message: `Insufficient stock for product ${item.name}. Available: ${availableStock}, Requested: ${item.quantity}.` }, { status: 400 });
+                return NextResponse.json({ message: `Product ${item.productId} is no longer available.` }, { status: 400 });
             }
+
+            if (product.stock_quantity < item.quantity) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: `Insufficient stock for product ID ${item.productId}. Available: ${product.stock_quantity}, Requested: ${item.quantity}.` }, { status: 400 });
+            }
+
+            dbPriceMap[item.productId] = parseFloat(product.price);
         }
         // --- End Stock Validation ---
 
-        // --- Stripe Payment Verification ---
+        // --- Server-Side Total Calculation (C2) ---
+        const serverSubtotal = items.reduce((sum, item) => sum + dbPriceMap[item.productId] * item.quantity, 0);
+        const serverTax = Math.round(serverSubtotal * 0.05 * 100) / 100;
+        const serverShipping = serverSubtotal > 200 ? 0 : 30;
+        const serverGiftWrap = gift_wrap ? GIFT_WRAP_FEE : 0;
+
+        // --- Coupon Revalidation (H1) ---
+        let serverCouponDiscount = 0;
+        let couponCode = null;
+        let resolvedCouponId = null;
+        if (applied_coupon_id) {
+            const { rows: couponRows } = await client.query(
+                'SELECT id, code, is_active, expiration_date, usage_limit, usage_count, minimum_purchase_amount, discount_type, discount_value FROM coupons WHERE id = $1',
+                [applied_coupon_id]
+            );
+            if (couponRows.length > 0) {
+                const coupon = couponRows[0];
+                const isExpired = coupon.expiration_date && new Date(coupon.expiration_date) < new Date();
+                const isOverLimit = coupon.usage_limit !== null && coupon.usage_count >= coupon.usage_limit;
+                const belowMinimum = coupon.minimum_purchase_amount !== null && serverSubtotal < coupon.minimum_purchase_amount;
+                if (coupon.is_active && !isExpired && !isOverLimit && !belowMinimum) {
+                    serverCouponDiscount = coupon.discount_type === 'percentage'
+                        ? Math.round(serverSubtotal * coupon.discount_value / 100 * 100) / 100
+                        : parseFloat(coupon.discount_value);
+                    couponCode = coupon.code;
+                    resolvedCouponId = coupon.id;
+                }
+                // If coupon is invalid at order time, proceed without discount
+            }
+        }
+
+        // --- Loyalty Points Validation (H2) ---
+        const parsedRedeemedPoints = parseInt(redeemed_points, 10) || 0;
+        const serverPointsDiscount = Math.floor(parsedRedeemedPoints / 100) * 5;
+
+        if (parsedRedeemedPoints > 0) {
+            // Lock user row to prevent parallel redemptions
+            const userLoyaltyRes = await client.query(
+                'SELECT loyalty_points FROM users WHERE id = $1 FOR UPDATE',
+                [user_id]
+            );
+            if (!userLoyaltyRes.rows[0] || userLoyaltyRes.rows[0].loyalty_points < parsedRedeemedPoints) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: 'Insufficient loyalty points.' }, { status: 400 });
+            }
+        }
+
+        // --- Server Total Verification (C2) ---
+        const serverTotal = Math.max(0, serverSubtotal + serverTax + serverShipping + serverGiftWrap - serverCouponDiscount - serverPointsDiscount);
+        const clientTotal = parseFloat(total_amount);
+        if (Math.abs(serverTotal - clientTotal) > 1) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ message: 'Order total mismatch. Please refresh and try again.' }, { status: 400 });
+        }
+
+        // --- Stripe Payment Verification (C6) ---
         if (payment_method === 'card') {
             if (!stripe_payment_intent_id) {
                 await client.query('ROLLBACK');
                 return NextResponse.json({ message: 'Card payment requires a payment intent.' }, { status: 400 });
             }
-            // Duplicate guard — prevent double-orders for the same payment
+            // Duplicate guard inside transaction (H3 — already inside BEGIN)
             const dupCheck = await client.query(
                 'SELECT id FROM orders WHERE stripe_payment_intent_id = $1',
                 [stripe_payment_intent_id]
@@ -316,6 +391,12 @@ export async function POST(request) {
                 if (paymentIntent.status !== 'succeeded') {
                     await client.query('ROLLBACK');
                     return NextResponse.json({ message: 'Payment has not been confirmed. Please complete payment before placing the order.' }, { status: 402 });
+                }
+                // Verify the amount charged matches what the server calculated (C6)
+                const expectedAmountCents = Math.round(serverTotal * 100);
+                if (Math.abs(paymentIntent.amount - expectedAmountCents) > 100) {
+                    await client.query('ROLLBACK');
+                    return NextResponse.json({ message: 'Payment amount does not match order total.' }, { status: 402 });
                 }
             } catch (stripeErr) {
                 await client.query('ROLLBACK');
@@ -345,29 +426,44 @@ export async function POST(request) {
         }
         // --- End Tabby Payment Verification ---
 
+        // --- Loyalty Redemption (H2 — after all validations pass) ---
+        if (parsedRedeemedPoints > 0) {
+            await client.query('UPDATE users SET loyalty_points = loyalty_points - $1 WHERE id = $2', [parsedRedeemedPoints, user_id]);
+            await client.query(
+                'INSERT INTO loyalty_transactions (user_id, type, points, description) VALUES ($1, $2, $3, $4)',
+                [user_id, 'redeem', -parsedRedeemedPoints, 'Redeemed during Checkout']
+            );
+        }
+        // --- End Loyalty Redemption ---
+
         const insertOrderSql = "INSERT INTO orders (user_address_id, payment_method, total_amount, tax_amount, order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id, tabby_payment_id, redeemed_points) VALUES ($1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id;";
-        const orderValues = [user_address_id, payment_method, total_amount, taxAmount, 'Pending', shipping_scheduled_date, user_id, applied_coupon_id, discount_amount, subtotal, shipping_cost, gift_wrap, gift_wrap_cost, stripe_payment_intent_id, tabby_payment_id, redeemed_points || 0];
+        const orderValues = [
+            user_address_id, payment_method,
+            serverTotal, serverTax,
+            'Pending', shipping_scheduled_date,
+            user_id, resolvedCouponId, serverCouponDiscount,
+            serverSubtotal, serverShipping,
+            gift_wrap, serverGiftWrap,
+            stripe_payment_intent_id, tabby_payment_id,
+            parsedRedeemedPoints,
+        ];
         const { rows: orderRows } = await client.query(insertOrderSql, orderValues);
         const orderId = orderRows[0].id;
 
-        let couponCode = null;
-        if (applied_coupon_id) {
-            await client.query('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = $1', [applied_coupon_id]);
-            const { rows: couponRows } = await client.query('SELECT code FROM coupons WHERE id = $1', [applied_coupon_id]);
-            if (couponRows.length > 0) {
-                couponCode = couponRows[0].code;
-            }
+        if (resolvedCouponId) {
+            await client.query('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = $1', [resolvedCouponId]);
         }
 
         const { rows: userRows } = await client.query('SELECT email, first_name FROM users WHERE id = $1', [user_id]);
         const userEmail = userRows.length > 0 ? userRows[0].email : null;
         const firstName = userRows.length > 0 ? userRows[0].first_name : 'Customer';
-        
 
+
+        // Insert order items using server-fetched prices (C1)
         for (const item of items) {
             await client.query(
                 "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)",
-                [orderId, item.productId, item.quantity, item.price]
+                [orderId, item.productId, item.quantity, dbPriceMap[item.productId]]
             );
         }
 
@@ -401,7 +497,7 @@ export async function POST(request) {
         };
 
         // Record pending loyalty transaction so the loyalty tab shows activity immediately
-        const estimatedPoints = Math.floor(parseFloat(subtotal) || 0);
+        const estimatedPoints = Math.floor(serverSubtotal);
         await client.query(
             'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
             [user_id, 'placed', estimatedPoints, `Order #${orderId} placed`, orderId]
@@ -439,20 +535,22 @@ export async function POST(request) {
         });
 
         // Emails are non-blocking — a failure must never prevent the success response
+        let emailSent = true;
         try {
             if (userEmail) {
-                await sendOrderConfirmationEmail(userEmail, firstName, orderId, total_amount, taxAmount, discount_amount, subtotal, shipping_cost, itemsWithDetails, shippingAddress, gift_wrap_cost, couponCode);
+                await sendOrderConfirmationEmail(userEmail, firstName, orderId, serverTotal, serverTax, serverCouponDiscount, serverSubtotal, serverShipping, itemsWithDetails, shippingAddress, serverGiftWrap, couponCode);
             }
         } catch (emailErr) {
+            emailSent = false;
             console.error(`Customer confirmation email failed for order #${orderId}:`, emailErr);
         }
         try {
-            await sendAdminNotificationEmail(null, orderId, userEmail || 'Unknown', total_amount, shippingAddress);
+            await sendAdminNotificationEmail(null, orderId, userEmail || 'Unknown', serverTotal, shippingAddress);
         } catch (emailErr) {
             console.error(`Admin notification email failed for order #${orderId}:`, emailErr);
         }
 
-        return NextResponse.json({ message: 'Order created successfully', orderId }, { status: 201 });
+        return NextResponse.json({ message: 'Order created successfully', orderId, emailSent }, { status: 201 });
 
     } catch (error) {
         await client.query('ROLLBACK');

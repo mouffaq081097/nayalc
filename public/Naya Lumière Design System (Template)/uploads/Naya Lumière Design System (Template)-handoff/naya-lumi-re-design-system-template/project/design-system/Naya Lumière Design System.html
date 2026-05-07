@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naya Lumière — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* =====================================================================
+     NAYA LUMIÈRE — DESIGN SYSTEM
+     ---------------------------------------------------------------------
+     Goals
+       • Plain white background, everywhere.
+       • One canonical action button (the purple gradient pill) for every
+         primary CTA across the site.
+       • One sans-serif family (Inter), used at a consistent scale.
+       • Lotus mark used as the only brand symbol.
+       • Calm, restrained surface treatments: thin neutral borders, no
+         heavy shadows, no glassmorphism, no decorative gradients on
+         containers — gradient is reserved for the action button only.
+     ===================================================================== */
+
+  :root {
+    /* ── Brand ─────────────────────────────────────────────────────── */
+    --brand-purple-1: #c087fc;        /* gradient start (light)  */
+    --brand-purple-2: #9869f7;        /* gradient end   (deep)   */
+    --brand-purple:   #9869f7;        /* solid fallback           */
+    --brand-purple-dark: #7a4fe0;     /* hover / pressed end      */
+    --brand-purple-darker: #6536d4;
+    --brand-gradient: linear-gradient(90deg, var(--brand-purple-1) 0%, var(--brand-purple-2) 100%);
+    --brand-gradient-hover: linear-gradient(90deg, #b577fb 0%, var(--brand-purple-dark) 100%);
+
+    /* ── Neutrals ──────────────────────────────────────────────────── */
+    --white: #ffffff;
+    --ink-900: #111114;               /* primary text             */
+    --ink-700: #2a2a31;               /* strong body              */
+    --ink-500: #5a5a64;               /* secondary text           */
+    --ink-400: #8a8a93;               /* tertiary / placeholder   */
+    --ink-300: #c8c8cf;               /* disabled text / hairline */
+    --ink-200: #e5e5ea;               /* borders, dividers        */
+    --ink-100: #f3f3f5;               /* hover surface, chips     */
+    --ink-50:  #f9f9fb;               /* zebra rows               */
+
+    /* ── Status (used sparingly) ───────────────────────────────────── */
+    --success: #2e8b57;
+    --danger:  #c8344b;
+    --warning: #b97a00;
+
+    /* ── Type ──────────────────────────────────────────────────────── */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    --t-xs:    12px;
+    --t-sm:    13px;
+    --t-base:  15px;
+    --t-md:    16px;
+    --t-lg:    18px;
+    --t-xl:    22px;
+    --t-2xl:   28px;
+    --t-3xl:   36px;
+    --t-4xl:   48px;
+    --t-5xl:   64px;
+
+    /* ── Spacing (4px base) ────────────────────────────────────────── */
+    --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+    --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px;
+    --s-12: 48px; --s-16: 64px; --s-20: 80px; --s-24: 96px;
+
+    /* ── Radius ────────────────────────────────────────────────────── */
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 16px;
+    --r-pill: 999px;
+
+    /* ── Elevation (very restrained) ───────────────────────────────── */
+    --shadow-1: 0 1px 2px rgba(17,17,20,.04), 0 1px 1px rgba(17,17,20,.03);
+    --shadow-2: 0 4px 14px rgba(17,17,20,.06);
+    --shadow-button: none;
+    --shadow-button-hover: none;
+
+    /* ── Motion ───────────────────────────────────────────────────── */
+    --ease: cubic-bezier(.2,.7,.2,1);
+    --t-fast: 120ms;
+    --t-med:  200ms;
+  }
+
+  /* ──── Reset / base ───────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--t-base);
+    line-height: 1.5;
+    color: var(--ink-900);
+    background: var(--white);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  img { display: block; max-width: 100%; }
+  hr { border: 0; border-top: 1px solid var(--ink-200); margin: 0; }
+  a { color: inherit; text-decoration: none; }
+
+  /* =====================================================================
+     CANONICAL ACTION BUTTON (.btn)
+     ---------------------------------------------------------------------
+     • Pill shape, full-bleed gradient, white uppercase label, optional
+       trailing arrow. Use for every primary action site-wide:
+       Sign In, Add to Bag, Checkout, Subscribe, Apply, Save…
+     ===================================================================== */
+  .btn {
+    /* layout */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 28px;
+    border-radius: var(--r-pill);
+    border: 0;
+    /* color / surface */
+    background: var(--brand-gradient);
+    color: var(--white);
+    /* type */
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    /* feedback */
+    cursor: pointer;
+    user-select: none;
+    box-shadow: none;
+    transition:
+      background var(--t-med) var(--ease),
+      transform var(--t-fast) var(--ease),
+      box-shadow var(--t-fast) var(--ease);
+  }
+  .btn .arrow {
+    width: 18px; height: 18px;
+    stroke: currentColor; fill: none; stroke-width: 1.75;
+    transition: transform var(--t-med) var(--ease);
+  }
+  .btn:hover { background: var(--brand-gradient-hover); }
+  .btn:hover .arrow { transform: translateX(3px); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(152,105,247,.30);
+  }
+  .btn[disabled], .btn.is-disabled {
+    background: var(--ink-200); color: var(--ink-400);
+    box-shadow: none; cursor: not-allowed;
+  }
+  /* sizes */
+  .btn.sm { min-height: 36px; padding: 0 18px; font-size: 11px; }
+  .btn.lg { min-height: 56px; padding: 0 36px; font-size: 14px; }
+  /* layout helpers */
+  .btn.block { display: flex; width: 100%; }
+
+  /* ── Secondary / ghost — same SHAPE, neutral surface.
+        Used only when two actions sit side-by-side and one must
+        recede (e.g. "Cancel" beside "Save"). ───────────────────── */
+  .btn.ghost {
+    background: var(--white);
+    color: var(--ink-900);
+    border: 1px solid var(--ink-200);
+    box-shadow: none;
+  }
+  .btn.ghost:hover { background: var(--ink-100); box-shadow: none; }
+  .btn.ghost:focus-visible { box-shadow: 0 0 0 3px rgba(152,105,247,.20); }
+
+  /* =====================================================================
+     PAGE SHELL (this document only)
+     ===================================================================== */
+  .doc { max-width: 1180px; margin: 0 auto; padding: var(--s-16) var(--s-8) var(--s-24); }
+  .doc-head {
+    display: flex; align-items: center; gap: var(--s-5);
+    padding-bottom: var(--s-8); margin-bottom: var(--s-12);
+    border-bottom: 1px solid var(--ink-200);
+  }
+  .doc-head .mark {
+    width: 56px; height: 56px;
+    display: grid; place-items: center;
+  }
+  .doc-head .mark img { width: 100%; height: 100%; object-fit: contain; }
+  .doc-head h1 {
+    font-size: var(--t-3xl); font-weight: 600; letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .doc-head .sub {
+    color: var(--ink-500); font-size: var(--t-sm);
+    margin-top: 4px;
+  }
+  .doc-head .meta { margin-left: auto; color: var(--ink-400); font-size: var(--t-xs); text-align: right; }
+
+  section { margin-bottom: var(--s-20); }
+  section > h2 {
+    font-size: var(--t-2xl); font-weight: 600; letter-spacing: -0.015em;
+    margin: 0 0 var(--s-2);
+  }
+  section > .lede {
+    color: var(--ink-500); font-size: var(--t-md);
+    margin: 0 0 var(--s-8); max-width: 65ch;
+  }
+  section > h3 {
+    font-size: var(--t-md); font-weight: 600;
+    margin: var(--s-10) 0 var(--s-4);
+    color: var(--ink-700);
+  }
+  .section-num {
+    color: var(--ink-400); font-size: var(--t-xs);
+    font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;
+    display: block; margin-bottom: var(--s-2);
+  }
+
+  /* shared spec table */
+  .spec {
+    width: 100%; border-collapse: collapse;
+    font-size: var(--t-sm);
+  }
+  .spec th, .spec td {
+    text-align: left; padding: 10px 14px;
+    border-bottom: 1px solid var(--ink-200);
+    vertical-align: middle;
+  }
+  .spec th { color: var(--ink-500); font-weight: 500; background: var(--ink-50); }
+  .spec td.mono, .spec th.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--ink-700); }
+  .spec tr:last-child td { border-bottom: 0; }
+
+  /* card surface used to demo components */
+  .demo {
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-lg);
+    padding: var(--s-10) var(--s-8);
+    background: var(--white);
+  }
+  .demo + .demo { margin-top: var(--s-4); }
+  .demo .label {
+    font-size: var(--t-xs); color: var(--ink-400);
+    letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500;
+    margin-bottom: var(--s-6);
+  }
+  .row { display: flex; flex-wrap: wrap; gap: var(--s-4); align-items: center; }
+  .stack { display: flex; flex-direction: column; gap: var(--s-4); }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-4); }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-4); }
+
+  /* ── Color swatches ───────────────────────────────────────────── */
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-4); }
+  .swatch {
+    border: 1px solid var(--ink-200); border-radius: var(--r-md);
+    overflow: hidden; background: var(--white);
+  }
+  .swatch .chip { height: 96px; }
+  .swatch .meta { padding: 12px 14px; font-size: var(--t-sm); }
+  .swatch .name { font-weight: 600; color: var(--ink-900); }
+  .swatch .hex { color: var(--ink-500); font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 12px; margin-top: 2px; }
+  .swatch .role { color: var(--ink-400); font-size: 12px; margin-top: 4px; }
+
+  /* ── Type specimens ───────────────────────────────────────────── */
+  .type-row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: var(--s-6);
+    padding: var(--s-5) 0;
+    border-bottom: 1px solid var(--ink-200);
+    align-items: baseline;
+  }
+  .type-row:last-child { border-bottom: 0; }
+  .type-row .meta { color: var(--ink-500); font-size: var(--t-sm); }
+  .type-row .meta strong { color: var(--ink-900); display: block; font-weight: 600; font-size: var(--t-md); }
+  .type-row .meta code { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 12px; color: var(--ink-700); }
+  .type-sample.h1 { font-size: var(--t-5xl); font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; }
+  .type-sample.h2 { font-size: var(--t-4xl); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+  .type-sample.h3 { font-size: var(--t-3xl); font-weight: 600; letter-spacing: -0.015em; line-height: 1.15; }
+  .type-sample.h4 { font-size: var(--t-2xl); font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; }
+  .type-sample.h5 { font-size: var(--t-xl); font-weight: 600; line-height: 1.3; }
+  .type-sample.lead { font-size: var(--t-lg); color: var(--ink-500); line-height: 1.55; }
+  .type-sample.body { font-size: var(--t-base); line-height: 1.55; max-width: 60ch; }
+  .type-sample.small { font-size: var(--t-sm); color: var(--ink-500); }
+  .type-sample.eyebrow { font-size: var(--t-xs); letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-500); font-weight: 600; }
+
+  /* ── Inputs ───────────────────────────────────────────────────── */
+  .field { display: flex; flex-direction: column; gap: 6px; max-width: 360px; }
+  .field label { font-size: var(--t-sm); font-weight: 500; color: var(--ink-700); }
+  .input {
+    height: 44px; padding: 0 14px;
+    border: 1px solid var(--ink-200); border-radius: var(--r-md);
+    background: var(--white); color: var(--ink-900);
+    font: 500 var(--t-base)/1 var(--font-sans);
+    transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+    width: 100%;
+  }
+  .input::placeholder { color: var(--ink-400); font-weight: 400; }
+  .input:focus { outline: 0; border-color: var(--brand-purple); box-shadow: 0 0 0 3px rgba(152,105,247,.18); }
+  .input.error { border-color: var(--danger); }
+  .field .help { font-size: var(--t-xs); color: var(--ink-500); }
+  .field .err { font-size: var(--t-xs); color: var(--danger); }
+
+  /* ── Badges / chips ───────────────────────────────────────────── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    background: var(--ink-100); color: var(--ink-700);
+    border-radius: var(--r-pill);
+    font-size: var(--t-xs); font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .badge.brand { background: rgba(152,105,247,.10); color: var(--brand-purple-darker); }
+  .badge.success { background: rgba(46,139,87,.10); color: var(--success); }
+  .badge.danger  { background: rgba(200,52,75,.10); color: var(--danger); }
+
+  /* =====================================================================
+     PRODUCT CARD specimen
+     ===================================================================== */
+  .product {
+    background: var(--white);
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: border-color var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease), transform var(--t-med) var(--ease);
+  }
+  .product:hover { border-color: var(--ink-300); box-shadow: var(--shadow-2); transform: translateY(-2px); }
+  .product .img {
+    aspect-ratio: 4 / 5;
+    background: var(--ink-50);
+    position: relative;
+    display: grid; place-items: center;
+    color: var(--ink-300);
+  }
+  .product .img .ph {
+    width: 56%; height: 60%;
+    border-radius: 12px;
+    background:
+      linear-gradient(180deg, #ffffff 0%, #f3eefe 100%);
+    border: 1px solid var(--ink-200);
+    display: grid; place-items: center;
+    color: var(--ink-400);
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .product .tag {
+    position: absolute; top: 12px; left: 12px;
+  }
+  .product .body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .product .brand { font-size: var(--t-xs); color: var(--ink-500); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; }
+  .product .name  { font-size: var(--t-md); font-weight: 600; color: var(--ink-900); line-height: 1.3; }
+  .product .price { font-size: var(--t-md); font-weight: 600; color: var(--ink-900); }
+  .product .price .was { color: var(--ink-400); font-weight: 500; text-decoration: line-through; margin-left: 6px; font-size: var(--t-sm); }
+  .product .meta { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+  .product .rating { font-size: var(--t-xs); color: var(--ink-500); display: inline-flex; gap: 4px; align-items: center; }
+  .product .star { color: #e0a800; }
+
+  /* =====================================================================
+     SITE HEADER specimen
+     ===================================================================== */
+  .header {
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  .header .top {
+    display: flex; align-items: center; gap: var(--s-6);
+    padding: 14px 22px;
+    background: var(--white);
+    border-bottom: 1px solid var(--ink-200);
+  }
+  .header .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 600; letter-spacing: 0.06em;
+    color: var(--ink-900);
+  }
+  .header .logo img { width: 28px; height: 28px; object-fit: contain; }
+  .header .logo .word { font-size: var(--t-md); }
+  .header .logo .sub { font-size: 9px; letter-spacing: 0.32em; color: var(--ink-500); text-transform: uppercase; margin-top: 1px; display: block; line-height: 1; }
+  .header nav { display: flex; gap: 28px; margin-left: 28px; }
+  .header nav a {
+    font-size: var(--t-sm); font-weight: 500; color: var(--ink-700);
+    padding: 6px 0;
+    border-bottom: 2px solid transparent;
+    transition: color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  }
+  .header nav a:hover { color: var(--ink-900); }
+  .header nav a.active { color: var(--ink-900); border-bottom-color: var(--ink-900); }
+  .header .actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .header .icon-btn {
+    width: 38px; height: 38px; border-radius: var(--r-pill);
+    border: 1px solid var(--ink-200); background: var(--white);
+    display: grid; place-items: center; color: var(--ink-700);
+    cursor: pointer; transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+  }
+  .header .icon-btn:hover { background: var(--ink-100); }
+  .header .icon-btn .count {
+    position: absolute; transform: translate(14px,-14px);
+    background: var(--brand-purple); color: white;
+    font-size: 10px; font-weight: 600;
+    width: 16px; height: 16px; border-radius: 999px;
+    display: grid; place-items: center;
+  }
+  .header .icon-btn { position: relative; }
+
+  /* hero specimen */
+  .hero {
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-lg);
+    background: var(--white);
+    padding: var(--s-16) var(--s-12);
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: var(--s-12);
+    align-items: center;
+  }
+  .hero .eyebrow { font-size: var(--t-xs); letter-spacing: 0.22em; text-transform: uppercase; color: var(--brand-purple-darker); font-weight: 600; }
+  .hero h2.hh {
+    font-size: clamp(36px, 4.4vw, 56px);
+    font-weight: 600; letter-spacing: -0.025em; line-height: 1.05;
+    margin: 14px 0 18px;
+  }
+  .hero p.hp { font-size: var(--t-lg); color: var(--ink-500); margin: 0 0 var(--s-8); max-width: 46ch; line-height: 1.5; }
+  .hero .actions { display: flex; gap: 12px; align-items: center; }
+  .hero .stage {
+    aspect-ratio: 1 / 1.05;
+    background: var(--ink-50);
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-lg);
+    display: grid; place-items: center;
+    color: var(--ink-300);
+  }
+  .hero .stage .bottle {
+    width: 60%; height: 80%; border-radius: 24px;
+    background:
+      linear-gradient(180deg, #ffffff 0%, #efe6fe 50%, #d8c6f8 100%);
+    border: 1px solid var(--ink-200);
+    box-shadow: var(--shadow-1);
+    display: grid; place-items: center;
+  }
+  .hero .stage .bottle span {
+    font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--ink-500); font-weight: 600;
+  }
+
+  /* footer specimen */
+  .footer {
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-lg);
+    padding: var(--s-10) var(--s-8) var(--s-8);
+  }
+  .footer .cols { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: var(--s-8); }
+  .footer h4 { font-size: var(--t-sm); font-weight: 600; margin: 0 0 var(--s-4); }
+  .footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .footer li a { font-size: var(--t-sm); color: var(--ink-500); }
+  .footer li a:hover { color: var(--ink-900); }
+  .footer .brand-col p { font-size: var(--t-sm); color: var(--ink-500); margin: 8px 0 16px; max-width: 32ch; }
+  .footer .legal { display: flex; justify-content: space-between; align-items: center; font-size: var(--t-xs); color: var(--ink-400); margin-top: var(--s-8); padding-top: var(--s-6); border-top: 1px solid var(--ink-200); }
+
+  /* before / after */
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-6); }
+  .ba > div {
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  .ba .ba-h {
+    padding: 10px 16px; font-size: var(--t-xs); font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-500);
+    border-bottom: 1px solid var(--ink-200);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .ba .ba-h .pill { font-size: 10px; padding: 3px 8px; border-radius: var(--r-pill); }
+  .ba .pill.bad { background: rgba(200,52,75,.10); color: var(--danger); }
+  .ba .pill.good { background: rgba(46,139,87,.10); color: var(--success); }
+
+  /* "before" — replicates the inconsistent existing site flavor */
+  .before-stage {
+    background: linear-gradient(160deg, #ffffff 0%, #faf5ff 50%, #ffffff 100%);
+    padding: var(--s-8);
+  }
+  .before-stage .glass {
+    background: rgba(253,248,255,0.88);
+    border: 1px solid rgba(196, 167, 254, 0.50);
+    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.14);
+    border-radius: 20px;
+    padding: 14px 22px;
+    display: flex; align-items: center; gap: 24px;
+    backdrop-filter: blur(8px);
+  }
+  .before-stage .word { font-family: 'Cormorant Garamond', serif; font-size: 22px; letter-spacing: 0.06em; color: #2e0669; font-weight: 600; }
+  .before-stage .nav a { font-family: 'Cormorant Garamond', serif; font-size: 16px; font-style: italic; color: #5b21b6; margin-right: 18px; }
+  .before-stage .cta-pink {
+    background: linear-gradient(135deg, #db2777 0%, #ec4899 100%);
+    color: white; padding: 10px 18px; border-radius: 999px;
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
+    box-shadow: 0 8px 24px rgba(219, 39, 119, 0.38);
+    border: 0;
+  }
+  .before-stage .cta-purple {
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+    color: white; padding: 10px 18px; border-radius: 8px;
+    font-size: 14px; font-weight: 700;
+    border: 0;
+  }
+  .before-stage .cta-rect {
+    background: #2e0669; color: white; padding: 12px 22px; border-radius: 4px;
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px;
+    border: 0;
+  }
+  .before-stage .gap { margin-top: 18px; display: flex; gap: 10px; align-items: center; }
+
+  .after-stage { padding: var(--s-8); background: var(--white); }
+
+  /* code block */
+  .code {
+    background: var(--ink-50);
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-md);
+    padding: 12px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    color: var(--ink-700);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* button reference photo */
+  .ref-card { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-6); align-items: center; }
+  .ref-card .img-wrap { border: 1px solid var(--ink-200); border-radius: var(--r-md); padding: 22px; background: var(--white); }
+  .ref-card .img-wrap img { width: 100%; height: auto; }
+  .ref-card .desc h4 { margin: 0 0 6px; font-size: var(--t-md); font-weight: 600; }
+  .ref-card .desc p { margin: 0 0 12px; color: var(--ink-500); font-size: var(--t-sm); line-height: 1.6; }
+
+  /* principles list */
+  .principles { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); }
+  .principle {
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-md);
+    padding: 18px 20px;
+  }
+  .principle .n { font-size: var(--t-xs); color: var(--brand-purple-darker); font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
+  .principle h4 { margin: 6px 0 6px; font-size: var(--t-md); font-weight: 600; }
+  .principle p { margin: 0; color: var(--ink-500); font-size: var(--t-sm); line-height: 1.55; }
+
+  /* do / don't */
+  .dodont { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); }
+  .dodont .card {
+    border: 1px solid var(--ink-200);
+    border-radius: var(--r-md);
+    padding: 18px;
+  }
+  .dodont .card.do  { border-left: 3px solid var(--success); }
+  .dodont .card.no  { border-left: 3px solid var(--danger); }
+  .dodont .card .lab { font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+  .dodont .card.do .lab { color: var(--success); }
+  .dodont .card.no .lab { color: var(--danger); }
+  .dodont .card p { margin: 6px 0 12px; font-size: var(--t-sm); color: var(--ink-500); }
+  .dodont .card .ex { padding-top: 12px; border-top: 1px dashed var(--ink-200); }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <!-- ====================================================================
+       HEADER
+       ==================================================================== -->
+  <header class="doc-head">
+    <div class="mark"><img src="lotus.png" alt="Naya Lumière lotus mark"></div>
+    <div>
+      <h1>Naya Lumière — Design System</h1>
+      <div class="sub">A single, consistent visual language. White surfaces, sans-serif type, one canonical action button.</div>
+    </div>
+    <div class="meta">
+      v1.0<br>
+      Updated May 2026
+    </div>
+  </header>
+
+  <!-- ====================================================================
+       1 · PRINCIPLES
+       ==================================================================== -->
+  <section>
+    <span class="section-num">01 · Principles</span>
+    <h2>What this system fixes</h2>
+    <p class="lede">The current site mixes glassy lavender surfaces, italic serif headlines, and three or four different button styles. This system replaces all of that with a single, calm, consistent vocabulary.</p>
+
+    <div class="principles">
+      <div class="principle">
+        <div class="n">01</div>
+        <h4>White, always</h4>
+        <p>Page backgrounds are pure white (<code>#FFFFFF</code>). No gradients, no tinted lavender washes, no glass. Color appears only on content.</p>
+      </div>
+      <div class="principle">
+        <div class="n">02</div>
+        <h4>One action button</h4>
+        <p>Every primary action across every page uses the purple-gradient pill — same shape, same colors, same uppercase label, same arrow.</p>
+      </div>
+      <div class="principle">
+        <div class="n">03</div>
+        <h4>Sans-serif only</h4>
+        <p>Inter for everything. No Cormorant, no Playfair, no Cinzel, no italic decorative cuts. Hierarchy comes from size and weight, not style.</p>
+      </div>
+      <div class="principle">
+        <div class="n">04</div>
+        <h4>Restrained surfaces</h4>
+        <p>Containers are defined by 1px neutral borders. Shadows are barely-there. The lotus mark and the action button are the only visual flourishes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       2 · BRAND MARK
+       ==================================================================== -->
+  <section style="width: 1056.8px">
+    <span class="section-num">02 · Brand Mark</span>
+    <h2>Lotus</h2>
+    <p class="lede">The lotus is the only brand symbol. Always rendered in solid ink, never colorized, never on a colored container.</p>
+
+    <div class="grid-3">
+      <div class="demo" style="text-align:center;">
+        <div class="label">Primary — on white</div>
+        <div style="width:120px;margin:0 auto;"><img src="lotus.png" alt="Lotus"></div>
+        <div style="margin-top:14px;font-size:12px;color:var(--ink-500);">Default usage</div>
+      </div>
+      <div class="demo" style="text-align:center;">
+        <div class="label">Lockup — horizontal</div>
+        <div style="display:flex;align-items:center;gap:14px;justify-content:center;padding:14px 0;">
+          <img src="lotus.png" style="width:48px;height:48px;object-fit:contain;" alt="Lotus">
+          <div style="text-align:left;">
+            <div style="font-size:22px;font-weight:600;letter-spacing:0.06em;color:var(--ink-900);line-height:1;">NAYA LUMIÈRE</div>
+            <div style="font-size: 10px; letter-spacing: 0.36em; color: var(--ink-500); text-transform: uppercase; margin-top: 6px; margin: 1px 0px 0px; width: 278px; line-height: 1.5">COSMETICS</div>
+          </div>
+        </div>
+        <div style="margin-top:6px;font-size:12px;color:var(--ink-500);">Header, packaging, email</div>
+      </div>
+      <div class="demo" style="text-align:center;">
+        <div class="label">Minimum size</div>
+        <div style="display:flex;align-items:end;justify-content:center;gap:20px;padding:18px 0;">
+          <img src="lotus.png" style="width:24px;height:24px;object-fit:contain;" alt="">
+          <img src="lotus.png" style="width:32px;height:32px;object-fit:contain;" alt="">
+          <img src="lotus.png" style="width:48px;height:48px;object-fit:contain;" alt="">
+        </div>
+        <div style="margin-top:6px;font-size:12px;color:var(--ink-500);">24px digital · 8mm print</div>
+      </div>
+    </div>
+
+    <h3>Clear space &amp; misuse</h3>
+    <div class="dodont">
+      <div class="card do">
+        <div class="lab">Do</div>
+        <p>Place the lotus on white with at least 0.5× of its width as clear space on every side.</p>
+        <div class="ex" style="text-align:center;"><img src="lotus.png" style="width:64px;height:64px;object-fit:contain;" alt=""></div>
+      </div>
+      <div class="card no">
+        <div class="lab">Don't</div>
+        <p>Don't place the lotus on a colored surface, tint it, or pair it with a serif wordmark.</p>
+        <div class="ex" style="text-align:center;background:linear-gradient(135deg,#c084fc,#f9a8d4);padding:14px;border-radius:8px;">
+          <img src="lotus.png" style="width:64px;height:64px;object-fit:contain;filter:invert(1);" alt="">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       3 · COLOR
+       ==================================================================== -->
+  <section>
+    <span class="section-num">03 · Color</span>
+    <h2>Palette</h2>
+    <p class="lede">A two-tone purple gradient for the action button. Everything else is neutral. Status colors are reserved for feedback only.</p>
+
+    <h3>Brand</h3>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="chip" style="background: var(--brand-gradient);"></div>
+        <div class="meta">
+          <div class="name">Action Gradient</div>
+          <div class="hex">#C087FC → #9869F7</div>
+          <div class="role">Action button only</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--brand-purple-1);"></div>
+        <div class="meta">
+          <div class="name">Purple / Light</div>
+          <div class="hex">#C087FC</div>
+          <div class="role">Gradient start</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--brand-purple-2);"></div>
+        <div class="meta">
+          <div class="name">Purple / Deep</div>
+          <div class="hex">#9869F7</div>
+          <div class="role">Gradient end · focus ring · accents</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--brand-purple-darker);"></div>
+        <div class="meta">
+          <div class="name">Purple / Ink</div>
+          <div class="hex">#6536D4</div>
+          <div class="role">Brand text on white (badges, links)</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Neutrals</h3>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="chip" style="background: var(--white); border-bottom: 1px solid var(--ink-200);"></div>
+        <div class="meta"><div class="name">White</div><div class="hex">#FFFFFF</div><div class="role">Page · cards · inputs</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-50);"></div>
+        <div class="meta"><div class="name">Ink 50</div><div class="hex">#F9F9FB</div><div class="role">Zebra rows · hover</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-100);"></div>
+        <div class="meta"><div class="name">Ink 100</div><div class="hex">#F3F3F5</div><div class="role">Chip / ghost hover</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-200);"></div>
+        <div class="meta"><div class="name">Ink 200</div><div class="hex">#E5E5EA</div><div class="role">Borders · dividers</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-300);"></div>
+        <div class="meta"><div class="name">Ink 300</div><div class="hex">#C8C8CF</div><div class="role">Disabled · hairlines</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-400);"></div>
+        <div class="meta"><div class="name">Ink 400</div><div class="hex">#8A8A93</div><div class="role">Tertiary · placeholders</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-500);"></div>
+        <div class="meta"><div class="name">Ink 500</div><div class="hex">#5A5A64</div><div class="role">Body / secondary</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--ink-900);"></div>
+        <div class="meta"><div class="name">Ink 900</div><div class="hex">#111114</div><div class="role">Primary text · wordmark</div></div>
+      </div>
+    </div>
+
+    <h3>Status</h3>
+    <div class="swatches" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="swatch">
+        <div class="chip" style="background: var(--success);"></div>
+        <div class="meta"><div class="name">Success</div><div class="hex">#2E8B57</div><div class="role">Confirmed · in stock</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--warning);"></div>
+        <div class="meta"><div class="name">Warning</div><div class="hex">#B97A00</div><div class="role">Low stock · cautions</div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background: var(--danger);"></div>
+        <div class="meta"><div class="name">Danger</div><div class="hex">#C8344B</div><div class="role">Errors · validation</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       4 · TYPOGRAPHY
+       ==================================================================== -->
+  <section>
+    <span class="section-num">04 · Typography</span>
+    <h2>One sans-serif, eight sizes</h2>
+    <p class="lede">Inter for everything — UI, headlines, prices, tags, body. Hierarchy is built from size and weight only. No serifs, no italics, no decorative cuts.</p>
+
+    <div class="demo" style="padding: var(--s-4) var(--s-8);">
+      <div class="type-row">
+        <div class="meta"><strong>Display</strong><code>64 / 1.05 / 600 · -2.5%</code></div>
+        <div class="type-sample h1">Skin, lit from within.</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><strong>H1</strong><code>48 / 1.10 / 600 · -2%</code></div>
+        <div class="type-sample h2">Skin, lit from within.</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><strong>H2</strong><code>36 / 1.15 / 600 · -1.5%</code></div>
+        <div class="type-sample h3">Skin, lit from within.</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><strong>H3</strong><code>28 / 1.25 / 600 · -1%</code></div>
+        <div class="type-sample h4">Skin, lit from within.</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><strong>H4</strong><code>22 / 1.30 / 600</code></div>
+        <div class="type-sample h5">Skin, lit from within.</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><strong>Lead</strong><code>18 / 1.55 / 400</code></div>
+        <div class="type-sample lead">A daily ritual built around vitamin C, niacinamide, and the kind of slow-release hyaluronic acid that does the work while you sleep.</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><strong>Body</strong><code>15 / 1.55 / 400</code></div>
+        <div class="type-sample body">A daily ritual built around vitamin C, niacinamide, and the kind of slow-release hyaluronic acid that does the work while you sleep. Use morning and night, after cleansing, before SPF.</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><strong>Small / Caption</strong><code>13 / 1.5 / 400</code></div>
+        <div class="type-sample small">Free standard delivery on orders over AED 200.</div>
+      </div>
+      <div class="type-row">
+        <div class="meta"><strong>Eyebrow / Label</strong><code>12 / 600 · +18% tracking · UPPER</code></div>
+        <div class="type-sample eyebrow">Limited Edition · Vitamin C</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       5 · ACTION BUTTON  (the headline component)
+       ==================================================================== -->
+  <section>
+    <span class="section-num">05 · The Action Button</span>
+    <h2>One button, every page</h2>
+    <p class="lede">Every primary action across the site uses this exact button — Sign In, Add to Bag, Checkout, Subscribe, Apply, Save Address, Place Order. No exceptions, no per-page variants.</p>
+
+    <div class="demo">
+      <div class="ref-card">
+        <div class="img-wrap"><img src="sign-in-ref.png" alt="Reference button"></div>
+        <div class="desc">
+          <h4>Reference</h4>
+          <p>The pill-shaped purple gradient button you provided sets the canonical pattern: pill radius, left-to-right purple gradient, white uppercase label with letter-spacing, optional trailing arrow.</p>
+          <p style="margin:0;"><span class="badge brand">Single source of truth</span></p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Anatomy</h3>
+    <div class="demo">
+      <table class="spec">
+        <thead><tr><th>Token</th><th>Value</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Shape</td><td class="mono">border-radius: 999px (pill)</td><td>Always pill — never rounded-rect.</td></tr>
+          <tr><td>Height</td><td class="mono">48px (default) · 36 sm · 56 lg</td><td>Three sizes only.</td></tr>
+          <tr><td>Padding</td><td class="mono">0 28px (default)</td><td>Wider than tall — feels generous.</td></tr>
+          <tr><td>Background</td><td class="mono">linear-gradient(90deg, #C087FC 0%, #9869F7 100%)</td><td>Left → right.</td></tr>
+          <tr><td>Label</td><td class="mono">Inter 13 / 600 · letter-spacing 0.14em · UPPER</td><td>Uppercase always.</td></tr>
+          <tr><td>Color</td><td class="mono">#FFFFFF</td><td>White on gradient.</td></tr>
+          <tr><td>Icon</td><td class="mono">arrow → 18px · stroke 1.75</td><td>Optional, trailing only.</td></tr>
+          <tr><td>Shadow</td><td class="mono">0 6px 16px rgba(152,105,247,.35)</td><td>Lifts off white surface.</td></tr>
+          <tr><td>Hover</td><td class="mono">deepen gradient · arrow shifts +3px</td><td>200ms ease.</td></tr>
+          <tr><td>Focus</td><td class="mono">+ 3px ring rgba(152,105,247,.30)</td><td>For keyboard nav.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Sizes</h3>
+    <div class="demo">
+      <div class="row">
+        <button class="btn sm" type="button">Sign In <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        <button class="btn" type="button">Sign In <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        <button class="btn lg" type="button">Sign In <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+
+    <h3>States</h3>
+    <div class="demo">
+      <div class="row">
+        <button class="btn" type="button">Default</button>
+        <button class="btn" type="button" id="btn-hover">Hover</button>
+        <button class="btn" type="button" disabled>Disabled</button>
+        <button class="btn" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" opacity=".3"/><path d="M21 12a9 9 0 0 0-9-9"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></path></svg>
+          Loading
+        </button>
+      </div>
+      <div class="row" style="margin-top: var(--s-4);">
+        <button class="btn ghost" type="button">Cancel</button>
+        <button class="btn" type="button">Save Changes</button>
+      </div>
+      <div style="margin-top: var(--s-4); font-size: var(--t-sm); color: var(--ink-500);">
+        Pair the gradient button with a neutral <code>.ghost</code> only when two actions sit together (e.g. Cancel · Save).
+      </div>
+    </div>
+
+    <h3>Where it appears</h3>
+    <div class="demo">
+      <div class="grid-3" style="gap: var(--s-3);">
+        <button class="btn block" type="button">Sign In <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        <button class="btn block" type="button">Add to Bag <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        <button class="btn block" type="button">Checkout <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        <button class="btn block" type="button">Subscribe <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        <button class="btn block" type="button">Apply Code <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        <button class="btn block" type="button">Save Address <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+
+    <h3>Code</h3>
+    <div class="code">&lt;button class="btn"&gt;
+  Sign In
+  &lt;svg class="arrow" viewBox="0 0 24 24"&gt;&lt;path d="M5 12h14M13 5l7 7-7 7"/&gt;&lt;/svg&gt;
+&lt;/button&gt;</div>
+  </section>
+
+  <!-- ====================================================================
+       6 · LAYOUT FOUNDATIONS
+       ==================================================================== -->
+  <section>
+    <span class="section-num">06 · Foundations</span>
+    <h2>Spacing, radius, elevation</h2>
+
+    <h3>Spacing scale (4px base)</h3>
+    <div class="demo">
+      <table class="spec">
+        <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">--s-1</td><td class="mono">4px</td><td>Hairline gaps inside chips, badges</td></tr>
+          <tr><td class="mono">--s-2</td><td class="mono">8px</td><td>Icon ↔ label, between badges</td></tr>
+          <tr><td class="mono">--s-3</td><td class="mono">12px</td><td>Default control gap</td></tr>
+          <tr><td class="mono">--s-4</td><td class="mono">16px</td><td>Card inner padding</td></tr>
+          <tr><td class="mono">--s-6</td><td class="mono">24px</td><td>Between cards in a row</td></tr>
+          <tr><td class="mono">--s-8</td><td class="mono">32px</td><td>Section internal padding</td></tr>
+          <tr><td class="mono">--s-12</td><td class="mono">48px</td><td>Between major sections</td></tr>
+          <tr><td class="mono">--s-16</td><td class="mono">64px</td><td>Hero / page padding</td></tr>
+          <tr><td class="mono">--s-20</td><td class="mono">80px</td><td>Top-level section rhythm</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Radius</h3>
+    <div class="demo">
+      <div class="row">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <div style="width:84px;height:84px;background:var(--ink-100);border:1px solid var(--ink-200);border-radius:6px;"></div>
+          <div style="font-size:12px;color:var(--ink-500);"><code>--r-sm</code> · 6px</div>
+          <div style="font-size:11px;color:var(--ink-400);">Inputs, tags</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <div style="width:84px;height:84px;background:var(--ink-100);border:1px solid var(--ink-200);border-radius:10px;"></div>
+          <div style="font-size:12px;color:var(--ink-500);"><code>--r-md</code> · 10px</div>
+          <div style="font-size:11px;color:var(--ink-400);">Inputs (default)</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <div style="width:84px;height:84px;background:var(--ink-100);border:1px solid var(--ink-200);border-radius:16px;"></div>
+          <div style="font-size:12px;color:var(--ink-500);"><code>--r-lg</code> · 16px</div>
+          <div style="font-size:11px;color:var(--ink-400);">Cards, panels, hero</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <div style="width:84px;height:84px;background:var(--ink-100);border:1px solid var(--ink-200);border-radius:999px;"></div>
+          <div style="font-size:12px;color:var(--ink-500);"><code>--r-pill</code> · 999px</div>
+          <div style="font-size:11px;color:var(--ink-400);">Buttons, badges, avatars</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Elevation</h3>
+    <div class="demo">
+      <div class="row" style="gap: var(--s-8);">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <div style="width:120px;height:80px;background:#fff;border:1px solid var(--ink-200);border-radius:10px;"></div>
+          <div style="font-size:12px;color:var(--ink-500);">Flat — borders only</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <div style="width:120px;height:80px;background:#fff;border:1px solid var(--ink-200);border-radius:10px;box-shadow:var(--shadow-1);"></div>
+          <div style="font-size:12px;color:var(--ink-500);">Shadow 1 — hover</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <div style="width:120px;height:80px;background:#fff;border:1px solid var(--ink-200);border-radius:10px;box-shadow:var(--shadow-2);"></div>
+          <div style="font-size:12px;color:var(--ink-500);">Shadow 2 — overlays</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <button class="btn" type="button" style="pointer-events:none;">Button</button>
+          <div style="font-size:12px;color:var(--ink-500);">Button — purple lift</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       7 · CONTROLS
+       ==================================================================== -->
+  <section>
+    <span class="section-num">07 · Controls</span>
+    <h2>Inputs, badges, links</h2>
+    <p class="lede">Quiet, neutral, plain white. The only colored element on a form is the action button at the end.</p>
+
+    <h3>Text inputs</h3>
+    <div class="demo">
+      <div class="grid-2" style="gap: var(--s-6);">
+        <div class="field">
+          <label for="i1">Email address</label>
+          <input id="i1" class="input" type="email" placeholder="you@example.com">
+          <div class="help">We'll send your order confirmation here.</div>
+        </div>
+        <div class="field">
+          <label for="i2">Password</label>
+          <input id="i2" class="input" type="password" value="••••••••">
+          <div class="help">Minimum 8 characters.</div>
+        </div>
+        <div class="field">
+          <label for="i3">Discount code</label>
+          <input id="i3" class="input" type="text" placeholder="LOTUS20">
+        </div>
+        <div class="field">
+          <label for="i4">Email address</label>
+          <input id="i4" class="input error" type="email" value="not-an-email">
+          <div class="err">Please enter a valid email.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Badges</h3>
+    <div class="demo">
+      <div class="row">
+        <span class="badge">New</span>
+        <span class="badge brand">Bestseller</span>
+        <span class="badge success">In stock</span>
+        <span class="badge danger">Out of stock</span>
+        <span class="badge">Limited Edition</span>
+        <span class="badge brand">−20%</span>
+      </div>
+    </div>
+
+    <h3>Links</h3>
+    <div class="demo">
+      <div class="stack" style="font-size: var(--t-md);">
+        <p style="margin:0;">
+          Read our <a href="#" style="color:var(--brand-purple-darker);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;">ingredients philosophy</a> or browse the <a href="#" style="color:var(--brand-purple-darker);text-decoration:underline;text-underline-offset:3px;">full collection</a>.
+        </p>
+        <p style="margin:0; color: var(--ink-500); font-size: var(--t-sm);">Inline links are purple-ink, underlined, 3px offset. Never bold.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       8 · COMPONENT SPECIMENS — applied to real pieces of the site
+       ==================================================================== -->
+  <section>
+    <span class="section-num">08 · Components</span>
+    <h2>Re-skinned to the system</h2>
+    <p class="lede">The same pieces of the existing site, rebuilt with white surfaces, sans-serif type, and the canonical action button.</p>
+
+    <h3>Site header</h3>
+    <div class="header">
+      <div class="top">
+        <div class="logo">
+          <img src="lotus.png" alt="">
+          <div>
+            <div class="word">NAYA LUMIÈRE</div>
+            <span class="sub">Skincare</span>
+          </div>
+        </div>
+        <nav>
+          <a href="#" class="active">Shop</a>
+          <a href="#">Collections</a>
+          <a href="#">Skin Quiz</a>
+          <a href="#">Brands</a>
+          <a href="#">Journal</a>
+        </nav>
+        <div class="actions">
+          <button class="icon-btn" aria-label="Search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          </button>
+          <button class="icon-btn" aria-label="Account">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          </button>
+          <button class="icon-btn" aria-label="Bag">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+            <span class="count">2</span>
+          </button>
+          <button class="btn sm" type="button">Sign In <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <h3>Hero section</h3>
+    <div class="hero">
+      <div>
+        <div class="eyebrow">New · Vitamin C Serum</div>
+        <h2 class="hh">Skin, lit from within.</h2>
+        <p class="hp">A clinical 15% vitamin C blend, balanced with squalane and hyaluronic acid for a calm, radiant finish — morning and night.</p>
+        <div class="actions">
+          <button class="btn" type="button">Shop the Serum <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+          <a href="#" style="color:var(--ink-700);font-size:var(--t-sm);font-weight:500;">Read the ingredients →</a>
+        </div>
+      </div>
+      <div class="stage">
+        <div class="bottle"><span>Bottle</span></div>
+      </div>
+    </div>
+
+    <h3>Product cards</h3>
+    <div class="grid-4">
+      <article class="product">
+        <div class="img"><span class="badge brand tag">−20%</span><div class="ph">Image</div></div>
+        <div class="body">
+          <div class="brand">Naya Lumière</div>
+          <div class="name">Radiance Vitamin C Serum 30ml</div>
+          <div class="rating"><span class="star">★★★★★</span> 4.9 (218)</div>
+          <div class="meta">
+            <div class="price">AED 220 <span class="was">AED 275</span></div>
+          </div>
+          <button class="btn block sm" type="button">Add to Bag <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+      </article>
+      <article class="product">
+        <div class="img"><div class="ph">Image</div></div>
+        <div class="body">
+          <div class="brand">Naya Lumière</div>
+          <div class="name">Calm Niacinamide Toner</div>
+          <div class="rating"><span class="star">★★★★★</span> 4.8 (132)</div>
+          <div class="meta">
+            <div class="price">AED 150</div>
+          </div>
+          <button class="btn block sm" type="button">Add to Bag <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+      </article>
+      <article class="product">
+        <div class="img"><span class="badge tag">New</span><div class="ph">Image</div></div>
+        <div class="body">
+          <div class="brand">Naya Lumière</div>
+          <div class="name">Overnight Repair Cream</div>
+          <div class="rating"><span class="star">★★★★☆</span> 4.6 (89)</div>
+          <div class="meta">
+            <div class="price">AED 295</div>
+          </div>
+          <button class="btn block sm" type="button">Add to Bag <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+      </article>
+      <article class="product">
+        <div class="img"><div class="ph">Image</div></div>
+        <div class="body">
+          <div class="brand">Naya Lumière</div>
+          <div class="name">Pure Hydration Cleanser</div>
+          <div class="rating"><span class="star">★★★★★</span> 4.9 (412)</div>
+          <div class="meta">
+            <div class="price">AED 110</div>
+          </div>
+          <button class="btn block sm" type="button">Add to Bag <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+      </article>
+    </div>
+
+    <h3>Newsletter / Sign-in form</h3>
+    <div class="demo">
+      <div class="grid-2" style="gap: var(--s-12); align-items: center;">
+        <div>
+          <span class="badge">Members get more</span>
+          <h3 style="font-size:var(--t-2xl);font-weight:600;letter-spacing:-0.01em;margin:10px 0 8px;">Join the ritual.</h3>
+          <p style="margin:0 0 var(--s-6);color:var(--ink-500);max-width:38ch;line-height:1.5;">Early access to new launches, restock alerts, and a 10% welcome discount.</p>
+        </div>
+        <div class="stack" style="max-width: 420px;">
+          <div class="field">
+            <label for="i5">Email</label>
+            <input id="i5" class="input" type="email" placeholder="you@example.com">
+          </div>
+          <button class="btn" type="button" style="align-self:flex-start;">Subscribe <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+          <p style="margin:0;font-size:var(--t-xs);color:var(--ink-400);">By subscribing you agree to our privacy policy.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Footer</h3>
+    <div class="footer">
+      <div class="cols">
+        <div class="brand-col">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="lotus.png" style="width:24px;height:24px;object-fit:contain;" alt="">
+            <div style="font-weight:600;letter-spacing:.06em;">NAYA LUMIÈRE</div>
+          </div>
+          <p>Clean, clinical skincare made in small batches. Shipping across the GCC and worldwide.</p>
+          <button class="btn sm" type="button">Sign In <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+        </div>
+        <div>
+          <h4>Shop</h4>
+          <ul><li><a href="#">All products</a></li><li><a href="#">Bestsellers</a></li><li><a href="#">New arrivals</a></li><li><a href="#">Gift sets</a></li></ul>
+        </div>
+        <div>
+          <h4>Help</h4>
+          <ul><li><a href="#">Shipping &amp; returns</a></li><li><a href="#">Track order</a></li><li><a href="#">Contact us</a></li><li><a href="#">FAQ</a></li></ul>
+        </div>
+        <div>
+          <h4>About</h4>
+          <ul><li><a href="#">Our story</a></li><li><a href="#">Ingredients</a></li><li><a href="#">Sustainability</a></li><li><a href="#">Journal</a></li></ul>
+        </div>
+      </div>
+      <div class="legal">
+        <span>© 2026 Naya Lumière. All rights reserved.</span>
+        <span>Privacy · Terms · Cookies</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       9 · BEFORE / AFTER
+       ==================================================================== -->
+  <section>
+    <span class="section-num">09 · Before / After</span>
+    <h2>Why this is more consistent</h2>
+    <p class="lede">A side-by-side of the same site moment, today vs. with the system applied.</p>
+
+    <div class="ba">
+      <div>
+        <div class="ba-h"><span>Today</span><span class="pill bad">Inconsistent</span></div>
+        <div class="before-stage">
+          <div class="glass">
+            <div class="word">Naya Lumière</div>
+            <div class="nav">
+              <a href="#">Shop</a><a href="#">Quiz</a><a href="#">Brands</a>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;">
+              <button class="cta-pink">SIGN IN</button>
+            </div>
+          </div>
+          <div class="gap">
+            <button class="cta-purple">Add to Bag</button>
+            <button class="cta-rect">Checkout</button>
+            <button class="cta-pink">Subscribe</button>
+          </div>
+          <div style="margin-top:14px;font-size:12px;color:#5b21b6;font-family:'Cormorant Garamond',serif;font-style:italic;">3 button styles · serif headlines · lavender glass surface</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-h"><span>With the system</span><span class="pill good">Consistent</span></div>
+        <div class="after-stage">
+          <div class="header" style="border:0;">
+            <div class="top" style="border-bottom:0;padding:10px 14px;">
+              <div class="logo">
+                <img src="lotus.png" alt="">
+                <div><div class="word" style="font-size:14px;">NAYA LUMIÈRE</div></div>
+              </div>
+              <nav style="margin-left:18px;gap:18px;"><a href="#" class="active">Shop</a><a href="#">Quiz</a><a href="#">Brands</a></nav>
+              <div class="actions">
+                <button class="btn sm" type="button">Sign In <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:14px;">
+            <button class="btn sm" type="button">Add to Bag <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+            <button class="btn sm" type="button">Checkout <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+            <button class="btn sm" type="button">Subscribe <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+          </div>
+          <div style="margin-top:14px;font-size:12px;color:var(--ink-500);">1 button · 1 sans-serif · pure white surface</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       10 · DO / DON'T
+       ==================================================================== -->
+  <section>
+    <span class="section-num">10 · Do &amp; Don't</span>
+    <h2>Rules of the system</h2>
+
+    <div class="dodont" style="grid-template-columns: 1fr 1fr; gap: var(--s-4);">
+      <div class="card do">
+        <div class="lab">Do</div>
+        <p>Use white as the page background. Define containers with thin neutral borders.</p>
+        <div class="ex" style="background:white;border:1px solid var(--ink-200);border-radius:10px;padding:12px;">Pure <code>#FFFFFF</code> page.</div>
+      </div>
+      <div class="card no">
+        <div class="lab">Don't</div>
+        <p>Don't apply lavender or rose gradient washes to the page or to large containers.</p>
+        <div class="ex" style="background:linear-gradient(160deg,#fff,#faf5ff,#fff);border:1px solid var(--ink-200);border-radius:10px;padding:12px;">Tinted page background.</div>
+      </div>
+
+      <div class="card do">
+        <div class="lab">Do</div>
+        <p>Use the canonical gradient pill for every primary action.</p>
+        <div class="ex"><button class="btn sm" type="button">Add to Bag <svg class="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button></div>
+      </div>
+      <div class="card no">
+        <div class="lab">Don't</div>
+        <p>Don't ship pink, dark-blue, square, or serif buttons.</p>
+        <div class="ex" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button style="background:linear-gradient(135deg,#db2777,#ec4899);color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;">Sign in</button>
+          <button style="background:#2e0669;color:#fff;border:0;border-radius:4px;padding:8px 14px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;">Checkout</button>
+          <button style="background:#fff;border:2px solid #2e0669;color:#2e0669;border-radius:0;padding:8px 14px;font-size:12px;font-weight:700;">Subscribe</button>
+        </div>
+      </div>
+
+      <div class="card do">
+        <div class="lab">Do</div>
+        <p>Set every text element in Inter. Use weight and size to build hierarchy.</p>
+        <div class="ex"><div style="font-family:Inter,sans-serif;font-weight:600;font-size:20px;">Skin, lit from within.</div></div>
+      </div>
+      <div class="card no">
+        <div class="lab">Don't</div>
+        <p>Don't mix Cormorant, Playfair, Cinzel, or italic decorative cuts into the UI.</p>
+        <div class="ex"><div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:#5b21b6;">Skin, lit from within.</div></div>
+      </div>
+
+      <div class="card do">
+        <div class="lab">Do</div>
+        <p>Reserve the gradient for the action button only.</p>
+        <div class="ex"><button class="btn sm" type="button">Apply</button></div>
+      </div>
+      <div class="card no">
+        <div class="lab">Don't</div>
+        <p>Don't paint the gradient onto cards, banners, or backgrounds.</p>
+        <div class="ex" style="background:linear-gradient(90deg,#c087fc,#9869f7);border-radius:10px;height:56px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================================
+       11 · TOKENS
+       ==================================================================== -->
+  <section>
+    <span class="section-num">11 · Tokens</span>
+    <h2>Drop into <code>globals.css</code></h2>
+    <p class="lede">Replace the existing Cloud Luxe block with these tokens. Map your <code>brand-*</code> aliases here so existing components inherit the new system without per-file edits.</p>
+
+    <div class="code">:root {
+  /* Brand */
+  --brand-purple-1: #c087fc;
+  --brand-purple-2: #9869f7;
+  --brand-purple-darker: #6536d4;
+  --brand-gradient: linear-gradient(90deg, var(--brand-purple-1), var(--brand-purple-2));
+  --brand-gradient-hover: linear-gradient(90deg, #b577fb, #7a4fe0);
+
+  /* Surface */
+  --bg: #ffffff;
+  --ink-50:  #f9f9fb;
+  --ink-100: #f3f3f5;
+  --ink-200: #e5e5ea;
+  --ink-300: #c8c8cf;
+  --ink-400: #8a8a93;
+  --ink-500: #5a5a64;
+  --ink-700: #2a2a31;
+  --ink-900: #111114;
+
+  /* Type */
+  --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+
+  /* Radius */
+  --r-sm: 6px;  --r-md: 10px;  --r-lg: 16px;  --r-pill: 999px;
+
+  /* Shadow */
+  --shadow-button: 0 6px 16px rgba(152, 105, 247, 0.35);
+  --shadow-button-hover: 0 8px 22px rgba(152, 105, 247, 0.45);
+}
+
+/* Reset legacy */
+body { background: #fff !important; font-family: var(--font-sans); }
+.font-serif, .font-playfair, .font-cinzel, .font-cormorant { font-family: var(--font-sans) !important; }</div>
+  </section>
+
+  <footer style="margin-top: var(--s-20); padding-top: var(--s-6); border-top: 1px solid var(--ink-200); display: flex; justify-content: space-between; align-items: center; color: var(--ink-400); font-size: var(--t-xs);">
+    <div>Naya Lumière · Design System v1.0</div>
+    <div>One button. One typeface. One white page.</div>
+  </footer>
+</div>
+
+<script>
+  // Permanently hover one of the buttons in the States demo for visual reference.
+  const h = document.getElementById('btn-hover');
+  if (h) {
+    h.style.background = 'var(--brand-gradient-hover)';
+    h.style.boxShadow = 'var(--shadow-button-hover)';
+  }
+</script>
+</body>
+</html>

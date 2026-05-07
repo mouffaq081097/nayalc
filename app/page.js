@@ -3,7 +3,6 @@ import { HeroSection } from './components/HeroSection';
 import { Categories } from './components/Categories';
 import { FeaturedProducts } from './components/FeaturedProducts';
 import { ForYouSection } from './components/ForYouSection';
-import { EditorialShowcase } from './components/EditorialShowcase';
 import { SocialFeed } from './components/SocialFeed';
 import TabbyHeroBanner from './components/TabbyHeroBanner';
 import db from '@/lib/db';
@@ -28,7 +27,6 @@ export default async function HomePage() {
             <FeaturedProducts />
             <TabbyHeroBanner />
             <ForYouSection />
-            <EditorialShowcase />
             <SocialFeed />
         </div>
     );

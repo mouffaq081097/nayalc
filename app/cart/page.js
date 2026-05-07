@@ -10,6 +10,11 @@ import BuyAgainSection from '../components/BuyAgainSection';
 import TabbyPromo from '../components/TabbyPromo';
 import { motion, AnimatePresence } from 'framer-motion';
 
+/* ── sidebar card wrapper — defined outside to prevent focus loss on re-render ── */
+const SCard = ({ children, className = '' }) => (
+  <div className={`bg-white border border-[#e5e5ea] rounded-2xl ${className}`}>{children}</div>
+);
+
 export default function CartPage() {
   const {
     cartItems, removeFromCart, updateQuantity,
@@ -30,8 +35,8 @@ export default function CartPage() {
     if (isAuthenticated && user?.id) {
       fetch(`/api/users/${user.id}/buy-again`)
         .then(r => r.ok ? r.json() : [])
-        .then(d => setBuyAgainProducts(d.filter(p => !cartItems.some(c => c.id === p.id))))
-        .catch(() => {});
+        .then(d => Array.isArray(d) && setBuyAgainProducts(d.filter(p => !cartItems.some(c => c.id === p.id))))
+        .catch(err => console.error('Buy-again fetch failed:', err));
       fetch(`/api/users/${user.id}/loyalty`)
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d?.stats) setLoyaltyPoints(d.stats.points || 0); })
@@ -63,11 +68,6 @@ export default function CartPage() {
     if (!isAuthenticated) { router.push('/auth?callbackUrl=/checkout'); return; }
     router.push('/need-anything-else');
   };
-
-  /* ── sidebar card wrapper ── */
-  const SCard = ({ children, className = '' }) => (
-    <div className={`bg-white border border-[#e5e5ea] rounded-2xl ${className}`}>{children}</div>
-  );
 
   if (cartItems.length === 0) return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-5 px-5">
