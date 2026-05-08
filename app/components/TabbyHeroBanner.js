@@ -4,13 +4,13 @@ import { motion } from 'framer-motion';
 
 export default function TabbyHeroBanner() {
   return (
-    <section className="w-full px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+    <section className="w-full py-6">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="max-w-7xl mx-auto relative rounded-3xl overflow-hidden"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative rounded-3xl overflow-hidden"
         style={{ background: '#f0eff5' }}
       >
 

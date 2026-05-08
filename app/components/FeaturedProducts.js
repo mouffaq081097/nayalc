@@ -12,57 +12,20 @@ export function FeaturedProducts() {
   const displayedProducts = featuredProducts;
 
   return (
-    <section className="py-12 relative overflow-hidden bg-white">
+    <section className="py-6 relative overflow-hidden bg-white">
 
       <Container className="relative z-10">
         {/* Section Header */}
-        <div className="mb-8 flex flex-row justify-between items-center gap-4 md:items-end md:gap-6">
-          <div className="relative space-y-1.5 md:space-y-3">
-            {/* Decorative editorial number */}
-            <span
-              className="absolute -top-8 -left-2 font-serif font-black select-none pointer-events-none leading-none"
-              style={{
-                fontSize: 'clamp(80px, 10vw, 120px)',
-                color: 'transparent',
-                WebkitTextStroke: '1px rgba(196,167,254,0.18)',
-                lineHeight: 1,
-              }}
-              aria-hidden="true"
-            >
-              01
-            </span>
-
-            <div className="flex items-center gap-3">
-              <span className="w-5 md:w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }} />
-              <span className="text-[10px] md:text-[12px] font-black tracking-[0.22em] uppercase" style={{ color: 'rgb(147,104,236)' }}>Editor's Pick</span>
-            </div>
-            <h2 className="text-3xl md:text-5xl font-serif text-cl-deep italic leading-tight">
-              Signature{' '}
-              <span
-                className="font-sans not-italic font-black"
-                style={{
-                  backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                Selection
-              </span>
-            </h2>
+        <div className="mb-5 flex flex-row justify-between items-end gap-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Shop</p>
+            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Signature Selection</h2>
           </div>
-
-          {/* Soft lavender pill button */}
           <Link
             href="/all-products"
-            className="shrink-0 inline-flex items-center gap-2 md:gap-3 px-5 py-2.5 md:px-8 md:py-3.5 text-[11px] md:text-[13px] font-black tracking-widest uppercase rounded-full text-white transition-all duration-300 group border-none shadow-none"
-            style={{
-              background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))',
-              boxShadow: '0 4px 16px rgba(147,104,236,0.28)',
-            }}
+            className="shrink-0 text-sm font-medium text-indigo-500 hover:text-indigo-700 transition-colors"
           >
-            View All
-            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            View all →
           </Link>
         </div>
 

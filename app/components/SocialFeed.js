@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Instagram, Youtube, Facebook, ArrowRight, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+
+const LAVENDER = 'rgb(147,104,236)';
 
 export const SocialFeed = () => {
   const [posts, setPosts] = useState([]);
@@ -27,120 +28,68 @@ export const SocialFeed = () => {
     fetchPosts();
   }, []);
 
-  // Don't render the section if there are no posts and we're done loading
   if (!loading && posts.length === 0) return null;
 
   return (
-    <section className="py-10 relative overflow-hidden bg-transparent">
-      {/* ── Background Atmosphere ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="cl-aura cl-aura-purple opacity-10 top-0 left-1/4 w-[600px] h-[600px] blur-[140px]" />
-        <div className="cl-aura cl-aura-rose opacity-10 bottom-0 right-1/4 w-[500px] h-[500px] blur-[120px]" />
-      </div>
-
-      <div className="container mx-auto px-6 relative z-10">
-        {/* ── Header ── */}
-        <div className="flex flex-row items-end justify-between gap-4 mb-10">
-          <div className="space-y-2 md:space-y-3">
-            <div className="flex items-center gap-2 md:gap-3">
-              <span className="w-6 md:w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }}></span>
-              <span className="text-[10px] md:text-[12px] font-black tracking-widest uppercase text-[#9333ea]">Our Community</span>
-            </div>
-            <h2 className="text-2xl md:text-4xl lg:text-5xl font-serif italic text-cl-deep leading-tight">
-              As Seen On{' '}
-              <span
-                className="font-sans not-italic font-black"
-                style={{ backgroundImage: 'linear-gradient(135deg, rgb(196,167,254), rgb(126,105,230))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
-              >
-                Social
-              </span>
-            </h2>
+    <section className="py-6 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="flex flex-row items-end justify-between gap-4 mb-5">
+          <div className="space-y-1">
+            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">@nayalumiere</p>
+            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Follow the glow</h2>
           </div>
-
-          <div className="flex items-center gap-2 md:gap-4 pb-1 md:pb-2">
-            {[
-              { icon: <Instagram className="w-5 h-5 md:w-6 md:h-6" />, label: 'Instagram', href: '#' },
-              { icon: <Youtube className="w-5 h-5 md:w-6 md:h-6" />, label: 'Youtube', href: '#' },
-              { icon: <Facebook className="w-5 h-5 md:w-6 md:h-6" />, label: 'Facebook', href: '#' }
-            ].map((social, i) => (
-              <motion.a
-                key={i}
-                href={social.href}
-                whileHover={{ y: -5 }}
-                className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-[#ffffff] border border-[#f3e8ff] flex items-center justify-center text-[#9333ea] hover:bg-[#9333ea] hover:text-white transition-all duration-300 shadow-sm hover:shadow-xl"
-              >
-                {social.icon}
-              </motion.a>
-            ))}
-          </div>
+          <Link
+            href="https://instagram.com/nayalumiere"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 text-sm font-medium transition-colors whitespace-nowrap"
+            style={{ color: LAVENDER }}
+          >
+            Follow on Instagram →
+          </Link>
         </div>
 
-        {/* ── Loading skeleton ── */}
+        {/* Loading skeleton */}
         {loading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="aspect-square rounded-[2rem] bg-gray-100 animate-pulse" />
+              <div key={i} className="aspect-square rounded-xl bg-gray-100 animate-pulse" />
             ))}
           </div>
         )}
 
-        {/* ── Grid of Posts ── */}
+        {/* Tile row */}
         {!loading && posts.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {posts.map((post, i) => (
-              <motion.div
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+            {posts.slice(0, 6).map((post, i) => (
+              <a
                 key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="group relative aspect-square rounded-[2rem] overflow-hidden bg-gray-100 shadow-sm"
+                href={post.instagram_url || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100"
               >
                 <Image
                   src={post.image_url}
-                  alt={post.caption || `Social post ${post.id}`}
+                  alt={post.caption || `Post ${i + 1}`}
                   fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width: 768px) 33vw, 17vw"
                 />
-
-                {/* Overlay on Hover */}
-                <div className="absolute inset-0 bg-[#9333ea]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-sm">
-                  {post.instagram_url ? (
-                    <a
-                      href={post.instagram_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-white/90 p-3 rounded-2xl shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Instagram size={14} className="text-[#9333ea]" />
-                        <span className="text-[10px] font-black tracking-widest uppercase text-gray-900">{post.likes || '0'}</span>
-                      </div>
-                    </a>
-                  ) : (
-                    <div className="bg-white/90 p-3 rounded-2xl shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <div className="flex items-center gap-2">
-                        <Heart size={14} className="text-[#9333ea] fill-[#9333ea]" />
-                        <span className="text-[10px] font-black tracking-widest uppercase text-gray-900">{post.likes || '0'}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
+                {/* Like count on first tile */}
+                {i === 0 && post.likes && (
+                  <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/40 rounded-md px-1.5 py-0.5">
+                    <Heart size={10} className="text-white fill-white" />
+                    <span className="text-[10px] font-medium text-white">{Number(post.likes).toLocaleString()}</span>
+                  </div>
+                )}
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+              </a>
             ))}
           </div>
         )}
-
-        {/* ── CTA ── */}
-        <div className="mt-16 text-center">
-          <Link
-            href="#"
-            className="bg-transparent border-2 border-[#c4b5fd] text-[#a78bfa] hover:bg-[#f5f3ff] hover:border-[#a78bfa] hover:text-[#7e22ce] shadow-sm px-4 py-2.5 md:px-8 md:py-3.5 text-[11px] md:text-[13px] font-black tracking-tight rounded-full transition-all duration-300 inline-flex items-center gap-2 md:gap-3 group shrink-0"
-          >
-            Join the Community
-            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
       </div>
     </section>
   );

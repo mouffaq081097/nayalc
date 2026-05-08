@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, forwardRef } from 'react';
-import { ShoppingBag, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, ArrowRight, Droplets, Clock, Zap, Heart, Layers, Sun, Sparkles, Gift, LogOut } from 'lucide-react';
+import { ShoppingBag, ShoppingCart, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, ArrowRight, Droplets, Clock, Zap, Heart, Layers, Sun, Sparkles, Gift, LogOut } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -289,10 +289,7 @@ const Header = forwardRef((_, ref) => {
                 className={iconBtn}
                 aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M6 7h12l-1 13H7L6 7Z"/>
-                  <path d="M9 7a3 3 0 0 1 6 0"/>
-                </svg>
+                <ShoppingCart size={18} strokeWidth={1.8} />
                 {cartCount > 0 && (
                   <span
                     className="absolute -right-[3px] -top-[3px] w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-semibold text-white"
