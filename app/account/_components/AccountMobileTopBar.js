@@ -10,35 +10,36 @@ export function AccountMobileTopBar({ title }) {
 
   return (
     <div className="sticky top-0 z-40 md:hidden">
-      <div className="px-4 py-3" style={{
-        background: 'rgba(253,248,255,0.88)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(216,180,254,0.3)',
-      }}>
-        <div className="mx-auto flex max-w-2xl items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setAccountNavDirection(-1);
-              router.push('/account');
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-full transition-colors"
-            style={{
-              background: 'rgba(255,255,255,0.8)',
-              border: '1px solid rgba(216,180,254,0.35)',
-              color: 'rgb(126,105,230)',
-            }}
-            aria-label="Back"
-          >
-            <ChevronLeft size={17} />
-          </button>
-          <div className="flex-1 text-center">
-            <p className="text-[13px] font-bold tracking-tight" style={{ color: '#3b0764' }}>
-              {title}
-            </p>
-          </div>
-          <div className="w-9" />
-        </div>
+      <div
+        className="flex items-center px-2 h-11"
+        style={{
+          background: 'rgba(242,242,247,0.92)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(0,0,0,0.08)',
+        }}
+      >
+        {/* Back button */}
+        <button
+          type="button"
+          onClick={() => {
+            setAccountNavDirection(-1);
+            router.push('/account');
+          }}
+          className="flex items-center gap-0.5 px-2 py-1 text-purple-600 active:opacity-50 transition-opacity"
+          aria-label="Back"
+        >
+          <ChevronLeft size={20} strokeWidth={2.5} />
+          <span className="text-[16px] font-normal">Back</span>
+        </button>
+
+        {/* Centered title */}
+        <p className="absolute left-1/2 -translate-x-1/2 text-[15px] font-semibold text-gray-900 pointer-events-none">
+          {title}
+        </p>
+
+        {/* Right spacer to balance back button */}
+        <div className="ml-auto w-16" />
       </div>
     </div>
   );

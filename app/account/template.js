@@ -5,20 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { getAccountNavDirection } from './_components/navDirection';
 
-const easeLuxury = [0.16, 1, 0.3, 1];
-
 export default function Template({ children }) {
-  const pathname = usePathname();
+  const pathname  = usePathname();
   const direction = getAccountNavDirection();
 
   return (
     <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
         key={pathname}
-        initial={{ x: direction === 1 ? 28 : -12, opacity: 0 }}
+        initial={{ x: direction === 1 ? '100%' : '-30%', opacity: direction === 1 ? 1 : 0.6 }}
         animate={{ x: 0, opacity: 1 }}
-        exit={{ x: direction === 1 ? -12 : 28, opacity: 0 }}
-        transition={{ duration: 0.35, ease: easeLuxury }}
+        exit={{ x: direction === 1 ? '-30%' : '100%', opacity: direction === 1 ? 0.6 : 1 }}
+        transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
         className="h-full"
       >
         {children}
@@ -26,4 +24,3 @@ export default function Template({ children }) {
     </AnimatePresence>
   );
 }
-

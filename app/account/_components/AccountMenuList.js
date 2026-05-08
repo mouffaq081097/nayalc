@@ -1,93 +1,128 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Package, Heart, MapPin, Settings, Star, ChevronRight, LogOut, User } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import {
+  User, Package, Heart, Star, MapPin, Settings, ChevronRight, LogOut,
+} from 'lucide-react';
 import { setAccountNavDirection } from './navDirection';
 import { useAuth } from '../../context/AuthContext';
+import { useAppContext } from '../../context/AppContext';
 
-const sections = [
-  { id: 'dashboard', label: 'Dashboard',  href: '/account/dashboard',  icon: Sparkles },
-  { id: 'profile',   label: 'Profile',    href: '/account/profile',    icon: User     },
-  { id: 'orders',    label: 'Orders',     href: '/account/orders',     icon: Package  },
-  { id: 'wishlist',  label: 'Wishlist',   href: '/account/wishlist',   icon: Heart    },
-  { id: 'addresses', label: 'Addresses',  href: '/account/addresses',  icon: MapPin   },
-  { id: 'settings',  label: 'Settings',   href: '/account/settings',   icon: Settings },
-  { id: 'loyalty',   label: 'Loyalty',    href: '/account/loyalty',    icon: Star     },
+const GROUPS = [
+  {
+    label: 'Account',
+    items: [
+      { id: 'profile',   label: 'Profile',      href: '/account/profile',   Icon: User,     color: '#8b5cf6' },
+      { id: 'orders',    label: 'Orders',        href: '/account/orders',    Icon: Package,  color: '#f59e0b' },
+      { id: 'wishlist',  label: 'Wishlist',      href: '/account/wishlist',  Icon: Heart,    color: '#ef4444', badge: true },
+    ],
+  },
+  {
+    label: 'Rewards',
+    items: [
+      { id: 'loyalty',   label: 'Naya Rewards',  href: '/account/loyalty',   Icon: Star,     color: '#f59e0b' },
+    ],
+  },
+  {
+    label: 'More',
+    items: [
+      { id: 'addresses', label: 'Addresses',     href: '/account/addresses', Icon: MapPin,   color: '#10b981' },
+      { id: 'settings',  label: 'Settings',      href: '/account/settings',  Icon: Settings, color: '#6b7280' },
+    ],
+  },
 ];
 
 export function AccountMenuList() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { loyaltyData, wishlistItems } = useAppContext();
+
+  const points    = loyaltyData?.stats?.points ?? 0;
+  const tier      = loyaltyData?.stats?.tier   || 'Member';
+  const wishCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
+  const initials  = [user?.first_name?.[0], user?.last_name?.[0]].filter(Boolean).join('').toUpperCase() || 'NL';
+
+  const go = (href) => {
+    setAccountNavDirection(1);
+    router.push(href);
+  };
 
   return (
-    <div className="md:hidden min-h-screen bg-white">
-      <div className="mx-auto max-w-2xl px-4 pb-10 pt-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="w-5 h-px bg-brand-purple" />
-            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-brand-purple">My Account</p>
-          </div>
-          <h1 className="text-[30px] font-bold leading-tight tracking-tight text-ink-900">
-            {user?.first_name ? `Hello, ${user.first_name}.` : 'My Sanctuary'}
-          </h1>
-          <p className="mt-2 text-sm text-ink-500">
-            Manage your orders, wishlist, and preferences.
-          </p>
-        </div>
+    <div className="md:hidden min-h-screen font-sans" style={{ background: '#f2f2f7' }}>
+      <div className="max-w-lg mx-auto px-4 pt-14 pb-12">
 
-        {/* Nav list */}
-        <div className="overflow-hidden rounded-lg border border-ink-200 bg-white shadow-1">
-          {sections.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <React.Fragment key={item.id}>
-                {i > 0 && <div className="h-px bg-ink-200" />}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAccountNavDirection(1);
-                    router.push(item.href);
-                  }}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-all hover:bg-ink-50"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink-100 text-brand-purple">
-                      <Icon size={17} strokeWidth={1.75} />
-                    </span>
-                    <span className="text-[15px] font-semibold tracking-tight text-ink-900">
-                      {item.label}
-                    </span>
-                  </div>
-                  <ChevronRight size={15} className="text-ink-400" />
-                </button>
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* Sign out */}
-        <div className="mt-4 overflow-hidden rounded-lg border border-ink-200 bg-white shadow-1">
-          <button
-            type="button"
-            onClick={() => { logout?.(); router.push('/'); }}
-            className="flex w-full items-center gap-4 px-5 py-4 text-left transition-all text-status-danger hover:bg-status-danger/5"
+        {/* Profile hero */}
+        <div className="flex flex-col items-center text-center mb-8 pt-4">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-3 relative overflow-hidden shadow-md"
+            style={{ background: 'linear-gradient(135deg,#c087fc,#9869f7)' }}
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-danger/10">
-              <LogOut size={17} strokeWidth={1.75} />
-            </span>
-            <span className="text-[15px] font-semibold tracking-tight">Sign Out</span>
-          </button>
+            {user?.profile_image
+              ? <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
+              : initials}
+          </div>
+          <h2 className="text-[18px] font-semibold text-gray-900">{user?.first_name} {user?.last_name}</h2>
+          <p className="text-[13px] text-gray-500 mt-0.5">{user?.email}</p>
+          <div className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+            <Star size={11} className="fill-amber-400 stroke-amber-400" />
+            <span className="text-[12px] font-semibold text-gray-700">{tier} Member</span>
+            <span className="text-gray-300 mx-1">·</span>
+            <span className="text-[12px] font-semibold text-purple-600">{points.toLocaleString()} pts</span>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          className="mt-5 w-full py-3 rounded-full border border-ink-200 text-[11px] font-bold uppercase tracking-widest transition-all hover:bg-ink-100 text-ink-700"
-        >
-          Back to Shop
-        </button>
+        {/* Nav groups */}
+        <div className="space-y-6">
+          {GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 px-1 mb-1.5">
+                {group.label}
+              </p>
+              <div className="rounded-2xl bg-white overflow-hidden shadow-sm divide-y divide-gray-100">
+                {group.items.map(({ id, label, href, Icon, color, badge }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => go(href)}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors"
+                  >
+                    {/* iOS-style icon bubble */}
+                    <div
+                      className="w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0"
+                      style={{ background: color }}
+                    >
+                      <Icon size={16} strokeWidth={2} className="text-white" />
+                    </div>
+                    <span className="flex-1 text-[15px] font-normal text-gray-900">{label}</span>
+                    {badge && wishCount > 0 && (
+                      <span className="text-[11px] font-semibold bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 mr-1">
+                        {wishCount}
+                      </span>
+                    )}
+                    <ChevronRight size={16} className="text-gray-300 shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Sign out */}
+          <div className="rounded-2xl bg-white overflow-hidden shadow-sm">
+            <button
+              type="button"
+              onClick={() => { logout(); router.push('/'); }}
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-red-50 transition-colors"
+            >
+              <div className="w-8 h-8 rounded-[9px] flex items-center justify-center shrink-0 bg-red-500">
+                <LogOut size={16} strokeWidth={2} className="text-white" />
+              </div>
+              <span className="flex-1 text-[15px] font-normal text-red-500">Sign Out</span>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );

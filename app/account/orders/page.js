@@ -1,250 +1,151 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  User, Sparkles, Package, Heart, Star, MapPin, Settings,
-  Camera, Crown, LogOut, ChevronRight, ArrowRight,
-} from 'lucide-react';
-import { AccountMobileTopBar } from '../_components/AccountMobileTopBar';
-import { setAccountNavDirection } from '../_components/navDirection';
+import Image from 'next/image';
+import { Package, Search, X } from 'lucide-react';
+import AccountShell from '../_components/AccountShell';
 import { useAccountData } from '../_components/useAccountData';
-import { useAuth } from '../../context/AuthContext';
 
-// ── Design tokens (Cloud Luxe) ──────────────────────────────────────────────
-const CL = {
-  glass:       'rgba(255,255,255,0.72)',
-  glassBorder: 'var(--ink-200)',
-  gradient:    'var(--brand-gradient)',
-  purple:      'rgb(126,105,230)',
-  purpleLight: 'rgba(196,167,254,0.18)',
-  bgPage:      'var(--cl-bg)',
-  textDeep:    'var(--cl-text-deep)',
-  textMid:     'var(--cl-text-mid)',
-  textSoft:    'var(--cl-text-soft)',
-  cardShadow:  '0 4px 32px rgba(147,51,234,0.07), 0 1px 4px rgba(0,0,0,0.04)',
-  glowShadow:  '0 8px 32px rgba(147,51,234,0.18)',
-};
+function statusStyle(status) {
+  switch ((status || '').toLowerCase()) {
+    case 'delivered':  return 'bg-green-50 text-green-700';
+    case 'shipped':    return 'bg-blue-50 text-blue-600';
+    case 'processing': return 'bg-amber-50 text-amber-600';
+    case 'cancelled':  return 'bg-red-50 text-red-500';
+    default:           return 'bg-gray-100 text-gray-500';
+  }
+}
 
-const glassCard = {
-  background:     CL.glass,
-  border:         `1px solid ${CL.glassBorder}`,
-  backdropFilter: 'blur(20px)',
-  boxShadow:      CL.cardShadow,
-};
-
-const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', href: '/account',            Icon: Sparkles },
-  { id: 'profile',   label: 'Profile',   href: '/account/profile',    Icon: User     },
-  { id: 'orders',    label: 'Orders',    href: '/account/orders',     Icon: Package  },
-  { id: 'wishlist',  label: 'Wishlist',  href: '/account/wishlist',   Icon: Heart    },
-  { id: 'loyalty',   label: 'Loyalty',   href: '/account/loyalty',    Icon: Star     },
-  { id: 'addresses', label: 'Addresses', href: '/account/addresses',  Icon: MapPin   },
-  { id: 'settings',  label: 'Settings',  href: '/account/settings',   Icon: Settings },
-];
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 export default function AccountOrdersPage() {
-  const router = useRouter();
-  const { user, logout } = useAuth();
-  const { orders, loyaltyData } = useAccountData();
+  const { orders, wishlistItems, isLoading } = useAccountData();
+  const wishCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
+  const [query, setQuery] = useState('');
 
-  const tier      = loyaltyData?.stats?.tier           || 'Silver';
-  const points    = loyaltyData?.stats?.points          ?? 0;
-  const nextPt    = loyaltyData?.stats?.nextTierPoints  ?? 2000;
-  const loyaltyPct = Math.min(100, Math.round((points / nextPt) * 100));
+  const filtered = useMemo(() => {
+    if (!query.trim()) return orders;
+    const q = query.toLowerCase();
+    return orders.filter(o =>
+      String(o.id).includes(q) ||
+      (o.status || '').toLowerCase().includes(q) ||
+      (o.items || []).some(i => (i.name || '').toLowerCase().includes(q))
+    );
+  }, [orders, query]);
 
   return (
-    <>
-      <AccountMobileTopBar title="Orders" />
+    <AccountShell wishCount={wishCount}>
+      <div className="w-full">
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search by order ID, product or status…"
+          className="w-full pl-9 pr-9 h-9 text-[13px] rounded-md border border-[#eaeaea] bg-white text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
+        />
+        {query && (
+          <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <X size={13} />
+          </button>
+        )}
+      </div>
 
-      <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
+      {/* Order list */}
+      <div className="space-y-3 w-full">
+        {isLoading ? (
+          <div className="py-16 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-gray-400 text-sm">
+            {query ? 'No orders match your search.' : 'No orders yet.'}
+          </div>
+        ) : (
+          filtered.map((o) => {
+            const items   = o.items || [];
+            const total   = Number(o.totalAmount || o.total_amount || o.total || 0);
+            const date    = formatDate(o.createdAt || o.created_at);
+            // Up to 3 product images to preview
+            const previews = items.slice(0, 3);
+            const extra   = items.length - previews.length;
 
-        <div className="max-w-[1400px] mx-auto px-6 pt-10 pb-28 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-8">
-
-            {/* ── Sidebar ── */}
-            <aside className="hidden md:block lg:col-span-3 space-y-5 self-start sticky top-24">
-
-              {/* Profile card */}
-              <div className="rounded-3xl p-7" style={glassCard}>
-                <div className="flex flex-col items-center text-center gap-3 mb-7">
-                  <div className="relative">
-                    <div
-                      className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-black shadow-lg"
-                      style={{ background: CL.gradient }}
-                    >
-                      {user?.first_name?.[0]}{user?.last_name?.[0]}
-                    </div>
-                    <button
-                      className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-colors"
-                      style={{ background: CL.glass, border: `1px solid ${CL.glassBorder}`, color: CL.purple }}
-                    >
-                      <Camera size={12} />
-                    </button>
-                    <div className="absolute inset-0 rounded-full -z-10" style={{ boxShadow: CL.glowShadow, opacity: 0.3 }} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold tracking-tight" style={{ color: CL.textDeep }}>
-                      {user?.first_name} {user?.last_name}
-                    </h3>
-                    <p className="text-[9px] font-black uppercase tracking-[0.12em] mt-0.5" style={{ color: CL.purple }}>
-                      {tier} Member
-                    </p>
-                  </div>
-                </div>
-
-                <nav className="space-y-1">
-                  {NAV_ITEMS.map(({ id, label, href, Icon }) => {
-                    const active = id === 'orders';
-                    return (
-                      <button
-                        key={id}
-                        onClick={() => { setAccountNavDirection(active ? 0 : 1); router.push(href); }}
-                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300"
-                        style={active
-                          ? { background: 'rgba(196,167,254,0.22)', color: 'rgb(126,105,230)', border: '1px solid rgba(196,167,254,0.45)', boxShadow: '0 2px 12px rgba(147,51,234,0.12)' }
-                          : { color: 'rgba(59,7,100,0.50)' }
-                        }
+            return (
+              <Link
+                key={o.id}
+                href={`/account/orders/${o.id}`}
+                className="flex items-center gap-4 p-4 bg-white rounded-lg border border-[#eaeaea] hover:border-gray-300 transition-colors group"
+              >
+                {/* Product image stack */}
+                <div className="flex -space-x-3 shrink-0">
+                  {previews.length > 0 ? (
+                    previews.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="w-14 h-14 rounded-xl border-2 border-white bg-white overflow-hidden relative shadow-sm"
+                        style={{ zIndex: previews.length - idx }}
                       >
-                        <div className="flex items-center gap-3">
-                          <Icon size={16} strokeWidth={active ? 2 : 1.5} />
-                          <span className="text-[13px] font-semibold tracking-tight">{label}</span>
-                        </div>
-                        {active && <ChevronRight size={13} />}
-                      </button>
-                    );
-                  })}
-                </nav>
-
-                <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
-                  <button
-                    onClick={() => { logout(); router.push('/'); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-red-400 hover:text-red-600 hover:bg-red-50/60"
-                  >
-                    <LogOut size={16} strokeWidth={1.5} />
-                    <span className="text-[13px] font-semibold">Sign Out</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Loyalty card */}
-              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
-                <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full blur-[50px]" style={{ background: 'rgba(196,167,254,0.2)' }} />
-                <div className="relative z-10 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Star size={14} className="fill-yellow-300 text-yellow-300" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/60">Loyalty Points</span>
-                  </div>
-                  <p className="text-4xl font-black text-white">{points.toLocaleString()}</p>
-                  <div>
-                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${loyaltyPct}%` }}
-                        transition={{ duration: 1.2, ease: 'easeOut' }}
-                        className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg, rgba(249,168,212,0.9), rgba(253,224,71,0.9))' }}
-                      />
-                    </div>
-                    <p className="text-[9px] text-white/40 font-medium uppercase tracking-widest mt-2">
-                      {nextPt - points} pts to next tier
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Crown size={12} style={{ color: 'rgba(253,224,71,0.8)' }} />
-                    <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{tier} Prestige</span>
-                  </div>
-                </div>
-              </div>
-
-            </aside>
-
-            {/* ── Main content ── */}
-            <main className="lg:col-span-9">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key="orders"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -16 }}
-                  className="space-y-6"
-                >
-                  {/* Section title */}
-                  <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>My Account</p>
-                    </div>
-                    <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight leading-tight" style={{ color: CL.textDeep }}>
-                      Order History
-                    </h2>
-                  </div>
-
-                  {orders.length === 0 ? (
-                    <div className="py-28 text-center rounded-3xl border border-dashed" style={{ borderColor: CL.glassBorder, background: CL.purpleLight }}>
-                      <Package size={44} strokeWidth={1} className="mx-auto mb-5" style={{ color: 'rgba(147,51,234,0.3)' }} />
-                      <h3 className="text-xl font-bold mb-2" style={{ color: CL.textDeep }}>No Orders Yet</h3>
-                      <p className="text-xs uppercase tracking-widest" style={{ color: CL.textSoft }}>
-                        When you place an order, it will appear here
-                      </p>
-                    </div>
+                        {item.imageUrl ? (
+                          <Image
+                            src={item.imageUrl}
+                            alt={item.name || ''}
+                            fill
+                            className="object-contain p-1"
+                            sizes="56px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                            <Package size={16} className="text-gray-300" />
+                          </div>
+                        )}
+                      </div>
+                    ))
                   ) : (
-                    <div className="space-y-3">
-                      {orders.map((order, i) => (
-                        <Link
-                          key={order.id || i}
-                          href={`/account/orders/${order.id}`}
-                          className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl p-6 transition-all hover:-translate-y-0.5"
-                          style={glassCard}
-                        >
-                          <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: CL.purpleLight }}>
-                              <Package size={22} strokeWidth={1.5} style={{ color: CL.purple }} />
-                            </div>
-                            <div className="space-y-1">
-                              <p className="text-base font-bold" style={{ color: CL.textDeep }}>Order #{order.id}</p>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.1em]">
-                                  {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}
-                                </span>
-                                <span className="w-1 h-1 rounded-full bg-gray-300 inline-block" />
-                                <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: CL.purple }}>
-                                  {String(order.status || 'Processing')}
-                                </span>
-                                {order.pointsEarned && (
-                                  <>
-                                    <span className="w-1 h-1 rounded-full bg-gray-300 inline-block" />
-                                    <div className="flex items-center gap-1 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
-                                      <Star size={8} className="fill-purple-500 text-purple-500" />
-                                      <span className="text-[9px] font-black text-purple-600 uppercase tracking-tight">+{order.pointsEarned} Points</span>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between md:justify-end gap-8 pt-4 md:pt-0">
-                            <div className="text-left md:text-right">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-1">Total</p>
-                              <p className="text-xl font-black" style={{ color: CL.textDeep }}>AED {Number(order.totalAmount || 0).toFixed(2)}</p>
-                            </div>
-                            <div className="w-11 h-11 rounded-full flex items-center justify-center transition-all" style={{ background: CL.purpleLight, color: CL.purple }}>
-                              <ArrowRight size={16} />
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
+                    <div className="w-14 h-14 rounded-xl border-2 border-white bg-gray-100 flex items-center justify-center shadow-sm">
+                      <Package size={18} className="text-gray-300" />
                     </div>
                   )}
-                </motion.div>
-              </AnimatePresence>
-            </main>
+                  {extra > 0 && (
+                    <div className="w-14 h-14 rounded-xl border-2 border-white bg-purple-50 flex items-center justify-center text-[11px] font-bold text-purple-600 shadow-sm" style={{ zIndex: 0 }}>
+                      +{extra}
+                    </div>
+                  )}
+                </div>
 
-          </div>
-        </div>
+                {/* Order info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[13px] font-semibold text-gray-900">Order #{o.id}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${statusStyle(o.status)}`}>
+                      {o.status}
+                    </span>
+                  </div>
+                  <p className="text-[12px] text-gray-500 mt-0.5">
+                    {date}{items.length > 0 ? ` · ${items.length} item${items.length > 1 ? 's' : ''}` : ''}
+                  </p>
+                  {/* First product name as hint */}
+                  {items[0]?.name && (
+                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">{items[0].name}{items.length > 1 ? ` & ${items.length - 1} more` : ''}</p>
+                  )}
+                </div>
+
+                {/* Amount + CTA */}
+                <div className="text-right shrink-0">
+                  <div className="text-[15px] font-bold text-gray-900">AED {total.toFixed(0)}</div>
+                  <span className="text-[11px] text-purple-600 font-medium group-hover:underline">View Details →</span>
+                </div>
+              </Link>
+            );
+          })
+        )}
       </div>
-    </>
+      </div>
+    </AccountShell>
   );
 }

@@ -35,8 +35,9 @@ export default function LayoutContent({ children }) {
     return () => clearTimeout(t);
   }, []);
 
-  const isAuthPage = pathname === '/auth';
-  const isAdminPage = pathname.startsWith('/admin');
+  const isAuthPage    = pathname === '/auth';
+  const isAdminPage   = pathname.startsWith('/admin');
+  const isAccountPage = pathname.startsWith('/account');
   const isCartPage = pathname === '/cart';
   const isCheckoutPage = pathname === '/checkout';
   const isNeedAnythingElsePage  = pathname === '/need-anything-else';
@@ -55,7 +56,11 @@ export default function LayoutContent({ children }) {
         className={`flex min-h-screen flex-col ${showMobileChrome ? 'pb-[var(--mobile-main-pad-bottom)] md:pb-0' : ''}`}
       >
         <main className="min-h-0 flex-1">{children}</main>
-        {showMobileChrome && <Footer />}
+        {showMobileChrome && (
+          <div className={isAccountPage ? 'md:pl-[200px]' : ''}>
+            <Footer />
+          </div>
+        )}
       </div>
       {showMobileChrome && <MobileBottomNav />}
       <ToastContainer

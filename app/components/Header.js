@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, forwardRef } from 'react';
-import { ShoppingBag, ShoppingCart, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, ArrowRight, Droplets, Clock, Zap, Heart, Layers, Sun, Sparkles, Gift, LogOut } from 'lucide-react';
+import { ShoppingBag, ShoppingCart, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, ArrowRight, Droplets, Clock, Zap, Heart, Layers, Sun, Sparkles, Gift, LogOut, Package, MapPin, Settings } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -84,7 +84,7 @@ const Header = forwardRef((_, ref) => {
       >
         <div
           className={`mx-auto bg-white transition-all duration-300 ${
-            isScrolled ? 'max-w-5xl rounded-2xl overflow-hidden' : 'max-w-full'
+            isScrolled ? 'max-w-5xl rounded-2xl' : 'max-w-full'
           }`}
           style={{
             borderBottom: isScrolled ? 'none' : '1px solid #e5e5ea',
@@ -236,50 +236,87 @@ const Header = forwardRef((_, ref) => {
                   )}
                 </button>
 
+                {/* bridge to keep hover alive */}
+                {user && <div className="absolute top-full right-0 w-full h-4 bg-transparent z-[200]" />}
                 {/* Account dropdown */}
-                {user && (
-                  <div className="absolute top-[calc(100%+0.75rem)] right-0 w-52 bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_8px_32px_rgba(17,17,20,.10)] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-200 translate-y-2 group-hover/account:translate-y-0 z-[200] p-2">
-                    <div className="px-3 py-2 border-b border-[#e5e5ea] mb-1">
-                      <p className="text-[13px] font-semibold text-[#111114]">{user.first_name}</p>
-                      {loyaltyData?.stats?.points != null && (
-                        <p className="text-[11px] text-[#8a8a93] mt-0.5">{loyaltyData.stats.points.toLocaleString()} points</p>
-                      )}
+                {user && (() => {
+                  const points     = loyaltyData?.stats?.points ?? 0;
+                  const tier       = loyaltyData?.stats?.tier ?? 'Member';
+                  const nextPts    = loyaltyData?.stats?.nextTierPoints ?? 2000;
+                  const ptsToNext  = Math.max(0, nextPts - points);
+                  const pct        = Math.min(100, Math.round((points / nextPts) * 100));
+                  const tierNext   = tier === 'Gold' ? 'Platinum' : tier === 'Silver' ? 'Gold' : tier === 'Member' ? 'Silver' : 'Top';
+                  const initials   = [user.first_name?.[0], user.last_name?.[0]].filter(Boolean).join('').toUpperCase() || 'NL';
+                  return (
+                    <div className="absolute top-[calc(100%+0.75rem)] right-0 w-[300px] bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_12px_40px_rgba(17,17,20,.13)] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-200 translate-y-2 group-hover/account:translate-y-0 z-[200] overflow-hidden">
+                      {/* User info block */}
+                      <div className="px-4 pt-4 pb-3">
+                        <div className="flex items-center gap-3 mb-3">
+                          {/* Avatar */}
+                          <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-[15px] font-bold shrink-0 relative overflow-hidden"
+                            style={{ background: 'linear-gradient(135deg,#c087fc,#9869f7)' }}>
+                            {user.profile_image
+                              ? <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
+                              : initials}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[14px] font-bold text-[#111114] leading-tight">Welcome back!</p>
+                            <p className="text-[12px] text-[#8a8a93] truncate">{user.email}</p>
+                          </div>
+                        </div>
+                        {/* Tier + points */}
+                        <div className="rounded-xl border border-[#e5e5ea] bg-[#fafafa] px-3 py-2.5">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="flex items-center gap-1.5 text-[11px] font-bold text-amber-500 uppercase tracking-wide">
+                              <Star size={11} className="fill-amber-400 stroke-amber-400" />
+                              {tier} Member
+                            </span>
+                            <span className="text-[13px] font-bold text-[#111114]">{points.toLocaleString()} pts</span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-[#e5e5ea] overflow-hidden mb-1.5">
+                            <div className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#c087fc,#9869f7)' }} />
+                          </div>
+                          <p className="text-[11px] text-[#8a8a93]">{ptsToNext.toLocaleString()} pts to {tierNext}</p>
+                        </div>
+                      </div>
+
+                      {/* Menu items */}
+                      <div className="px-2 pb-2 border-t border-[#f0f0f0]">
+                        {[
+                          { label: 'My Profile',    href: '/account',           Icon: User },
+                          { label: 'My Orders',     href: '/account/orders',    Icon: Package },
+                          { label: 'Wishlist',      href: '/account/wishlist',  Icon: Heart },
+                          { label: 'Naya Rewards',  href: '/account/loyalty',   Icon: Star },
+                          { label: 'Addresses',     href: '/account/addresses', Icon: MapPin },
+                          { label: 'Settings',      href: '/account/settings',  Icon: Settings },
+                        ].map(({ label, href, Icon }) => (
+                          <Link key={href} href={href}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors">
+                            <Icon size={15} strokeWidth={1.8} className="text-[#8a8a93]" />
+                            {label}
+                          </Link>
+                        ))}
+                        {user?.role === 'admin' && (
+                          <Link href="/admin"
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors">
+                            <ShieldCheck size={15} strokeWidth={1.8} className="text-[#8a8a93]" />
+                            Admin Panel
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Sign out */}
+                      <div className="px-2 pb-2 border-t border-[#f0f0f0]">
+                        <button type="button" onClick={logout}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-red-500 hover:bg-red-50 transition-colors">
+                          <LogOut size={15} strokeWidth={1.8} />
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
-                    {[
-                      { label: 'My Profile',     href: '/account',  Icon: User },
-                      { label: 'Wishlist',        href: '/wishlist', Icon: Heart },
-                      { label: 'Loyalty Points',  href: '/loyalty',  Icon: Star },
-                    ].map(({ label, href, Icon }) => (
-                      <Link
-                        key={href}
-                        href={href}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
-                      >
-                        <Icon size={14} strokeWidth={2} className="text-[#5a5a64]" />
-                        {label}
-                      </Link>
-                    ))}
-                    {user?.role === 'admin' && (
-                      <Link
-                        href="/admin"
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
-                      >
-                        <ShieldCheck size={14} strokeWidth={2} className="text-[#5a5a64]" />
-                        Admin Panel
-                      </Link>
-                    )}
-                    <div className="mt-1 pt-1 border-t border-[#e5e5ea]">
-                      <button
-                        type="button"
-                        onClick={logout}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <LogOut size={14} strokeWidth={2} />
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Cart */}

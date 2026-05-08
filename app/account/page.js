@@ -134,7 +134,11 @@ const AccountPageContent = () => {
         await deleteShippingAddress(addressId);
         toast.success('Address removed.');
       } catch (err) {
-        toast.error('Failed to remove address.');
+        if (err.message?.includes('409')) {
+          toast.error('This address is linked to existing orders and cannot be deleted.');
+        } else {
+          toast.error('Failed to remove address.');
+        }
       }
     }
   };
@@ -710,27 +714,15 @@ const AccountPageContent = () => {
 export default function AccountPage() {
   const router = useRouter();
 
+  // On desktop, go straight to profile
   useEffect(() => {
-    setAccountNavDirection(-1);
-  }, []);
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      setAccountNavDirection(1);
+      router.replace('/account/profile');
+    }
+  }, [router]);
 
-  return (
-    <>
-      <AccountMenuList />
-
-      <div className="hidden md:block">
-        <Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--cl-bg)' }}>
-              <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(196,167,254,0.3)', borderTopColor: 'rgb(147,51,234)' }} />
-            </div>
-          }
-        >
-          <Elements stripe={stripePromise}>
-            <AccountPageContent />
-          </Elements>
-        </Suspense>
-      </div>
-    </>
-  );
+  // Mobile: show the iOS-style account menu
+  // Desktop: handled by the redirect above
+  return <AccountMenuList />;
 }

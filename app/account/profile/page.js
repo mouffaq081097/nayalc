@@ -1,429 +1,251 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  User, Sparkles, Package, Heart, Star, MapPin, Settings,
-  Camera, Crown, LogOut, ChevronRight,
-} from 'lucide-react';
-import { AccountMobileTopBar } from '../_components/AccountMobileTopBar';
-import { setAccountNavDirection } from '../_components/navDirection';
-import { useAccountData } from '../_components/useAccountData';
-import { useSession } from 'next-auth/react';
+import { Camera, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
+import { useAccountData } from '../_components/useAccountData';
+import AccountShell from '../_components/AccountShell';
 import { toast } from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
 
-// ── Design tokens (Cloud Luxe) ──────────────────────────────────────────────
-const CL = {
-  glass:       'rgba(255,255,255,0.72)',
-  glassBorder: 'var(--ink-200)',
-  gradient:    'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))',
-  purple:      'rgb(126,105,230)',
-  purpleMid:   'rgb(147,104,236)',
-  purpleLight: 'rgba(196,167,254,0.18)',
-  bgPage:      '#ffffff',
-  bgLav:       'var(--cl-bg-lavender)',
-  textDeep:    'var(--cl-text-deep)',
-  textMid:     'var(--cl-text-mid)',
-  textSoft:    'var(--cl-text-soft)',
-  cardShadow:  '0 4px 32px rgba(147,51,234,0.07), 0 1px 4px rgba(0,0,0,0.04)',
-  glowShadow:  '0 8px 32px rgba(147,51,234,0.18)',
-};
+/* ── Vercel-style section card ──────────────────────────────────────────── */
+function SectionCard({ title, description, children, footer }) {
+  return (
+    <div className="w-full bg-white border border-[#eaeaea] rounded-lg overflow-hidden mb-5">
+      {/* Header */}
+      <div className="px-6 pt-5 pb-4 border-b border-[#eaeaea]">
+        <h2 className="text-[15px] font-semibold text-gray-900">{title}</h2>
+        {description && <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">{description}</p>}
+      </div>
+      {/* Body */}
+      {children && (
+        <div className="px-6 py-5">
+          {children}
+        </div>
+      )}
+      {/* Footer */}
+      {footer && (
+        <div className="px-6 py-3 bg-[#fafafa] border-t border-[#eaeaea] flex items-center justify-between gap-4">
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+}
 
-const glassCard = {
-  background:  '#ffffff',
-  border:      `1px solid ${CL.glassBorder}`,
-  boxShadow:   CL.cardShadow,
-};
-
-const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', href: '/account',            Icon: Sparkles },
-  { id: 'profile',   label: 'Profile',   href: '/account/profile',    Icon: User     },
-  { id: 'orders',    label: 'Orders',    href: '/account/orders',     Icon: Package  },
-  { id: 'wishlist',  label: 'Wishlist',  href: '/account/wishlist',   Icon: Heart    },
-  { id: 'loyalty',   label: 'Loyalty',   href: '/account/loyalty',    Icon: Star     },
-  { id: 'addresses', label: 'Addresses', href: '/account/addresses',  Icon: MapPin   },
-  { id: 'settings',  label: 'Settings',  href: '/account/settings',   Icon: Settings },
-];
+function SaveBtn({ onClick, saving, saved, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={saving || disabled}
+      className="h-8 px-4 rounded-md text-[12px] font-semibold text-white transition-all disabled:opacity-40"
+      style={{ background: saving || saved ? '#555' : '#000' }}
+    >
+      {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save'}
+    </button>
+  );
+}
 
 export default function ProfilePage() {
-  const router = useRouter();
-  const { user, logout } = useAuth();
-  const { update } = useSession();
-  const { loyaltyData } = useAccountData();
-
-  const [form, setForm] = useState({ first_name: '', last_name: '', phone_number: '' });
-  const [fetched, setFetched] = useState({ first_name: '', last_name: '', phone_number: '' });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState(null);
-
+  const { user }          = useAuth();
   const { fetchWithAuth } = useAppContext();
+  const { wishlistItems } = useAccountData();
+  const { update }        = useSession();
+  const fileRef           = useRef(null);
+  const wishCount         = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
+
+  const [profile,   setProfile]   = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Per-field save state
+  const [name,    setName]    = useState({ first: '', last: '', saving: false, saved: false });
+  const [phone,   setPhone]   = useState({ value: '', saving: false, saved: false });
+
+  const initials  = [user?.first_name?.[0], user?.last_name?.[0]].filter(Boolean).join('').toUpperCase() || 'NL';
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : 'January 2025';
 
   useEffect(() => {
     if (!user?.id) return;
-    let cancelled = false;
     fetchWithAuth(`/api/users/${user.id}/profile`)
       .then(r => r.json())
       .then(data => {
-        if (cancelled) return;
-        const vals = {
-          first_name:   data.first_name   || '',
-          last_name:    data.last_name    || '',
-          phone_number: data.phone_number || '',
-        };
-        setForm(vals);
-        setFetched(vals);
+        setProfile(data);
+        setName(n => ({ ...n, first: data.first_name || '', last: data.last_name || '' }));
+        setPhone(p => ({ ...p, value: data.phone_number || '' }));
       })
-      .catch(() => setError('Failed to load profile.'))
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .catch(() => {});
   }, [user?.id, fetchWithAuth]);
 
-  const handleChange = field => e => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
-    setSaved(false);
-  };
-
-  const handleDiscard = () => { setForm(fetched); setError(null); };
-
-  const handleSubmit = async e => {
-    e.preventDefault();
-    if (!form.first_name.trim() || !form.last_name.trim()) {
-      setError('First name and last name are required.');
-      return;
-    }
-    setSaving(true);
-    setError(null);
+  const saveName = async () => {
+    if (!name.first.trim()) { toast.error('First name is required.'); return; }
+    setName(n => ({ ...n, saving: true }));
     try {
       const res = await fetchWithAuth(`/api/users/${user.id}/profile`, {
         method: 'PUT',
-        body: JSON.stringify(form),
+        body: JSON.stringify({ first_name: name.first, last_name: name.last, phone_number: phone.value }),
       });
       if (!res.ok) throw new Error();
-      
-      // Update session with new name
-      await update({
-        first_name: form.first_name,
-        last_name: form.last_name,
-      });
-
-      setFetched({ ...form });
-      setSaved(true);
-      toast.success('Profile updated successfully!');
-    } catch {
-      setError('Could not save changes. Please try again.');
-    } finally {
-      setSaving(false);
-    }
+      await update({ first_name: name.first, last_name: name.last });
+      setProfile(p => ({ ...p, first_name: name.first, last_name: name.last }));
+      setName(n => ({ ...n, saving: false, saved: true }));
+      setTimeout(() => setName(n => ({ ...n, saved: false })), 2000);
+      toast.success('Name updated!');
+    } catch { toast.error('Could not save.'); setName(n => ({ ...n, saving: false })); }
   };
 
-  const [uploading, setUploading] = useState(false);
+  const savePhone = async () => {
+    setPhone(p => ({ ...p, saving: true }));
+    try {
+      await fetchWithAuth(`/api/users/${user.id}/profile`, {
+        method: 'PUT',
+        body: JSON.stringify({ first_name: profile?.first_name || '', last_name: profile?.last_name || '', phone_number: phone.value }),
+      });
+      setProfile(p => ({ ...p, phone_number: phone.value }));
+      setPhone(p => ({ ...p, saving: false, saved: true }));
+      setTimeout(() => setPhone(p => ({ ...p, saved: false })), 2000);
+      toast.success('Phone updated!');
+    } catch { toast.error('Could not save.'); setPhone(p => ({ ...p, saving: false })); }
+  };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
-
-    // Validate file type and size
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB.');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image.'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Max 5MB.'); return; }
     setUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
+    const fd = new FormData(); fd.append('file', file);
     try {
-      const res = await fetchWithAuth(`/api/users/${user.id}/profile-image`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-        }
-      });
-
-      if (!res.ok) throw new Error('Upload failed');
+      const res = await fetchWithAuth(`/api/users/${user.id}/profile-image`, { method: 'POST', body: fd, headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error();
       const data = await res.json();
-      
-      // Update local session immediately
-      await update({
-        profile_image: data.imageUrl
-      });
-      
-      toast.success('Profile photo updated!');
-    } catch (err) {
-      setError('Failed to upload image. Please try again.');
-      toast.error('Failed to upload image.');
-    } finally {
-      setUploading(false);
-    }
+      await update({ profile_image: data.imageUrl });
+      toast.success('Avatar updated!');
+    } catch { toast.error('Upload failed.'); }
+    finally { setUploading(false); }
   };
 
-  const tier   = loyaltyData?.stats?.tier        || 'Silver';
-  const points = loyaltyData?.stats?.points       ?? 0;
-  const nextPt = loyaltyData?.stats?.nextTierPoints ?? 2000;
-  const loyaltyPct = Math.min(100, Math.round((points / nextPt) * 100));
-
   return (
-    <>
-      <AccountMobileTopBar title="My Profile" />
+    <AccountShell wishCount={wishCount}>
 
-      <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
-
-
-        <div className="max-w-[1400px] mx-auto px-6 pt-10 pb-28 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-8">
-
-            {/* ── Sidebar ── */}
-            <aside className="hidden md:block lg:col-span-3 space-y-5 self-start sticky top-24">
-
-              {/* Profile card */}
-              <div className="rounded-3xl p-7" style={glassCard}>
-                <div className="flex flex-col items-center text-center gap-3 mb-7">
-                  <div className="relative">
-                    <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg overflow-hidden relative" style={{ background: CL.gradient }}>
-                      {user?.profile_image ? (
-                        <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
-                      ) : (
-                        <>{user?.first_name?.[0]}{user?.last_name?.[0]}</>
-                      )}
-
-                      {uploading && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        </div>
-                      )}
-                    </div>
-                    <label
-                      htmlFor="profile-upload"
-                      className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md cursor-pointer transition-all hover:scale-110 active:scale-95"
-                      style={{ background: 'white', border: `1px solid ${CL.glassBorder}`, color: CL.purple }}
-                    >
-                      <Camera size={14} strokeWidth={2.5} />
-                    </label>
-                    <div className="absolute inset-0 rounded-full -z-10" style={{ boxShadow: CL.glowShadow, opacity: 0.3 }} />
-                  </div>
-                  <div className="mt-2">
-                    <h3 className="text-lg font-bold tracking-tight" style={{ color: CL.textDeep }}>
-                      {user?.first_name} {user?.last_name}
-                    </h3>
-                    <p className="text-[10px] font-black uppercase tracking-[0.12em] mt-1" style={{ color: CL.purple }}>
-                      {tier} Member
-                    </p>
-                  </div>
-                </div>
-
-                <nav className="space-y-1">
-                  {NAV_ITEMS.map(({ id, label, href, Icon }) => {
-                    const active = id === 'profile';
-                    return (
-                      <button
-                        key={id}
-                        onClick={() => { setAccountNavDirection(active ? 0 : 1); router.push(href); }}
-                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300"
-                        style={active
-                          ? { background: 'rgba(196,167,254,0.22)', color: 'rgb(126,105,230)', border: '1px solid rgba(196,167,254,0.45)', boxShadow: '0 2px 12px rgba(147,51,234,0.12)' }
-                          : { color: 'rgba(59,7,100,0.50)' }
-                        }
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon size={16} strokeWidth={active ? 2 : 1.5} />
-                          <span className="text-[13px] font-semibold tracking-tight">{label}</span>
-                        </div>
-                        {active && <ChevronRight size={13} />}
-                      </button>
-                    );
-                  })}
-                </nav>
-
-                <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
-                  <button
-                    onClick={() => { logout(); router.push('/'); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-red-400 hover:text-red-600 hover:bg-red-50/60"
-                  >
-                    <LogOut size={16} strokeWidth={1.5} />
-                    <span className="text-[13px] font-semibold">Sign Out</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Loyalty card */}
-              <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
-                <div className="relative z-10 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Star size={14} className="fill-yellow-300 text-yellow-300" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/60">Loyalty Points</span>
-                  </div>
-                  <p className="text-4xl font-black text-white">{points.toLocaleString()}</p>
-                  <div>
-                    <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${loyaltyPct}%` }}
-                        transition={{ duration: 1.2, ease: 'easeOut' }}
-                        className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg, rgba(249,168,212,0.9), rgba(253,224,71,0.9))' }}
-                      />
-                    </div>
-                    <p className="text-[9px] text-white/40 font-medium uppercase tracking-widest mt-2">
-                      {nextPt - points} pts to next tier
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Crown size={12} style={{ color: 'rgba(253,224,71,0.8)' }} />
-                    <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{tier} Prestige</span>
-                  </div>
-                </div>
-              </div>
-
-            </aside>
-
-            {/* ── Main content ── */}
-            <main className="lg:col-span-9">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key="profile"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -16 }}
-                  className="space-y-6"
-                >
-                  {/* Section title */}
-                  <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>My Account</p>
-                    </div>
-                    <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight leading-tight" style={{ color: CL.textDeep }}>
-                      Personal Details
-                    </h2>
-                  </div>
-
-                  {loading ? (
-                    <div className="rounded-3xl p-16 flex items-center justify-center" style={glassCard}>
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="w-10 h-10 border-2 rounded-full animate-spin" style={{ borderColor: CL.purpleLight, borderTopColor: CL.purple }}></div>
-                        <p className="text-[10px] font-bold tracking-[0.4em] uppercase animate-pulse" style={{ color: CL.textSoft }}>Loading profile</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmit}>
-                      {/* Personal info card */}
-                      <div className="rounded-3xl p-8 mb-5" style={glassCard}>
-                        <div className="flex items-center gap-2 mb-6">
-                          <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
-                          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Personal info</p>
-                        </div>
-                        <div className="grid sm:grid-cols-2 gap-5">
-                          {[
-                            { field: 'first_name', label: 'First name', placeholder: 'First name', type: 'text' },
-                            { field: 'last_name',  label: 'Last name',  placeholder: 'Last name',  type: 'text' },
-                          ].map(({ field, label, placeholder, type }) => (
-                            <div key={field}>
-                              <label className="block text-[9.5px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: CL.purple }}>{label}</label>
-                              <input
-                                type={type}
-                                value={form[field]}
-                                onChange={handleChange(field)}
-                                placeholder={placeholder}
-                                className="w-full rounded-xl px-4 py-3 text-sm font-medium transition-all outline-none focus:ring-2"
-                                style={{
-                                  background:  'rgba(255,255,255,0.85)',
-                                  border:      `1px solid ${CL.glassBorder}`,
-                                  color:       CL.textDeep,
-                                  focusRingColor: CL.purple,
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Contact card */}
-                      <div className="rounded-3xl p-8 mb-5" style={glassCard}>
-                        <div className="flex items-center gap-2 mb-6">
-                          <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
-                          <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Contact</p>
-                        </div>
-                        <div className="grid sm:grid-cols-2 gap-5">
-                          <div>
-                            <label className="block text-[9.5px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: CL.purple }}>Email address</label>
-                            <input
-                              type="email"
-                              value={user?.email || ''}
-                              readOnly
-                              className="w-full rounded-xl px-4 py-3 text-sm font-medium cursor-not-allowed"
-                              style={{
-                                background: 'rgba(255,255,255,0.85)',
-                                border:     `1px solid ${CL.glassBorder}`,
-                                color:      CL.textDeep,
-                                opacity:    0.55,
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[9.5px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: CL.purple }}>Phone number</label>
-                            <input
-                              type="tel"
-                              value={form.phone_number}
-                              onChange={handleChange('phone_number')}
-                              placeholder="+971 50 000 0000"
-                              className="w-full rounded-xl px-4 py-3 text-sm font-medium transition-all outline-none"
-                              style={{
-                                background: 'rgba(255,255,255,0.85)',
-                                border:     `1px solid ${CL.glassBorder}`,
-                                color:      CL.textDeep,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {error && (
-                        <p className="text-xs font-medium mb-4" style={{ color: 'rgba(239,68,68,0.85)' }}>{error}</p>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="submit"
-                          disabled={saving}
-                          className="cl-gradient-btn px-8 py-3 text-[13px] font-semibold rounded-full"
-                          style={{ opacity: saving ? 0.6 : 1 }}
-                        >
-                          {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleDiscard}
-                          className="px-7 py-3 text-[13px] font-medium rounded-full border transition-all"
-                          style={{
-                            border:     `1px solid ${CL.glassBorder}`,
-                            color:      CL.textMid,
-                            background: CL.glass,
-                          }}
-                        >
-                          Discard
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </main>
-
+      {/* Avatar */}
+      <SectionCard
+        title="Avatar"
+        description="This is your avatar. Click on the avatar to upload a custom one from your files."
+        footer={
+          <p className="text-[12px] text-gray-400">An avatar is optional but strongly recommended.</p>
+        }
+      >
+        <div className="flex items-center justify-between">
+          <div className="text-[13px] text-gray-500">
+            <p className="font-medium text-gray-900">{user?.first_name} {user?.last_name}</p>
+            <p className="text-[12px] text-gray-400 mt-0.5">Member since {memberSince}</p>
           </div>
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="relative w-16 h-16 rounded-full overflow-hidden group shrink-0 shadow-sm ring-2 ring-gray-100 hover:ring-purple-200 transition-all"
+          >
+            <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold"
+              style={{ background: 'linear-gradient(135deg,#c087fc,#9869f7)' }}>
+              {user?.profile_image
+                ? <Image src={user.profile_image} alt={initials} fill className="object-cover" />
+                : initials}
+            </div>
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              {uploading
+                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <Camera size={14} className="text-white" />}
+            </div>
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
         </div>
-      </div>
-    </>
+      </SectionCard>
+
+      {/* Full Name */}
+      <SectionCard
+        title="Full Name"
+        description="Please enter your full name, or a display name you are comfortable with."
+        footer={
+          <>
+            <p className="text-[12px] text-gray-400">Please use 48 characters at maximum.</p>
+            <SaveBtn onClick={saveName} saving={name.saving} saved={name.saved} />
+          </>
+        }
+      >
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={name.first}
+            onChange={e => setName(n => ({ ...n, first: e.target.value, saved: false }))}
+            placeholder="First name"
+            className="flex-1 h-9 px-3 text-[13px] text-gray-900 bg-white border border-[#eaeaea] rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 placeholder:text-gray-300"
+          />
+          <input
+            type="text"
+            value={name.last}
+            onChange={e => setName(n => ({ ...n, last: e.target.value, saved: false }))}
+            placeholder="Last name"
+            className="flex-1 h-9 px-3 text-[13px] text-gray-900 bg-white border border-[#eaeaea] rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 placeholder:text-gray-300"
+          />
+        </div>
+      </SectionCard>
+
+      {/* Email */}
+      <SectionCard
+        title="Email Address"
+        description="Your email address is used to sign in and receive order updates."
+        footer={<p className="text-[12px] text-gray-400">Email cannot be changed. Contact support if needed.</p>}
+      >
+        <input
+          type="email"
+          value={user?.email || ''}
+          readOnly
+          className="w-full h-9 px-3 text-[13px] text-gray-400 bg-[#fafafa] border border-[#eaeaea] rounded-md cursor-not-allowed"
+        />
+      </SectionCard>
+
+      {/* Phone */}
+      <SectionCard
+        title="Phone Number"
+        description="Your phone number may be used for delivery updates and account security."
+        footer={
+          <>
+            <p className="text-[12px] text-gray-400">Include country code, e.g. +971 50 000 0000</p>
+            <SaveBtn onClick={savePhone} saving={phone.saving} saved={phone.saved} />
+          </>
+        }
+      >
+        <input
+          type="tel"
+          value={phone.value}
+          onChange={e => setPhone(p => ({ ...p, value: e.target.value, saved: false }))}
+          placeholder="+971 50 000 0000"
+          className="w-72 h-9 px-3 text-[13px] text-gray-900 bg-white border border-[#eaeaea] rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 placeholder:text-gray-300"
+        />
+      </SectionCard>
+
+      {/* Skin Profile */}
+      <SectionCard
+        title="Skin Profile"
+        description="Your skin concerns help us personalise product recommendations for you."
+        footer={<p className="text-[12px] text-gray-400">Update your skin quiz anytime to refresh recommendations.</p>}
+      >
+        <div className="flex flex-wrap gap-2">
+          {(profile?.skin_concerns?.length > 0
+            ? profile.skin_concerns
+            : ['Combination', 'Sensitive', 'Anti-Aging', 'Hydration', 'Brightening']
+          ).map(tag => (
+            <span key={tag} className="px-3 py-1 text-[12px] font-medium rounded-full border border-[#eaeaea] bg-[#fafafa] text-gray-600">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </SectionCard>
+
+    </AccountShell>
   );
 }
