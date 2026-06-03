@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Chrome, Facebook, Sparkles, ShieldCheck, Star } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Chrome, Facebook, Sparkles, ShieldCheck, Star, MailOpen, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
@@ -114,18 +114,46 @@ function Login({ onForgotClick }) {
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
+  const [resending, setResending] = useState(false);
+  const [resendMsg, setResendMsg] = useState('');
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setUnverifiedEmail(null);
+    setResendMsg('');
     setIsLoading(true);
     try {
       await login(email, password, getSafeCallbackUrl());
     } catch (err) {
-      setError(err.message);
+      if (err.message === 'EMAIL_NOT_VERIFIED') {
+        setUnverifiedEmail(email);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!unverifiedEmail) return;
+    setResending(true);
+    setResendMsg('');
+    try {
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: unverifiedEmail }),
+      });
+      const data = await res.json();
+      setResendMsg(data.message || 'Verification email sent.');
+    } catch {
+      setResendMsg('Could not send email. Please try again.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -207,6 +235,38 @@ function Login({ onForgotClick }) {
           </motion.p>
         )}
 
+        {unverifiedEmail && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border p-4 space-y-3"
+            style={{ background: 'rgba(248,240,255,0.9)', borderColor: 'rgba(216,180,254,0.45)' }}
+          >
+            <div className="flex items-start gap-3">
+              <MailOpen size={18} className="text-purple-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[13px] font-semibold text-[#3b0764]">Email not verified</p>
+                <p className="text-[12px] text-[rgba(59,7,100,0.55)] mt-0.5">
+                  Check your inbox for <span className="font-semibold">{unverifiedEmail}</span> and click the verification link.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending || !!resendMsg}
+              className="w-full py-2.5 rounded-xl text-[12px] font-bold text-white disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}
+            >
+              {resending
+                ? <><Loader2 size={13} className="animate-spin" />Sending…</>
+                : resendMsg
+                ? resendMsg
+                : 'Resend verification email'}
+            </button>
+          </motion.div>
+        )}
+
         <Button
           type="submit"
           disabled={isLoading}
@@ -261,6 +321,9 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailOptIn, setEmailOptIn] = useState(true);
+  const [registeredEmail, setRegisteredEmail] = useState(null);
+  const [resending, setResending] = useState(false);
+  const [resendMsg, setResendMsg] = useState('');
   const { register } = useAuth();
 
   const strength = getPasswordStrength(password);
@@ -272,13 +335,78 @@ function Register() {
     setIsLoading(true);
     try {
       const autoUsername = `${firstName.toLowerCase()}${lastName.toLowerCase()}${Math.floor(1000 + Math.random() * 9000)}`;
-      await register(autoUsername, email, password, firstName, lastName, getSafeCallbackUrl());
+      const result = await register(autoUsername, email, password, firstName, lastName);
+      if (result?.requiresEmailVerification) {
+        setRegisteredEmail(email);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleResend = async () => {
+    if (!registeredEmail) return;
+    setResending(true);
+    setResendMsg('');
+    try {
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+      const data = await res.json();
+      setResendMsg(data.message || 'Email sent.');
+    } catch {
+      setResendMsg('Could not send. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // ── Post-registration: "check your email" screen ──
+  if (registeredEmail) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-5 py-4 text-center"
+      >
+        <div className="flex justify-center">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(147,51,234,0.08)' }}>
+            <MailOpen size={30} style={{ color: '#9333ea' }} />
+          </div>
+        </div>
+        <div>
+          <h3 className="text-[20px] font-black text-[#111114]">Check your inbox</h3>
+          <p className="text-[13px] text-[#888] mt-1.5 leading-relaxed">
+            We sent a verification link to<br />
+            <span className="font-semibold text-[#3b0764]">{registeredEmail}</span>
+          </p>
+          <p className="text-[12px] text-[#aaa] mt-2">Click the link in the email to activate your account. It expires in 24 hours.</p>
+        </div>
+        <button
+          onClick={handleResend}
+          disabled={resending || !!resendMsg}
+          className="w-full h-[48px] rounded-full text-[12px] font-bold disabled:opacity-50 flex items-center justify-center gap-2 border transition-colors"
+          style={{ borderColor: 'rgba(216,180,254,0.5)', color: '#9333ea' }}
+        >
+          {resending
+            ? <><Loader2 size={13} className="animate-spin" />Sending…</>
+            : resendMsg
+            ? resendMsg
+            : 'Resend verification email'}
+        </button>
+        <p className="text-[11px] text-[#bbb]">
+          Already verified?{' '}
+          <button onClick={() => setRegisteredEmail(null)} className="text-[#9333ea] hover:underline font-semibold">
+            Back to sign in
+          </button>
+        </p>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

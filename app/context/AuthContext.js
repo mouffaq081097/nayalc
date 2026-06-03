@@ -22,35 +22,46 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (result?.error) {
-      const errorMessage = 'Invalid email or password.';
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
+      // Check whether the failure is due to an unverified email
+      try {
+        const statusRes = await fetch('/api/auth/check-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const statusData = await statusRes.json();
+        if (statusData.needsVerification) {
+          throw new Error('EMAIL_NOT_VERIFIED');
+        }
+      } catch (e) {
+        if (e.message === 'EMAIL_NOT_VERIFIED') throw e;
+      }
+      throw new Error('Invalid email or password.');
     }
 
     if (result?.ok) {
-      // Logged in successfully (toast removed per user request)
-      router.push(callbackUrl); // Redirect after successful login
+      router.push(callbackUrl);
     }
   }, [router]);
 
-  const register = useCallback(async (username, email, password, firstName, lastName, callbackUrl = '/') => {
+  const register = useCallback(async (username, email, password, firstName, lastName) => {
     const response = await fetch(`/api/auth/signup`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password, firstName, lastName }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json();
-      toast.error(errorData.error || 'Registration failed');
-      throw new Error(errorData.error || 'Registration failed');
+      toast.error(data.error || 'Registration failed');
+      throw new Error(data.error || 'Registration failed');
     }
 
-    // After successful registration, log the user in
-    await login(email, password, callbackUrl);
-  }, [login]);
+    // Registration successful — do NOT auto-login; email verification is required.
+    // Return the flag so the UI can show the "check your email" screen.
+    return { requiresEmailVerification: data.requiresEmailVerification === true };
+  }, []);
 
   const logout = useCallback(() => {
     signOut({ callbackUrl: '/auth' });

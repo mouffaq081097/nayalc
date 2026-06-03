@@ -412,6 +412,15 @@ export async function POST(request) {
                 await client.query('ROLLBACK');
                 return NextResponse.json({ message: 'Tabby payment requires a payment ID.' }, { status: 400 });
             }
+            // Duplicate guard — prevent double-orders if return page is visited twice
+            const tabbyDupCheck = await client.query(
+                'SELECT id FROM orders WHERE tabby_payment_id = $1',
+                [tabby_payment_id]
+            );
+            if (tabbyDupCheck.rows.length > 0) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: 'Order already created for this payment.', orderId: tabbyDupCheck.rows[0].id }, { status: 409 });
+            }
             try {
                 const tabbyPayment = await getTabbyPayment(tabby_payment_id);
                 if (tabbyPayment.status !== 'authorized' && tabbyPayment.status !== 'closed') {

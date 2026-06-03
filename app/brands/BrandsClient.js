@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Star } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { MadeInFranceBadge } from '../components/MadeInFranceBadge';
 
 // Static metadata for known brands
 const BRAND_META = {
@@ -122,6 +123,7 @@ function BrandCard({ brand, products }) {
                 {tag}
               </span>
             ))}
+            {meta.origin === 'France' && <MadeInFranceBadge variant="light" />}
           </div>
 
           <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">

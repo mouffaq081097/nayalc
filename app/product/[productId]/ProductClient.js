@@ -15,6 +15,7 @@ import { useAppContext } from '../../context/AppContext';
 import ProductCard from '../../components/ProductCard';
 import TabbyPromo from '../../components/TabbyPromo';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '../../components/ui/carousel';
+import { MadeInFranceBadge } from '../../components/MadeInFranceBadge';
 
 const LAVENDER = 'rgb(147,104,236)';
 const LAVENDER_LIGHT = 'rgba(147,104,236,0.10)';
@@ -372,15 +373,44 @@ export default function ProductClient({ params, initialProduct }) {
           {/* RIGHT — Info */}
           <div className="flex flex-col gap-5">
 
-            {/* Brand */}
-            <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: LAVENDER }}>
-              {product.brand || 'Naya Lumière'}
-            </p>
+            {/* Brand + Made in France */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: LAVENDER }}>
+                {product.brand || 'Naya Lumière'}
+              </p>
+              {product.brand && /gern[eé]t/i.test(product.brand) && (
+                <MadeInFranceBadge variant="light" />
+              )}
+            </div>
+
 
             {/* Name */}
             <h1 className="text-[28px] lg:text-[34px] font-bold text-gray-900 leading-tight">
               {product.name}
             </h1>
+
+            {/* Homemade tag — Crystal Bar only */}
+            {product.name && /crystal\s*bar/i.test(product.name) && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '100px',
+                  background: '#fef3c7',
+                  border: '1px solid #f59e0b',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  letterSpacing: '0.13em',
+                  textTransform: 'uppercase',
+                  color: '#92400e',
+                  width: 'fit-content',
+                }}
+              >
+                ✦ Homemade
+              </span>
+            )}
 
             {/* Rating */}
             <div className="flex items-center gap-2">

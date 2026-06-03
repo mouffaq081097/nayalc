@@ -18,13 +18,8 @@ export const ForYouSection = () => {
       {/* Tactile Paper Texture */}
       <div className="absolute inset-0 opacity-[0.025] pointer-events-none bg-[url('/textures/natural-paper.png')] mix-blend-multiply" />
 
-      {/* Lavender gradient divider replacing the plain border-top */}
-      <div
-        className="absolute top-0 inset-x-0 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent 0%, rgb(216,180,254) 30%, rgb(196,167,254) 50%, rgb(216,180,254) 70%, transparent 100%)' }}
-      />
 
-      <Container className="relative z-10">
+<Container className="relative z-10">
         {/* Section Header */}
         <div className="mb-5 flex flex-row justify-between items-end gap-4">
           <div className="space-y-1">
@@ -43,7 +38,7 @@ export const ForYouSection = () => {
           {forYouProducts.map((product) => (
             <div
               key={product.id}
-              className="pl-1.5 basis-[85%] md:basis-1/4 flex-shrink-0 snap-center md:snap-align-none flex flex-col"
+              className="pl-1.5 basis-1/2 md:basis-1/4 flex-shrink-0 snap-center md:snap-align-none flex flex-col"
             >
               <div className="w-full h-full p-2 flex flex-col">
                 <ProductCard

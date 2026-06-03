@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, FlaskConical, Leaf, Award } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { MadeInFranceBadge } from './MadeInFranceBadge';
 
 const pillars = [
   { icon: FlaskConical, label: 'Bio-Cosmetic Science', detail: 'Cell-active formulas developed with dermatologists since 1971' },
@@ -76,19 +77,22 @@ export const EditorialShowcase = () => {
             style={{ background: 'linear-gradient(to top, #0f0520 0%, transparent 60%)' }}
           />
 
-          {/* Floating badge */}
-          <div
-            className="absolute bottom-6 left-6 md:bottom-8 md:left-8 flex items-center gap-3 px-4 py-2.5 rounded-full"
-            style={{
-              background: 'rgba(255,255,255,0.09)',
-              backdropFilter: 'blur(14px)',
-              border: '1px solid rgba(216,180,254,0.25)',
-            }}
-          >
-            <span className="w-2 h-2 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))' }} />
-            <span className="text-[11px] font-black tracking-[0.18em] uppercase text-white/80">
-              GERnétic Paris
-            </span>
+          {/* Floating badges */}
+          <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 flex flex-col gap-2">
+            <div
+              className="flex items-center gap-3 px-4 py-2.5 rounded-full"
+              style={{
+                background: 'rgba(255,255,255,0.09)',
+                backdropFilter: 'blur(14px)',
+                border: '1px solid rgba(216,180,254,0.25)',
+              }}
+            >
+              <span className="w-2 h-2 rounded-full" style={{ background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))' }} />
+              <span className="text-[11px] font-black tracking-[0.18em] uppercase text-white/80">
+                GERnétic Paris
+              </span>
+            </div>
+            <MadeInFranceBadge variant="dark" />
           </div>
         </motion.div>
 

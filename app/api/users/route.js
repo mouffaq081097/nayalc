@@ -4,6 +4,11 @@ import db from '@/lib/db';
 export async function GET(request) {
     const client = await db.connect();
     try {
+        await client.query(`
+            ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN NOT NULL DEFAULT false
+        `);
+
         const sql = `
             SELECT
                 u.id,
@@ -14,6 +19,7 @@ export async function GET(request) {
                 u.profile_image,
                 u.created_at,
                 u.is_admin,
+                COALESCE(u.is_suspended, false) AS is_suspended,
                 u.loyalty_points,
                 u.loyalty_tier,
                 COALESCE(

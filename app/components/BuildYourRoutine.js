@@ -81,7 +81,7 @@ export function BuildYourRoutine() {
           <Carousel opts={{ align: 'start', loop: false }} className="w-full">
             <CarouselContent className="-ml-3">
               {routineProducts.map((product, i) => (
-                <CarouselItem key={product.id} className="pl-3 basis-[80%]">
+                <CarouselItem key={product.id} className="pl-3 basis-1/2">
                   <Card product={product} i={i} />
                 </CarouselItem>
               ))}

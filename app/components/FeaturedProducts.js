@@ -33,7 +33,7 @@ export function FeaturedProducts() {
         <Carousel opts={{ align: 'start', loop: true }} className="w-full">
           <CarouselContent className="-ml-1.5">
             {displayedProducts.map((product) => (
-              <CarouselItem key={product.id} className="pl-1.5 basis-[85%] md:basis-1/3 lg:basis-1/4 flex">
+              <CarouselItem key={product.id} className="pl-1.5 basis-1/2 md:basis-1/3 lg:basis-1/4 flex">
                 <div
                   className="w-full h-full p-2 flex flex-col transition-all duration-300 rounded-2xl"
                   style={{ '--hover-shadow': '0 4px 24px rgba(147,51,234,0.08)' }}

@@ -525,7 +525,7 @@ export default function CollectionClient({ category: serverCategory }) {
 
           {/* Products */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5 md:gap-6">
               {Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : filteredAndSortedProducts.length === 0 ? (
@@ -553,7 +553,7 @@ export default function CollectionClient({ category: serverCategory }) {
                 className={
                   viewMode === 'list'
                     ? 'flex flex-col gap-4'
-                    : 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6'
+                    : 'grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5'
                 }
               >
                 <AnimatePresence mode="popLayout">

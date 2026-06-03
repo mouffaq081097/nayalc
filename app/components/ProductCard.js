@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import Modal from './Modal';
 import { Badge } from './ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MadeInFranceBadge } from './MadeInFranceBadge';
 
 const TypewriterText = ({ text, speed = 10 }) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -117,229 +118,217 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
   return (
     <>
-      {/* ── Glass Product Card ── */}
+      {/* ── Editorial Product Card ── */}
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative flex flex-col h-full w-full transition-all duration-500 overflow-hidden"
-        style={{
-          borderRadius: 'var(--r-lg)',
-          background: 'var(--white)',
-          border: '1px solid var(--ink-200)',
-          boxShadow: isHovered ? 'var(--shadow-2)' : 'none',
-          transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-          borderColor: isHovered ? 'var(--ink-300)' : 'var(--ink-200)',
-        }}
+        className="group relative flex flex-col h-full w-full bg-white"
+        style={{ border: '1px solid #e8e8e8' }}
       >
         {/* Image area */}
-        <div className="relative aspect-[4/5] overflow-hidden rounded-t-[var(--r-lg)]" style={{ background: 'var(--ink-50)' }}>
+        <div className="relative aspect-square overflow-hidden bg-white">
           <Link href={productUrl} className="block w-full h-full relative z-0">
-            <motion.div className="w-full h-full p-0.5 relative" whileTap={{ scale: 0.98 }}>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={displayImage}
-                  initial={{ opacity: 0, scale: 1.05 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.02 }}
-                  transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-                  className="relative w-full h-full flex items-center justify-center"
-                >
-                  {imgError ? (
-                    <div
-                      className="w-full h-full flex items-center justify-center"
-                      style={{ background: 'linear-gradient(135deg, rgba(216,180,254,0.18), rgba(249,168,212,0.12))' }}
-                    >
-                      <Sparkles size={32} style={{ color: 'rgba(147,51,234,0.25)' }} strokeWidth={1} />
-                    </div>
-                  ) : (
-                    <Image
-                      src={displayImage}
-                      alt={seoAlt}
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                      className="object-contain"
-                      onError={() => setImgError(true)}
-                    />
-                  )}
-                  {/* Subtle Gradient Overlay on Hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={displayImage}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="relative w-full h-full"
+              >
+                {imgError ? (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                    <Sparkles size={32} style={{ color: 'rgba(147,51,234,0.2)' }} strokeWidth={1} />
+                  </div>
+                ) : (
+                  <Image
+                    src={displayImage}
+                    alt={seoAlt}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                    className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
+                    onError={() => setImgError(true)}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </Link>
 
-          {/* Top-left badges */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-            {discount > 0 && (
-              <span
-                className="text-[9px] font-bold text-white px-2.5 py-1 rounded-full shadow-sm"
-                style={{ background: 'linear-gradient(135deg, #FF6B6B, #FF8E8E)' }}
-              >
-                -{discount}%
-              </span>
-            )}
-            {isNew && (
-              <span className="text-[9px] font-bold text-white px-2.5 py-1 rounded-full bg-violet-500/90 backdrop-blur-sm shadow-sm">
-                New Arrival
-              </span>
-            )}
-            {isLowStock && (
-              <motion.span 
-                animate={{ opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="text-[9px] font-bold text-rose-600 px-2.5 py-1 rounded-full bg-rose-50/90 border border-rose-100 backdrop-blur-sm flex items-center gap-1"
-              >
-                <Flame size={10} className="fill-current" />
-                Only {stock_quantity} Left
-              </motion.span>
-            )}
-          </div>
+          {/* Discount badge — top left, red square */}
+          {discount > 0 && (
+            <span
+              className="absolute top-0 left-0 z-10 text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
+              style={{ background: '#e63939' }}
+            >
+              -{discount}%
+            </span>
+          )}
 
-          {/* Top-right: wishlist + AI wand */}
-          <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 opacity-100 translate-x-0 md:opacity-0 md:group-hover:opacity-100 md:translate-x-4 md:group-hover:translate-x-0 transition-all duration-300">
+          {/* New Arrival badge — top left if no discount */}
+          {isNew && !discount && (
+            <span
+              className="absolute top-0 left-0 z-10 text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
+              style={{ background: '#7c3aed' }}
+            >
+              New
+            </span>
+          )}
+
+          {/* Low stock badge — top left, amber */}
+          {isLowStock && !discount && !isNew && (
+            <span
+              className="absolute top-0 left-0 z-10 text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
+              style={{ background: '#b45309' }}
+            >
+              {stock_quantity} left
+            </span>
+          )}
+
+          {/* Top-right: quick action icons — visible on hover */}
+          <div className="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <button
               onClick={handleWishlistToggle}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-md"
-              style={{
-                background: isWishlisted ? 'linear-gradient(135deg, #FF7EB3, #FF758C)' : 'rgba(255, 255, 255, 0.9)',
-                border: '1px solid rgba(255,255,255,0.4)',
-                backdropFilter: 'blur(8px)',
-              }}
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95"
+              style={{ border: '1px solid #e8e8e8' }}
               aria-label="Add to wishlist"
             >
               <Heart
-                size={14}
+                size={13}
                 strokeWidth={isWishlisted ? 0 : 1.75}
-                style={{ color: isWishlisted ? 'white' : '#6366f1' }}
-                className={isWishlisted ? 'fill-white' : ''}
+                style={{ color: isWishlisted ? '#e63939' : '#555' }}
+                className={isWishlisted ? 'fill-[#e63939]' : ''}
               />
             </button>
             <button
-              onClick={handleAIGenerate}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 relative group/ai shadow-md"
-              style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }}
-              aria-label="AI Insights"
-            >
-              <Wand2 size={14} strokeWidth={1.75} className="text-indigo-600" />
-            </button>
-            <button
               onClick={toggleQuickView}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-md"
-              style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }}
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95"
+              style={{ border: '1px solid #e8e8e8' }}
               aria-label="Quick view"
             >
-              <Eye size={14} strokeWidth={1.75} className="text-indigo-600" />
+              <Eye size={13} strokeWidth={1.75} style={{ color: '#555' }} />
             </button>
             <button
-              onClick={handleShare}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-md md:flex hidden"
-              style={{ background: 'rgba(255, 255, 255, 0.9)', border: '1px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }}
-              aria-label="Share product"
+              onClick={handleAIGenerate}
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95"
+              style={{ border: '1px solid #e8e8e8' }}
+              aria-label="AI Insights"
             >
-              <Share2 size={14} strokeWidth={1.75} className="text-indigo-600" />
+              <Wand2 size={13} strokeWidth={1.75} style={{ color: '#555' }} />
             </button>
+          </div>
+
+          {/* ADD TO CART — slides up from bottom of image on hover */}
+          <div
+            className="absolute bottom-0 left-0 right-0 z-10 flex justify-center pb-3 transition-all duration-300 ease-out"
+            style={{
+              transform: isHovered ? 'translateY(0)' : 'translateY(110%)',
+              opacity: isHovered ? 1 : 0,
+            }}
+          >
+            {stock_quantity > 0 ? (
+              <button
+                onClick={handleAddToCart}
+                className="px-6 py-2.5 text-[10px] font-black text-white uppercase tracking-widest flex items-center justify-center gap-2 rounded-full shadow-lg transition-all duration-150 active:scale-95"
+                style={{
+                  background: addedToCart ? '#7c3aed' : '#9333ea',
+                  minWidth: '160px',
+                }}
+              >
+                {addedToCart ? (
+                  <>
+                    <BadgeCheck size={13} className="fill-white text-white" />
+                    Added
+                  </>
+                ) : (
+                  <>
+                    Add to Cart
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                className="px-6 py-2.5 text-[10px] font-black text-white uppercase tracking-widest rounded-full"
+                style={{ background: '#aaa', minWidth: '160px' }}
+              >
+                Notify Me
+              </button>
+            )}
           </div>
         </div>
 
         {/* Info section */}
-        <div className="flex flex-col flex-1 px-4 py-3.5 gap-2">
+        <div className="flex flex-col px-3 pt-3 pb-4 gap-1.5">
           {/* Brand */}
-          <div className="flex items-center justify-between">
-            <span
-              className="text-[12px] font-semibold uppercase tracking-[0.14em]"
-              style={{ color: 'var(--ink-500)' }}
-            >
-              {brandName || 'Naya Lumière'}
+          {brandName && (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">
+              {brandName}
             </span>
-            {concerns.length > 0 && (
-              <div className="flex gap-1">
-                {concerns.slice(0, 1).map((concern, idx) => (
-                  <span key={idx} className="text-[8px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">
-                    {concern}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
+          {brandName && /gern[eé]t/i.test(brandName) && (
+            <MadeInFranceBadge variant="light" />
+          )}
 
           {/* Name */}
-          <Link href={productUrl} className="block transition-colors duration-200" style={{ color: 'var(--ink-900)' }}>
-            <span className="text-base font-semibold leading-[1.3]">
+          <Link href={productUrl} className="block hover:text-gray-600 transition-colors duration-150">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.08em] leading-[1.4] text-gray-900 line-clamp-2 font-sans">
               {name}
             </span>
           </Link>
 
-          {/* Stars */}
-          {reviewCount > 0 && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={9} className={i < Math.floor(averageRating || 5) ? 'fill-[#e0a800] text-[#e0a800]' : 'text-gray-200'} />
-                  ))}
-                </div>
-                <p className="text-[12px] font-medium" style={{ color: 'var(--ink-500)' }}>{reviewCount}</p>
-              </div>
-              {size && <span className="text-[10px] text-gray-400 font-medium italic">{size}</span>}
-            </div>
-          )}
-          {(!reviewCount || reviewCount === 0) && size && (
-             <div className="flex items-center justify-end">
-               <span className="text-[10px] text-gray-400 font-medium italic">{size}</span>
-             </div>
+          {/* Homemade tag — Crystal Bar only */}
+          {name && /crystal\s*bar/i.test(name) && (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '3px 9px',
+                borderRadius: '100px',
+                background: '#fef3c7',
+                border: '1px solid #f59e0b',
+                fontSize: '9px',
+                fontWeight: 800,
+                letterSpacing: '0.13em',
+                textTransform: 'uppercase',
+                color: '#92400e',
+                width: 'fit-content',
+              }}
+            >
+              ✦ Homemade
+            </span>
           )}
 
           {/* Price row */}
-          <div className="flex items-center justify-between mt-auto pt-4 border-t" style={{ borderColor: 'var(--ink-100)' }}>
-            {/* Price Block */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-baseline gap-1">
-                <span className="text-base font-semibold" style={{ color: 'var(--ink-900)' }}>
-                  AED {price}
-                </span>
-
-                {/* Original Price */}
-                {showComparePrice && (
-                  <span className="text-[13px] line-through font-medium" style={{ color: 'var(--ink-400)' }}>
-                    AED {originalPrice}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Discount Badge */}
-            {discount > 0 && (
-              <span className="text-[10px] font-bold px-3 py-1.5 rounded-full" style={{ background: 'rgba(216,180,254,0.15)', color: 'rgb(126,105,230)' }}>
-                −{discount}%
+          <div className="flex items-center gap-2 mt-0.5">
+            {showComparePrice && (
+              <span className="text-[12px] text-gray-400 line-through font-normal">
+                AED {originalPrice}
               </span>
             )}
+            <span
+              className="text-[13px] font-semibold"
+              style={{ color: showComparePrice ? '#7c3aed' : '#1a1a1a' }}
+            >
+              AED {price}
+            </span>
           </div>
 
-          {/* Add to cart */}
-          {stock_quantity > 0 ? (
-            <motion.button
-              onClick={handleAddToCart}
-              whileTap={{ scale: 0.97 }}
-              className={`w-full mt-2 h-11 text-[11px] font-bold flex items-center justify-center gap-2 rounded-full transition-all duration-500 uppercase tracking-widest ${
-                addedToCart
-                  ? 'bg-green-50 text-green-600 border border-green-100 cursor-default shadow-sm'
-                  : 'btn sm block'
-              }`}
-            >
-              {addedToCart ? (
-                <>
-                  <BadgeCheck size={14} className="fill-green-600 text-white" />
-                  <span>Added to Bag</span>
-                </>
-              ) : (
-                <span>Add to Bag</span>
-              )}
-            </motion.button>
-          ) : (
-            <div className="w-full mt-2 h-11 flex items-center justify-center text-[11px] font-bold text-gray-400 rounded-full border border-gray-100 bg-gray-50/50">
-              Notify Me
+          {/* Stars */}
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <div className="flex gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={10}
+                  className={i < Math.floor(averageRating || 4) ? 'fill-[#e0a800] text-[#e0a800]' : 'fill-gray-200 text-gray-200'}
+                />
+              ))}
             </div>
-          )}
+            {reviewCount > 0 && (
+              <span className="text-[10px] text-gray-400">({reviewCount})</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -472,13 +461,18 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           {/* Right: info */}
           <div className="p-10 md:p-14 flex flex-col justify-center" style={{ background: '#ffffff' }}>
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
-              <p
-                className="text-[9px] font-bold mb-4 flex items-center gap-3"
-                style={{ color: 'var(--cl-text-soft)' }}
-              >
-                <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }} />
-                {brandName || 'Naya Lumière Cosmetics'}
-              </p>
+              <div className="flex items-center gap-3 mb-4 flex-wrap">
+                <p
+                  className="text-[9px] font-bold flex items-center gap-3"
+                  style={{ color: 'var(--cl-text-soft)' }}
+                >
+                  <span className="w-8 h-px" style={{ background: 'linear-gradient(90deg, rgb(196,167,254), rgb(216,180,254))' }} />
+                  {brandName || 'Naya Lumière Cosmetics'}
+                </p>
+                {brandName && /gern[eé]t/i.test(brandName) && (
+                  <MadeInFranceBadge variant="light" />
+                )}
+              </div>
               <h2 className="font-serif text-4xl font-light italic leading-[1.1] mb-6" style={{ color: 'var(--cl-text-deep)' }}>{name}</h2>
 
               <div className="flex items-baseline gap-4 mb-8 pb-8" style={{ borderBottom: '1px solid var(--cl-glass-border)' }}>

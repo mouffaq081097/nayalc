@@ -1,9 +1,7 @@
 "use client";
-import { Suspense, useEffect, useState, useMemo } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { createFetchWithAuth } from '../lib/api';
 import { CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
 
 const glass = {
@@ -17,8 +15,6 @@ function TabbyReturn() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { clearCart } = useCart();
-  const { logout } = useAuth();
-  const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
 
   const [phase, setPhase] = useState('verifying'); // verifying | placing | success | error
   const [errorMsg, setErrorMsg] = useState('');
@@ -49,11 +45,22 @@ function TabbyReturn() {
 
         // 3. Place the order
         setPhase('placing');
-        const orderRes = await fetchWithAuth('/api/orders', {
+        const orderRes = await fetch('/api/orders', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...orderData, payment_method: 'tabby', tabby_payment_id: paymentId }),
         });
         const result = await orderRes.json();
+
+        // 409 = order was already created for this payment (duplicate return page visit)
+        if (orderRes.status === 409 && result.orderId) {
+          sessionStorage.removeItem('pendingTabbyOrder');
+          clearCart();
+          setPhase('success');
+          setTimeout(() => router.push(`/account/orders/${result.orderId}`), 1500);
+          return;
+        }
+
         if (!orderRes.ok) throw new Error(result.message || 'Order creation failed');
 
         // 4. Cleanup and redirect
