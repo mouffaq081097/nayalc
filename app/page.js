@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { HeroSection } from './components/HeroSection';
 import { Categories } from './components/Categories';
 import { FeaturedProducts } from './components/FeaturedProducts';
@@ -30,6 +31,16 @@ export default async function HomePage() {
             <BuildYourRoutine />
             <FeaturedProducts />
             <TabbyHeroBanner />
+            <div className="md:hidden w-full">
+                <Image
+                    src="/Gemini_Generated_Image_2r1otq2r1otq2r1o.png"
+                    alt=""
+                    width={600}
+                    height={400}
+                    className="w-full h-auto object-cover"
+                    priority={false}
+                />
+            </div>
             <ForYouSection />
             {/* <ReviewsSection /> */}
             {/* <OurStorySection /> */}
