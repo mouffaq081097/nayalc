@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Search, ShieldCheck, Zap, BarChart3, Globe, Sparkles, AlertTriangle, CheckCircle2, ArrowRight, Loader2, Target, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/app/components/ui/button';
 
 const SeoAnalyticsPage = () => {
     const { fetchWithAuth } = useAppContext();
@@ -53,12 +52,12 @@ const SeoAnalyticsPage = () => {
                     <AlertTriangle size={32} />
                 </div>
                 <div className="space-y-2">
-                    <p className="text-sm font-black   text-gray-900">Audit Protocol Terminated</p>
-                    <p className="text-xs text-red-400 font-medium italic">Reason: {error || 'Neural connection timed out.'}</p>
+                    <p className="text-sm font-semibold text-gray-900">Audit failed</p>
+                    <p className="text-xs text-red-400 font-medium">{error || 'Connection timed out. Please try again.'}</p>
                 </div>
-                <Button onClick={runAudit} className="mt-4 bg-gray-900 text-white rounded-xl px-8 py-4 text-[10px] font-black  ">
-                    Retry Neutral Scan
-                </Button>
+                <button onClick={runAudit} className="cl-gradient-btn gap-2 px-6 py-2.5 text-[11px] mt-2 active:scale-[0.98]">
+                    <Zap size={13} /> Retry
+                </button>
             </div>
         );
     }
@@ -70,12 +69,12 @@ const SeoAnalyticsPage = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900 ">AI SEO Command Center</h2>
-                    <p className="text-sm text-gray-400 mt-1">Real-time neural analysis of your visibility in global search engines</p>
+                    <h2 className="text-2xl font-bold" style={{ color: '#3b0764' }}>SEO Audit</h2>
+                    <p className="text-sm text-gray-400 mt-0.5">AI-powered analysis of your store's search visibility</p>
                 </div>
-                <Button onClick={runAudit} className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-8 py-6 text-[11px] font-black   shadow-xl transition-all">
-                    <Zap size={14} className="mr-2" /> Run Fresh Audit
-                </Button>
+                <button onClick={runAudit} className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98] whitespace-nowrap">
+                    <Zap size={13} /> Run Audit
+                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

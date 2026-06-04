@@ -54,8 +54,15 @@ export async function POST(request, { params }) {
     }
 
     try {
-        // If this is the new default, set all others to false first
-        if (is_default) {
+        // Auto-default the first address ever added for this user
+        const { rows: existing } = await db.query(
+            'SELECT id FROM user_addresses WHERE user_id = $1 LIMIT 1',
+            [userId]
+        );
+        const shouldBeDefault = is_default || existing.length === 0;
+
+        // If this is the new default, clear all others first
+        if (shouldBeDefault) {
             await db.query('UPDATE user_addresses SET is_default = false WHERE user_id = $1', [userId]);
         }
         
@@ -76,7 +83,7 @@ export async function POST(request, { params }) {
                 is_default as "isDefault",
                 address_label as "addressLabel",
                 customer_phone as "customerPhone"`,
-            [userId, address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_phone]
+            [userId, address_line1, address_line1, city, zip_code, country, address_line2, state, shouldBeDefault, address_label, customer_phone]
         );
 
         // SYNC: Update user's main phone number if they don't have one yet

@@ -8,10 +8,12 @@ import { useUser } from '../../context/UserContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import { Heart, Star, Plus, Minus, Check, ChevronRight, ChevronDown, ChevronUp, Truck, RotateCcw, ShieldCheck, X, ShoppingBag, Maximize2 } from 'lucide-react';
+import { Heart, Star, Plus, Minus, Check, ChevronRight, ChevronDown, ChevronUp, Truck, RotateCcw, ShieldCheck, X, Maximize2, Sparkles, Package, MapPin } from 'lucide-react';
 import Reviews from '../../components/Reviews';
+import Modal from '../../components/Modal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
+import { calcShipping, getDeliveryInfo, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME } from '../../../lib/shipping';
 import ProductCard from '../../components/ProductCard';
 import TabbyPromo from '../../components/TabbyPromo';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '../../components/ui/carousel';
@@ -25,6 +27,135 @@ function parseSizes(sizeStr) {
   if (sizeStr.includes(',')) return sizeStr.split(',').map(s => s.trim());
   if (sizeStr.includes('/')) return sizeStr.split('/').map(s => s.trim());
   return [sizeStr.trim()];
+}
+
+function DeliveryEstimate({ cartItems }) {
+  const [info, setInfo]         = useState(() => getDeliveryInfo());
+  const [minsLeft, setMinsLeft] = useState(info.minsLeft);
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const updated = getDeliveryInfo();
+      setInfo(updated);
+      setMinsLeft(updated.minsLeft);
+    }, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const cartQty  = cartItems.reduce((s, i) => s + i.quantity, 0);
+  const shipCost = calcShipping(cartQty + 1);
+  const hrs      = minsLeft != null ? Math.floor(minsLeft / 60) : 0;
+  const mins     = minsLeft != null ? minsLeft % 60 : 0;
+
+  const TIERS = [
+    { qty: '1 item',   cost: 'AED 20', free: false },
+    { qty: '2 items',  cost: 'AED 10', free: false },
+    { qty: '3+ items', cost: 'FREE',   free: true  },
+  ];
+
+  return (
+    <>
+      <div className="flex items-start gap-2">
+        <Truck size={14} className="flex-shrink-0 mt-0.5" style={{ color: LAVENDER }} />
+        <div className="space-y-0.5">
+          <p className="text-[13px] text-gray-500 leading-snug">
+            {info.isNextDay ? 'Get it ' : 'Estimated delivery '}
+            <span className="font-semibold text-gray-900">{info.dateLabel}</span>
+            <span className="mx-1.5 text-gray-300">·</span>
+            {shipCost === 0
+              ? <span className="font-semibold text-emerald-600">Free shipping</span>
+              : <><span className="font-medium" style={{ color: LAVENDER }}>AED {shipCost} shipping</span>
+                <span className="text-[11px] text-gray-400 ml-1.5">(free with 3+ items)</span></>}
+            <button
+              onClick={() => setShowModal(true)}
+              className="ml-1.5 text-[11px] font-medium underline underline-offset-2 cursor-pointer transition-opacity hover:opacity-70"
+              style={{ color: LAVENDER }}>
+              Learn more
+            </button>
+          </p>
+          {info.isNextDay && minsLeft != null && (
+            <p className="text-[11px] font-medium" style={{ color: LAVENDER }}>
+              Order within{' '}
+              <span className="font-bold text-gray-900">{hrs > 0 ? `${hrs}h ` : ''}{mins}m</span>
+              {' '}for tomorrow delivery
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Shipping model modal */}
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="How shipping works" size="max-w-md">
+        <div className="space-y-6">
+
+          {/* Intro */}
+          <p className="text-[13px] text-gray-500 leading-relaxed">
+            We believe in honest, transparent pricing. Our shipping is based on the number of items in your order — not the order value.
+          </p>
+
+          {/* Tier cards */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400 mb-3">Shipping tiers</p>
+            <div className="space-y-2">
+              {TIERS.map((tier) => (
+                <div key={tier.qty}
+                  className="flex items-center justify-between px-4 py-3 rounded-xl border transition-all"
+                  style={{
+                    background: tier.free ? 'rgba(248,240,255,0.6)' : 'rgba(249,250,251,0.8)',
+                    borderColor: tier.free ? 'rgba(216,180,254,0.5)' : '#f3f4f6',
+                  }}>
+                  <div className="flex items-center gap-2.5">
+                    {tier.free
+                      ? <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: LAVENDER }}>
+                          <Check size={10} className="text-white" strokeWidth={3} />
+                        </span>
+                      : <span className="w-5 h-5 rounded-full border-2 flex items-center justify-center border-gray-200" />}
+                    <span className="text-[13px] font-medium text-gray-700">{tier.qty}</span>
+                  </div>
+                  <span className={`text-[14px] font-bold tabular-nums ${tier.free ? 'text-emerald-600' : 'text-gray-900'}`}>
+                    {tier.cost}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Artisan Gift */}
+          <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(248,240,255,0.5)', border: '1px solid rgba(216,180,254,0.35)' }}>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px]">🎁</span>
+              <p className="text-[13px] font-bold" style={{ color: '#6b21a8' }}>{ARTISAN_GIFT_NAME}</p>
+            </div>
+            <p className="text-[12px] text-gray-500 leading-relaxed">
+              Spend <span className="font-semibold text-gray-800">AED {ARTISAN_GIFT_THRESHOLD}+</span> and receive a complimentary handmade gift from our Crystal Bar collection — our way of celebrating your order and supporting our small artisan line.
+            </p>
+          </div>
+
+          {/* Delivery speed */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">Delivery speed</p>
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-100">
+              <Truck size={15} className="flex-shrink-0 mt-0.5" style={{ color: LAVENDER }} />
+              <div className="space-y-0.5">
+                <p className="text-[13px] font-medium text-gray-800">via Fly Express</p>
+                <p className="text-[12px] text-gray-500 leading-relaxed">
+                  Orders placed before <span className="font-semibold text-gray-700">2:00 PM UAE time</span> are dispatched the same day and typically arrive the next business day.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Transparency note */}
+          <div className="rounded-xl px-4 py-3 bg-gray-50 border border-gray-100">
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              <span className="font-semibold text-gray-600">Why we charge shipping:</span> Our actual cost per parcel via Fly Express is AED 32. We absorb the difference on multi-item orders because we'd rather reward you for ordering more than hide fees in product prices.
+            </p>
+          </div>
+
+        </div>
+      </Modal>
+    </>
+  );
 }
 
 function AccordionItem({ title, children, defaultOpen = false }) {
@@ -46,9 +177,9 @@ function AccordionItem({ title, children, defaultOpen = false }) {
 export default function ProductClient({ params, initialProduct }) {
   const resolvedParams = use(params);
   const { productId } = resolvedParams;
-  const { addToCart } = useCart();
+  const { addToCart, cartItems } = useCart();
   const { user } = useAuth();
-  const { shippingAddresses } = useUser();
+  const { shippingAddresses, contactInfo } = useUser();
   const { products: allProducts } = useAppContext();
   const router = useRouter();
 
@@ -62,6 +193,7 @@ export default function ProductClient({ params, initialProduct }) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [btDeselected, setBtDeselected] = useState({});
 
   const buyButtonRef = useRef(null);
 
@@ -138,10 +270,29 @@ export default function ProductClient({ params, initialProduct }) {
     } catch (e) { console.error(e); }
   };
 
+  const handleBtAddToCart = () => {
+    if (product) addToCart(product, 1);
+    btCompanions
+      .filter(p => !btDeselected[p.id])
+      .forEach(p => addToCart({ ...p, stock_quantity: p.stockQuantity ?? p.stock_quantity }, 1));
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 2000);
+  };
+
   const recommendations = useMemo(() => {
     if (!product || !allProducts) return [];
     return allProducts.filter(p => p.id !== product.id && (p.brand === product.brand || p.categoryNames === product.categoryNames)).slice(0, 4);
   }, [product, allProducts]);
+
+  const btCompanions = useMemo(() => recommendations.slice(0, 2), [recommendations]);
+
+  const btTotal = useMemo(() => {
+    if (!product) return 0;
+    const extras = btCompanions
+      .filter(p => !btDeselected[p.id])
+      .reduce((sum, p) => sum + Number(p.price), 0);
+    return Number(product.price) + extras;
+  }, [product, btCompanions, btDeselected]);
 
   const sizes = useMemo(() => product?.size ? parseSizes(product.size) : [], [product]);
   const discountPct = product?.comparedprice > product?.price
@@ -396,19 +547,22 @@ export default function ProductClient({ params, initialProduct }) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '5px 12px',
+                  padding: '5px 14px',
                   borderRadius: '100px',
-                  background: '#fef3c7',
-                  border: '1px solid #f59e0b',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  letterSpacing: '0.13em',
+                  background: 'linear-gradient(135deg, rgba(248,240,255,0.97), rgba(255,240,250,0.97))',
+                  border: '1px solid rgba(216,180,254,0.55)',
+                  boxShadow: '0 2px 12px rgba(147,51,234,0.14), inset 0 1px 0 rgba(255,255,255,0.85)',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  color: '#92400e',
+                  color: '#6b21a8',
                   width: 'fit-content',
+                  backdropFilter: 'blur(10px)',
                 }}
               >
-                ✦ Homemade
+                <Sparkles size={12} color="#9333ea" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                Homemade
               </span>
             )}
 
@@ -445,6 +599,59 @@ export default function ProductClient({ params, initialProduct }) {
               <TabbyPromo price={product.price} source="product" lang="en" />
             )}
 
+            {/* Deliver to strip */}
+            {(() => {
+              // Single address → treat as default regardless of flag
+              // Multiple addresses → prefer the one flagged is_default, else first
+              const addr = shippingAddresses.length === 1
+                ? shippingAddresses[0]
+                : (shippingAddresses.find(a => a.isDefault) ?? shippingAddresses[0] ?? null);
+
+              const name = contactInfo?.name || '';
+              const line = addr ? (addr.addressLine1 || addr.shippingAddress || '') : '';
+              const city = addr?.city || '';
+              const full = [line, city].filter(Boolean).join(', ');
+              const truncated = full.length > 38 ? full.slice(0, 38) + '…' : full;
+
+              if (!user) return (
+                <Link href="/auth"
+                  className="flex items-center gap-2 py-2 text-[13px] font-medium transition-colors hover:opacity-80"
+                  style={{ color: LAVENDER }}>
+                  <MapPin size={14} className="flex-shrink-0" style={{ color: LAVENDER }} />
+                  Sign in to see delivery options
+                </Link>
+              );
+
+              if (!addr) return (
+                <Link href="/account/addresses"
+                  className="flex items-center gap-2 py-2 text-[13px] font-medium transition-colors hover:opacity-80"
+                  style={{ color: LAVENDER }}>
+                  <MapPin size={14} className="flex-shrink-0" style={{ color: LAVENDER }} />
+                  Add a delivery address
+                </Link>
+              );
+
+              return (
+                <Link href="/account/addresses"
+                  className="flex items-start gap-2 py-2 group">
+                  <MapPin size={14} className="flex-shrink-0 mt-0.5" style={{ color: LAVENDER }} />
+                  <p className="text-[13px] text-gray-500 leading-snug">
+                    Deliver to{' '}
+                    <span className="font-semibold text-gray-800">{name}</span>
+                    {truncated && (
+                      <>
+                        <span className="mx-1 text-gray-300">·</span>
+                        <span className="group-hover:underline underline-offset-2" style={{ color: LAVENDER }}>{truncated}</span>
+                      </>
+                    )}
+                  </p>
+                </Link>
+              );
+            })()}
+
+            {/* Delivery estimate with live cutoff countdown */}
+            <DeliveryEstimate cartItems={cartItems} />
+
             {/* Description */}
             {(product.description || product.long_description) && (
               <p className="text-[14px] text-gray-500 leading-relaxed">
@@ -469,6 +676,33 @@ export default function ProductClient({ params, initialProduct }) {
                 </div>
               </div>
             )}
+
+            {/* Stock urgency indicator */}
+            {(() => {
+              const qty = product.stock_quantity ?? product.stockQuantity;
+              if (qty == null) return null;
+              if (Number(qty) === 0) return (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                  <span className="text-[13px] font-semibold text-red-600">Out of stock</span>
+                </div>
+              );
+              if (Number(qty) <= 5) return (
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                  </span>
+                  <span className="text-[13px] font-semibold text-red-600">Only {qty} left in stock – order soon!</span>
+                </div>
+              );
+              return (
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                  <span className="text-[13px] font-medium text-emerald-700">In stock – ready to ship</span>
+                </div>
+              );
+            })()}
 
             {/* Quantity + CTA + Wishlist */}
             <div className="flex items-center gap-3" ref={buyButtonRef}>
@@ -521,6 +755,16 @@ export default function ProductClient({ params, initialProduct }) {
               ))}
             </div>
 
+            {/* Sold by / Delivered by */}
+            <div className="flex items-center gap-2.5 py-2.5 px-3.5 rounded-xl border border-gray-100 bg-gray-50/50">
+              <Package size={13} style={{ color: LAVENDER }} className="flex-shrink-0" />
+              <p className="text-[12px] text-gray-500 leading-none">
+                Sold by{' '}<span className="font-semibold text-gray-700">Naya Lumière Cosmetics</span>
+                {' · '}
+                Delivered by{' '}<span className="font-semibold text-gray-700">Fly Express</span>
+              </p>
+            </div>
+
             {/* Accordions */}
             <div className="mt-2">
               {benefits.length > 0 && (
@@ -558,6 +802,91 @@ export default function ProductClient({ params, initialProduct }) {
               )}
             </div>
 
+            {/* ── Frequently Bought Together ── */}
+            {btCompanions.length > 0 && (
+              <div className="border-t border-gray-100 pt-5">
+                <p className="text-[13px] font-bold text-gray-900 mb-4">Frequently bought together</p>
+
+                {/* Amazon-style: products left, total+CTA right */}
+                <div className="flex items-start gap-4">
+
+                  {/* Products row */}
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    {/* Current product */}
+                    <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                      <div className="relative w-[90px] h-[90px] rounded-xl border-2 bg-gray-50 overflow-hidden flex items-center justify-center p-1.5"
+                        style={{ borderColor: LAVENDER }}>
+                        {allImages[0] && (
+                          <Image src={allImages[0]} alt={product.name} width={84} height={84} className="object-contain w-full h-full" />
+                        )}
+                        <div className="absolute top-1 right-1 w-4 h-4 rounded flex items-center justify-center"
+                          style={{ background: LAVENDER }}>
+                          <Check size={9} className="text-white" strokeWidth={3} />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-gray-600 text-center line-clamp-2 leading-snug w-[90px]">
+                        <span className="font-semibold">This item:</span> {product.name}
+                      </p>
+                      <p className="text-[12px] font-bold text-gray-900 tabular-nums">AED {Number(product.price).toFixed(0)}</p>
+                    </div>
+
+                    {btCompanions.map((companion) => {
+                      const isSelected = !btDeselected[companion.id];
+                      return (
+                        <div key={companion.id} className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-gray-400 font-light text-lg leading-none flex-shrink-0">+</span>
+                          <button
+                            onClick={() => setBtDeselected(prev => ({ ...prev, [companion.id]: !prev[companion.id] }))}
+                            className="flex flex-col items-center gap-1.5 cursor-pointer"
+                          >
+                            <div className="relative w-[90px] h-[90px] rounded-xl border-2 bg-gray-50 overflow-hidden flex items-center justify-center p-1.5 transition-all duration-200"
+                              style={{
+                                borderColor: isSelected ? 'rgba(216,180,254,0.7)' : '#e5e7eb',
+                                opacity: isSelected ? 1 : 0.5,
+                              }}>
+                              {companion.imageUrl && (
+                                <Image src={companion.imageUrl} alt={companion.name} width={84} height={84} className="object-contain w-full h-full" />
+                              )}
+                              <div className="absolute top-1 right-1 w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200"
+                                style={isSelected
+                                  ? { background: LAVENDER, borderColor: LAVENDER }
+                                  : { background: 'white', borderColor: '#9ca3af' }}>
+                                {isSelected && <Check size={9} className="text-white" strokeWidth={3} />}
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-gray-600 text-center line-clamp-2 leading-snug w-[90px]" style={{ color: isSelected ? LAVENDER : '#6b7280' }}>
+                              {companion.name}
+                            </p>
+                            <p className="text-[12px] font-bold tabular-nums" style={{ color: isSelected ? '#111827' : '#9ca3af' }}>
+                              AED {Number(companion.price).toFixed(0)}
+                            </p>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Total + CTA — right panel */}
+                  <div className="flex-shrink-0 flex flex-col gap-3 pt-1 min-w-[130px]">
+                    <div>
+                      <p className="text-[11px] text-gray-500 font-medium mb-0.5">Total price</p>
+                      <p className="text-[18px] font-bold text-gray-900 tabular-nums">AED {btTotal.toFixed(0)}</p>
+                    </div>
+                    <button
+                      onClick={handleBtAddToCart}
+                      className="w-full h-9 rounded-full text-[11px] font-bold text-white uppercase tracking-wide transition-all active:scale-[0.98]"
+                      style={{ background: LAVENDER }}>
+                      Add all to cart
+                    </button>
+                    <p className="text-[10px] text-gray-400 leading-relaxed">
+                      Tap an item to include or exclude it
+                    </p>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -588,6 +917,7 @@ export default function ProductClient({ params, initialProduct }) {
             </Carousel>
           </section>
         )}
+
       </div>
 
       {/* ── Reviews ── */}

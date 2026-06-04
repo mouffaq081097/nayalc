@@ -31,10 +31,10 @@ export const SocialFeed = () => {
   if (!loading && posts.length === 0) return null;
 
   return (
-    <section className="py-6 bg-white">
+    <section className="py-4 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex flex-row items-end justify-between gap-4 mb-5">
+        <div className="flex flex-row items-end justify-between gap-4 mb-4">
           <div className="space-y-1">
             <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">@nayalumiere</p>
             <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Follow the glow</h2>

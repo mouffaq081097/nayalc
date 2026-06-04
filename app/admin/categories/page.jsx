@@ -1,9 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, Trash2, Search, Loader2, Tag, MoreHorizontal, LayoutGrid, Package, ArrowRight, ExternalLink, Image as ImageIcon, CheckCircle2, Edit, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Search, Loader2, Tag, MoreHorizontal, LayoutGrid, Package, ArrowRight, Image as ImageIcon, CheckCircle2, Edit, Eye, EyeOff } from 'lucide-react';
 import Modal from '../../components/Modal';
-import { Button } from '@/app/components/ui/button';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,10 +68,6 @@ const ManageCategories = () => {
         }
     }
 
-    const handleFileChange = (e) => {
-        setImageFile(e.target.files[0]);
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!categoryName.trim()) return;
@@ -125,19 +120,19 @@ const ManageCategories = () => {
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Search category universes..."
+                        placeholder="Search categories..."
                         className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-cl-purple/20 focus:border-cl-purple transition-all text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 
-                <Button 
-                    onClick={handleOpenAddModal} 
-                    className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-6 py-6 text-[11px] font-black   shadow-lg shadow-indigo-500/10 active:scale-95 transition-all"
+                <button
+                    onClick={handleOpenAddModal}
+                    className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98] whitespace-nowrap"
                 >
-                    <Plus className="mr-2 h-4 w-4" /> Create New Universe
-                </Button>
+                    <Plus size={14} /> Add Category
+                </button>
             </div>
 
             {/* Content Area */}
@@ -359,30 +354,30 @@ const ManageCategories = () => {
                                     ) : (
                                         <div className="flex flex-col items-center justify-center py-14 text-gray-300 gap-4 text-center">
                                             <LayoutGrid size={40} strokeWidth={1} />
-                                            <p className="text-sm font-medium italic">Universe must be incepted before <br/>masterpieces can be linked.</p>
+                                            <p className="text-sm font-medium text-gray-400">Save the category first before linking products.</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </section>
 
-                        <div className="pt-8 border-t border-gray-50 flex justify-end gap-6">
-                            <button 
-                                type="button" 
-                                onClick={handleCloseModal} 
-                                className="px-8 py-4 text-[10px] font-black   text-gray-400 hover:text-gray-900 transition-colors"
+                        <div className="pt-5 border-t border-gray-100 flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={handleCloseModal}
+                                className="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
                                 disabled={isSubmitting}
                             >
-                                Cancel Operation
+                                Cancel
                             </button>
-                            <Button 
-                                type="submit" 
-                                className="px-10 py-6 bg-cl-purple hover:bg-gray-900 text-white rounded-xl text-[11px] font-black   shadow-xl active:scale-95 transition-all" 
+                            <button
+                                type="submit"
+                                className="cl-gradient-btn gap-2 px-6 py-2.5 text-[11px] active:scale-[0.98] disabled:opacity-60"
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? <Loader2 className="animate-spin" /> : editingCategory ? 'Update Architecture' : 'Incept Universe'}
-                            </Button>
-                                                </div>
+                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : editingCategory ? 'Update category' : 'Add category'}
+                            </button>
+                        </div>
                                             </form>
                                         </Modal>
                                     </div>

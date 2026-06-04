@@ -31,10 +31,10 @@ export default async function HomePage() {
             <BuildYourRoutine />
             <FeaturedProducts />
             <TabbyHeroBanner />
-            <div className="md:hidden w-full">
+            <div className="md:hidden">
                 <Image
-                    src="/Gemini_Generated_Image_2r1otq2r1otq2r1o.png"
-                    alt=""
+                    src="/ChatGPT Image Jun 2, 2026, 03_20_23 PM.png"
+                    alt="Naya Lumière featured collection"
                     width={600}
                     height={400}
                     className="w-full h-auto object-cover"
@@ -45,6 +45,16 @@ export default async function HomePage() {
             {/* <ReviewsSection /> */}
             {/* <OurStorySection /> */}
             <SocialFeed />
+            <div className="md:hidden">
+                <Image
+                    src="/ChatGPT Image Jun 3, 2026, 03_23_31 PM1.png"
+                    alt="Naya Lumière handmade collection"
+                    width={600}
+                    height={400}
+                    className="w-full h-auto object-cover"
+                    priority={false}
+                />
+            </div>
             <RewardsSection />
         </div>
     );

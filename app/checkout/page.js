@@ -10,6 +10,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { createFetchWithAuth } from '../lib/api';
+import { calcShipping } from '@/lib/shipping';
 import dynamic from 'next/dynamic';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
@@ -44,7 +45,8 @@ export default function CheckoutPage() {
   const prevClientSecretRef = useRef('');
 
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
-  const shipping = subtotal > 200 ? 0 : 30;
+  const totalQty = cartItems.reduce((s, i) => s + i.quantity, 0);
+  const shipping = calcShipping(totalQty);
   const tax = subtotal * 0.05;
   const giftWrapFee = formData.giftWrap ? 100 : 0;
   const pointsDiscount = usePoints ? Math.floor(loyaltyPoints / 100) * 5 : 0;

@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Loader2, MoreHorizontal, Image as ImageIcon, Edit, Eye, EyeOff, Film, ArrowUp, ArrowDown, Save, X } from 'lucide-react';
 import PageLoader from '@/app/components/PageLoader';
 import Modal from '../../components/Modal';
-import { Button } from '@/app/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -175,9 +174,9 @@ const ManageHeroSlides = () => {
           <h1 className="text-2xl font-bold text-gray-900">Hero Banner Management</h1>
           <p className="text-sm text-gray-500">Curate the first impression of your sanctuary.</p>
         </div>
-        <Button onClick={handleOpenAddModal} className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-6 py-6 text-[11px] font-black shadow-lg">
-          <Plus className="mr-2 h-4 w-4" /> Add New Sequence
-        </Button>
+        <button onClick={handleOpenAddModal} className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98]">
+          <Plus size={14} /> Add Slide
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -370,13 +369,13 @@ const ManageHeroSlides = () => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 pt-8 border-t border-gray-50">
-             <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-4 text-[10px] font-black text-gray-400 hover:text-gray-900 transition-colors">
+          <div className="flex justify-end gap-3 pt-5 border-t border-gray-100">
+             <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
                 Cancel
              </button>
-             <Button type="submit" disabled={isSubmitting} className="px-10 py-6 bg-cl-purple hover:bg-gray-900 text-white rounded-xl text-[11px] font-black shadow-xl">
-                {isSubmitting ? <Loader2 className="animate-spin" /> : editingSlide ? 'Update Sequence' : 'Create Sequence'}
-             </Button>
+             <button type="submit" disabled={isSubmitting} className="cl-gradient-btn gap-2 px-6 py-2.5 text-[11px] active:scale-[0.98] disabled:opacity-60">
+                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : editingSlide ? 'Update slide' : 'Add slide'}
+             </button>
           </div>
         </form>
       </Modal>

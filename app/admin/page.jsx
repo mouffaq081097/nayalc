@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -71,10 +71,9 @@ const AdminDashboard = () => {
                 </div>
                 <button
                     onClick={() => router.push('/admin/products')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 text-white text-[12px] font-bold rounded-xl shadow-lg transition-all active:scale-95"
-                    style={{ background: '#9333ea', boxShadow: '0 4px 14px rgba(147,51,234,0.35)' }}
+                    className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98]"
                 >
-                    <Plus size={15} /> Add Product
+                    <Plus size={14} /> Add Product
                 </button>
             </div>
 
@@ -196,7 +195,7 @@ const AdminDashboard = () => {
                             <button
                                 key={label}
                                 onClick={() => router.push(href)}
-                                className="p-5 rounded-xl border flex flex-col items-center gap-2.5 transition-all hover:shadow-md active:scale-95"
+                                className="p-5 rounded-xl border flex flex-col items-center gap-2.5 transition-all hover:shadow-md active:scale-95 cursor-pointer"
                                 style={{ background: bg, borderColor: fg + '30' }}
                             >
                                 <Icon size={22} style={{ color: fg }} />

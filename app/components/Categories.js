@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from './ui/carousel.tsx';
 import { Container } from './ui/Container';
-import { ArrowRight } from 'lucide-react';
 
 export function Categories() {
   const [categories, setCategories] = useState([]);
@@ -43,14 +42,10 @@ export function Categories() {
   if (error) return null;
 
   return (
-    <section
-      className="py-6 relative overflow-hidden"
-      style={{ background: '#ffffff' }}
-    >
-
+    <section className="py-4 relative overflow-hidden bg-white">
       <Container className="relative z-10">
         {/* Section Header */}
-        <div className="mb-5 flex flex-row justify-between items-end gap-4">
+        <div className="mb-4 flex flex-row justify-between items-end gap-4">
           <div className="space-y-1">
             <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Browse</p>
             <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Shop by Category</h2>

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { ArrowRight, Plus, Minus, ShoppingBag, Truck, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Plus, Minus, ShoppingBag, Truck, Sparkles, X, Gift } from 'lucide-react';
+import { calcShipping, nextShippingTier, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME } from '@/lib/shipping';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
@@ -55,11 +56,13 @@ export default function CartPage() {
     finally { setIsAiLoading(false); }
   };
 
-  const FREE_SHIPPING = 200;
-  const SHIP_COST     = 30;
-  const shipping      = subtotal >= FREE_SHIPPING ? 0 : SHIP_COST;
+  const totalQty   = cartItems.reduce((s, i) => s + i.quantity, 0);
+  const shipping   = calcShipping(totalQty);
+  const nextTier   = nextShippingTier(totalQty);
+  const artisanPct = Math.min(100, Math.round((subtotal / ARTISAN_GIFT_THRESHOLD) * 100));
+  const artisanGap = Math.max(0, ARTISAN_GIFT_THRESHOLD - subtotal);
   // Max redeemable: 1 point = 1 AED, capped at subtotal
-  const maxPoints     = Math.min(loyaltyPoints, Math.floor(subtotal));
+  const maxPoints  = Math.min(loyaltyPoints, Math.floor(subtotal));
   const pointsDiscount = Math.min(pointsToUse, maxPoints);
   const total         = Math.max(0, finalTotal + shipping - pointsDiscount);
   const hasStockIssues = cartItems.some(i => i.stock_quantity === 0 || i.quantity > i.stock_quantity);
@@ -117,7 +120,7 @@ export default function CartPage() {
         <div className="mb-8">
           <h1 className="text-[32px] font-semibold tracking-tight text-[#111114]">Your Bag</h1>
           <p className="text-[14px] text-[#5a5a64] mt-1">
-            {cartItems.reduce((s, i) => s + i.quantity, 0)} {cartItems.reduce((s,i)=>s+i.quantity,0)===1?'item':'items'} · Free shipping on orders over AED {FREE_SHIPPING}
+            {totalQty} {totalQty === 1 ? 'item' : 'items'} · Free shipping with 3+ items
           </p>
         </div>
 
@@ -306,23 +309,73 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* Shipping progress — only when not free */}
-              {shipping > 0 && (
-                <div className="mt-3 space-y-1.5">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-[#8a8a93]">Add AED {(FREE_SHIPPING - subtotal).toFixed(0)} for free shipping</span>
-                    <span className="font-semibold text-[#111114]">{Math.round((subtotal / FREE_SHIPPING) * 100)}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-[#f3f3f5] overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING) * 100)}%` }}
-                      className="h-full rounded-full"
-                      style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
-                    />
-                  </div>
+              {/* Shipping tier progress */}
+              <div className="mt-3 space-y-2">
+                {/* Tier badges */}
+                <div className="flex items-center gap-1.5">
+                  {[
+                    { label: '1 item',  cost: 20, active: totalQty >= 1 },
+                    { label: '2 items', cost: 10, active: totalQty >= 2 },
+                    { label: '3+ items', cost: 0, active: totalQty >= 3 },
+                  ].map((tier, i) => (
+                    <div key={i} className="flex items-center gap-1 flex-1">
+                      <div className={`flex-1 text-center py-1 rounded-lg text-[10px] font-semibold border transition-all ${
+                        tier.active
+                          ? 'text-white border-transparent'
+                          : 'text-[#8a8a93] border-[#e5e5ea] bg-[#f3f3f5]'
+                      }`}
+                        style={tier.active ? { background: 'linear-gradient(90deg,#c087fc,#9869f7)', borderColor: 'transparent' } : {}}>
+                        {tier.cost === 0 ? 'FREE' : `AED ${tier.cost}`}
+                        <div className="text-[9px] font-normal opacity-80">{tier.label}</div>
+                      </div>
+                      {i < 2 && <div className="w-2 h-px bg-[#e5e5ea] flex-shrink-0" />}
+                    </div>
+                  ))}
                 </div>
-              )}
+
+                {nextTier && (
+                  <p className="text-[11px] text-[#8a8a93]">
+                    Add <span className="font-semibold text-[#111114]">{nextTier.itemsNeeded} more item</span> →{' '}
+                    {nextTier.newCost === 0
+                      ? <span className="font-semibold text-green-600">FREE shipping</span>
+                      : <span className="font-semibold">AED {nextTier.newCost} shipping</span>}
+                    {' '}(save AED {nextTier.saving})
+                  </p>
+                )}
+                {!nextTier && (
+                  <p className="text-[11px] font-semibold text-green-600">You have free shipping!</p>
+                )}
+              </div>
+
+              {/* Lumière Artisan Gift progress */}
+              <div className="mt-3 pt-3 border-t border-[#f3f3f5]">
+                {artisanGap <= 0 ? (
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl text-[12px] font-semibold"
+                    style={{ background: 'rgba(192,135,252,0.1)', color: '#7c3aed' }}>
+                    <Gift size={13} />
+                    Your free {ARTISAN_GIFT_NAME} is on its way!
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="flex items-center gap-1.5 text-[#5a5a64]">
+                        <Gift size={11} style={{ color: '#c087fc' }} />
+                        AED {artisanGap.toFixed(0)} away from your free{' '}
+                        <span className="font-semibold" style={{ color: '#7c3aed' }}>{ARTISAN_GIFT_NAME}</span>
+                      </span>
+                      <span className="font-semibold text-[#111114]">{artisanPct}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-[#f3f3f5] overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${artisanPct}%` }}
+                        className="h-full rounded-full"
+                        style={{ background: 'linear-gradient(90deg,#f0abfc,#c087fc)' }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="mt-4 pt-4 border-t border-[#e5e5ea] flex justify-between items-baseline">
                 <span className="text-[16px] font-semibold text-[#111114]">Total</span>

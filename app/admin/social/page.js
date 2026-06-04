@@ -1,8 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Loader2, MoreHorizontal, Instagram, Eye, EyeOff, ExternalLink, GripVertical, Image as ImageIcon, Link as LinkIcon, Heart } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, MoreHorizontal, Share2, Eye, EyeOff, Image as ImageIcon, Link as LinkIcon, Heart } from 'lucide-react';
 import Modal from '../../components/Modal';
-import { Button } from '@/app/components/ui/button';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -135,20 +134,20 @@ const ManageSocial = () => {
  if (loading) return <PageLoader />;
 
  return (
- <div className="space-y-10 pb-20">
+ <div className="space-y-6 pb-8">
  {/* Header */}
- <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+ <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
  <div>
- <h2 className="text-2xl font-bold text-gray-900">Social Feed</h2>
- <p className="text-sm text-gray-400 mt-1">{posts.length} post{posts.length !== 1 ? 's' : ''} in your Instagram showcase</p>
+ <h2 className="text-2xl font-bold" style={{ color: '#3b0764' }}>Social Feed</h2>
+ <p className="text-sm text-gray-400 mt-0.5">{posts.length} post{posts.length !== 1 ? 's' : ''} in your Instagram showcase</p>
  </div>
 
- <Button
+ <button
  onClick={handleOpenAddModal}
- className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-6 py-6 text-[11px] font-black shadow-lg active:scale-95 transition-all"
+ className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98] whitespace-nowrap"
  >
- <Plus className="mr-2 h-4 w-4" /> Add Post
- </Button>
+ <Plus size={15} /> Add Post
+ </button>
  </div>
 
  {/* Posts Grid */}
@@ -204,7 +203,7 @@ const ManageSocial = () => {
  rel="noopener noreferrer"
  className="text-[9px] font-black text-[#9333ea] flex items-center gap-1 hover:underline"
  >
- <Instagram size={10} /> View Post
+ <LinkIcon size={10} /> View Post
  </a>
  ) : (
  <span className="text-[9px] font-medium text-gray-300">No link</span>
@@ -244,39 +243,33 @@ const ManageSocial = () => {
 
  {/* Empty state */}
  {posts.length === 0 && (
- <div className="min-h-[300px] bg-white rounded-[2.5rem] border border-dashed border-gray-200 flex flex-col items-center justify-center gap-4">
- <Instagram size={40} className="text-gray-200" />
- <p className="text-lg font-medium text-gray-400 italic">No social posts yet. Add your first one!</p>
- <Button
+ <div className="min-h-[280px] bg-white rounded-2xl border border-dashed border-purple-100 flex flex-col items-center justify-center gap-3">
+ <Share2 size={36} className="text-purple-200" />
+ <p className="text-sm font-medium text-gray-400">No social posts yet.</p>
+ <button
  onClick={handleOpenAddModal}
- className="bg-cl-purple hover:bg-gray-900 text-white rounded-xl px-6 py-4 text-[11px] font-black shadow-lg"
+ className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98]"
  >
- <Plus className="mr-2 h-4 w-4" /> Add First Post
- </Button>
+ <Plus size={14} /> Add first post
+ </button>
  </div>
  )}
 
  {/* Modal */}
- <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingPost ? 'Edit Social Post' : 'Add Social Post'} size="max-w-2xl">
- <form onSubmit={handleSubmit} className="p-8 lg:p-12 space-y-10">
- <div className="space-y-8">
- <h3 className="text-[10px] font-black text-cl-purple mb-2 flex items-center gap-3">
- <span className="w-10 h-px bg-cl-purple/20"></span>
- Post Details
- </h3>
-
+ <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingPost ? 'Edit post' : 'Add post'} size="max-w-2xl">
+ <form onSubmit={handleSubmit} className="p-6 space-y-5">
  {/* Image Upload */}
  <div className="group">
- <label className="block text-[11px] font-black text-gray-400 mb-3">Post Image *</label>
- <div className="relative group/img aspect-square max-w-[300px] mx-auto bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-gray-100/50 relative">
+ <label className="block text-xs font-medium text-purple-400 mb-2">Post image *</label>
+ <div className="relative aspect-square max-w-[260px] mx-auto bg-gray-50 rounded-xl border-2 border-dashed border-purple-100 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-purple-50/30 hover:border-purple-200 cursor-pointer">
  {imageFile ? (
  <Image src={URL.createObjectURL(imageFile)} alt="Preview" fill className="object-cover" />
  ) : editingPost?.image_url ? (
  <Image src={editingPost.image_url} alt="Current" fill className="object-cover" />
  ) : (
- <div className="text-gray-200 flex flex-col items-center gap-2">
- <ImageIcon size={32} />
- <span className="text-[9px] font-black">Select Image</span>
+ <div className="text-purple-200 flex flex-col items-center gap-2">
+ <ImageIcon size={28} />
+ <span className="text-xs font-medium text-gray-400">Click to select</span>
  </div>
  )}
  <input
@@ -291,18 +284,18 @@ const ManageSocial = () => {
 
  {/* Instagram URL */}
  <div className="group">
- <label htmlFor="instagram_url" className="block text-[11px] font-black text-gray-400 mb-3 transition-colors group-focus-within:text-cl-purple">
- Instagram Post URL
+ <label htmlFor="instagram_url" className="block text-xs font-medium text-purple-400 mb-2 transition-colors group-focus-within:text-purple-600">
+ Instagram post URL
  </label>
  <div className="relative">
- <LinkIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
+ <LinkIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
  <input
  type="url"
  id="instagram_url"
  value={instagramUrl}
  onChange={(e) => setInstagramUrl(e.target.value)}
  placeholder="https://www.instagram.com/p/..."
- className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-12 pr-6 py-4 font-medium text-gray-900 focus:bg-white transition-all text-sm shadow-inner"
+ className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-9 pr-4 py-3 font-medium text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all text-sm"
  disabled={isSubmitting}
  />
  </div>
@@ -310,76 +303,65 @@ const ManageSocial = () => {
 
  {/* Caption */}
  <div className="group">
- <label htmlFor="caption" className="block text-[11px] font-black text-gray-400 mb-3 transition-colors group-focus-within:text-cl-purple">
- Caption
- </label>
+ <label htmlFor="caption" className="block text-xs font-medium text-purple-400 mb-2 transition-colors group-focus-within:text-purple-600">Caption</label>
  <textarea
  id="caption"
  value={caption}
  onChange={(e) => setCaption(e.target.value)}
  placeholder="Describe this post..."
  rows={3}
- className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-medium text-gray-900 focus:bg-white transition-all text-sm shadow-inner resize-none"
+ className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-medium text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all text-sm resize-none"
  disabled={isSubmitting}
  />
  </div>
 
  {/* Likes & Sort Order */}
- <div className="grid grid-cols-2 gap-6">
+ <div className="grid grid-cols-2 gap-4">
  <div className="group">
- <label htmlFor="likes" className="block text-[11px] font-black text-gray-400 mb-3 transition-colors group-focus-within:text-cl-purple">
- Likes Count
- </label>
+ <label htmlFor="likes" className="block text-xs font-medium text-purple-400 mb-2">Likes count</label>
  <input
  type="text"
  id="likes"
  value={likes}
  onChange={(e) => setLikes(e.target.value)}
  placeholder="e.g. 1.2k"
- className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-medium text-gray-900 focus:bg-white transition-all text-sm shadow-inner"
+ className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-medium text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all text-sm"
  disabled={isSubmitting}
  />
  </div>
-
  <div className="group">
- <label htmlFor="sort_order" className="block text-[11px] font-black text-gray-400 mb-3 transition-colors group-focus-within:text-cl-purple">
- Sort Order
- </label>
+ <label htmlFor="sort_order" className="block text-xs font-medium text-purple-400 mb-2">Sort order</label>
  <input
  type="number"
  id="sort_order"
  value={sortOrder}
  onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
  placeholder="0"
- className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-medium text-gray-900 focus:bg-white transition-all text-sm shadow-inner"
+ className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-medium text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all text-sm"
  disabled={isSubmitting}
  />
  </div>
  </div>
- </div>
 
  {/* Actions */}
- <div className="pt-8 border-t border-gray-50 flex justify-end gap-6">
+ <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
  <button
  type="button"
  onClick={handleCloseModal}
- className="px-8 py-4 text-[10px] font-black text-gray-400 hover:text-gray-900 transition-colors"
+ className="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
  disabled={isSubmitting}
  >
  Cancel
  </button>
- <Button
+ <button
  type="submit"
  disabled={isSubmitting}
- className="px-10 py-6 bg-cl-purple hover:bg-gray-900 text-white rounded-xl text-[11px] font-black shadow-xl active:scale-95 transition-all"
+ className="cl-gradient-btn gap-2 px-6 py-2.5 text-[11px] active:scale-[0.98] disabled:opacity-60"
  >
  {isSubmitting ? (
- <>
- <Loader2 className="mr-3 h-5 w-5 animate-spin" />
- <span>Uploading...</span>
- </>
- ) : editingPost ? 'Update Post' : 'Add Post'}
- </Button>
+ <><Loader2 size={15} className="animate-spin" /> Uploading...</>
+ ) : editingPost ? 'Update post' : 'Add post'}
+ </button>
  </div>
  </form>
  </Modal>

@@ -547,7 +547,7 @@ export async function POST(request) {
         let emailSent = true;
         try {
             if (userEmail) {
-                await sendOrderConfirmationEmail(userEmail, firstName, orderId, serverTotal, serverTax, serverCouponDiscount, serverSubtotal, serverShipping, itemsWithDetails, shippingAddress, serverGiftWrap, couponCode);
+                await sendOrderConfirmationEmail(userEmail, firstName, orderId, serverTotal, serverTax, serverCouponDiscount, serverSubtotal, serverShipping, itemsWithDetails, shippingAddress, serverGiftWrap, couponCode, payment_method);
             }
         } catch (emailErr) {
             emailSent = false;

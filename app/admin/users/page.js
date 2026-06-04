@@ -163,9 +163,9 @@ const AllUsersPage = () => {
 
     if (error) {
         return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center gap-4 text-red-500">
-                <Shield size={40} className="opacity-20" />
-                <p className="font-bold text-sm">Access Protocol Failure: {error}</p>
+            <div className="min-h-[400px] flex flex-col items-center justify-center gap-3 text-red-500">
+                <Shield size={36} className="opacity-30" />
+                <p className="font-semibold text-sm">Failed to load users: {error}</p>
             </div>
         );
     }
@@ -435,7 +435,7 @@ const AllUsersPage = () => {
                                                     </button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="start" className="w-64 p-3 rounded-2xl shadow-xl border-purple-100 max-h-80 overflow-y-auto no-scrollbar">
-                                                    <p className="text-[10px] font-black text-purple-500 mb-3 px-1">Saved Logistics Hubs</p>
+                                                    <p className="text-[10px] font-semibold text-purple-500 mb-3 px-1">Saved addresses</p>
                                                     {user.addresses && user.addresses.length > 0 ? (
                                                         user.addresses.map((addr) => (
                                                             <div key={addr.id} className="mb-2 p-3 bg-purple-50/30 rounded-xl border border-purple-100/50 last:mb-0">
@@ -447,7 +447,7 @@ const AllUsersPage = () => {
                                                             </div>
                                                         ))
                                                     ) : (
-                                                        <p className="text-[10px] text-gray-400 italic text-center py-4">No logistics data recorded.</p>
+                                                        <p className="text-[10px] text-gray-400 text-center py-4">No addresses on file.</p>
                                                     )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>

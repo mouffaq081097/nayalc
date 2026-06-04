@@ -3,7 +3,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Plus, Edit, Trash2, Search, Loader2, Heart, MoreHorizontal, Award, Sparkles, LayoutGrid, Globe, ExternalLink, EyeOff, Eye, Image as ImageIcon } from 'lucide-react';
 import Modal from '../../components/Modal';
-import { Button } from '@/app/components/ui/button';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -83,32 +82,32 @@ const ManageBrands = () => {
     if (isDataLoading) return <PageLoader />;
     
     return (
-        <div className="space-y-10 pb-20">
+        <div className="space-y-6 pb-8">
             {/* Header & Search */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900 ">Brands</h2>
-                    <p className="text-sm text-gray-400 mt-1">{brands.length} brand{brands.length !== 1 ? 's' : ''} in the Naya Lumière collection</p>
+                    <h2 className="text-2xl font-bold" style={{ color: '#3b0764' }}>Brands</h2>
+                    <p className="text-sm text-gray-400 mt-0.5">{brands.length} brand{brands.length !== 1 ? 's' : ''} in the collection</p>
                 </div>
-                
-                <div className="flex items-center gap-4">
-                    <div className="relative flex-grow md:w-64">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+
+                <div className="flex items-center gap-3">
+                    <div className="relative flex-grow sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
                         <input
                             type="text"
-                            placeholder="Search maison..."
-                            className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-cl-purple/20 focus:border-cl-purple transition-all text-sm"
+                            placeholder="Search brands..."
+                            className="w-full pl-9 pr-4 py-2.5 bg-white border border-purple-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition-all"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    
-                    <Button
+
+                    <button
                         onClick={handleOpenAddModal}
-                        className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-6 py-6 text-[11px] font-black   shadow-lg active:scale-95 transition-all"
+                        className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98] whitespace-nowrap"
                     >
-                        <Plus className="mr-2 h-4 w-4" /> Add Brand
-                    </Button>
+                        <Plus size={14} /> Add Brand
+                    </button>
                 </div>
             </div>
             
@@ -178,75 +177,65 @@ const ManageBrands = () => {
             </div>
 
             {filteredBrands.length === 0 && (
-                <div className="min-h-[300px] bg-white rounded-[2.5rem] border border-dashed border-gray-200 flex flex-col items-center justify-center gap-4">
-                    <Award size={40} className="text-gray-200" />
-                    <p className="text-lg font-medium text-gray-400 italic">No maison records match your query.</p>
+                <div className="min-h-[280px] bg-white rounded-2xl border border-dashed border-purple-100 flex flex-col items-center justify-center gap-3">
+                    <Award size={36} className="text-purple-200" />
+                    <p className="text-sm font-medium text-gray-400">{searchTerm ? 'No brands match your search.' : 'No brands yet.'}</p>
                 </div>
             )}
 
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingBrand ? 'Edit Brand' : 'Add Brand'} size="max-w-2xl">
-                <form onSubmit={handleSubmit} className="p-8 lg:p-12 space-y-10">
-                    <div className="space-y-8">
-                        <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
-                            <span className="w-10 h-px bg-cl-purple/20"></span>
-                            Brand Info
-                        </h3>
+                <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                    <div className="group">
+                        <label htmlFor="name" className="block text-xs font-medium text-purple-400 mb-2 transition-colors group-focus-within:text-purple-600">Brand name</label>
+                        <input
+                            type="text" id="name" name="name" value={brandName} onChange={(e) => setBrandName(e.target.value)}
+                            placeholder="e.g., GERnétic"
+                            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-semibold text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all text-base"
+                            required disabled={isSubmitting}
+                        />
+                    </div>
 
-                        <div className="group">
-                            <label htmlFor="name" className="block text-[11px] font-black text-gray-400   mb-3 transition-colors group-focus-within:text-cl-purple">Brand Name</label>
+                    <div className="group">
+                        <label htmlFor="logo" className="block text-xs font-medium text-purple-400 mb-2">Brand logo</label>
+                        <div className="relative aspect-video bg-gray-50 rounded-xl border-2 border-dashed border-purple-100 flex flex-col items-center justify-center overflow-hidden transition-all hover:bg-purple-50/30 hover:border-purple-200 cursor-pointer">
+                            {imageFile ? (
+                                <Image src={URL.createObjectURL(imageFile)} alt="Preview" fill className="object-contain p-2" />
+                            ) : editingBrand?.imageurl ? (
+                                <Image src={editingBrand.imageurl} alt="Current" fill className="object-contain p-2" />
+                            ) : (
+                                <div className="text-purple-200 flex flex-col items-center gap-2">
+                                    <ImageIcon size={28} />
+                                    <span className="text-xs font-medium text-gray-400">Click to select image</span>
+                                </div>
+                            )}
                             <input
-                                type="text" id="name" name="name" value={brandName} onChange={(e) => setBrandName(e.target.value)}
-                                placeholder="e.g., GERnétic"
-                                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white transition-all text-lg shadow-inner"
-                                required disabled={isSubmitting}
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setImageFile(e.target.files[0])}
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                disabled={isSubmitting}
                             />
-                        </div>
-
-                        <div className="group">
-                            <label htmlFor="logo" className="block text-[11px] font-black text-gray-400   mb-3">Brand Logo</label>
-                            <div className="relative group/img aspect-video bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-6 transition-all hover:bg-gray-100/50 relative">
-                                {imageFile ? (
-                                    <Image src={URL.createObjectURL(imageFile)} alt="Preview" fill className="object-contain p-2" />
-                                ) : editingBrand?.imageurl ? (
-                                    <Image src={editingBrand.imageurl} alt="Current" fill className="object-contain p-2" />
-                                ) : (
-                                    <div className="text-gray-200 flex flex-col items-center gap-2">
-                                        <ImageIcon size={32} />
-                                        <span className="text-[9px] font-black  ">Select Image</span>
-                                    </div>
-                                )}
-                                <input 
-                                    type="file" 
-                                    accept="image/*"
-                                    onChange={(e) => setImageFile(e.target.files[0])} 
-                                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                                    disabled={isSubmitting} 
-                                />
-                            </div>
                         </div>
                     </div>
 
-                    <div className="pt-8 border-t border-gray-50 flex justify-end gap-6">
+                    <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
                         <button
                             type="button"
                             onClick={handleCloseModal}
-                            className="px-8 py-4 text-[10px] font-black   text-gray-400 hover:text-gray-900 transition-colors"
+                            className="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
                             disabled={isSubmitting}
                         >
                             Cancel
                         </button>
-                        <Button 
-                            type="submit" 
-                            disabled={isSubmitting} 
-                            className="px-10 py-6 bg-cl-purple hover:bg-gray-900 text-white rounded-xl text-[11px] font-black   shadow-xl active:scale-95 transition-all"
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="cl-gradient-btn gap-2 px-6 py-2.5 text-[11px] active:scale-[0.98] disabled:opacity-60"
                         >
                             {isSubmitting ? (
-                                <>
-                                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                                    <span>Syncing...</span>
-                                </>
-                            ) : editingBrand ? 'Update Brand' : 'Add Brand'}
-                        </Button>
+                                <><Loader2 size={15} className="animate-spin" /> Saving...</>
+                            ) : editingBrand ? 'Update brand' : 'Add brand'}
+                        </button>
                     </div>
                 </form>
             </Modal>

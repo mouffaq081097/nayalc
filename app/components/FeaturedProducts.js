@@ -5,25 +5,25 @@ import { Container } from './ui/Container';
 import ProductCard from './ProductCard';
 import Link from 'next/link';
 import { useAppContext } from '../context/AppContext';
-import { ArrowRight } from 'lucide-react';
 
 export function FeaturedProducts() {
   const { featuredProducts } = useAppContext();
   const displayedProducts = featuredProducts;
 
   return (
-    <section className="py-6 relative overflow-hidden bg-white">
+    <section className="py-4 relative overflow-hidden bg-white">
 
       <Container className="relative z-10">
         {/* Section Header */}
-        <div className="mb-5 flex flex-row justify-between items-end gap-4">
+        <div className="mb-4 flex flex-row justify-between items-end gap-4">
           <div className="space-y-1">
             <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Shop</p>
             <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Signature Selection</h2>
           </div>
           <Link
             href="/all-products"
-            className="shrink-0 text-sm font-medium text-indigo-500 hover:text-indigo-700 transition-colors"
+            className="shrink-0 text-sm font-medium transition-colors hover:opacity-70"
+            style={{ color: 'rgb(147,104,236)' }}
           >
             View all →
           </Link>

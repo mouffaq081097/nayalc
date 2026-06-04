@@ -282,20 +282,23 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '4px',
                 padding: '3px 9px',
                 borderRadius: '100px',
-                background: '#fef3c7',
-                border: '1px solid #f59e0b',
-                fontSize: '9px',
-                fontWeight: 800,
-                letterSpacing: '0.13em',
+                background: 'linear-gradient(135deg, rgba(248,240,255,0.97), rgba(255,240,250,0.97))',
+                border: '1px solid rgba(216,180,254,0.55)',
+                boxShadow: '0 1px 8px rgba(147,51,234,0.12), inset 0 1px 0 rgba(255,255,255,0.8)',
+                fontSize: '8.5px',
+                fontWeight: 700,
+                letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                color: '#92400e',
+                color: '#6b21a8',
                 width: 'fit-content',
+                backdropFilter: 'blur(8px)',
               }}
             >
-              ✦ Homemade
+              <Sparkles size={9} color="#9333ea" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+              Homemade
             </span>
           )}
 

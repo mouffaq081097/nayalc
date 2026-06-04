@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAppContext } from '../context/AppContext';
 import { Carousel, CarouselContent, CarouselItem } from './ui/carousel.tsx';
+import { Container } from './ui/Container';
 
 const STEPS = [
   { step: 1, label: 'Cleanse', timing: 'AM & PM' },
@@ -60,23 +61,24 @@ export function BuildYourRoutine() {
   };
 
   return (
-    <section className="py-6 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-4 bg-white">
+      <Container>
         {/* Header */}
-        <div className="flex flex-row justify-between items-end mb-5 gap-4">
+        <div className="flex flex-row justify-between items-end mb-4 gap-4">
           <div className="space-y-1">
             <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Personalised</p>
             <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Build Your Routine</h2>
           </div>
           <Link
             href="/all-products"
-            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 text-[13px] font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all whitespace-nowrap"
+            className="shrink-0 text-sm font-medium transition-colors hover:opacity-70"
+            style={{ color: 'rgb(147,104,236)' }}
           >
-            Shop all {routineProducts.length} — AED {totalPrice.toFixed(0)}
+            Shop all → AED {totalPrice.toFixed(0)}
           </Link>
         </div>
 
-        {/* Mobile: single-item carousel */}
+        {/* Mobile: carousel */}
         <div className="md:hidden">
           <Carousel opts={{ align: 'start', loop: false }} className="w-full">
             <CarouselContent className="-ml-3">
@@ -95,7 +97,7 @@ export function BuildYourRoutine() {
             <Card key={product.id} product={product} i={i} />
           ))}
         </div>
-      </div>
+      </Container>
     </section>
   );
 }

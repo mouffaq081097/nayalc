@@ -1,7 +1,8 @@
 'use client';
 
 import { useCart } from '../context/CartContext';
-import { X, ShoppingBag, Minus, Plus, ArrowRight, Sparkles } from 'lucide-react';
+import { X, ShoppingBag, Minus, Plus, ArrowRight, Sparkles, Truck } from 'lucide-react';
+import { calcShipping, nextShippingTier } from '@/lib/shipping';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,10 +10,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function SideCart() {
   const { isCartOpen, closeCart, cartItems, removeFromCart, updateQuantity } = useCart();
 
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const subtotal   = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   const totalItems = cartItems.reduce((t, i) => t + i.quantity, 0);
-  const FREE_SHIPPING = 200;
-  const toFreeShipping = Math.max(0, FREE_SHIPPING - subtotal);
+  const shipping   = calcShipping(totalItems);
+  const nextTier   = nextShippingTier(totalItems);
 
   return (
     <AnimatePresence>
@@ -67,29 +68,49 @@ export default function SideCart() {
               </button>
             </div>
 
-            {/* Free shipping progress */}
+            {/* Shipping tier progress */}
             {cartItems.length > 0 && (
-              <div className="px-6 py-3 relative z-10" style={{ borderBottom: '1px solid rgba(216,180,254,0.18)', background: 'rgba(255,255,255,0.5)' }}>
-                {toFreeShipping === 0 ? (
-                  <p className="text-[11px] font-bold text-green-600 flex items-center gap-1.5">
+              <div className="px-5 py-3 relative z-10 space-y-2" style={{ borderBottom: '1px solid rgba(216,180,254,0.18)', background: 'rgba(255,255,255,0.5)' }}>
+                {/* Tier badges */}
+                <div className="flex items-center gap-1">
+                  {[
+                    { label: 'AED 20', sub: '1 item',   active: totalItems >= 1, done: totalItems >= 2 },
+                    { label: 'AED 10', sub: '2 items',  active: totalItems >= 2, done: totalItems >= 3 },
+                    { label: 'FREE',   sub: '3+ items', active: totalItems >= 3, done: false           },
+                  ].map((tier, i) => (
+                    <div key={i} className="flex items-center gap-1 flex-1">
+                      <div
+                        className="flex-1 text-center py-1 rounded-lg border transition-all duration-300"
+                        style={tier.active
+                          ? { background: 'var(--brand-gradient)', borderColor: 'transparent', color: 'white' }
+                          : { background: 'rgba(216,180,254,0.1)', borderColor: 'rgba(216,180,254,0.3)', color: 'rgba(107,33,168,0.45)' }}
+                      >
+                        <p className="text-[10px] font-bold leading-none">{tier.label}</p>
+                        <p className="text-[8px] font-medium opacity-80 mt-0.5">{tier.sub}</p>
+                      </div>
+                      {i < 2 && (
+                        <div className="w-1.5 h-px flex-shrink-0" style={{ background: 'rgba(216,180,254,0.4)' }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Status line */}
+                {!nextTier ? (
+                  <p className="text-[10px] font-bold text-green-600 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                    You qualify for complimentary shipping!
+                    Free shipping unlocked!
                   </p>
                 ) : (
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] font-semibold flex justify-between" style={{ color: 'rgba(59,7,100,0.5)' }}>
-                      <span>Add AED {toFreeShipping.toFixed(2)} for free shipping</span>
-                      <span className="font-black" style={{ color: 'rgb(126,105,230)' }}>{Math.round((subtotal / FREE_SHIPPING) * 100)}%</span>
-                    </p>
-                    <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: 'rgba(216,180,254,0.3)' }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(100, (subtotal / FREE_SHIPPING) * 100)}%` }}
-                        className="h-full rounded-full"
-                        style={{ background: 'var(--brand-gradient)' }}
-                      />
-                    </div>
-                  </div>
+                  <p className="text-[10px] font-semibold" style={{ color: 'rgba(59,7,100,0.55)' }}>
+                    <Truck size={9} className="inline mr-1" style={{ color: 'rgb(126,105,230)' }} />
+                    Add <span className="font-black" style={{ color: '#3b0764' }}>{nextTier.itemsNeeded} more item</span>
+                    {' → '}
+                    {nextTier.newCost === 0
+                      ? <span className="font-black text-green-600">FREE shipping</span>
+                      : <span className="font-black" style={{ color: 'rgb(126,105,230)' }}>AED {nextTier.newCost}</span>}
+                    <span className="ml-1 opacity-60">(save AED {nextTier.saving})</span>
+                  </p>
                 )}
               </div>
             )}

@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import {
@@ -12,15 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import { Search, Tag, Calendar, Percent, DollarSign, Edit, Trash2, PlusCircle, Loader2, MoreHorizontal, Ticket, ShieldCheck, Zap, Info, Clock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Search, Calendar, Percent, DollarSign, Edit, Trash2, PlusCircle, Loader2, MoreHorizontal, Ticket, ShieldCheck, Zap, Clock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Modal from '@/app/components/Modal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 const CouponsPage = () => {
   const [coupons, setCoupons] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [currentCoupon, setCurrentCoupon] = useState({
     id: null,
@@ -51,7 +49,7 @@ const CouponsPage = () => {
       const data = await response.json();
       setCoupons(data);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +115,7 @@ const CouponsPage = () => {
       await fetchCoupons();
       resetForm();
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -144,7 +142,7 @@ const CouponsPage = () => {
         }
         await fetchCoupons();
       } catch (err) {
-        setError(err.message);
+        toast.error(err.message);
       }
     }
   };
@@ -159,7 +157,7 @@ const CouponsPage = () => {
       if (!response.ok) throw new Error('Failed to toggle coupon status');
       await fetchCoupons();
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -189,67 +187,68 @@ const CouponsPage = () => {
   if (isLoading) {
     return (
         <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-4 border-cl-purple border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-medium text-gray-400  ">Validating Privileges...</p>
+            <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm font-medium text-gray-400">Loading coupons...</p>
         </div>
     );
   }
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-6 pb-8">
         {/* Header Actions */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-                <h2 className="text-2xl font-bold text-gray-900 ">Privilege Registry</h2>
-                <p className="text-sm text-gray-400 mt-1">Managing {coupons.length} promotional vectors for the Naya Lumière market</p>
+                <h2 className="text-2xl font-bold" style={{ color: '#3b0764' }}>Coupons</h2>
+                <p className="text-sm text-gray-400 mt-0.5">{coupons.length} coupon{coupons.length !== 1 ? 's' : ''} total</p>
             </div>
-            
-            <div className="flex items-center gap-4">
-                <div className="relative flex-grow md:w-64">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+
+            <div className="flex items-center gap-3">
+                <div className="relative flex-grow sm:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
                     <input
                         type="text"
                         placeholder="Search by code..."
-                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-cl-purple/20 focus:border-cl-purple transition-all text-sm"
+                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-purple-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-300 transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                
-                <Button 
-                    onClick={() => setIsModalOpen(true)} 
-                    className="bg-gray-900 hover:bg-cl-purple text-white rounded-xl px-6 py-6 text-[11px] font-black   shadow-lg active:scale-95 transition-all"
+
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98] whitespace-nowrap"
                 >
-                    <PlusCircle className="mr-2 h-4 w-4" /> Issue New Privilege
-                </Button>
+                    <PlusCircle size={15} /> Add Coupon
+                </button>
             </div>
         </div>
 
         {/* Coupons Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             <AnimatePresence>
                 {filteredCoupons.map(coupon => (
-                    <motion.div 
-                        key={coupon.id} 
+                    <motion.div
+                        key={coupon.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`group relative bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col ${!coupon.is_active ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                        className={`group relative bg-white rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col ${!coupon.is_active ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                        style={{ borderColor: 'rgba(216,180,254,0.35)' }}
                     >
                         {/* Decorative background element */}
-                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-                            {coupon.discount_type === 'percentage' ? <Percent size={120} /> : <DollarSign size={120} />}
+                        <div className="absolute top-0 right-0 p-6 opacity-[0.04] group-hover:opacity-[0.07] transition-opacity">
+                            {coupon.discount_type === 'percentage' ? <Percent size={96} /> : <DollarSign size={96} />}
                         </div>
 
-                        <div className="p-8 space-y-6 flex-grow relative z-10">
+                        <div className="p-6 space-y-4 flex-grow relative z-10">
                             <div className="flex justify-between items-start">
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2 h-2 rounded-full ${coupon.is_active ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></div>
-                                        <p className="text-[10px] font-black text-gray-400  ">
-                                            {coupon.is_active ? 'Active Privilege' : 'Deactivated'}
+                                        <p className="text-[10px] font-semibold text-gray-400">
+                                            {coupon.is_active ? 'Active' : 'Inactive'}
                                         </p>
                                     </div>
-                                    <h3 className="text-3xl font-black text-gray-900 er ">{coupon.code}</h3>
+                                    <h3 className="text-3xl font-black text-gray-900">{coupon.code}</h3>
                                 </div>
                                 
                                 <DropdownMenu>
@@ -280,13 +279,13 @@ const CouponsPage = () => {
                             </div>
 
                             <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-black text-cl-purple er">
+                                <span className="text-4xl font-black" style={{ color: '#9333ea' }}>
                                     {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `AED ${coupon.discount_value}`}
                                 </span>
-                                <span className="text-[10px] font-black text-gray-400  ">Reduction</span>
+                                <span className="text-[10px] font-medium text-gray-400">off</span>
                             </div>
 
-                            <div className="space-y-3 pt-6 border-t border-gray-50">
+                            <div className="space-y-2 pt-4 border-t border-gray-50">
                                 <div className="flex items-center gap-3">
                                     <Calendar size={14} className="text-gray-300" />
                                     <span className="text-xs font-medium text-gray-500 italic">
@@ -308,9 +307,9 @@ const CouponsPage = () => {
                             </div>
                         </div>
 
-                        <div className="mt-auto bg-gray-50/50 p-6 border-t border-gray-50 flex items-center justify-between">
+                        <div className="mt-auto bg-gray-50/40 p-4 border-t border-gray-50 flex items-center justify-between">
                             <div className="space-y-1">
-                                <p className="text-[9px] font-black text-gray-300  ">Usage Quota</p>
+                                <p className="text-[9px] font-medium text-gray-400">Usage</p>
                                 <div className="flex items-center gap-2">
                                     <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
                                         <div 
@@ -331,69 +330,69 @@ const CouponsPage = () => {
         </div>
 
         {filteredCoupons.length === 0 && (
-            <div className="min-h-[300px] bg-white rounded-[2.5rem] border border-dashed border-gray-200 flex flex-col items-center justify-center gap-4">
-                <Ticket size={40} className="text-gray-200" />
-                <p className="text-lg font-medium text-gray-400 italic">No privilege codes match your current parameters.</p>
+            <div className="min-h-[280px] bg-white rounded-2xl border border-dashed border-purple-100 flex flex-col items-center justify-center gap-3">
+                <Ticket size={36} className="text-purple-200" />
+                <p className="text-sm font-medium text-gray-400">{searchTerm ? 'No coupons match your search.' : 'No coupons yet.'}</p>
             </div>
         )}
 
         {/* Modal Redesign */}
-        <Modal 
-            isOpen={isModalOpen} 
-            onClose={resetForm} 
-            title={editMode ? 'Refine Privilege Parameters' : 'Issue New Privilege'}
+        <Modal
+            isOpen={isModalOpen}
+            onClose={resetForm}
+            title={editMode ? 'Edit Coupon' : 'Add Coupon'}
             size="max-w-4xl"
             noBodyPadding
         >
-            <form onSubmit={handleSubmit} className="p-10 lg:p-14">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <section className="space-y-8">
-                            <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
-                                <span className="w-10 h-px bg-cl-purple/20"></span>
-                                Core Registry
+            <form onSubmit={handleSubmit} className="p-6 lg:p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <section className="space-y-5">
+                            <h3 className="text-xs font-semibold text-purple-600 flex items-center gap-3">
+                                <span className="w-8 h-px bg-purple-200"></span>
+                                Coupon details
                             </h3>
-                            
+
                             <div className="group">
-                                <label htmlFor="code" className="block text-[11px] font-black text-gray-400   mb-3 transition-colors group-focus-within:text-cl-purple">Privilege Code</label>
-                                <input 
-                                    id="code" name="code" value={currentCoupon.code} onChange={handleInputChange} 
-                                    placeholder="e.g., ROYALTY2025"
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-black text-gray-900 focus:bg-white transition-all text-xl  er shadow-inner"
-                                    required disabled={isSubmitting} 
+                                <label htmlFor="code" className="block text-xs font-medium text-purple-400 mb-2 transition-colors group-focus-within:text-purple-600">Coupon code</label>
+                                <input
+                                    id="code" name="code" value={currentCoupon.code} onChange={handleInputChange}
+                                    placeholder="e.g., SUMMER2025"
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all text-lg"
+                                    required disabled={isSubmitting}
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="group">
-                                    <label htmlFor="discount_type" className="block text-[11px] font-black text-gray-400   mb-3">Reduction Mechanism</label>
+                                    <label htmlFor="discount_type" className="block text-xs font-medium text-purple-400 mb-2">Discount type</label>
                                     <Select name="discount_type" value={currentCoupon.discount_type} onValueChange={(value) => handleSelectChange('discount_type', value)}>
-                                        <SelectTrigger className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 h-auto font-bold text-gray-900 focus:bg-white transition-all">
-                                            <SelectValue placeholder="Mechanism" />
+                                        <SelectTrigger className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 h-auto font-medium text-gray-900 focus:bg-white transition-all">
+                                            <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-2xl shadow-2xl border-gray-100">
-                                            <SelectItem value="percentage" className="rounded-xl px-4 py-3">Percentage (%)</SelectItem>
-                                            <SelectItem value="fixed_amount" className="rounded-xl px-4 py-3">Fixed Amount (AED)</SelectItem>
+                                        <SelectContent className="rounded-xl shadow-xl border-gray-100">
+                                            <SelectItem value="percentage" className="rounded-lg px-3 py-2.5">Percentage (%)</SelectItem>
+                                            <SelectItem value="fixed_amount" className="rounded-lg px-3 py-2.5">Fixed amount (AED)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="group">
-                                    <label htmlFor="discount_value" className="block text-[11px] font-black text-gray-400   mb-3">Quantum Value</label>
+                                    <label htmlFor="discount_value" className="block text-xs font-medium text-purple-400 mb-2">Discount value</label>
                                     <input
                                         id="discount_value" name="discount_value" type="number" step="0.01" value={currentCoupon.discount_value} onChange={handleInputChange}
                                         placeholder={currentCoupon.discount_type === 'percentage' ? 'e.g., 15' : 'e.g., 50'}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-black text-gray-900 focus:bg-white transition-all shadow-inner"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all"
                                         required disabled={isSubmitting}
                                     />
                                 </div>
                             </div>
 
-                            <div className="bg-cl-bg-lavender/50 rounded-3xl p-8 border border-indigo-100/30">
-                                <div className="flex items-center gap-3 mb-4 text-cl-purple">
-                                    <ShieldCheck size={18} />
-                                    <span className="text-[11px] font-black  ">Protocol Verification</span>
+                            <div className="bg-purple-50/50 rounded-2xl p-5 border border-purple-100/40">
+                                <div className="flex items-center gap-2.5 mb-4 text-purple-600">
+                                    <ShieldCheck size={16} />
+                                    <span className="text-xs font-semibold">Status</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[11px] text-gray-500 font-medium italic">Is this privilege currently active in the ecosystem?</p>
+                                    <p className="text-xs text-gray-500 font-medium">Is this coupon currently active?</p>
                                     <div className="flex items-center gap-3">
                                         <Checkbox 
                                             id="is_active" checked={currentCoupon.is_active} 
@@ -406,72 +405,72 @@ const CouponsPage = () => {
                             </div>
                         </section>
 
-                        <section className="space-y-8">
-                            <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
-                                <span className="w-10 h-px bg-cl-purple/20"></span>
-                                Logistics & Scope
+                        <section className="space-y-5">
+                            <h3 className="text-xs font-semibold text-purple-600 flex items-center gap-3">
+                                <span className="w-8 h-px bg-purple-200"></span>
+                                Configuration
                             </h3>
-                            
+
                             <div className="group">
-                                <label htmlFor="expiration_date" className="block text-[11px] font-black text-gray-400   mb-3">Void Threshold (Expiration)</label>
+                                <label htmlFor="expiration_date" className="block text-xs font-medium text-purple-400 mb-2">Expiration date</label>
                                 <div className="relative">
-                                    <Clock className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                                    <input 
-                                        id="expiration_date" name="expiration_date" type="date" value={currentCoupon.expiration_date} onChange={handleInputChange} 
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-16 pr-6 py-4 font-bold text-gray-600 focus:bg-white transition-all cursor-pointer"
-                                        disabled={isSubmitting} 
+                                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
+                                    <input
+                                        id="expiration_date" name="expiration_date" type="date" value={currentCoupon.expiration_date} onChange={handleInputChange}
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-11 pr-4 py-3 font-medium text-gray-700 focus:bg-white focus:border-purple-300 focus:outline-none transition-all cursor-pointer"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                             </div>
 
                             <div className="group">
-                                <label htmlFor="usage_limit" className="block text-[11px] font-black text-gray-400   mb-3">Activation Quota (Usage Limit)</label>
-                                <input 
-                                    id="usage_limit" name="usage_limit" type="number" value={currentCoupon.usage_limit} onChange={handleInputChange} 
-                                    placeholder="Indefinite activation if blank"
-                                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white transition-all shadow-inner"
-                                    disabled={isSubmitting} 
+                                <label htmlFor="usage_limit" className="block text-xs font-medium text-purple-400 mb-2">Usage limit</label>
+                                <input
+                                    id="usage_limit" name="usage_limit" type="number" value={currentCoupon.usage_limit} onChange={handleInputChange}
+                                    placeholder="Leave blank for unlimited"
+                                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 font-medium text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all"
+                                    disabled={isSubmitting}
                                 />
                             </div>
 
                             <div className="group">
-                                <label htmlFor="minimum_purchase_amount" className="block text-[11px] font-black text-gray-400   mb-3">Transaction Minimum (AED)</label>
+                                <label htmlFor="minimum_purchase_amount" className="block text-xs font-medium text-purple-400 mb-2">Minimum order (AED)</label>
                                 <div className="relative">
-                                    <DollarSign className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                                    <input 
-                                        id="minimum_purchase_amount" name="minimum_purchase_amount" type="number" step="0.01" value={currentCoupon.minimum_purchase_amount} onChange={handleInputChange} 
-                                        placeholder="No transaction limit if blank"
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-16 pr-6 py-4 font-bold text-gray-900 focus:bg-white transition-all shadow-inner"
-                                        disabled={isSubmitting} 
+                                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
+                                    <input
+                                        id="minimum_purchase_amount" name="minimum_purchase_amount" type="number" step="0.01" value={currentCoupon.minimum_purchase_amount} onChange={handleInputChange}
+                                        placeholder="No minimum"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-11 pr-4 py-3 font-medium text-gray-900 focus:bg-white focus:border-purple-300 focus:outline-none transition-all"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                             </div>
                         </section>
                     </div>
 
-                    <div className="mt-12 pt-10 border-t border-gray-50 flex justify-end gap-6">
-                        <button 
-                            type="button" 
-                            onClick={resetForm} 
-                            className="px-8 py-4 text-[10px] font-black   text-gray-400 hover:text-gray-900 transition-colors"
+                    <div className="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={resetForm}
+                            className="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
                             disabled={isSubmitting}
                         >
-                            Retract Request
+                            Cancel
                         </button>
-                        <Button 
-                            type="submit" 
-                            disabled={isSubmitting} 
-                            className="px-10 py-6 bg-cl-purple hover:bg-cl-purple-deep text-white rounded-xl text-[11px] font-black   shadow-xl active:scale-95 transition-all"
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="cl-gradient-btn gap-2 px-6 py-2.5 text-[11px] active:scale-[0.98] disabled:opacity-60"
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                                    <span>Synchronizing...</span>
+                                    <Loader2 size={15} className="animate-spin" />
+                                    Saving...
                                 </>
                             ) : (
-                                editMode ? 'Update Privilege' : 'Issue Privilege'
+                                editMode ? 'Update coupon' : 'Add coupon'
                             )}
-                        </Button>
+                        </button>
                     </div>
                 </form>
             </Modal>

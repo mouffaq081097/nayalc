@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
  ShoppingBag, Heart, Package, LogOut, Menu, X,
  LayoutDashboard, Tags, Ticket, Users, MessageSquare,
- ExternalLink, ShieldCheck, Bell, Globe, Instagram,
+ ExternalLink, ShieldCheck, Bell, Globe, Share2,
  Layout,
  Banknote,
  Send
@@ -31,7 +31,7 @@ const navItems = [
  { to: '/admin/chat', text: 'Chat', icon: MessageSquare },
  { to: '/admin/marketing', text: 'Marketing', icon: Send },
  { to: '/admin/seo', text: 'SEO', icon: Globe },
- { to: '/admin/social', text: 'Social', icon: Instagram },
+ { to: '/admin/social', text: 'Social', icon: Share2 },
 ];
 
 const SidebarContent = ({ pathname, isSidebarOpen, setIsSidebarOpen, notifications, onLogout }) => (
@@ -39,42 +39,21 @@ const SidebarContent = ({ pathname, isSidebarOpen, setIsSidebarOpen, notificatio
 
  {/* Logo */}
  <div className="px-5 pt-6 pb-5" style={{ borderBottom: '1px solid rgba(216,180,254,0.35)' }}>
- <Link href="/admin" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-[14px]">
+ <Link href="/admin" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-[10px]">
  <Image
  src="/Adobe Express - file (5).png"
- alt="Naya Lumière Cosmetics"
- width={44}
- height={44}
- className="h-9 w-auto object-contain shrink-0"
+ alt="Naya Lumière"
+ width={28}
+ height={28}
+ className="w-7 h-7 object-contain shrink-0"
  priority
  />
- <div style={{ textAlign: 'left', lineHeight: '1.25' }}>
-     <div
-     style={{
-         fontSize: '18px',
-         fontWeight: '600',
-         letterSpacing: '0.05em',
-         color: '#3b0764',
-         textTransform: 'uppercase',
-         fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
-     }}
-     >
-     NAYA
-     </div>
-     <div
-     style={{
-         fontSize: '12px',
-         fontStyle: 'italic',
-         fontFamily: "Georgia, 'Times New Roman', serif",
-         color: '#6b21a8',
-         marginTop: '0px'
-     }}
-     >
-     Lumière Cosmetics
-     </div>
- </div> </Link>
- <p className="text-[11px] font-bold text-purple-600 mt-2 ml-0.5"> Admin Portal
- </p>
+ <div className="flex flex-col leading-tight">
+   <span className="text-[16px] font-semibold tracking-[0.06em] leading-none" style={{ color: '#3b0764' }}>NAYA LUMIÈRE</span>
+   <span className="text-[9px] tracking-[0.32em] uppercase mt-[2px] leading-none font-medium" style={{ color: '#6b21a8' }}>COSMETICS</span>
+ </div>
+ </Link>
+ <p className="text-[10px] font-semibold tracking-[0.18em] uppercase mt-2.5 ml-[38px]" style={{ color: 'rgba(147,51,234,0.45)' }}>Admin Portal</p>
  </div>
 
  {/* Nav */}
@@ -125,7 +104,7 @@ const SidebarContent = ({ pathname, isSidebarOpen, setIsSidebarOpen, notificatio
  </Link>
  <button
  onClick={onLogout}
- className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-red-50 hover:text-red-500"
+ className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-red-50 hover:text-red-500 cursor-pointer"
  style={{ color: 'rgba(107,33,168,0.5)' }}
  >
  <LogOut size={16} strokeWidth={1.75} />
@@ -238,7 +217,8 @@ const AdminLayout = ({ children }) => {
  <div className="flex items-center gap-3">
  <button
  onClick={() => setIsSidebarOpen(v => !v)}
- className="lg:hidden p-2 rounded-lg hover:bg-purple-50 text-gray-500 transition-colors"
+ className="lg:hidden p-2 rounded-lg hover:bg-purple-50 text-gray-500 transition-colors cursor-pointer"
+ aria-label="Toggle navigation menu"
  >
  {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
  </button>
@@ -252,7 +232,8 @@ const AdminLayout = ({ children }) => {
  <div className="relative" ref={notifRef}>
  <button
  onClick={() => setIsNotifOpen(v => !v)}
- className={`relative p-2 rounded-lg transition-all ${isNotifOpen ? 'text-[#9333ea] bg-purple-50' : 'text-gray-400 hover:text-[#9333ea] hover:bg-purple-50'}`}
+ className={`relative p-2 rounded-lg transition-all cursor-pointer ${isNotifOpen ? 'text-[#9333ea] bg-purple-50' : 'text-gray-400 hover:text-[#9333ea] hover:bg-purple-50'}`}
+ aria-label="Notifications"
  >
  <Bell size={18} />
  {notifications.unreadTotal > 0 && (

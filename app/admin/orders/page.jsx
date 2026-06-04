@@ -74,8 +74,7 @@ const RecoverFromCart = () => {
                         style={{ borderColor: 'rgba(216,180,254,0.4)' }}
                     />
                     <button onClick={lookup} disabled={lookupLoading || !email.trim()}
-                        className="px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white disabled:opacity-40"
-                        style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}>
+                        className="cl-gradient-btn px-4 py-2.5 text-[11px] disabled:opacity-40">
                         {lookupLoading ? <Loader2 size={14} className="animate-spin" /> : 'Search'}
                     </button>
                 </div>
@@ -160,8 +159,7 @@ const RecoverFromCart = () => {
                                 </div>
                             ) : (
                                 <button onClick={recover} disabled={placing || !selectedAddressId || lookupResult.addresses.length === 0}
-                                    className="w-full py-3 rounded-xl text-[13px] font-semibold text-white disabled:opacity-40 flex items-center justify-center gap-2"
-                                    style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}>
+                                    className="cl-gradient-btn w-full py-3 text-[11px] gap-2 disabled:opacity-40">
                                     {placing ? <><Loader2 size={14} className="animate-spin" />Creating order…</> : <><RotateCcw size={14} />Recover order from cart</>}
                                 </button>
                             )}
