@@ -45,19 +45,6 @@ const NavLink = ({ item, isActive, onClick, badge }) => (
         {badge}
       </span>
     )}
-    <style jsx>{`
-      .sp-nav-link {
-        display: flex; align-items: center; gap: 10px;
-        padding: 7px 10px; border-radius: 8px;
-        color: #303030; transition: background 120ms ease;
-      }
-      .sp-nav-link:hover { background: #ebebeb; }
-      .sp-nav-link[data-active='true'] {
-        background: #ffffff;
-        box-shadow: 0 1px 0 rgba(0,0,0,0.06), inset 0 0 0 1px rgba(0,0,0,0.04);
-        font-weight: 600;
-      }
-    `}</style>
   </Link>
 );
 
@@ -88,14 +75,6 @@ const Sidebar = ({ pathname, onNavigate, notifications, onLogout }) => (
           <span className="text-[13px] font-medium">Online Store</span>
           <ExternalLink size={13} className="ml-auto opacity-50" />
         </Link>
-        <style jsx>{`
-          .sp-channel {
-            display: flex; align-items: center; gap: 10px;
-            padding: 7px 10px; border-radius: 8px; color: #303030;
-            transition: background 120ms ease;
-          }
-          .sp-channel:hover { background: #ebebeb; }
-        `}</style>
       </div>
     </nav>
 
