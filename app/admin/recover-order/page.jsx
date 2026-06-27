@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { Search, AlertTriangle, CheckCircle, Loader2, ShoppingCart, User, MapPin } from 'lucide-react';
 
-const card  = { background: 'rgba(255,255,255,0.72)', border: '1px solid rgba(216,180,254,0.35)', borderRadius: 16, padding: 24 };
-const inp   = { background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(216,180,254,0.35)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#3b0764', width: '100%', outline: 'none' };
+const card  = { background: 'rgba(255,255,255,0.72)', border: '1px solid #e3e3e3', borderRadius: 16, padding: 24 };
+const inp   = { background: 'rgba(255,255,255,0.6)', border: '1px solid #e3e3e3', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#1a1a1a', width: '100%', outline: 'none' };
 const lbl   = { fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'rgba(59,7,100,0.5)', display: 'block', marginBottom: 6 };
 const btn   = { background: 'var(--brand-gradient)', boxShadow: '0 4px 14px rgba(168,85,247,0.28)', color: '#fff', borderRadius: 99, padding: '10px 24px', fontSize: 12, fontWeight: 900, cursor: 'pointer', border: 'none' };
 
@@ -92,7 +92,7 @@ export default function RecoverOrderPage() {
     return (
         <div className="max-w-2xl mx-auto p-6 space-y-6">
             <div>
-                <h1 className="text-2xl font-bold" style={{ color: '#3b0764' }}>Recover Missing Order</h1>
+                <h1 className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>Recover Missing Order</h1>
                 <p className="text-sm mt-1" style={{ color: 'rgba(59,7,100,0.5)' }}>
                     Customer paid but no order was created. Enter their email to load their cart automatically.
                 </p>
@@ -102,7 +102,7 @@ export default function RecoverOrderPage() {
             <div style={card} className="space-y-4">
                 <div className="flex items-center gap-2 mb-1">
                     <User size={15} style={{ color: 'var(--brand-purple-darker)' }} />
-                    <h2 className="text-sm font-bold" style={{ color: '#3b0764' }}>Step 1 — Find customer</h2>
+                    <h2 className="text-sm font-bold" style={{ color: '#1a1a1a' }}>Step 1 — Find customer</h2>
                 </div>
                 <div className="flex gap-2">
                     <input
@@ -118,8 +118,8 @@ export default function RecoverOrderPage() {
                 </div>
                 {userError && <p className="text-sm text-red-500 flex items-center gap-1"><AlertTriangle size={13} />{userError}</p>}
                 {userInfo && (
-                    <div className="rounded-xl p-3 space-y-1" style={{ background: 'rgba(147,104,236,0.08)', border: '1px solid rgba(196,167,254,0.3)' }}>
-                        <p className="text-sm font-bold" style={{ color: '#3b0764' }}>{userInfo.user.firstName} — {userInfo.user.email}</p>
+                    <div className="rounded-xl p-3 space-y-1" style={{ background: '#616161', border: '1px solid #e3e3e3' }}>
+                        <p className="text-sm font-bold" style={{ color: '#1a1a1a' }}>{userInfo.user.firstName} — {userInfo.user.email}</p>
                         <p className="text-xs" style={{ color: 'rgba(59,7,100,0.5)' }}>User ID: {userInfo.user.id} · {userInfo.cart.length} item(s) in cart · {userInfo.addresses.length} address(es)</p>
                         {userInfo.cart.length === 0 && (
                             <p className="text-xs text-amber-600 font-semibold">⚠ Cart is empty — enter items manually below.</p>
@@ -132,7 +132,7 @@ export default function RecoverOrderPage() {
                 <>
                     {/* Step 2 — Payment */}
                     <div style={card} className="space-y-4">
-                        <h2 className="text-sm font-bold" style={{ color: '#3b0764' }}>Step 2 — Payment method</h2>
+                        <h2 className="text-sm font-bold" style={{ color: '#1a1a1a' }}>Step 2 — Payment method</h2>
                         <div className="flex gap-3">
                             {['card', 'cashOnDelivery'].map(m => (
                                 <button
@@ -141,7 +141,7 @@ export default function RecoverOrderPage() {
                                     className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all"
                                     style={paymentMethod === m
                                         ? { background: 'var(--brand-gradient)', color: '#fff' }
-                                        : { border: '1px solid rgba(216,180,254,0.4)', color: 'rgb(126,105,230)' }}
+                                        : { border: '1px solid #e3e3e3', color: '#616161' }}
                                 >
                                     {m === 'card' ? 'Card (Stripe)' : 'Cash on Delivery'}
                                 </button>
@@ -162,7 +162,7 @@ export default function RecoverOrderPage() {
                                 {piError && <p className="text-sm text-red-500 flex items-center gap-1"><AlertTriangle size={13} />{piError}</p>}
                                 {piInfo && (
                                     <div className="rounded-xl p-3 text-xs space-y-1" style={{ background: piInfo.stripe.status === 'succeeded' ? 'rgba(22,163,74,0.07)' : 'rgba(251,191,36,0.1)', border: `1px solid ${piInfo.stripe.status === 'succeeded' ? 'rgba(22,163,74,0.3)' : 'rgba(251,191,36,0.4)'}` }}>
-                                        <p className="font-bold" style={{ color: '#3b0764' }}>
+                                        <p className="font-bold" style={{ color: '#1a1a1a' }}>
                                             {piInfo.stripe.status === 'succeeded' ? '✓' : '⚠'} {piInfo.stripe.status.toUpperCase()} — {piInfo.stripe.amountFormatted}
                                         </p>
                                         {piInfo.existingOrder
@@ -178,7 +178,7 @@ export default function RecoverOrderPage() {
                     <div style={card} className="space-y-4">
                         <div className="flex items-center gap-2">
                             <MapPin size={15} style={{ color: 'var(--brand-purple-darker)' }} />
-                            <h2 className="text-sm font-bold" style={{ color: '#3b0764' }}>Step 3 — Shipping address</h2>
+                            <h2 className="text-sm font-bold" style={{ color: '#1a1a1a' }}>Step 3 — Shipping address</h2>
                         </div>
                         {userInfo.addresses.length === 0 ? (
                             <p className="text-xs text-amber-600">No saved addresses for this user.</p>
@@ -189,12 +189,12 @@ export default function RecoverOrderPage() {
                                         key={addr.id}
                                         className="flex items-start gap-3 p-3 rounded-xl cursor-pointer"
                                         style={String(selectedAddressId) === String(addr.id)
-                                            ? { background: 'rgba(196,167,254,0.15)', border: '1.5px solid rgba(196,167,254,0.6)' }
-                                            : { border: '1px solid rgba(216,180,254,0.3)' }}
+                                            ? { background: '#e3e3e3', border: '1.5px solid #e3e3e3' }
+                                            : { border: '1px solid #e3e3e3' }}
                                     >
                                         <input type="radio" name="address" value={addr.id} checked={String(selectedAddressId) === String(addr.id)} onChange={() => setSelectedAddressId(String(addr.id))} className="mt-0.5" />
                                         <div>
-                                            <p className="text-xs font-bold" style={{ color: '#3b0764' }}>{addr.address_label || addr.shipping_address}</p>
+                                            <p className="text-xs font-bold" style={{ color: '#1a1a1a' }}>{addr.address_label || addr.shipping_address}</p>
                                             <p className="text-xs" style={{ color: 'rgba(59,7,100,0.5)' }}>{addr.city}, {addr.country} · ID: {addr.id}</p>
                                         </div>
                                         {addr.is_default && <span className="ml-auto text-[9px] font-black px-1.5 py-0.5 rounded text-white" style={{ background: 'var(--brand-purple-2)' }}>Default</span>}
@@ -208,7 +208,7 @@ export default function RecoverOrderPage() {
                     <div style={card} className="space-y-4">
                         <div className="flex items-center gap-2">
                             <ShoppingCart size={15} style={{ color: 'var(--brand-purple-darker)' }} />
-                            <h2 className="text-sm font-bold" style={{ color: '#3b0764' }}>
+                            <h2 className="text-sm font-bold" style={{ color: '#1a1a1a' }}>
                                 Step 4 — Order items {userInfo.cart.length > 0 && <span className="font-normal text-xs" style={{ color: 'rgba(59,7,100,0.45)' }}>(auto-loaded from cart)</span>}
                             </h2>
                         </div>
@@ -218,7 +218,7 @@ export default function RecoverOrderPage() {
                                 <div key={i} className="grid grid-cols-12 gap-2 items-center text-xs">
                                     <div className="col-span-5">
                                         {item.name
-                                            ? <p className="font-semibold truncate" style={{ color: '#3b0764' }}>{item.name}</p>
+                                            ? <p className="font-semibold truncate" style={{ color: '#1a1a1a' }}>{item.name}</p>
                                             : null}
                                         <input value={item.productId} onChange={e => updateItem(i, 'productId', e.target.value)} placeholder="Product ID" style={{ ...inp, padding: '7px 10px', fontSize: 12 }} />
                                     </div>
@@ -241,9 +241,9 @@ export default function RecoverOrderPage() {
                             + Add item
                         </button>
 
-                        <div className="flex justify-between text-sm pt-2" style={{ borderTop: '1px solid rgba(216,180,254,0.2)' }}>
+                        <div className="flex justify-between text-sm pt-2" style={{ borderTop: '1px solid #e3e3e3' }}>
                             <span style={{ color: 'rgba(59,7,100,0.5)' }}>Order total</span>
-                            <span className="font-bold" style={{ color: '#3b0764' }}>AED {totalAmount.toFixed(2)}</span>
+                            <span className="font-bold" style={{ color: '#1a1a1a' }}>AED {totalAmount.toFixed(2)}</span>
                         </div>
                     </div>
 

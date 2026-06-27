@@ -68,7 +68,7 @@ const css = `
  background: #ffffff;
  overflow-y: auto;
  font-family: 'Montserrat', sans-serif;
- color: #3b0764;
+ color: #1a1a1a;
  }
 
  .slip-inner {
@@ -92,7 +92,7 @@ const css = `
  justify-content: space-between;
  padding-bottom: 20px;
  margin-bottom: 28px;
- border-bottom: 2px solid #9333ea;
+ border-bottom: 2px solid #303030;
  }
 
  .brand-line1 {
@@ -101,14 +101,14 @@ const css = `
  font-size: 18px;
  text-transform: ;
  letter-spacing: 0.05em;
- color: #3b0764;
+ color: #1a1a1a;
  }
 
  .brand-line2 {
  font-family: Georgia, serif;
  font-style: italic;
  font-size: 11px;
- color: #6b21a8;
+ color: #303030;
  margin-top: 3px;
  }
 
@@ -119,19 +119,19 @@ const css = `
  font-weight: 900;
  letter-spacing: 0.1em;
  text-transform: ;
- color: #9333ea;
+ color: #303030;
  }
 
  .slip-order-num {
  font-size: 13px;
  font-weight: 600;
- color: #6b21a8;
+ color: #303030;
  margin-top: 4px;
  }
 
  .slip-date {
  font-size: 11px;
- color: rgba(107,33,168,0.6);
+ color: #616161;
  margin-top: 2px;
  }
 
@@ -145,7 +145,7 @@ const css = `
 
  .info-box {
  background: #ffffff;
- border: 1px solid rgba(216,180,254,0.35);
+ border: 1px solid #e3e3e3;
  border-radius: 10px;
  padding: 16px 20px;
  }
@@ -155,11 +155,11 @@ const css = `
  font-weight: 700;
  letter-spacing: 0.18em;
  text-transform: ;
- color: #9333ea;
+ color: #303030;
  margin-bottom: 8px;
  }
 
- .info-box p { font-size: 12px; color: #3b0764; line-height: 1.7; }
+ .info-box p { font-size: 12px; color: #1a1a1a; line-height: 1.7; }
  .info-box .info-name { font-weight: 700; font-size: 13px; }
 
  /* Items table */
@@ -171,7 +171,7 @@ const css = `
  }
 
  .items-table th {
- background: #f3e8ff;
+ background: #f7f7f7;
  color: #7e22ce;
  font-weight: 600;
  padding: 10px 12px;
@@ -188,15 +188,15 @@ const css = `
 
  .items-table td {
  padding: 11px 12px;
- border-bottom: 1px solid #f3e8ff;
- color: #3b0764;
+ border-bottom: 1px solid #f7f7f7;
+ color: #1a1a1a;
  vertical-align: top;
  }
 
  .items-table tr:nth-child(even) td { background: #faf5ff; }
 
  .item-name { font-weight: 600; color: #1a1a1a; }
- .item-brand { font-size: 10px; color: #9333ea; font-weight: 500; margin-top: 3px; }
+ .item-brand { font-size: 10px; color: #303030; font-weight: 500; margin-top: 3px; }
 
  /* Footer */
  .slip-footer {
@@ -205,7 +205,7 @@ const css = `
  text-align: center;
  }
 
- .slip-footer p { font-size: 11px; color: #9333ea; line-height: 1.8; }
+ .slip-footer p { font-size: 11px; color: #303030; line-height: 1.8; }
  .slip-footer .footer-tagline { font-weight: 600; font-size: 12px; }
 
  /* Print */
@@ -242,8 +242,8 @@ export default async function PackingSlipPage({ params }) {
  <style dangerouslySetInnerHTML={{ __html: css }} />
  <div id="packing-slip">
  <div className="slip-inner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
- <p style={{ color: '#9333ea', fontWeight: 600 }}>Order #{numericId} not found.</p>
- <Link href="/admin/orders" style={{ fontSize: '12px', color: '#6b21a8', textDecoration: 'underline' }}>← Back to orders</Link>
+ <p style={{ color: '#303030', fontWeight: 600 }}>Order #{numericId} not found.</p>
+ <Link href="/admin/orders" style={{ fontSize: '12px', color: '#303030', textDecoration: 'underline' }}>← Back to orders</Link>
  </div>
  </div>
  </>

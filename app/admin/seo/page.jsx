@@ -69,7 +69,7 @@ const SeoAnalyticsPage = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
                 <div>
-                    <h2 className="text-2xl font-bold" style={{ color: '#3b0764' }}>SEO Audit</h2>
+                    <h2 className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>SEO Audit</h2>
                     <p className="text-sm text-gray-400 mt-0.5">AI-powered analysis of your store's search visibility</p>
                 </div>
                 <button onClick={runAudit} className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98] whitespace-nowrap">
@@ -85,7 +85,7 @@ const SeoAnalyticsPage = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className="lg:col-span-4 bg-white rounded-[3rem] border border-gray-100 p-10 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden group"
                 >
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-transparent to-transparent pointer-events-none"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#f7f7f7] via-transparent to-transparent pointer-events-none"></div>
                     <div className="relative z-10 space-y-6">
                         <div className="relative w-40 h-40 mx-auto">
                             <svg className="w-full h-full transform -rotate-90">

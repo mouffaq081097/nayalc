@@ -170,7 +170,7 @@ const PaymentsPage = () => {
                     >
                         <div className="p-8 border-b border-purple-50 flex justify-between items-center sticky top-0 bg-white z-10">
                             <div>
-                                <h3 className="text-xl font-black text-[#3b0764]">Tabby Payment Details</h3>
+                                <h3 className="text-xl font-black text-[#1a1a1a]">Tabby Payment Details</h3>
                                 <p className="text-xs text-gray-400 font-medium">{tx.id}</p>
                             </div>
                             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-2">
@@ -192,7 +192,7 @@ const PaymentsPage = () => {
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Gross Amount</p>
-                                        <p className="text-lg font-black text-[#3b0764]">{parseFloat(tx.amount).toFixed(2)} {tx.currency.toUpperCase()}</p>
+                                        <p className="text-lg font-black text-[#1a1a1a]">{parseFloat(tx.amount).toFixed(2)} {tx.currency.toUpperCase()}</p>
                                     </div>
                                 </div>
                             </section>
@@ -203,7 +203,7 @@ const PaymentsPage = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase">Name</p>
-                                            <p className="text-sm font-black text-[#3b0764]">{tx.buyer?.name || 'N/A'}</p>
+                                            <p className="text-sm font-black text-[#1a1a1a]">{tx.buyer?.name || 'N/A'}</p>
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-bold text-gray-400 uppercase">Email</p>
@@ -218,7 +218,7 @@ const PaymentsPage = () => {
                             </section>
                         </div>
                         <div className="p-8 bg-purple-50/50 flex justify-end">
-                            <Button onClick={onClose} className="bg-[#3b0764] hover:bg-[#1e0335] text-white rounded-2xl px-8 py-2 text-xs font-bold transition-all shadow-lg">
+                            <Button onClick={onClose} className="bg-[#1a1a1a] hover:bg-[#1e0335] text-white rounded-2xl px-8 py-2 text-xs font-bold transition-all shadow-lg">
                                 Dismiss
                             </Button>
                         </div>
@@ -253,7 +253,7 @@ const PaymentsPage = () => {
                 >
                     <div className="p-8 border-b border-purple-50 flex justify-between items-center sticky top-0 bg-white z-10">
                         <div>
-                            <h3 className="text-xl font-black text-[#3b0764]">Transaction Details</h3>
+                            <h3 className="text-xl font-black text-[#1a1a1a]">Transaction Details</h3>
                             <p className="text-xs text-gray-400 font-medium">{tx.id}</p>
                         </div>
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-2">
@@ -280,7 +280,7 @@ const PaymentsPage = () => {
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Gross Amount</p>
-                                    <p className="text-lg font-black text-[#3b0764]">{(tx.amount / 100).toFixed(2)} {tx.currency.toUpperCase()}</p>
+                                    <p className="text-lg font-black text-[#1a1a1a]">{(tx.amount / 100).toFixed(2)} {tx.currency.toUpperCase()}</p>
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Fee</p>
@@ -345,7 +345,7 @@ const PaymentsPage = () => {
                                         <div className="space-y-4 border-t md:border-t-0 md:border-l border-purple-100 pt-4 md:pt-0 md:pl-8">
                                             <div>
                                                 <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">Cardholder</p>
-                                                <p className="text-sm font-black text-[#3b0764]">{ownerName}</p>
+                                                <p className="text-sm font-black text-[#1a1a1a]">{ownerName}</p>
                                                 <p className="text-xs font-medium text-purple-600">{ownerEmail || 'No email provided'}</p>
                                             </div>
                                             
@@ -380,12 +380,12 @@ const PaymentsPage = () => {
                                 onClick={() => handleSendTransactionEmail(tx)} 
                                 disabled={isSendingTxEmail}
                                 variant="outline"
-                                className="border-[#3b0764] text-[#3b0764] hover:bg-purple-100 rounded-2xl px-6 py-2 text-xs font-bold transition-all shadow-sm"
+                                className="border-[#1a1a1a] text-[#1a1a1a] hover:bg-purple-100 rounded-2xl px-6 py-2 text-xs font-bold transition-all shadow-sm"
                             >
                                 {isSendingTxEmail ? <Loader2 size={16} className="animate-spin mr-2" /> : <Mail size={16} className="mr-2" />}
                                 Email Details
                             </Button>
-                            <Button onClick={onClose} className="bg-[#3b0764] hover:bg-[#1e0335] text-white rounded-2xl px-8 py-2 text-xs font-bold transition-all shadow-lg">
+                            <Button onClick={onClose} className="bg-[#1a1a1a] hover:bg-[#1e0335] text-white rounded-2xl px-8 py-2 text-xs font-bold transition-all shadow-lg">
                                 Dismiss
                             </Button>
                         </div>
@@ -409,20 +409,20 @@ const PaymentsPage = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-[#3b0764]">Payment Management</h1>
+                    <h1 className="text-2xl font-black text-[#1a1a1a]">Payment Management</h1>
                     <p className="text-sm text-gray-500">Monitor your {provider === 'stripe' ? 'Stripe' : 'Tabby'} balance and manage payouts.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="bg-purple-50 p-1 rounded-2xl border border-purple-100 flex">
                         <button 
                             onClick={() => setProvider('stripe')}
-                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${provider === 'stripe' ? 'bg-white text-[#3b0764] shadow-sm' : 'text-gray-400 hover:text-purple-600'}`}
+                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${provider === 'stripe' ? 'bg-white text-[#1a1a1a] shadow-sm' : 'text-gray-400 hover:text-purple-600'}`}
                         >
                             Stripe
                         </button>
                         <button 
                             onClick={() => setProvider('tabby')}
-                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${provider === 'tabby' ? 'bg-white text-[#3b0764] shadow-sm' : 'text-gray-400 hover:text-purple-600'}`}
+                            className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${provider === 'tabby' ? 'bg-white text-[#1a1a1a] shadow-sm' : 'text-gray-400 hover:text-purple-600'}`}
                         >
                             Tabby
                         </button>
@@ -464,14 +464,14 @@ const PaymentsPage = () => {
                     
                     <div className="relative z-10">
                         <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] mb-2">Available for Payout</p>
-                        <h2 className="text-4xl font-black text-[#3b0764]">
+                        <h2 className="text-4xl font-black text-[#1a1a1a]">
                             {formatAmount(available.amount, available.currency)}
                         </h2>
                         
                         <Button 
                             onClick={handlePayout}
                             disabled={isRequestingPayout || (provider === 'stripe' && available.amount <= 0)}
-                            className="mt-8 bg-[#9333ea] hover:bg-[#3b0764] text-white rounded-2xl px-8 py-6 text-[11px] font-black uppercase tracking-widest shadow-xl transition-all"
+                            className="mt-8 bg-[#303030] hover:bg-[#1a1a1a] text-white rounded-2xl px-8 py-6 text-[11px] font-black uppercase tracking-widest shadow-xl transition-all"
                         >
                             {isRequestingPayout ? <Loader2 className="animate-spin" /> : <><Banknote className="mr-2" size={18} /> {provider === 'stripe' ? 'Request Payout Now' : 'Automatic Payouts'}</>}
                         </Button>
@@ -488,7 +488,7 @@ const PaymentsPage = () => {
                     
                     <div className="relative z-10">
                         <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] mb-2">Pending Balance</p>
-                        <h2 className="text-4xl font-black text-[#3b0764]">
+                        <h2 className="text-4xl font-black text-[#1a1a1a]">
                             {formatAmount(pending.amount, pending.currency)}
                         </h2>
                         <p className="mt-4 text-xs text-gray-400 font-medium max-w-[200px]">
@@ -505,7 +505,7 @@ const PaymentsPage = () => {
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-2">
                         <History size={18} className="text-purple-400" />
-                        <h3 className="text-sm font-black text-[#3b0764] uppercase tracking-widest">Balance History</h3>
+                        <h3 className="text-sm font-black text-[#1a1a1a] uppercase tracking-widest">Balance History</h3>
                     </div>
                     
                     <div className="bg-white rounded-[2rem] border border-purple-50 overflow-hidden shadow-sm">
@@ -552,7 +552,7 @@ const PaymentsPage = () => {
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 px-2">
                         <Banknote size={18} className="text-purple-400" />
-                        <h3 className="text-sm font-black text-[#3b0764] uppercase tracking-widest">Recent Payouts</h3>
+                        <h3 className="text-sm font-black text-[#1a1a1a] uppercase tracking-widest">Recent Payouts</h3>
                     </div>
                     
                     <div className="bg-white rounded-[2rem] border border-purple-50 overflow-hidden shadow-sm">

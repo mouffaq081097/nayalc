@@ -204,3 +204,168 @@ body {
     border-color: rgba(196,167,254,0.8);
   }
 }
+/* ════════════════════════════════════════════════════════════════════
+   SHOPIFY ADMIN THEME  ·  scoped to .sp-admin (admin portal only)
+   Neutral/black Polaris-style surface. Overrides the Cloud Luxe lavender
+   palette for everything rendered inside the admin shell.
+   ════════════════════════════════════════════════════════════════════ */
+/* Tokens live on :root so sp-* component classes also work inside
+   portals (e.g. the product Modal renders outside .sp-admin). */
+:root {
+  --sp-bg: #f1f1f1;
+  --sp-surface: #ffffff;
+  --sp-surface-sub: #f7f7f7;
+  --sp-border: #e3e3e3;
+  --sp-border-strong: #d1d1d1;
+  --sp-text: #303030;
+  --sp-text-secondary: #616161;
+  --sp-text-subdued: #8a8a8a;
+  --sp-topbar: #1a1a1a;
+  --sp-topbar-2: #303030;
+  --sp-nav-hover: #ebebeb;
+  --sp-nav-active: #ffffff;
+  --sp-primary: #303030;
+  --sp-primary-hover: #1a1a1a;
+  --sp-focus: #005bd3;
+  --sp-radius: 12px;
+  --sp-radius-sm: 8px;
+}
+
+.sp-admin {
+  /* Re-point legacy brand vars so inline var() references go neutral/black */
+  --brand-gradient: #303030;
+  --brand-gradient-hover: #1a1a1a;
+  --brand-purple: #303030;
+  --brand-purple-1: #303030;
+  --brand-purple-2: #303030;
+  --brand-purple-dark: #1a1a1a;
+  --brand-purple-darker: #303030;
+  --cl-gradient: #303030;
+  --cl-bg: #f1f1f1;
+
+  background: var(--sp-bg);
+  color: var(--sp-text);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+}
+
+/* Legacy gradient button → Shopify primary (black) */
+.sp-admin .cl-gradient-btn {
+  background: var(--sp-primary) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  border-radius: var(--sp-radius-sm) !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08) !important;
+}
+.sp-admin .cl-gradient-btn:hover { background: var(--sp-primary-hover) !important; filter: none !important; }
+.sp-admin .cl-ghost-btn {
+  background: #fff !important;
+  color: var(--sp-text) !important;
+  border: 1px solid var(--sp-border-strong) !important;
+  border-radius: var(--sp-radius-sm) !important;
+  font-weight: 600 !important;
+}
+.sp-admin .cl-ghost-btn:hover { background: var(--sp-surface-sub) !important; }
+
+/* ── Remap Cloud Luxe purple Tailwind utilities → Shopify neutrals ── */
+.sp-admin [class*="text-purple-9"],
+.sp-admin [class*="text-purple-8"],
+.sp-admin [class*="text-purple-7"],
+.sp-admin [class*="text-purple-6"] { color: var(--sp-text) !important; }
+.sp-admin [class*="text-purple-5"],
+.sp-admin [class*="text-purple-4"] { color: var(--sp-text-secondary) !important; }
+.sp-admin [class*="text-purple-3"],
+.sp-admin [class*="text-purple-2"],
+.sp-admin [class*="text-purple-1"] { color: var(--sp-text-subdued) !important; }
+.sp-admin [class*="text-pink-"] { color: var(--sp-text-secondary) !important; }
+
+.sp-admin [class*="bg-purple-5"],
+.sp-admin [class*="bg-purple-4"],
+.sp-admin [class*="bg-purple-3"],
+.sp-admin [class*="bg-purple-2"],
+.sp-admin [class*="bg-purple-1"] { background-color: var(--sp-surface-sub) !important; }
+.sp-admin .bg-purple-500,
+.sp-admin .bg-purple-600,
+.sp-admin .bg-purple-700,
+.sp-admin .bg-purple-800,
+.sp-admin .bg-purple-900 { background-color: var(--sp-primary) !important; color: #fff !important; }
+
+.sp-admin [class*="border-purple-"] { border-color: var(--sp-border) !important; }
+.sp-admin [class*="divide-purple-"] > :not([hidden]) ~ :not([hidden]) { border-color: var(--sp-border) !important; }
+.sp-admin [class*="ring-purple-"] { --tw-ring-color: rgba(0,91,211,0.25) !important; }
+.sp-admin .focus\:border-purple-300:focus,
+.sp-admin .focus\:border-purple-400:focus { border-color: var(--sp-focus) !important; }
+
+/* Soft shadows used across cards → flatten to Shopify elevation */
+.sp-admin .shadow-cl-card,
+.sp-admin .shadow-cl-card-hover,
+.sp-admin .shadow-cl-glow,
+.sp-admin .shadow-cl-btn { box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.02) !important; }
+
+/* ── Reusable Shopify components (used by rewritten admin pages) ── */
+.sp-card {
+  background: var(--sp-surface);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+.sp-card-pad { padding: 16px 20px; }
+
+.sp-section-title { font-size: 14px; font-weight: 650; color: var(--sp-text); }
+.sp-label { font-size: 13px; font-weight: 500; color: var(--sp-text-secondary); }
+.sp-muted { color: var(--sp-text-subdued); }
+
+.sp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 13px; font-weight: 600; line-height: 1;
+  padding: 9px 14px; border-radius: var(--sp-radius-sm);
+  cursor: pointer; transition: background 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.sp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.sp-btn-primary { background: var(--sp-primary); color: #fff; box-shadow: 0 1px 0 rgba(0,0,0,0.10); }
+.sp-btn-primary:hover:not(:disabled) { background: var(--sp-primary-hover); }
+.sp-btn-secondary { background: #fff; color: var(--sp-text); border-color: var(--sp-border-strong); box-shadow: 0 1px 0 rgba(0,0,0,0.04); }
+.sp-btn-secondary:hover:not(:disabled) { background: var(--sp-surface-sub); }
+.sp-btn-plain { background: transparent; color: var(--sp-text-secondary); padding: 6px 10px; }
+.sp-btn-plain:hover:not(:disabled) { background: var(--sp-nav-hover); }
+
+.sp-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 500; line-height: 1;
+  padding: 4px 8px; border-radius: 8px;
+  background: #e3e3e3; color: #4a4a4a;
+}
+.sp-badge .dot { width: 8px; height: 8px; border-radius: 999px; background: currentColor; }
+.sp-badge-success { background: #cdf0d8; color: #0c5132; }
+.sp-badge-info    { background: #d6e8ff; color: #00527c; }
+.sp-badge-warning { background: #ffeec2; color: #5e4200; }
+.sp-badge-critical{ background: #ffd6d9; color: #8e0b21; }
+.sp-badge-neutral { background: #e3e3e3; color: #4a4a4a; }
+
+.sp-input {
+  width: 100%; font-size: 14px; color: var(--sp-text);
+  background: #fff; border: 1px solid var(--sp-border-strong);
+  border-radius: var(--sp-radius-sm); padding: 8px 12px;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.sp-input:focus { outline: none; border-color: var(--sp-focus); box-shadow: 0 0 0 2px rgba(0,91,211,0.20); }
+.sp-input::placeholder { color: var(--sp-text-subdued); }
+
+.sp-table { width: 100%; border-collapse: collapse; }
+.sp-table thead th {
+  font-size: 12px; font-weight: 600; color: var(--sp-text-secondary);
+  text-align: left; padding: 10px 16px; background: var(--sp-surface-sub);
+  border-bottom: 1px solid var(--sp-border);
+}
+.sp-table tbody td { font-size: 13px; color: var(--sp-text); padding: 12px 16px; border-bottom: 1px solid #f1f1f1; }
+.sp-table tbody tr:last-child td { border-bottom: 0; }
+.sp-table tbody tr:hover { background: #fafafa; }
+
+.sp-link { color: var(--sp-focus); font-weight: 500; }
+.sp-link:hover { text-decoration: underline; }
+
+/* Page background fills behind scroll area */
+.sp-admin .sp-scroll { background: var(--sp-bg); }

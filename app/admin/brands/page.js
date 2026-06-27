@@ -86,7 +86,7 @@ const ManageBrands = () => {
             {/* Header & Search */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold" style={{ color: '#3b0764' }}>Brands</h2>
+                    <h2 className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>Brands</h2>
                     <p className="text-sm text-gray-400 mt-0.5">{brands.length} brand{brands.length !== 1 ? 's' : ''} in the collection</p>
                 </div>
 
@@ -158,7 +158,7 @@ const ManageBrands = () => {
                                 
                                 <div>
                                     <h3 className="text-2xl font-bold text-gray-900  group-hover:text-cl-purple transition-colors duration-500">{brand.name}</h3>
-                                    <p className="text-[10px] font-black mt-2 flex items-center gap-2" style={{ color: brand.is_active === false ? '#9ca3af' : '#9333ea' }}>
+                                    <p className="text-[10px] font-black mt-2 flex items-center gap-2" style={{ color: brand.is_active === false ? '#9ca3af' : '#303030' }}>
                                         <Sparkles size={12} />
                                         {brand.is_active === false ? 'Inactive' : 'Active'}
                                     </p>

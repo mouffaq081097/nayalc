@@ -352,7 +352,7 @@ const AdminChatPage = () => {
                                         initial={{ opacity: 0, y: 6 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.01 }}
-                                        className={`group flex items-center gap-4 px-6 py-4 transition-colors ${isSelected ? 'bg-indigo-50/50' : isUrgent && conv.unreadCount > 0 ? 'bg-red-50/30' : 'hover:bg-gray-50/60'}`}
+                                        className={`group flex items-center gap-4 px-6 py-4 transition-colors ${isSelected ? 'bg-[#f1f1f1]' : isUrgent && conv.unreadCount > 0 ? 'bg-red-50/30' : 'hover:bg-gray-50/60'}`}
                                     >
                                         {/* Selection Checkbox */}
                                         <button 

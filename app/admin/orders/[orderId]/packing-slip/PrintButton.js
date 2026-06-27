@@ -10,7 +10,7 @@ export default function PrintButton() {
  padding: '10px 28px',
  borderRadius: '999px',
  border: 'none',
- background: 'linear-gradient(135deg, #a78bfa, #7e69e6)',
+ background: 'linear-gradient(135deg, #303030, #1a1a1a)',
  color: 'white',
  fontFamily: "'Montserrat', sans-serif",
  fontWeight: 900,
@@ -18,7 +18,7 @@ export default function PrintButton() {
  letterSpacing: '0.08em',
  textTransform: '',
  cursor: 'pointer',
- boxShadow: '0 4px 14px rgba(147,51,234,0.3)',
+ boxShadow: '0 4px 14px #616161',
  }}
  >
  Print / Save as PDF

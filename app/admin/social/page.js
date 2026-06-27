@@ -138,7 +138,7 @@ const ManageSocial = () => {
  {/* Header */}
  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
  <div>
- <h2 className="text-2xl font-bold" style={{ color: '#3b0764' }}>Social Feed</h2>
+ <h2 className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>Social Feed</h2>
  <p className="text-sm text-gray-400 mt-0.5">{posts.length} post{posts.length !== 1 ? 's' : ''} in your Instagram showcase</p>
  </div>
 
@@ -201,7 +201,7 @@ const ManageSocial = () => {
  href={post.instagram_url}
  target="_blank"
  rel="noopener noreferrer"
- className="text-[9px] font-black text-[#9333ea] flex items-center gap-1 hover:underline"
+ className="text-[9px] font-black text-[#303030] flex items-center gap-1 hover:underline"
  >
  <LinkIcon size={10} /> View Post
  </a>

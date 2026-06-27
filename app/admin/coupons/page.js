@@ -198,7 +198,7 @@ const CouponsPage = () => {
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-                <h2 className="text-2xl font-bold" style={{ color: '#3b0764' }}>Coupons</h2>
+                <h2 className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>Coupons</h2>
                 <p className="text-sm text-gray-400 mt-0.5">{coupons.length} coupon{coupons.length !== 1 ? 's' : ''} total</p>
             </div>
 
@@ -232,7 +232,7 @@ const CouponsPage = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className={`group relative bg-white rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col ${!coupon.is_active ? 'opacity-60 grayscale-[0.5]' : ''}`}
-                        style={{ borderColor: 'rgba(216,180,254,0.35)' }}
+                        style={{ borderColor: '#e3e3e3' }}
                     >
                         {/* Decorative background element */}
                         <div className="absolute top-0 right-0 p-6 opacity-[0.04] group-hover:opacity-[0.07] transition-opacity">
@@ -279,7 +279,7 @@ const CouponsPage = () => {
                             </div>
 
                             <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-black" style={{ color: '#9333ea' }}>
+                                <span className="text-4xl font-black" style={{ color: '#303030' }}>
                                     {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `AED ${coupon.discount_value}`}
                                 </span>
                                 <span className="text-[10px] font-medium text-gray-400">off</span>

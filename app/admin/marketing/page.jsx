@@ -41,7 +41,7 @@ const TEMPLATES = [
     {
         id: 'exclusive_offer',
         name: 'Exclusive Offer',
-        color: '#db2777',
+        color: '#303030',
         description: 'Special discount or limited-time promo',
         icon: Tag,
         defaultSections: () => [
@@ -236,23 +236,23 @@ const MarketingPage = () => {
         sections.forEach(s => {
             switch (s.type) {
                 case SECTION_TYPES.HERO:
-                    html += `<div style="margin-bottom:40px;border-radius:20px;overflow:hidden;border:1px solid rgba(216,180,254,0.25);">
+                    html += `<div style="margin-bottom:40px;border-radius:20px;overflow:hidden;border:1px solid #e3e3e3;">
     ${s.data.image ? `<img src="${s.data.image}" alt="Hero Banner" style="width:100%;display:block;margin:0;" />` : ''}
-    <div style="background:linear-gradient(180deg,#ffffff 0%,#f3e8ff 100%);padding:36px 32px;text-align:center;">
-        <h2 style="color:#3b0764;font-size:28px;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;margin:0 0 14px;line-height:1.2;">${s.data.title}</h2>
+    <div style="background:linear-gradient(180deg,#ffffff 0%,#f7f7f7 100%);padding:36px 32px;text-align:center;">
+        <h2 style="color:#1a1a1a;font-size:28px;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;margin:0 0 14px;line-height:1.2;">${s.data.title}</h2>
         <p style="color:rgba(59,7,100,0.65);font-size:16px;line-height:1.75;margin:0 auto 28px;max-width:420px;">${s.data.subtitle}</p>
-        ${s.data.ctaText ? `<a href="${s.data.ctaLink}" style="display:inline-block;background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230));color:#ffffff;padding:15px 38px;text-decoration:none;border-radius:50px;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;box-shadow:0 6px 24px rgba(147,51,234,0.25);">${s.data.ctaText}</a>` : ''}
+        ${s.data.ctaText ? `<a href="${s.data.ctaLink}" style="display:inline-block;background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230));color:#ffffff;padding:15px 38px;text-decoration:none;border-radius:50px;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;box-shadow:0 6px 24px #616161;">${s.data.ctaText}</a>` : ''}
     </div>
 </div>`;
                     break;
 
                 case SECTION_TYPES.PROMO_BANNER:
-                    html += `<div style="background:linear-gradient(135deg,#3b0764 0%,#6b21a8 60%,#7e22ce 100%);border-radius:20px;padding:44px 36px;text-align:center;margin-bottom:40px;">
-    <p style="color:rgba(216,180,254,0.8);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.25em;margin:0 0 10px;">${s.data.headline}</p>
+                    html += `<div style="background:linear-gradient(135deg,#1a1a1a 0%,#303030 60%,#7e22ce 100%);border-radius:20px;padding:44px 36px;text-align:center;margin-bottom:40px;">
+    <p style="color:#e3e3e3;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.25em;margin:0 0 10px;">${s.data.headline}</p>
     <p style="color:rgba(255,255,255,0.92);font-size:19px;font-weight:600;margin:0 0 26px;letter-spacing:-0.01em;">${s.data.subline}</p>
-    ${s.data.discount ? `<p style="color:rgba(216,180,254,0.9);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.2em;margin:0 0 14px;">${s.data.discount}</p>` : ''}
-    ${s.data.code ? `<div style="background:rgba(255,255,255,0.12);border:2px dashed rgba(216,180,254,0.5);border-radius:14px;padding:18px 40px;display:inline-block;margin:0 0 20px;"><div style="color:#ffffff;font-size:30px;font-weight:900;letter-spacing:0.14em;font-family:monospace,Courier,sans-serif;">${s.data.code}</div><div style="color:rgba(216,180,254,0.65);font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;margin-top:6px;">USE AT CHECKOUT</div></div><br>` : ''}
-    ${s.data.expiry ? `<p style="color:rgba(216,180,254,0.45);font-size:11px;margin:0;">${s.data.expiry}</p>` : ''}
+    ${s.data.discount ? `<p style="color:#e3e3e3;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.2em;margin:0 0 14px;">${s.data.discount}</p>` : ''}
+    ${s.data.code ? `<div style="background:rgba(255,255,255,0.12);border:2px dashed #e3e3e3;border-radius:14px;padding:18px 40px;display:inline-block;margin:0 0 20px;"><div style="color:#ffffff;font-size:30px;font-weight:900;letter-spacing:0.14em;font-family:monospace,Courier,sans-serif;">${s.data.code}</div><div style="color:#e3e3e3;font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;margin-top:6px;">USE AT CHECKOUT</div></div><br>` : ''}
+    ${s.data.expiry ? `<p style="color:#e3e3e3;font-size:11px;margin:0;">${s.data.expiry}</p>` : ''}
 </div>`;
                     break;
 
@@ -261,7 +261,7 @@ const MarketingPage = () => {
                     break;
 
                 case SECTION_TYPES.BUTTON:
-                    html += `<div style="text-align:center;margin-bottom:36px;"><a href="${s.data.link}" style="display:inline-block;background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230));color:#ffffff;padding:16px 42px;text-decoration:none;border-radius:50px;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;box-shadow:0 6px 24px rgba(147,51,234,0.25);">${s.data.text}</a></div>`;
+                    html += `<div style="text-align:center;margin-bottom:36px;"><a href="${s.data.link}" style="display:inline-block;background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230));color:#ffffff;padding:16px 42px;text-decoration:none;border-radius:50px;font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;box-shadow:0 6px 24px #616161;">${s.data.text}</a></div>`;
                     break;
 
                 case SECTION_TYPES.IMAGE:
@@ -269,19 +269,19 @@ const MarketingPage = () => {
                     break;
 
                 case SECTION_TYPES.DIVIDER:
-                    html += `<div style="height:1px;background:rgba(216,180,254,0.2);margin:36px 0;"></div>`;
+                    html += `<div style="height:1px;background:#e3e3e3;margin:36px 0;"></div>`;
                     break;
 
                 case SECTION_TYPES.PRODUCT:
-                    html += `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid rgba(216,180,254,0.3);border-radius:20px;overflow:hidden;margin-bottom:32px;">
+                    html += `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #e3e3e3;border-radius:20px;overflow:hidden;margin-bottom:32px;">
     <tr>
         <td width="150" valign="middle" style="padding:24px 0 24px 24px;text-align:center;">
-            ${s.data.image ? `<img src="${s.data.image}" alt="${s.data.name}" style="width:120px;height:120px;object-fit:contain;display:block;margin:0 auto;" />` : `<div style="width:120px;height:120px;background:rgba(216,180,254,0.2);border-radius:12px;margin:0 auto;"></div>`}
+            ${s.data.image ? `<img src="${s.data.image}" alt="${s.data.name}" style="width:120px;height:120px;object-fit:contain;display:block;margin:0 auto;" />` : `<div style="width:120px;height:120px;background:#e3e3e3;border-radius:12px;margin:0 auto;"></div>`}
         </td>
         <td valign="middle" style="padding:28px 28px 28px 16px;">
-            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#9333ea;margin-bottom:7px;">${s.data.brand || 'Naya Lumière'}</div>
-            <div style="font-size:19px;font-weight:900;color:#3b0764;margin-bottom:9px;line-height:1.3;">${s.data.name}</div>
-            <div style="font-size:17px;font-weight:800;color:#3b0764;margin-bottom:22px;">AED ${parseFloat(s.data.price || 0).toFixed(2)}</div>
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.15em;color:#303030;margin-bottom:7px;">${s.data.brand || 'Naya Lumière'}</div>
+            <div style="font-size:19px;font-weight:900;color:#1a1a1a;margin-bottom:9px;line-height:1.3;">${s.data.name}</div>
+            <div style="font-size:17px;font-weight:800;color:#1a1a1a;margin-bottom:22px;">AED ${parseFloat(s.data.price || 0).toFixed(2)}</div>
             <a href="${s.data.link}" style="display:inline-block;background:linear-gradient(135deg,rgb(196,167,254),rgb(126,105,230));color:#ffffff;padding:11px 26px;text-decoration:none;border-radius:50px;font-size:10px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;">View Product</a>
         </td>
     </tr>
@@ -345,7 +345,7 @@ const MarketingPage = () => {
             >
                 <div className="p-8 border-b border-purple-50 flex justify-between items-center bg-white sticky top-0 z-10">
                     <div>
-                        <h3 className="text-xl font-black text-[#3b0764]">Audience Preview</h3>
+                        <h3 className="text-xl font-black text-[#1a1a1a]">Audience Preview</h3>
                         <p className="text-xs text-gray-400 font-medium">Viewing {audienceList.length} users in segment: <span className="text-purple-600 capitalize">{formData.audience.replace('_', ' ')}</span></p>
                     </div>
                     <button onClick={() => setShowAudienceModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-2">
@@ -358,7 +358,7 @@ const MarketingPage = () => {
                         {audienceList.map((u) => (
                             <div key={u.id} className="py-4 flex items-center justify-between group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-[#3b0764] font-black text-xs uppercase">
+                                    <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-[#1a1a1a] font-black text-xs uppercase">
                                         {u.first_name?.[0]}{u.last_name?.[0]}
                                     </div>
                                     <div>
@@ -385,7 +385,7 @@ const MarketingPage = () => {
                 </div>
                 
                 <div className="p-8 bg-purple-50/50 flex justify-end">
-                    <Button onClick={() => setShowAudienceModal(false)} className="bg-[#3b0764] hover:bg-[#1e0335] text-white rounded-2xl px-12 py-3 text-xs font-bold transition-all shadow-lg">
+                    <Button onClick={() => setShowAudienceModal(false)} className="bg-[#1a1a1a] hover:bg-[#1e0335] text-white rounded-2xl px-12 py-3 text-xs font-bold transition-all shadow-lg">
                         Close Preview
                     </Button>
                 </div>
@@ -400,8 +400,8 @@ const MarketingPage = () => {
             </AnimatePresence>
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-black text-[#3b0764] flex items-center gap-3">
-                    Campaign Studio <Sparkles className="text-[#9333ea]" size={24} />
+                <h1 className="text-3xl font-black text-[#1a1a1a] flex items-center gap-3">
+                    Campaign Studio <Sparkles className="text-[#303030]" size={24} />
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">Design and send professional email campaigns to your customers.</p>
             </div>
@@ -434,7 +434,7 @@ const MarketingPage = () => {
                                         fetchAudience();
                                         setShowAudienceModal(true);
                                     }}
-                                    className="text-[9px] font-black text-[#9333ea] bg-purple-50 px-2 py-1 rounded-lg uppercase tracking-widest hover:bg-purple-100 transition-colors flex items-center gap-1.5"
+                                    className="text-[9px] font-black text-[#303030] bg-purple-50 px-2 py-1 rounded-lg uppercase tracking-widest hover:bg-purple-100 transition-colors flex items-center gap-1.5"
                                 >
                                     {fetchingAudience ? <Loader2 size={10} className="animate-spin" /> : <Eye size={10} />}
                                     Preview Recipients
@@ -444,11 +444,11 @@ const MarketingPage = () => {
                         <div className="space-y-2">
                             {audiences.map(aud => (
                                 <button key={aud.id} onClick={() => setFormData(f => ({ ...f, audience: aud.id }))}
-                                    className={`w-full p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 ${formData.audience === aud.id ? 'border-[#9333ea] bg-purple-50 ring-2 ring-purple-100' : 'border-gray-100 hover:border-purple-200 bg-white'}`}
+                                    className={`w-full p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 ${formData.audience === aud.id ? 'border-[#303030] bg-purple-50 ring-2 ring-purple-100' : 'border-gray-100 hover:border-purple-200 bg-white'}`}
                                 >
-                                    <aud.icon size={16} className={formData.audience === aud.id ? 'text-[#9333ea]' : 'text-gray-400'} />
+                                    <aud.icon size={16} className={formData.audience === aud.id ? 'text-[#303030]' : 'text-gray-400'} />
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-xs font-black truncate ${formData.audience === aud.id ? 'text-[#3b0764]' : 'text-gray-500'}`}>{aud.label}</p>
+                                        <p className={`text-xs font-black truncate ${formData.audience === aud.id ? 'text-[#1a1a1a]' : 'text-gray-500'}`}>{aud.label}</p>
                                         <p className="text-[9px] text-gray-400 font-medium">{aud.description}</p>
                                     </div>
                                     {aud.id === 'selected_users' && selectedUserIds.size > 0 && (
@@ -497,18 +497,18 @@ const MarketingPage = () => {
                                             <button key={user.id} onClick={() => toggleUser(user.id)}
                                                 className={`w-full p-3 flex items-center gap-3 hover:bg-purple-50/40 transition-colors text-left ${selectedUserIds.has(user.id) ? 'bg-purple-50/25' : ''}`}
                                             >
-                                                <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${selectedUserIds.has(user.id) ? 'bg-[#9333ea] border-[#9333ea]' : 'border-purple-200'}`}>
+                                                <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${selectedUserIds.has(user.id) ? 'bg-[#303030] border-[#303030]' : 'border-purple-200'}`}>
                                                     {selectedUserIds.has(user.id) && <Check size={9} className="text-white" strokeWidth={3} />}
                                                 </div>
-                                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-100 to-violet-200 flex items-center justify-center flex-shrink-0">
+                                                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#f1f1f1] to-[#e3e3e3] flex items-center justify-center flex-shrink-0">
                                                     <span className="text-[9px] font-black text-purple-700">{user.first_name?.[0]}{user.last_name?.[0]}</span>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[11px] font-bold text-[#3b0764] truncate">{user.first_name} {user.last_name}</p>
+                                                    <p className="text-[11px] font-bold text-[#1a1a1a] truncate">{user.first_name} {user.last_name}</p>
                                                     <p className="text-[9px] text-purple-300 truncate">{user.email}</p>
                                                 </div>
                                                 {user.loyalty_tier && (
-                                                    <span className="text-[8px] font-black uppercase flex-shrink-0" style={{ color: TIER_COLORS[user.loyalty_tier] || '#9333ea' }}>
+                                                    <span className="text-[8px] font-black uppercase flex-shrink-0" style={{ color: TIER_COLORS[user.loyalty_tier] || '#303030' }}>
                                                         {user.loyalty_tier}
                                                     </span>
                                                 )}
@@ -530,7 +530,7 @@ const MarketingPage = () => {
                     </div>
 
                     {/* Blocks / Templates tabs */}
-                    <div className="bg-[#3b0764] rounded-3xl overflow-hidden shadow-xl">
+                    <div className="bg-[#1a1a1a] rounded-3xl overflow-hidden shadow-xl">
                         <div className="flex border-b border-white/10">
                             {[{ id: 'blocks', icon: Layers, label: 'Blocks' }, { id: 'templates', icon: LayoutTemplate, label: 'Templates' }].map(tab => (
                                 <button key={tab.id} onClick={() => setLeftTab(tab.id)}
@@ -594,7 +594,7 @@ const MarketingPage = () => {
                             {/* Email chrome header */}
                             <div className="p-6 border-b border-gray-50 text-center bg-white">
                                 <p className="text-[9px] font-black text-purple-200 uppercase tracking-[0.3em] mb-1">Email Preview</p>
-                                <p className="text-xs font-black text-[#3b0764]">NAYA LUMIÈRE COSMETICS</p>
+                                <p className="text-xs font-black text-[#1a1a1a]">NAYA LUMIÈRE COSMETICS</p>
                             </div>
 
                             {/* Canvas */}
@@ -631,12 +631,12 @@ const MarketingPage = () => {
                                                                     value={section.data.image} onChange={e => updateSection(section.id, 'image', e.target.value)} />
                                                             </div>
                                                         </div>
-                                                        <input type="text" className="w-full text-2xl font-black text-[#3b0764] text-center bg-transparent border-b border-transparent focus:border-purple-200 outline-none"
+                                                        <input type="text" className="w-full text-2xl font-black text-[#1a1a1a] text-center bg-transparent border-b border-transparent focus:border-purple-200 outline-none"
                                                             value={section.data.title} onChange={e => updateSection(section.id, 'title', e.target.value)} />
                                                         <textarea className="w-full text-sm text-gray-500 text-center bg-transparent border-b border-transparent focus:border-purple-200 outline-none resize-none"
                                                             rows={2} value={section.data.subtitle} onChange={e => updateSection(section.id, 'subtitle', e.target.value)} />
                                                         <div className="flex justify-center gap-3 flex-wrap">
-                                                            <input placeholder="Button label" className="px-4 py-2 bg-[#9333ea] text-white text-[10px] font-black uppercase rounded-full w-36 text-center outline-none"
+                                                            <input placeholder="Button label" className="px-4 py-2 bg-[#303030] text-white text-[10px] font-black uppercase rounded-full w-36 text-center outline-none"
                                                                 value={section.data.ctaText} onChange={e => updateSection(section.id, 'ctaText', e.target.value)} />
                                                             <input placeholder="Link URL" className="px-4 py-2 bg-purple-50 text-purple-400 text-[10px] font-bold rounded-full flex-1 text-center outline-none"
                                                                 value={section.data.ctaLink} onChange={e => updateSection(section.id, 'ctaLink', e.target.value)} />
@@ -646,7 +646,7 @@ const MarketingPage = () => {
 
                                                 {/* ── PROMO BANNER ── */}
                                                 {section.type === SECTION_TYPES.PROMO_BANNER && (
-                                                    <div className="bg-gradient-to-br from-[#3b0764] to-[#6b21a8] rounded-3xl p-8 text-center space-y-3">
+                                                    <div className="bg-gradient-to-br from-[#1a1a1a] to-[#303030] rounded-3xl p-8 text-center space-y-3">
                                                         <input className="w-full bg-transparent text-[10px] font-black text-purple-300 uppercase tracking-widest text-center outline-none border-b border-white/10 pb-1 placeholder:text-purple-600"
                                                             placeholder="HEADLINE" value={section.data.headline} onChange={e => updateSection(section.id, 'headline', e.target.value)} />
                                                         <input className="w-full bg-transparent text-base font-semibold text-white/90 text-center outline-none border-b border-white/10 pb-1 placeholder:text-white/30"
@@ -671,13 +671,13 @@ const MarketingPage = () => {
                                                                 {section.data.image ? <img src={section.data.image} alt="Product" className="max-h-full max-w-full object-contain" /> : <Package className="text-purple-100" size={24} />}
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <p className="text-[9px] font-black text-[#9333ea] uppercase tracking-widest mb-0.5">{section.data.brand || 'Naya Lumière'}</p>
-                                                                <h3 className="text-base font-black text-[#3b0764] truncate">{section.data.name}</h3>
-                                                                <p className="text-sm font-bold text-[#3b0764] mt-0.5">AED {parseFloat(section.data.price || 0).toFixed(2)}</p>
+                                                                <p className="text-[9px] font-black text-[#303030] uppercase tracking-widest mb-0.5">{section.data.brand || 'Naya Lumière'}</p>
+                                                                <h3 className="text-base font-black text-[#1a1a1a] truncate">{section.data.name}</h3>
+                                                                <p className="text-sm font-bold text-[#1a1a1a] mt-0.5">AED {parseFloat(section.data.price || 0).toFixed(2)}</p>
                                                             </div>
                                                             <div className="relative flex-shrink-0">
                                                                 <button onClick={() => setActivePickerId(activePickerId === section.id ? null : section.id)}
-                                                                    className="flex items-center gap-1.5 px-3 py-2 bg-white border border-purple-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#3b0764] shadow-sm hover:shadow-md transition-all"
+                                                                    className="flex items-center gap-1.5 px-3 py-2 bg-white border border-purple-100 rounded-xl text-[9px] font-black uppercase tracking-widest text-[#1a1a1a] shadow-sm hover:shadow-md transition-all"
                                                                 >
                                                                     <Search size={11} /> {activePickerId === section.id ? 'Close' : 'Change'}
                                                                 </button>
@@ -717,7 +717,7 @@ const MarketingPage = () => {
 
                                                 {/* ── TEXT ── */}
                                                 {section.type === SECTION_TYPES.TEXT && (
-                                                    <textarea className="w-full p-4 text-sm text-[#3b0764] leading-relaxed bg-transparent border-b-2 border-dashed border-purple-100 focus:border-purple-400 outline-none min-h-[100px]"
+                                                    <textarea className="w-full p-4 text-sm text-[#1a1a1a] leading-relaxed bg-transparent border-b-2 border-dashed border-purple-100 focus:border-purple-400 outline-none min-h-[100px]"
                                                         placeholder="Compose your message..."
                                                         value={section.data.content} onChange={e => updateSection(section.id, 'content', e.target.value)} />
                                                 )}
@@ -725,7 +725,7 @@ const MarketingPage = () => {
                                                 {/* ── BUTTON ── */}
                                                 {section.type === SECTION_TYPES.BUTTON && (
                                                     <div className="flex flex-col items-center gap-3 p-6 bg-purple-50/30 rounded-3xl border border-purple-50">
-                                                        <input className="px-6 py-2.5 bg-gradient-to-r from-[rgb(196,167,254)] to-[rgb(126,105,230)] text-white text-[10px] font-black uppercase rounded-full text-center outline-none"
+                                                        <input className="px-6 py-2.5 bg-gradient-to-r from-[#303030] to-[#1a1a1a] text-white text-[10px] font-black uppercase rounded-full text-center outline-none"
                                                             value={section.data.text} onChange={e => updateSection(section.id, 'text', e.target.value)} />
                                                         <input placeholder="Paste link URL..." className="text-[10px] text-purple-400 bg-transparent text-center outline-none font-bold w-full"
                                                             value={section.data.link} onChange={e => updateSection(section.id, 'link', e.target.value)} />
@@ -764,7 +764,7 @@ const MarketingPage = () => {
                                         className="px-4 py-2.5 bg-white border border-purple-100 rounded-xl text-xs font-medium focus:outline-none focus:border-purple-300 w-full md:w-52"
                                     />
                                     <Button onClick={() => handleSend(true)} disabled={testLoading || !formData.testEmail}
-                                        variant="outline" className="border-[#9333ea] text-[#9333ea] hover:bg-white rounded-xl whitespace-nowrap px-4 py-2.5"
+                                        variant="outline" className="border-[#303030] text-[#303030] hover:bg-white rounded-xl whitespace-nowrap px-4 py-2.5"
                                     >
                                         {testLoading ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} className="mr-1.5" />}
                                         Test
@@ -772,7 +772,7 @@ const MarketingPage = () => {
                                 </div>
                                 <Button onClick={() => handleSend(false)}
                                     disabled={loading || !formData.subject || sections.length === 0 || (formData.audience === 'selected_users' && selectedUserIds.size === 0)}
-                                    className="bg-[#3b0764] hover:bg-[#1e0335] text-white rounded-2xl px-10 py-5 text-xs font-black uppercase tracking-widest shadow-xl transition-all w-full md:w-auto group"
+                                    className="bg-[#1a1a1a] hover:bg-[#1e0335] text-white rounded-2xl px-10 py-5 text-xs font-black uppercase tracking-widest shadow-xl transition-all w-full md:w-auto group"
                                 >
                                     {loading ? <Loader2 className="animate-spin" /> : (
                                         <>Launch Campaign <Send size={15} className="ml-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /></>

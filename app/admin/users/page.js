@@ -175,14 +175,14 @@ const AllUsersPage = () => {
             {/* Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={15} style={{ color: 'rgba(147,51,234,0.4)' }} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={15} style={{ color: '#616161' }} />
                     <input
                         type="text" placeholder="Search clients…"
                         className="w-full pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all rounded-full"
                         style={{
                             background: 'rgba(255,255,255,0.8)',
-                            border: '1px solid rgba(216,180,254,0.55)',
-                            color: '#3b0764',
+                            border: '1px solid #e3e3e3',
+                            color: '#1a1a1a',
                         }}
                         value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                     />
@@ -190,15 +190,15 @@ const AllUsersPage = () => {
 
                 <div className="flex items-center gap-3">
                     {/* View toggle */}
-                    <div className="flex rounded-full p-1" style={{ background: 'rgba(243,232,255,0.6)', border: '1px solid rgba(216,180,254,0.4)' }}>
+                    <div className="flex rounded-full p-1" style={{ background: '#f7f7f7', border: '1px solid #e3e3e3' }}>
                         <button onClick={() => setViewMode('grid')}
                             className="p-1.5 rounded-full transition-all"
-                            style={viewMode === 'grid' ? { background: '#fff', color: '#9333ea', boxShadow: '0 1px 4px rgba(147,51,234,0.2)' } : { color: 'rgba(107,33,168,0.5)' }}>
+                            style={viewMode === 'grid' ? { background: '#fff', color: '#303030', boxShadow: '0 1px 4px #616161' } : { color: '#616161' }}>
                             <LayoutGrid size={15} />
                         </button>
                         <button onClick={() => setViewMode('list')}
                             className="p-1.5 rounded-full transition-all"
-                            style={viewMode === 'list' ? { background: '#fff', color: '#9333ea', boxShadow: '0 1px 4px rgba(147,51,234,0.2)' } : { color: 'rgba(107,33,168,0.5)' }}>
+                            style={viewMode === 'list' ? { background: '#fff', color: '#303030', boxShadow: '0 1px 4px #616161' } : { color: '#616161' }}>
                             <List size={15} />
                         </button>
                     </div>
@@ -213,7 +213,7 @@ const AllUsersPage = () => {
                         {filteredUsers.map(user => (
                             <div key={user.id}
                                 className="group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300  "
-                                style={{ background: 'rgba(243,232,255,0.38)', border: '1px solid rgba(216,180,254,0.4)' }}
+                                style={{ background: '#f7f7f7', border: '1px solid #e3e3e3' }}
                             >
                                 {/* Status badges */}
                                 <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
@@ -374,8 +374,8 @@ const AllUsersPage = () => {
                                         className="mt-auto w-full py-2 rounded-full text-[11px] font-semibold transition-all duration-200 hover:shadow-md"
                                         style={{
                                             background: 'rgba(255,255,255,0.7)',
-                                            border: '1px solid rgba(216,180,254,0.6)',
-                                            color: '#6b21a8',
+                                            border: '1px solid #e3e3e3',
+                                            color: '#303030',
                                         }}
                                     >
                                         Manage Client
@@ -386,7 +386,7 @@ const AllUsersPage = () => {
                     </motion.div>
                 ) : (
                     <motion.div key="list" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                        className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: 'rgba(216,180,254,0.35)' }}>
+                        className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#e3e3e3' }}>
                         <table className="w-full">
                             <thead>
                                 <tr style={{ background: 'rgba(255,255,255,0.7)' }}>
@@ -498,7 +498,7 @@ const AllUsersPage = () => {
             </AnimatePresence>
 
             {filteredUsers.length === 0 && (
-                <div className="min-h-[260px] bg-white rounded-2xl border border-dashed flex flex-col items-center justify-center gap-3" style={{ borderColor: 'rgba(216,180,254,0.5)' }}>
+                <div className="min-h-[260px] bg-white rounded-2xl border border-dashed flex flex-col items-center justify-center gap-3" style={{ borderColor: '#e3e3e3' }}>
                     <Archive size={36} className="text-purple-200" />
                     <p className="text-gray-400 font-medium">No clients found</p>
                 </div>
@@ -526,10 +526,10 @@ const AllUsersPage = () => {
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                             className="fixed top-0 right-0 h-full w-full max-w-md z-50 flex flex-col overflow-hidden"
-                            style={{ background: '#ffffff', borderLeft: '1px solid rgba(216,180,254,0.4)' }}
+                            style={{ background: '#ffffff', borderLeft: '1px solid #e3e3e3' }}
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: 'rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.8)' }}>
+                            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#e3e3e3', background: 'rgba(255,255,255,0.8)' }}>
                                 <div className="flex items-center gap-3">
                                     <div className="relative w-10 h-10 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-400 overflow-hidden flex-shrink-0">
                                         {selectedUser.profile_image ? (
@@ -552,7 +552,7 @@ const AllUsersPage = () => {
                             </div>
 
                             {/* Tabs */}
-                            <div className="flex border-b" style={{ borderColor: 'rgba(216,180,254,0.3)', background: 'rgba(255,255,255,0.5)' }}>
+                            <div className="flex border-b" style={{ borderColor: '#e3e3e3', background: 'rgba(255,255,255,0.5)' }}>
                                 {[
                                     { key: 'overview', label: 'Overview' },
                                     { key: 'addresses', label: 'Addresses' },
@@ -563,8 +563,8 @@ const AllUsersPage = () => {
                                         onClick={() => { setClientTab(tab.key); if (tab.key === 'loyalty') fetchLoyalty(selectedUser.id); }}
                                         className="flex-1 py-3 text-[11px] font-bold transition-all border-b-2"
                                         style={clientTab === tab.key
-                                            ? { color: '#9333ea', borderColor: '#9333ea' }
-                                            : { color: 'rgba(107,33,168,0.4)', borderColor: 'transparent' }}
+                                            ? { color: '#303030', borderColor: '#303030' }
+                                            : { color: '#616161', borderColor: 'transparent' }}
                                     >
                                         {tab.label}
                                     </button>
@@ -577,7 +577,7 @@ const AllUsersPage = () => {
                                 {/* ── Overview ── */}
                                 {clientTab === 'overview' && (
                                     <>
-                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
                                             <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Contact</p>
                                             <div className="space-y-2.5">
                                                 <div className="flex items-center gap-3">
@@ -595,7 +595,7 @@ const AllUsersPage = () => {
                                             </div>
                                         </div>
 
-                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
                                             <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Loyalty status</p>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
@@ -603,7 +603,7 @@ const AllUsersPage = () => {
                                                     <span className="text-sm font-bold text-gray-800">{selectedUser.loyalty_points || 0} pts</span>
                                                 </div>
                                                 <span className="px-3 py-1 rounded-full text-[10px] font-bold"
-                                                    style={{ background: 'rgba(216,180,254,0.25)', color: '#6b21a8', border: '1px solid rgba(216,180,254,0.5)' }}>
+                                                    style={{ background: '#e3e3e3', color: '#303030', border: '1px solid #e3e3e3' }}>
                                                     {selectedUser.loyalty_tier || 'Bronze'}
                                                 </span>
                                             </div>
@@ -615,7 +615,7 @@ const AllUsersPage = () => {
                                             </button>
                                         </div>
 
-                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
                                             <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Role</p>
                                             <div className="flex items-center gap-2">
                                                 {selectedUser.is_admin ? (
@@ -636,8 +636,8 @@ const AllUsersPage = () => {
                                             </div>
                                         </div>
 
-                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: selectedUser.is_suspended ? 'rgba(254,242,242,0.8)' : 'rgba(255,255,255,0.7)', border: selectedUser.is_suspended ? '1px solid rgba(252,165,165,0.5)' : '1px solid rgba(216,180,254,0.35)' }}>
-                                            <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: selectedUser.is_suspended ? '#dc2626' : 'rgba(147,51,234,0.6)' }}>Account status</p>
+                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: selectedUser.is_suspended ? 'rgba(254,242,242,0.8)' : 'rgba(255,255,255,0.7)', border: selectedUser.is_suspended ? '1px solid rgba(252,165,165,0.5)' : '1px solid #e3e3e3' }}>
+                                            <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: selectedUser.is_suspended ? '#dc2626' : '#616161' }}>Account status</p>
                                             <div className="flex items-center justify-between">
                                                 <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${selectedUser.is_suspended ? 'bg-red-100 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
                                                     {selectedUser.is_suspended ? <><EyeOff size={11} /> Suspended</> : <><UserCheck size={11} /> Active</>}
@@ -658,7 +658,7 @@ const AllUsersPage = () => {
                                     <div className="space-y-3">
                                         {selectedUser.addresses && selectedUser.addresses.length > 0 ? (
                                             selectedUser.addresses.map(addr => (
-                                                <div key={addr.id} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                                <div key={addr.id} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
                                                     <div className="flex items-center justify-between mb-2">
                                                         <div className="flex items-center gap-2">
                                                             <MapPin size={12} className="text-purple-400" />
@@ -679,7 +679,7 @@ const AllUsersPage = () => {
                                                 </div>
                                             ))
                                         ) : (
-                                            <div className="min-h-[200px] flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed" style={{ borderColor: 'rgba(216,180,254,0.5)' }}>
+                                            <div className="min-h-[200px] flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed" style={{ borderColor: '#e3e3e3' }}>
                                                 <MapPin size={28} className="text-purple-200" />
                                                 <p className="text-[11px] text-gray-400">No addresses saved</p>
                                             </div>
@@ -703,7 +703,7 @@ const AllUsersPage = () => {
                                                     { label: 'Tier', value: loyaltyData[selectedUser.id].stats?.tier ?? '—', icon: <Award size={13} className="text-purple-400" /> },
                                                     { label: 'Lifetime spend', value: loyaltyData[selectedUser.id].stats?.lifetimeSpend ? `AED ${Number(loyaltyData[selectedUser.id].stats.lifetimeSpend).toFixed(0)}` : '—', icon: <TrendingUp size={13} className="text-green-400" /> },
                                                 ].map(stat => (
-                                                    <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(216,180,254,0.35)' }}>
+                                                    <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
                                                         <div className="flex justify-center mb-1">{stat.icon}</div>
                                                         <p className="text-[13px] font-black text-gray-800">{stat.value}</p>
                                                         <p className="text-[9px] text-gray-400 mt-0.5">{stat.label}</p>
@@ -712,11 +712,11 @@ const AllUsersPage = () => {
                                             </div>
 
                                             {/* Transactions */}
-                                            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(216,180,254,0.35)' }}>
+                                            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #e3e3e3' }}>
                                                 <div className="px-4 py-3" style={{ background: 'rgba(255,255,255,0.7)' }}>
                                                     <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Transactions</p>
                                                 </div>
-                                                <div className="divide-y" style={{ divideColor: 'rgba(216,180,254,0.2)' }}>
+                                                <div className="divide-y" style={{ divideColor: '#e3e3e3' }}>
                                                     {loyaltyData[selectedUser.id].transactions?.length > 0 ? (
                                                         loyaltyData[selectedUser.id].transactions.map(tx => (
                                                             <div key={tx.id} className="flex items-center gap-3 px-4 py-3" style={{ background: 'rgba(255,255,255,0.6)' }}>
