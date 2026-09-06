@@ -25,7 +25,7 @@ export function useAccountData() {
       setIsLoading(true);
       try {
         const [ordersRes, wishlistRes, loyaltyRes] = await Promise.all([
-          fetchWithAuth(`/api/orders?userId=${user.id}`)
+          fetchWithAuth(`/api/orders?userId=${user.id}&statusFilter=all&limit=100`)
             .then((res) => res.json())
             .catch(() => ({ orders: [] })),
           fetchWithAuth(`/api/wishlist?userId=${user.id}`)
@@ -34,7 +34,8 @@ export function useAccountData() {
           fetchWithAuth(`/api/users/${user.id}/loyalty`)
             .then((res) => res.json())
             .catch(() => ({
-              stats: { points: 1250, tier: 'Silver', nextTierPoints: 2000 },
+              stats: { points: 0, tier: 'Silver', nextTierPoints: 2000 },
+              transactions: [],
             })),
         ]);
 

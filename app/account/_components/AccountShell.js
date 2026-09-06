@@ -8,6 +8,7 @@ import { User, Package, Heart, Star, MapPin, Settings, LogOut } from 'lucide-rea
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
 import { AccountMobileTopBar } from './AccountMobileTopBar';
+import { PROMO_BAR_H } from '../../components/PromoBar';
 
 const SIDEBAR_W = 200; // px
 
@@ -29,7 +30,7 @@ const PAGE_TITLES = {
   '/account/settings':  'Settings',
 };
 
-export default function AccountShell({ children, wishCount = 0 }) {
+export default function AccountShell({ children, wishCount = 0, title }) {
   const pathname = usePathname();
   const router   = useRouter();
   const { user, logout } = useAuth();
@@ -44,12 +45,13 @@ export default function AccountShell({ children, wishCount = 0 }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // When scrolled the navbar is: fixed top-0 + pt-3 (12px) + h-[60px] = 72px total
-  // When not scrolled: fixed top-0 + h-[60px] = 60px
-  const navbarH = scrolled ? 72 : 60;
+  // Header now sits below the fixed PromoBar (top: PROMO_BAR_H, not top: 0).
+  // When scrolled the navbar is: PROMO_BAR_H + pt-3 (12px) + h-[60px] = +72px
+  // When not scrolled: PROMO_BAR_H + h-[60px] = +60px
+  const navbarH = PROMO_BAR_H + (scrolled ? 72 : 60);
 
   const tier      = loyaltyData?.stats?.tier || 'Member';
-  const pageTitle = PAGE_TITLES[pathname] || 'My Account';
+  const pageTitle = title || PAGE_TITLES[pathname] || 'My Account';
   const initials  = [user?.first_name?.[0], user?.last_name?.[0]].filter(Boolean).join('').toUpperCase() || 'NL';
 
   return (

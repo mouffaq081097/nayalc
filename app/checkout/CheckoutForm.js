@@ -1,58 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useStripe, useElements, CardElement, PaymentRequestButtonElement } from '@stripe/react-stripe-js';
+import React, { useState } from 'react';
+import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { Button } from '../components/ui/button';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Lock, CreditCard, Sparkles, Loader2 } from 'lucide-react';
 
-const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0, clientSecret = null }) => {
+const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", clientSecret = null }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [paymentRequest, setPaymentRequest] = useState(null);
-
-  useEffect(() => {
-    if (!stripe || !amount) return;
-
-    const pr = stripe.paymentRequest({
-      country: 'AE',
-      currency: 'aed',
-      total: {
-        label: 'Naya Lumière Acquisition',
-        amount, // dynamic amount in fils (smallest AED unit)
-      },
-      requestPayerName: true,
-      requestPayerEmail: true,
-    });
-
-    pr.canMakePayment().then(result => {
-      if (result) setPaymentRequest(pr);
-    });
-
-    pr.on('paymentmethod', async (ev) => {
-      if (!clientSecret) {
-        ev.complete('fail');
-        return;
-      }
-      const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
-        clientSecret,
-        { payment_method: ev.paymentMethod.id },
-        { handleActions: false }
-      );
-
-      if (confirmError) {
-        ev.complete('fail');
-        toast.error(confirmError.message);
-      } else {
-        ev.complete('success');
-        if (paymentIntent.status === 'requires_action') {
-          await stripe.confirmCardPayment(clientSecret);
-        }
-        onSuccessfulPayment(paymentIntent.id);
-      }
-    });
-  }, [stripe, amount, clientSecret]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -108,29 +65,6 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = "Pay now", amount = 0
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
-      {/* Wallet Payments (Apple Pay / Google Pay) */}
-      {paymentRequest && (
-        <div className="space-y-6">
-            <PaymentRequestButtonElement 
-                options={{ 
-                    paymentRequest,
-                    style: {
-                        paymentRequestButton: {
-                            type: 'buy',
-                            theme: 'dark', 
-                            height: '56px',
-                        },
-                    },
-                }} 
-            />
-            <div className="flex items-center gap-4">
-                <div className="h-[0.5px] flex-1 bg-gray-300"></div>
-                <span className="text-[11px] font-medium text-gray-400 tracking-tight uppercase">or card selection</span>
-                <div className="h-[0.5px] flex-1 bg-gray-300"></div>
-            </div>
-        </div>
-      )}
-
       {/* Physical Card Visual - Fully Responsive Apple Style */}
       <div className="relative w-full max-w-md mx-auto rounded-[1.5rem] bg-white p-6 lg:p-10 shadow-lg overflow-hidden border border-gray-200 group transition-all duration-1000">
         <div className="absolute inset-0 opacity-[0.03] mix-blend-multiply bg-[url('/textures/brushed-alum.png')]"></div>

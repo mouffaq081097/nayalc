@@ -5,6 +5,12 @@ import { createFetchWithAuth } from '../lib/api';
 
 const AppContext = createContext(null);
 
+// Store's own pick of best sellers to lead the homepage's "Signature Selection"
+// (all three have real sales history — see product.totalSold — even though two
+// are currently sold out; a sellout doesn't erase past sales). Matched by name so
+// it keeps working if product ids change.
+const PINNED_BESTSELLERS = ['Synchro Face Care', 'Immuno', 'Melano 50+'];
+
 export const AppProvider = ({ children }) => {
   const { user, isAuthenticated, logout } = useAuth();
   // Initialize fetchWithAuth with the logout function and memoize it
@@ -174,6 +180,10 @@ export const AppProvider = ({ children }) => {
       additionalImagesData: product.additionalImagesData || [],
       brand: product.brandName,
       stock_quantity: product.stock_quantity,
+      // The store's pinned picks (see PINNED_BESTSELLERS above) carry the Best
+      // Seller tag everywhere they appear, not just on the homepage — on top of
+      // whatever the real sales-ranked isBestseller already says.
+      isBestseller: product.isBestseller || PINNED_BESTSELLERS.includes(product.name),
     };
   });
 
@@ -230,7 +240,21 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const featuredProducts = useMemo(() => products.slice(0, 4), [products]);
+  // Remaining slots (beyond the pinned picks above) fill with the real algorithmic
+  // best sellers (product.isBestseller, ranked by totalSold), then the newest
+  // products if there still isn't enough real sales data.
+  const featuredProducts = useMemo(() => {
+    const pinned = PINNED_BESTSELLERS.map((name) => products.find((p) => p.name === name)).filter(Boolean);
+    const pinnedIds = new Set(pinned.map((p) => p.id));
+    const bestsellers = products
+      .filter((p) => p.isBestseller && !pinnedIds.has(p.id))
+      .sort((a, b) => Number(b.totalSold || 0) - Number(a.totalSold || 0));
+    const combined = [...pinned, ...bestsellers];
+    if (combined.length >= 4) return combined.slice(0, 4);
+    const usedIds = new Set(combined.map((p) => p.id));
+    const fillers = products.filter((p) => !usedIds.has(p.id)).slice(0, 4 - combined.length);
+    return [...combined, ...fillers];
+  }, [products]);
 
   const processCategoryData = (data) => data.map(category => ({
     ...category,

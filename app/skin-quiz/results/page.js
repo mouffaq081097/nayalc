@@ -1,119 +1,196 @@
 'use client';
-import React, { useEffect, useState, useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+
+import React, { useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAppContext } from '../../context/AppContext';
 import ProductCard from '../../components/ProductCard';
-import { Button } from '../../components/ui/button';
-import { useRouter } from 'next/navigation';
-import { Loader2, Frown } from 'lucide-react';
+import Link from 'next/link';
+import { RotateCcw, ArrowRight, SearchX } from 'lucide-react';
+
+const LAVENDER = 'rgb(147,104,236)';
+
+/* ============================================================================
+ * Real recommendation engine — replaces the old placeholder that grepped
+ * product.description for substrings. Matches on real data instead:
+ *  - concernIds come straight from the live `concerns` table (picked on the
+ *    quiz itself), matched against each product's real product.concern_ids.
+ *  - skin type adds one more real concern into the mix by name (Oily → any
+ *    concern named "Oil Control", Dry → "Hydration", Sensitive →
+ *    "Sensitivity & Redness"), rather than guessing from free text.
+ *  - texture matches the real product.form field (Serum / Cream / Lotion).
+ * Every in-stock product gets a score (0 if nothing matched) and the list is
+ * sorted best-first, so there is always a ranked, real result — never a dead
+ * "no products" page unless the whole catalog is empty.
+ * ==========================================================================*/
+
+const SKIN_TYPE_CONCERN_HINT = {
+  Oily: /oil/i,
+  Dry: /hydrat/i,
+  Sensitive: /sensitiv|redness/i,
+};
+
+function useRecommendations(answers) {
+  const { products, concerns } = useAppContext();
+
+  return useMemo(() => {
+    if (!products.length) return [];
+
+    const targetConcernIds = new Set(answers.concernIds);
+    const hint = SKIN_TYPE_CONCERN_HINT[answers.skinType];
+    if (hint) {
+      const match = concerns.find((c) => hint.test(c.name));
+      if (match) targetConcernIds.add(match.id);
+    }
+
+    const inStock = products.filter((p) => Number(p.stock_quantity) > 0);
+    const pool = inStock.length > 0 ? inStock : products;
+
+    const scored = pool.map((p) => {
+      const productConcernIds = (p.concern_ids || []).map(Number);
+      const concernMatches = productConcernIds.filter((id) => targetConcernIds.has(id)).length;
+      const textureMatch = answers.texture && p.form && p.form.toLowerCase().includes(answers.texture.toLowerCase());
+      const score = concernMatches * 2 + (textureMatch ? 1 : 0);
+      return { product: p, score };
+    });
+
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      const ratingDiff = Number(b.product.averageRating || 0) - Number(a.product.averageRating || 0);
+      if (ratingDiff !== 0) return ratingDiff;
+      return Number(b.product.reviewCount || 0) - Number(a.product.reviewCount || 0);
+    });
+
+    return scored.slice(0, 8).map((s) => s.product);
+  }, [products, concerns, answers]);
+}
 
 function SkinQuizResults() {
   const searchParams = useSearchParams();
-  const { products, fetchProducts } = useAppContext();
-  const [recommendedProducts, setRecommendedProducts] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { concerns, fetchProducts, products } = useAppContext();
   const router = useRouter();
 
-  const answers = useMemo(() => ({
-    skinType: searchParams.get('skinType'),
-    skinConcerns: searchParams.getAll('skinConcerns'),
-    texturePreference: searchParams.get('texturePreference'),
-  }), [searchParams]);
+  const answers = useMemo(() => {
+    const concernIdsParam = searchParams.get('concernIds');
+    return {
+      skinType: searchParams.get('skinType'),
+      concernIds: concernIdsParam ? concernIdsParam.split(',').map(Number).filter(Boolean) : [],
+      texture: searchParams.get('texture'),
+    };
+  }, [searchParams]);
 
   useEffect(() => {
-    if (products.length === 0) {
-      fetchProducts();
-    }
-  }, [products, fetchProducts]);
+    if (products.length === 0) fetchProducts();
+  }, [products.length, fetchProducts]);
 
-  useEffect(() => {
-    if (products.length > 0) {
-      setIsLoading(true);
-      
-      // Simple recommendation logic
-      const getRecommendations = () => {
-        let filtered = [...products];
+  const concernLabels = useMemo(
+    () => answers.concernIds.map((id) => concerns.find((c) => c.id === id)?.name).filter(Boolean),
+    [answers.concernIds, concerns]
+  );
 
-        // This is a placeholder logic. You should refine this based on your product data.
-        // For example, you might have tags or categories on your products.
-        if (answers.skinType) {
-            // Example: if skin type is "Dry", recommend products with "hydrating" in description
-            if (answers.skinType === 'Dry') {
-                filtered = filtered.filter(p => p.description.toLowerCase().includes('hydrat'));
-            }
-            if (answers.skinType === 'Oily') {
-                filtered = filtered.filter(p => p.description.toLowerCase().includes('oily') || p.description.toLowerCase().includes('clarifying'));
-            }
-        }
-
-        if (answers.skinConcerns && answers.skinConcerns.length > 0) {
-            filtered = filtered.filter(p => 
-                answers.skinConcerns.some(concern => 
-                    p.description.toLowerCase().includes(concern.split(' ')[0].toLowerCase())
-                )
-            );
-        }
-        
-        // If still too many products, randomly pick a few
-        if (filtered.length > 6) {
-          filtered = filtered.sort(() => 0.5 - Math.random()).slice(0, 6);
-        }
-
-        setRecommendedProducts(filtered);
-        setIsLoading(false);
-      };
-
-      getRecommendations();
-    }
-  }, [answers, products]);
+  const isLoading = products.length === 0;
+  const recommended = useRecommendations(answers);
+  const hasAnyAnswer = answers.skinType || concernLabels.length > 0 || answers.texture;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="container mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl mb-4">
-            <span className="text-gray-900">Your Personalized </span>
-            <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-pink)] bg-clip-text text-transparent">
-              Skincare Routine
-            </span>
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Based on your answers, here are the products we think you'll love.
+    <div className="min-h-screen bg-white py-12 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-8">
+          <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400 mb-2">Your consultation is ready</p>
+          <h1 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Your personalized routine</h1>
+          <p className="text-[14px] text-gray-500 mt-2 max-w-md mx-auto">
+            Matched from our real catalog against what you told us — ranked by best fit first.
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-12 w-12 animate-spin text-[var(--brand-blue)]" />
-          </div>
-        ) : recommendedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {recommendedProducts.map(product => (
-              <ProductCard key={product.id} {...product} />
+        {hasAnyAnswer && (
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-10">
+            {answers.skinType && (
+              <span
+                className="px-3.5 py-1.5 rounded-full text-[12px] font-semibold text-white"
+                style={{ background: LAVENDER }}
+              >
+                {answers.skinType} skin
+              </span>
+            )}
+            {concernLabels.map((label) => (
+              <span key={label} className="px-3.5 py-1.5 rounded-full text-[12px] font-medium text-gray-600 border border-gray-200">
+                {label}
+              </span>
             ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <Frown className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-            <h2 className="text-2xl mb-4">No products match your criteria</h2>
-            <p className="text-gray-600 mb-8">We couldn't find any products that match your specific needs. Please try the quiz again with different options.</p>
+            {answers.texture && (
+              <span className="px-3.5 py-1.5 rounded-full text-[12px] font-medium text-gray-600 border border-gray-200">
+                Prefers {answers.texture.toLowerCase()}
+              </span>
+            )}
           </div>
         )}
 
-        <div className="text-center mt-12">
-          <Button onClick={() => router.push('/skin-quiz')}>
-            Take the Quiz Again
-          </Button>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="aspect-[3/4.4] rounded-2xl border border-gray-100 bg-gray-50 animate-pulse" />
+            ))}
+          </div>
+        ) : recommended.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {recommended.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                slug={product.slug}
+                name={product.name}
+                price={product.price}
+                originalPrice={product.originalPrice}
+                image={product.imageUrl}
+                averageRating={product.averageRating}
+                reviewCount={product.reviewCount}
+                viewCount={product.viewCount}
+                brandName={product.brandName}
+                stock_quantity={product.stock_quantity}
+                isBestseller={product.isBestseller}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="max-w-md mx-auto text-center py-16 px-8 rounded-2xl border border-gray-200">
+            <SearchX size={36} className="mx-auto mb-4 text-gray-300" />
+            <h2 className="text-[18px] font-bold text-gray-900 mb-2">Nothing in stock just yet</h2>
+            <p className="text-[13px] text-gray-500">Our catalog is being restocked — check back soon, or retake the quiz.</p>
+          </div>
+        )}
+
+        <div className="text-center mt-10 flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={() => router.push('/skin-quiz')}
+            className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full border border-gray-200 text-gray-600 text-[12.5px] font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <RotateCcw size={14} />
+            Retake the quiz
+          </button>
+          <Link
+            href="/all-products"
+            className="inline-flex items-center gap-1.5 h-11 px-6 rounded-full text-white text-[12.5px] font-semibold transition-opacity hover:opacity-90"
+            style={{ background: LAVENDER }}
+          >
+            Shop everything
+            <ArrowRight size={14} />
+          </Link>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default function SkinQuizResultsPage() {
-    return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-[40vh]"><div className="w-8 h-8 rounded-full border-2 border-[var(--cl-purple)]/20 border-t-[var(--cl-purple)] animate-spin" /></div>}>
-            <SkinQuizResults />
-        </Suspense>
-    )
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[60vh] bg-white">
+          <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: 'rgba(147,104,236,0.2)', borderTopColor: LAVENDER }} />
+        </div>
+      }
+    >
+      <SkinQuizResults />
+    </Suspense>
+  );
 }

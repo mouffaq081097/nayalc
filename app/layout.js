@@ -11,6 +11,7 @@ const inter = Inter({
 });
 import Providers from './Providers';
 import LayoutContent from './LayoutContent';
+import VisitTracker from './components/VisitTracker';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
@@ -52,9 +53,9 @@ export const metadata = {
     images: ["/Adobe Express - file (12).png"],
   },
   icons: {
-    icon: "/favicon.jpeg",
-    shortcut: "/favicon.jpeg",
-    apple: "/favicon.jpeg",
+    icon: "/Adobe Express - file (5).png",
+    shortcut: "/Adobe Express - file (5).png",
+    apple: "/Adobe Express - file (5).png",
   },
   category: 'beauty',
 };
@@ -113,6 +114,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="antialiased">
         <Providers>
+          <VisitTracker />
           <LayoutContent>{children}</LayoutContent>
         </Providers>
       </body>

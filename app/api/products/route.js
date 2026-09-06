@@ -13,18 +13,35 @@ export async function GET(request) {
   const isAdmin = searchParams.get('admin') === 'true';
 
   try {
+    try {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS product_views (
+          id BIGSERIAL PRIMARY KEY,
+          product_id INTEGER NOT NULL,
+          visitor_id TEXT NOT NULL,
+          session_id TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+    } catch (e) { console.warn('Could not ensure product_views table exists'); }
+
     let sql;
     const params = [];
 
     // Base selection for all branches
     const baseSelection = `
-      p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.comparedprice, p.ingredients, p.brand_id, p.size, p.form,
+      p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.comparedprice, p.ingredients, p.brand_id, p.size, p.form, p.signature_image_url as "signatureImageUrl",
       b.name as "brandName", b.name as "brand", b.imageurl as "brandImageUrl",
       (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = TRUE LIMIT 1) as "imageUrl",
       (SELECT alt_text FROM product_images WHERE product_id = p.id AND is_main = TRUE LIMIT 1) as "altText",
       (SELECT JSON_AGG(JSON_BUILD_OBJECT('url', image_url, 'alt', alt_text)) FROM product_images WHERE product_id = p.id AND is_main = FALSE) as "additionalImagesData",
       COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = p.id), 0)::numeric(10,1) as "averageRating",
-      (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as "reviewCount"
+      (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as "reviewCount",
+      (SELECT COUNT(*) FROM product_views WHERE product_id = p.id AND created_at >= NOW() - INTERVAL '30 days') as "viewCount",
+      (
+        COALESCE((SELECT SUM(oi.quantity) FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.product_id = p.id), 0) +
+        COALESCE((SELECT SUM(oi2.quantity) FROM delivered_order_items oi2 JOIN delivered_orders o2 ON oi2.order_id = o2.id WHERE oi2.product_id = p.id), 0)
+      )::int as "totalSold"
     `;
 
     if (isNew === 'true') {
@@ -94,6 +111,15 @@ export async function GET(request) {
             retrySql = retrySql.replace(/p\.is_active = true AND /g, '');
             retrySql = retrySql.replace(/WHERE p\.is_active = true/g, 'WHERE 1=1');
         }
+        if (dbError.message.includes('signature_image_url')) {
+            retrySql = retrySql.replace(/p\.signature_image_url as "signatureImageUrl",/g, 'NULL as "signatureImageUrl",');
+        }
+        if (dbError.message.includes('product_views')) {
+            retrySql = retrySql.replace(/\(SELECT COUNT\(\*\) FROM product_views WHERE product_id = p\.id AND created_at >= NOW\(\) - INTERVAL '30 days'\) as "viewCount"/g, '0 as "viewCount"');
+        }
+        if (dbError.message.includes('order_items') || dbError.message.includes('delivered_order_items') || dbError.message.includes('delivered_orders')) {
+            retrySql = retrySql.replace(/\(\s*COALESCE\(\(SELECT SUM\(oi\.quantity\)[\s\S]*?\)::int as "totalSold"/, '0 as "totalSold"');
+        }
         const result = await db.query(retrySql, params.length > 0 ? params : undefined);
         rows = result.rows;
     }
@@ -129,6 +155,36 @@ export async function GET(request) {
                 p.concern_ids = concernRows.filter(c => c.product_id === p.id).map(c => c.concern_id);
             });
         } catch (e) { console.warn('Could not hydrate concerns'); }
+
+        rows.forEach(p => { p.viewCount = Number(p.viewCount) || 0; p.totalSold = Number(p.totalSold) || 0; });
+
+        // Real "Best Seller" tag: the top 8 active products SITE-WIDE by actual units
+        // sold (order_items + delivered_order_items — the same "sold" definition used by
+        // /api/products/sales-velocity), never a fixed/manual list. Not restricted to
+        // in-stock items — a sellout doesn't erase real sales history, and the badge is
+        // a track-record label, not a live-inventory indicator (out-of-stock cards
+        // already fall back to "Notify Me" instead of "Add to Cart"). Computed
+        // independently of this request's own filters/limit so a product is a
+        // bestseller consistently everywhere, not just relative to whatever subset a
+        // given page happened to fetch.
+        try {
+            const { rows: bsRows } = await db.query(`
+                SELECT p.id,
+                  (
+                    COALESCE((SELECT SUM(oi.quantity) FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.product_id = p.id), 0) +
+                    COALESCE((SELECT SUM(oi2.quantity) FROM delivered_order_items oi2 JOIN delivered_orders o2 ON oi2.order_id = o2.id WHERE oi2.product_id = p.id), 0)
+                  )::int as "totalSold"
+                FROM products p
+                WHERE p.is_active = true
+                ORDER BY "totalSold" DESC
+                LIMIT 8
+            `);
+            const bestsellerIds = new Set(bsRows.filter(r => r.totalSold > 0).map(r => r.id));
+            rows.forEach(p => { p.isBestseller = bestsellerIds.has(p.id); });
+        } catch (e) {
+            console.warn('Could not compute bestsellers');
+            rows.forEach(p => { p.isBestseller = false; });
+        }
     }
 
     const headers = (!isAdmin && random !== 'true')

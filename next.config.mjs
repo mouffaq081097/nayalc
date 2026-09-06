@@ -72,6 +72,15 @@ const nextConfig = {
       },
     ],
   },
+  // Requests to /api/admin/* pass through middleware.js (role check) before
+  // reaching the route handler. Next's default cap on the body middleware is
+  // allowed to forward is 10mb, which silently truncates larger image
+  // uploads (breaking FormData parsing) on every /api/admin/* upload route
+  // (journal, homepage-images, brand/product images). Raised to fit a
+  // typical phone-camera photo.
+  experimental: {
+    middlewareClientMaxBodySize: '20mb',
+  },
   /* config options here */
 };
 

@@ -18,6 +18,10 @@ import ProductCard from '../../components/ProductCard';
 import TabbyPromo from '../../components/TabbyPromo';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '../../components/ui/carousel';
 import { MadeInFranceBadge } from '../../components/MadeInFranceBadge';
+import { MadeInUAEBadge } from '../../components/MadeInUAEBadge';
+import ProductTrustSignals from '../../components/ProductTrustSignals';
+import { RecentlyViewedSection } from '../../components/RecentlyViewedSection';
+import { trackRecentlyViewed } from '../../hooks/useRecentlyViewed';
 
 const LAVENDER = 'rgb(147,104,236)';
 const LAVENDER_LIGHT = 'rgba(147,104,236,0.10)';
@@ -245,12 +249,44 @@ export default function ProductClient({ params, initialProduct }) {
   }, [product]);
 
   useEffect(() => {
+    if (product?.id) trackRecentlyViewed(product);
+  }, [product?.id]);
+
+  // Records one product view per browser session (mirrors VisitTracker's session-scoped pattern).
+  useEffect(() => {
+    if (!product?.id) return;
+    try {
+      const key = `nlc_pv_${product.id}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+
+      let vid = localStorage.getItem('nlc_vid');
+      if (!vid) { vid = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`; localStorage.setItem('nlc_vid', vid); }
+      const sid = sessionStorage.getItem('nlc_sid') || '';
+
+      const payload = JSON.stringify({ productId: product.id, visitorId: vid, sessionId: sid });
+      if (navigator.sendBeacon) navigator.sendBeacon('/api/track/product-view', new Blob([payload], { type: 'application/json' }));
+      else fetch('/api/track/product-view', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+    } catch {}
+  }, [product?.id]);
+
+  useEffect(() => {
     const el = buyButtonRef.current;
     if (!el || !product) return;
     const observer = new IntersectionObserver(([entry]) => setShowStickyBar(!entry.isIntersecting), { threshold: 0 });
     observer.observe(el);
     return () => observer.disconnect();
   }, [product]);
+
+  // Broadcast sticky-bar visibility so the global chat launcher can lift above it
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('nayalc:product-sticky-bar', { detail: { visible: showStickyBar } }));
+  }, [showStickyBar]);
+
+  // Reset the chat launcher position when leaving the product page
+  useEffect(() => () => {
+    window.dispatchEvent(new CustomEvent('nayalc:product-sticky-bar', { detail: { visible: false } }));
+  }, []);
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -328,8 +364,8 @@ export default function ProductClient({ params, initialProduct }) {
       {/* ── Sticky bar ── */}
       <AnimatePresence>
         {showStickyBar && (
-          <motion.div initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -8, opacity: 0 }}
-            className="fixed top-[72px] left-0 right-0 z-[140] hidden lg:block border-b border-gray-100 bg-white/95 backdrop-blur-md shadow-sm">
+          <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 16, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-[140] hidden lg:block border-t border-gray-100 bg-white/95 backdrop-blur-md shadow-[0_-2px_16px_rgba(0,0,0,0.06)]">
             <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-medium mb-0.5" style={{ color: LAVENDER }}>{product.brand || 'Naya Lumière'}</p>
@@ -532,6 +568,9 @@ export default function ProductClient({ params, initialProduct }) {
               {product.brand && /gern[eé]t/i.test(product.brand) && (
                 <MadeInFranceBadge variant="light" />
               )}
+              {product.brand && /naya\s*lumi[eè]?re?\s*perfumes?/i.test(product.brand) && (
+                <MadeInUAEBadge variant="light" />
+              )}
             </div>
 
 
@@ -598,6 +637,13 @@ export default function ProductClient({ params, initialProduct }) {
             {product?.price && (
               <TabbyPromo price={product.price} source="product" lang="en" />
             )}
+
+            {/* Brand trust / social proof */}
+            <ProductTrustSignals
+              brand={product.brand}
+              averageRating={product.averageRating}
+              reviewCount={product.reviewCount}
+            />
 
             {/* Deliver to strip */}
             {(() => {
@@ -804,14 +850,14 @@ export default function ProductClient({ params, initialProduct }) {
 
             {/* ── Frequently Bought Together ── */}
             {btCompanions.length > 0 && (
-              <div className="border-t border-gray-100 pt-5">
+              <div className="mt-3">
                 <p className="text-[13px] font-bold text-gray-900 mb-4">Frequently bought together</p>
 
-                {/* Amazon-style: products left, total+CTA right */}
-                <div className="flex items-start gap-4">
+                {/* Amazon-style: products left, total+CTA right (stacked on mobile) */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
 
-                  {/* Products row */}
-                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                  {/* Products row — horizontally scrollable on mobile */}
+                  <div className="flex items-start gap-2 flex-1 min-w-0 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0">
                     {/* Current product */}
                     <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
                       <div className="relative w-[90px] h-[90px] rounded-xl border-2 bg-gray-50 overflow-hidden flex items-center justify-center p-1.5"
@@ -866,24 +912,27 @@ export default function ProductClient({ params, initialProduct }) {
                     })}
                   </div>
 
-                  {/* Total + CTA — right panel */}
-                  <div className="flex-shrink-0 flex flex-col gap-3 pt-1 min-w-[130px]">
+                  {/* Total + CTA — right panel on desktop, row on mobile */}
+                  <div className="flex-shrink-0 flex sm:flex-col items-center sm:items-stretch justify-between gap-3 pt-1 sm:min-w-[130px]">
                     <div>
                       <p className="text-[11px] text-gray-500 font-medium mb-0.5">Total price</p>
                       <p className="text-[18px] font-bold text-gray-900 tabular-nums">AED {btTotal.toFixed(0)}</p>
                     </div>
                     <button
                       onClick={handleBtAddToCart}
-                      className="w-full h-9 rounded-full text-[11px] font-bold text-white uppercase tracking-wide transition-all active:scale-[0.98]"
+                      className="flex-shrink-0 px-6 sm:px-0 sm:w-full h-9 rounded-full text-[11px] font-bold text-white uppercase tracking-wide transition-all active:scale-[0.98]"
                       style={{ background: LAVENDER }}>
                       Add all to cart
                     </button>
-                    <p className="text-[10px] text-gray-400 leading-relaxed">
+                    <p className="hidden sm:block text-[10px] text-gray-400 leading-relaxed">
                       Tap an item to include or exclude it
                     </p>
                   </div>
 
                 </div>
+                <p className="sm:hidden text-[10px] text-gray-400 leading-relaxed mt-2">
+                  Tap an item to include or exclude it
+                </p>
               </div>
             )}
 
@@ -892,7 +941,7 @@ export default function ProductClient({ params, initialProduct }) {
 
         {/* ── Recommendations ── */}
         {recommendations.length > 0 && (
-          <section className="border-t border-gray-100 pt-10 pb-14">
+          <section className="pt-6 pb-8">
             <div className="flex items-end justify-between mb-6">
               <div className="space-y-1">
                 <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Complete the routine</p>
@@ -905,7 +954,7 @@ export default function ProductClient({ params, initialProduct }) {
             <Carousel opts={{ align: 'start', loop: true }} className="w-full">
               <CarouselContent className="-ml-4">
                 {recommendations.map(rec => (
-                  <CarouselItem key={rec.id} className="pl-4 basis-full md:basis-1/2 lg:basis-1/4">
+                  <CarouselItem key={rec.id} className="pl-4 basis-1/2 md:basis-1/2 lg:basis-1/4">
                     <ProductCard {...rec} image={rec.imageUrl} />
                   </CarouselItem>
                 ))}
@@ -920,8 +969,13 @@ export default function ProductClient({ params, initialProduct }) {
 
       </div>
 
+      {/* ── Recently Viewed ── */}
+      <div className="py-6">
+        <RecentlyViewedSection excludeId={product.id} />
+      </div>
+
       {/* ── Reviews ── */}
-      <div id="reviews" className="border-t border-gray-100 bg-white py-12 px-4 sm:px-6 lg:px-8">
+      <div id="reviews" className="bg-white py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <Reviews productId={product.id} />
         </div>

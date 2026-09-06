@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 import { useRouter } from 'next/navigation';
 import { createFetchWithAuth } from '../lib/api';
 import { calcShipping } from '@/lib/shipping';
@@ -15,6 +16,7 @@ import dynamic from 'next/dynamic';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from './CheckoutForm';
+import ExpressCheckoutButton from './ExpressCheckoutButton';
 import TabbyCard from '../components/TabbyCard';
 
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
@@ -23,6 +25,7 @@ const AddressInputForm = dynamic(() => import('../components/AddressInputForm'),
 export default function CheckoutPage() {
   const { cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal, applyCoupon, removeCoupon, selectedShippingAddressId, setSelectedShippingAddressId, couponError } = useCart();
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
+  const { fetchLoyalty } = useAppContext();
   const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
   const router = useRouter();
 
@@ -233,12 +236,10 @@ export default function CheckoutPage() {
     toast.success('Payment authorized!');
   };
 
-  const handlePlaceOrder = async () => {
-    if (!user || !selectedAddressId) return;
-    setIsPlacingOrder(true);
+  const buildOrderData = (extra = {}) => {
     const shippingDate = new Date();
     shippingDate.setDate(shippingDate.getDate() + 7);
-    const orderData = {
+    return {
       user_address_id: selectedAddressId,
       payment_method: formData.paymentMethod,
       subtotal: parseFloat(subtotal.toFixed(2)),
@@ -256,15 +257,42 @@ export default function CheckoutPage() {
       gift_wrap_cost: giftWrapFee,
       gift_message: formData.giftMessage || null,
       stripe_payment_intent_id: authorizedPaymentIntentId,
+      ...extra,
     };
+  };
+
+  // POST the order and route to confirmation. Returns true on success.
+  const postOrder = async (orderData) => {
     try {
       const res = await fetchWithAuth('/api/orders', { method: 'POST', body: JSON.stringify(orderData) });
       const result = await res.json();
-      if (res.status === 409) { clearCart(); router.push(`/order-confirmed/${result.orderId}`); return; }
-      if (!res.ok) { toast.error(result.message || 'Error placing order. Please contact support.'); setIsPlacingOrder(false); return; }
+      if (res.status === 409) { clearCart(); fetchLoyalty?.(); router.push(`/order-confirmed/${result.orderId}`); return true; }
+      if (!res.ok) { toast.error(result.message || 'Error placing order. Please contact support.'); return false; }
       clearCart();
+      // Refresh the global loyalty balance so the header/nav reflect redeemed/pending points
+      fetchLoyalty?.();
       router.push(`/order-confirmed/${result.orderId}`);
-    } catch { toast.error('Error placing order. Please contact support.'); setIsPlacingOrder(false); }
+      return true;
+    } catch {
+      toast.error('Error placing order. Please contact support.');
+      return false;
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!user || !selectedAddressId) return;
+    setIsPlacingOrder(true);
+    const ok = await postOrder(buildOrderData());
+    if (!ok) setIsPlacingOrder(false);
+  };
+
+  // Apple Pay / Google Pay express button: pay + place the order in one tap.
+  // Wallet payments settle through Stripe, so they are recorded as a 'card' order.
+  const handleWalletPayment = async (piId) => {
+    if (!user || !selectedAddressId) { toast.error('Please select a shipping address first.'); return; }
+    setIsPlacingOrder(true);
+    const ok = await postOrder(buildOrderData({ payment_method: 'card', stripe_payment_intent_id: piId }));
+    if (!ok) setIsPlacingOrder(false);
   };
 
   const steps = [
@@ -511,6 +539,19 @@ export default function CheckoutPage() {
                       })()}
                     </div>
 
+                    {/* Express checkout — Apple Pay / Google Pay (shown under Tabby, no card selection needed) */}
+                    <ExpressCheckoutButton
+                      stripePromise={stripePromise}
+                      amount={Math.round(total * 100)}
+                      disabled={isPlacingOrder}
+                      onBeforePay={() => {
+                        if (!selectedAddressId) { toast.error('Please select a shipping address first.'); return false; }
+                        if (total <= 0) return false;
+                        return true;
+                      }}
+                      onSuccess={handleWalletPayment}
+                    />
+
                     {/* Stripe card form */}
                     <AnimatePresence mode="wait">
                       {formData.paymentMethod === 'card' && (
@@ -529,7 +570,7 @@ export default function CheckoutPage() {
                             <div className="p-5">
                               {clientSecret && stripePromise ? (
                                 <Elements stripe={stripePromise} options={{ clientSecret }}>
-                                  <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" amount={Math.round(total * 100)} clientSecret={clientSecret} />
+                                  <CheckoutForm onSuccessfulPayment={handleAuthorizedCardPayment} buttonLabel="Authorize & Review" clientSecret={clientSecret} />
                                 </Elements>
                               ) : (
                                 <div className="flex flex-col items-center justify-center py-10 gap-3">
@@ -665,6 +706,26 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Redeem loyalty points */}
+                {loyaltyPoints >= 100 && (
+                  <div className="mb-5 rounded-xl border border-[#e9deff] bg-[#faf6ff] p-3.5">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={usePoints}
+                        onChange={(e) => setUsePoints(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 accent-[#9869f7] cursor-pointer"
+                      />
+                      <span className="flex-1">
+                        <span className="block text-[13px] font-semibold text-[#111114]">Use my loyalty points</span>
+                        <span className="block text-[11.5px] text-[#8a7aa0] mt-0.5">
+                          {loyaltyPoints.toLocaleString()} available · redeem {(Math.floor(loyaltyPoints / 100) * 100).toLocaleString()} for −AED {(Math.floor(loyaltyPoints / 100) * 5).toFixed(2)}
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                )}
 
                 {/* Breakdown */}
                 <div className="space-y-2.5 text-[13px] mb-5">

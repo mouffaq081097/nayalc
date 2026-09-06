@@ -6,6 +6,7 @@ import {
   Home, ShoppingBag, Tag, Users, MessageSquare, Percent,
   BarChart3, Store, Image as ImageIcon, Banknote, Send, Globe,
   Share2, Search, Bell, LogOut, Menu, X, ChevronDown, ExternalLink,
+  LayoutTemplate, BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -27,6 +28,8 @@ const navItems = [
   { to: '/admin/marketing', text: 'Marketing', icon: Send },
   { to: '/admin/payments', text: 'Payments', icon: Banknote },
   { to: '/admin/hero', text: 'Hero banner', icon: ImageIcon },
+  { to: '/admin/homepage', text: 'Homepage images', icon: LayoutTemplate },
+  { to: '/admin/journal', text: 'Journal', icon: BookOpen },
   { to: '/admin/seo', text: 'SEO', icon: Globe },
   { to: '/admin/social', text: 'Social', icon: Share2 },
 ];
@@ -310,7 +313,7 @@ const AdminLayout = ({ children }) => {
         </aside>
 
         <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar sp-scroll">
-          <div className="max-w-[1000px] mx-auto px-4 sm:px-6 py-5 pb-16">
+          <div className="w-full px-4 sm:px-6 py-5 pb-16">
             {children}
           </div>
         </main>

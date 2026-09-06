@@ -65,6 +65,10 @@ export async function POST(request) {
                     ALTER TABLE cancelled_orders  ADD COLUMN IF NOT EXISTS tabby_payment_id VARCHAR(255);
                 `
             },
+            {
+                name: '010_add_signature_image_to_products',
+                sql: `ALTER TABLE products ADD COLUMN IF NOT EXISTS signature_image_url TEXT;`
+            },
         ];
 
         for (const migration of migrations) {

@@ -97,7 +97,7 @@ const AccountPageContent = () => {
         const [ordersRes, wishlistRes, loyaltyRes] = await Promise.all([
           fetchWithAuth(`/api/orders?userId=${user.id}`).then(r => r.json()).catch(() => ({ orders: [] })),
           fetchWithAuth(`/api/wishlist?userId=${user.id}`).then(r => r.json()).catch(() => ({ wishlist: [] })),
-          fetchWithAuth(`/api/users/${user.id}/loyalty`).then(r => r.json()).catch(() => ({ stats: { points: 1250, tier: 'Silver', nextTierPoints: 2000 } })),
+          fetchWithAuth(`/api/users/${user.id}/loyalty`).then(r => r.json()).catch(() => ({ stats: { points: 0, tier: 'Silver', nextTierPoints: 2000 }, transactions: [] })),
         ]);
         setOrders(ordersRes.orders || []);
         setWishlistItems(wishlistRes.wishlist || []);
@@ -162,9 +162,10 @@ const AccountPageContent = () => {
 
   const loyaltyPct = Math.min(100, Math.round(((loyaltyData?.stats?.points ?? 0) / (loyaltyData?.stats?.nextTierPoints ?? 2000)) * 100));
   const tiers = [
-    { name: 'Silver',   min: 0,    color: 'rgba(192,192,192,0.9)' },
-    { name: 'Gold',     min: 2000, color: 'rgba(234,179,8,0.9)'   },
-    { name: 'Platinum', min: 5000, color: 'rgba(196,167,254,0.9)' },
+    { name: 'Silver',   min: 0,     color: 'rgba(192,192,192,0.9)' },
+    { name: 'Gold',     min: 2000,  color: 'rgba(234,179,8,0.9)'   },
+    { name: 'Platinum', min: 5000,  color: 'rgba(196,167,254,0.9)' },
+    { name: 'Diamond',  min: 10000, color: 'rgba(147,197,253,0.9)' },
   ];
 
   return (
@@ -526,7 +527,7 @@ const AccountPageContent = () => {
                     <div className="space-y-3">
                       {loyaltyData?.transactions?.length > 0 ? (
                         loyaltyData.transactions.map((tx) => {
-                          const isPlaced = tx.type === 'placed';
+                          const isPlaced = tx.type === 'placed' || tx.type === 'pending';
                           const isRedeem = tx.type === 'redeem';
                           const isRefund = tx.type === 'refund';
                           const isBonus  = tx.type === 'bonus';

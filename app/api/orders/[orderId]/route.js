@@ -335,7 +335,7 @@ export async function PUT(request, context) {
 
             if (userLoyaltyRes.rows.length > 0) {
                 const userLoyalty = userLoyaltyRes.rows[0];
-                const tierMultiplier = userLoyalty.loyalty_tier === 'Platinum' ? 2 : (userLoyalty.loyalty_tier === 'Gold' ? 1.5 : 1);
+                const tierMultiplier = userLoyalty.loyalty_tier === 'Diamond' ? 2.5 : (userLoyalty.loyalty_tier === 'Platinum' ? 2 : (userLoyalty.loyalty_tier === 'Gold' ? 1.5 : 1));
                 pointsEarned = Math.floor(parseFloat(currentOrder.total_amount) * tierMultiplier);
 
                 await client.query(
@@ -345,7 +345,8 @@ export async function PUT(request, context) {
 
                 const newLifetimeSpend = parseFloat(userLoyalty.lifetime_spend) + currentOrder.total_amount;
                 let newTier = 'Silver';
-                if (newLifetimeSpend >= 5000) newTier = 'Platinum';
+                if (newLifetimeSpend >= 10000) newTier = 'Diamond';
+                else if (newLifetimeSpend >= 5000) newTier = 'Platinum';
                 else if (newLifetimeSpend >= 2000) newTier = 'Gold';
 
                 await client.query(

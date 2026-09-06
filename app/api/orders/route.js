@@ -123,60 +123,41 @@ export async function GET(request) {
 
         let combinedSql = [];
         let combinedCountSql = [];
-        const userIdParams = []; // Parameters specific to userId
-        let selectParamIndex = 1; // Index for parameters in the SELECT query
-        let countParamIndex = 1; // Index for parameters in the COUNT query
+
+        // userId (when present) is always bound as $1 — reused verbatim across every
+        // UNION branch, since it's the same value in each. Only LIMIT/OFFSET get their
+        // own placeholders, appended after it.
+        const userIdWhere = userId ? ` o.user_id = $1` : '';
 
         for (const config of orderTableConfig) {
-            let currentSelectSql = selectOrderFields(config.name);
-            let currentCountSql = `SELECT COUNT(*) FROM ${config.name} o LEFT JOIN user_addresses ua ON o.user_address_id = ua.id`;
-            let whereClause = '';
-
-            // Add userId filter if present
-            if (userId) {
-                whereClause += (whereClause ? ' AND' : ' WHERE') + ` o.user_id = $${selectParamIndex++}`;
-                // Only add userId to userIdParams once per union part.
-                // For the count query, it needs its own parameter indexing.
-                // We'll build userIdParams for the count query separately.
-            }
+            let whereClause = userIdWhere ? ` WHERE${userIdWhere}` : '';
 
             // Add specific status filter if not 'all'
             if (statusFilter !== 'all') {
                  whereClause += (whereClause ? ' AND' : ' WHERE') + ` o.order_status = '${config.statusValue}'`;
             }
 
-            combinedSql.push(currentSelectSql + whereClause);
-            
-            // For count queries, parameters are simpler
-            let currentCountWhereClause = '';
-            if (userId) {
-                currentCountWhereClause += (currentCountWhereClause ? ' AND' : ' WHERE') + ` o.user_id = $${countParamIndex++}`;
-                if (userIdParams.length === 0 || userIdParams[userIdParams.length - 1] !== userId) { // Avoid duplicate userId in array if multiple union parts exist
-                    userIdParams.push(userId);
-                }
-            }
-            if (statusFilter !== 'all') {
-                 currentCountWhereClause += (currentCountWhereClause ? ' AND' : ' WHERE') + ` o.order_status = '${config.statusValue}'`;
-            }
-            combinedCountSql.push(currentCountSql + currentCountWhereClause);
+            combinedSql.push(selectOrderFields(config.name) + whereClause);
+            combinedCountSql.push(`SELECT COUNT(*) FROM ${config.name} o LEFT JOIN user_addresses ua ON o.user_address_id = ua.id` + whereClause);
         }
-        
+
         // Handle case where no tables are selected due to statusFilter
         if (combinedSql.length === 0) {
             return NextResponse.json({ orders: [], totalCount: 0, page, limit });
         }
 
-        const fullQuery = combinedSql.join(' UNION ALL ') + ` ORDER BY "createdAt" DESC LIMIT $${selectParamIndex++} OFFSET $${selectParamIndex++};`;
+        const countParams = userId ? [userId] : [];
         const fullCountQuery = combinedCountSql.join(' UNION ALL ');
-        
+
         // Execute the count query with its specific parameters
-        const totalCountResult = await client.query(fullCountQuery, userIdParams);
+        const totalCountResult = await client.query(fullCountQuery, countParams);
         const totalCount = totalCountResult.rows.reduce((sum, row) => sum + parseInt(row.count, 10), 0);
 
-        // Prepare parameters for the full SELECT query
-        const fullSelectQueryParams = [...userIdParams]; // Start with userId params
-        fullSelectQueryParams.push(limit);
-        fullSelectQueryParams.push(offset);
+        // Prepare parameters for the full SELECT query — userId (if any) as $1, then limit/offset
+        const fullSelectQueryParams = userId ? [userId, limit, offset] : [limit, offset];
+        const limitPlaceholder = userId ? 2 : 1;
+        const offsetPlaceholder = userId ? 3 : 2;
+        const fullQuery = combinedSql.join(' UNION ALL ') + ` ORDER BY "createdAt" DESC LIMIT $${limitPlaceholder} OFFSET $${offsetPlaceholder};`;
 
         const { rows: orders } = await client.query(fullQuery, fullSelectQueryParams);
 
@@ -505,11 +486,14 @@ export async function POST(request) {
             state: ''
         };
 
-        // Record pending loyalty transaction so the loyalty tab shows activity immediately
+        // Record a pending loyalty transaction so the loyalty tab shows activity immediately.
+        // Points are NOT credited here — they are only added to the balance when the order is
+        // marked Delivered (see app/api/orders/[orderId]/route.js). Stored with type 'pending'
+        // so the UI renders it as pending rather than as already-earned points.
         const estimatedPoints = Math.floor(serverSubtotal);
         await client.query(
             'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
-            [user_id, 'placed', estimatedPoints, `Order #${orderId} placed`, orderId]
+            [user_id, 'pending', estimatedPoints, `Order #${orderId} placed — points credited on delivery`, orderId]
         );
 
         await client.query('COMMIT');

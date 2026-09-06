@@ -40,6 +40,7 @@ const ChatWidget = () => {
     const [adminIsTyping, setAdminIsTyping] = useState(false);
     const [unreadMessageCount, setUnreadMessageCount] = useState(0);
     const [isConnected, setIsConnected] = useState(false);
+    const [liftForStickyBar, setLiftForStickyBar] = useState(false);
 
     const messagesEndRef = useRef(null);
     const socketRef = useRef(null);
@@ -49,6 +50,13 @@ const ChatWidget = () => {
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, []);
+
+    // Lift the launcher above the product page's bottom sticky bar when it is visible
+    useEffect(() => {
+        const handler = (e) => setLiftForStickyBar(!!e.detail?.visible);
+        window.addEventListener('nayalc:product-sticky-bar', handler);
+        return () => window.removeEventListener('nayalc:product-sticky-bar', handler);
     }, []);
 
     const fetchActiveConversation = useCallback(async () => {
@@ -332,8 +340,9 @@ const ChatWidget = () => {
                 {!isChatOpen && (
                     <motion.div
                         initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
+                        animate={{ scale: 1, opacity: 1, y: liftForStickyBar ? -56 : 0 }}
                         exit={{ scale: 0, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                         className="absolute hidden md:flex items-end bottom-8 right-8 pointer-events-auto group gap-3"
                     >
                         {/* Speech bubble tooltip */}

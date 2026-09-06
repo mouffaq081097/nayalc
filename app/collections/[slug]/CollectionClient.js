@@ -574,6 +574,7 @@ export default function CollectionClient({ category: serverCategory }) {
                         image={product.imageUrl}
                         averageRating={product.averageRating}
                         reviewCount={product.reviewCount}
+                        viewCount={product.viewCount}
                         isNew={product.isNew}
                         isBestseller={product.isBestseller}
                         brandName={product.brand}

@@ -45,6 +45,8 @@ export const ForYouSection = () => {
                       stock_quantity={product.stock_quantity}
                       averageRating={product.averageRating}
                       reviewCount={product.reviewCount}
+                      viewCount={product.viewCount}
+                      isBestseller={product.isBestseller}
                     />
                   </div>
                 </CarouselItem>
@@ -54,7 +56,7 @@ export const ForYouSection = () => {
         </div>
 
         {/* Desktop: 4-col grid */}
-        <div className="hidden md:grid md:grid-cols-4 gap-3">
+        <div className="hidden md:grid md:grid-cols-4 gap-2">
           {forYouProducts.slice(0, 4).map((product) => (
             <ProductCard
               key={product.id}
@@ -67,6 +69,8 @@ export const ForYouSection = () => {
               stock_quantity={product.stock_quantity}
               averageRating={product.averageRating}
               reviewCount={product.reviewCount}
+              viewCount={product.viewCount}
+              isBestseller={product.isBestseller}
             />
           ))}
         </div>

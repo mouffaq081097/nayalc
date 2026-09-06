@@ -9,10 +9,11 @@
  * and app/components/MobileBottomNav.js and are rendered by app/LayoutContent.js for
  * every page — they are intentionally left untouched and are not duplicated here).
  *
- * Palette / typography note: this design uses its own bespoke premium palette
- * (deep plum #4A2360, purple/pink gradient #8B5CF6→#C084FC, warm gold #8A5E22,
- * French navy #3B5BA9, UAE green #1E7A5A) which is DIFFERENT from the site-wide
- * "Cloud Luxe" `--cl-*` token system — that is intentional, per the design brief.
+ * Palette / typography note: this page uses the site-wide "Cloud Luxe" palette —
+ * lavender/rose section backgrounds, the `--cl-*` deep-purple text scale, and the
+ * purple→pink gradient (#9333ea→#db2777) for primary buttons and active states.
+ * The three brand-identity tints (Zorah green, GERnétic navy, Perfumes gold) and
+ * star-rating gold are kept as-is since they carry real meaning, not theme color.
  *
  * Data note: every section below is backed by REAL data from the Postgres catalog
  * via useAppContext() (products/categories/concerns/brands/loyaltyData), the real
@@ -28,8 +29,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Cormorant_Garamond, Poppins } from 'next/font/google';
 import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useRecentlyViewed } from '../../hooks/useRecentlyViewed';
+import { getSlot } from '@/lib/homepageImageSlots';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -59,16 +62,10 @@ const BRAND_TINT = {
   'GERnétic International': '#3B5BA9',
   'Naya Lumiere Perfumes': '#8A5E22',
 };
-const DEFAULT_TINT = '#8B5CF6';
+const DEFAULT_TINT = '#9333ea';
 
 const STAR_PATH =
   'm12 3.4 2.7 5.6 6.1.85-4.45 4.3 1.08 6.05L12 17.3l-5.43 2.9 1.08-6.05L3.2 9.85l6.1-.85Z';
-
-// Local, verified assets shipped by the user
-const IMG = {
-  lotusMask: '/design-home/lotus-mask.png',
-  routineTreat: '/design-home/routine-treat.jpg',
-};
 
 function money(n) {
   return 'AED ' + Math.round(Number(n) || 0).toLocaleString('en-US');
@@ -92,12 +89,12 @@ function brandTint(brandName) {
   return BRAND_TINT[brandName] || DEFAULT_TINT;
 }
 
-/** Top sellers: real in-stock products, ranked by review volume then rating (no fabricated sales/view data exists). */
+/** Top sellers: real in-stock products, ranked by review volume then rating. */
 function pickTopSellers(products) {
   return [...products]
     .filter((p) => num(p.stock_quantity) > 0)
     .sort((a, b) => num(b.reviewCount) - num(a.reviewCount) || num(b.averageRating) - num(a.averageRating) || b.id - a.id)
-    .slice(0, 4);
+    .slice(0, 5);
 }
 
 /** The "Fragrence" category (real, 3 products) — a natural fit for a signature-scent picker. */
@@ -244,16 +241,22 @@ function CheckIcon({ color = '#FFFFFF', size = 10 }) {
   );
 }
 
-function CheckCircleIcon({ color = '#1E7A5A', size = 13 }) {
+function EyeIcon({ color = 'currentColor', size = 11 }) {
   return (
-    <svg style={{ flex: 'none' }} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m5 12.8 4.2 4.2L19 7.4" />
+    <svg style={{ flex: 'none' }} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
 
+/** Compact "1.2k" style formatting for view counts. */
+function shortCount(n) {
+  return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k' : String(n);
+}
+
 /** Eyebrow label — small uppercase kicker used above every section heading. */
-function Eyebrow({ children, color = '#8B5CF6', style }) {
+function Eyebrow({ children, color = '#9333ea', style }) {
   return (
     <span style={{ fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color, ...style }}>
       {children}
@@ -261,7 +264,7 @@ function Eyebrow({ children, color = '#8B5CF6', style }) {
   );
 }
 
-function SectionHeading({ children, style, color = '#4A2360' }) {
+function SectionHeading({ children, style, color = '#3b0764' }) {
   return (
     <h2
       style={{
@@ -329,7 +332,7 @@ function InitialsAvatar({ initials, size = 36 }) {
         height: size,
         borderRadius: '50%',
         flex: 'none',
-        background: 'linear-gradient(135deg,#C084FC,#8B5CF6)',
+        background: 'linear-gradient(135deg,#9333ea,#db2777)',
         color: '#FFFFFF',
         fontFamily: sans,
         fontSize: Math.round(size * 0.36),
@@ -343,15 +346,119 @@ function InitialsAvatar({ initials, size = 36 }) {
 }
 
 /** A product photo, or a soft neutral placeholder if the catalog has no image for it — never a stock photo. */
-function ProductImage({ src, alt, sizes }) {
+function ProductImage({ src, alt, sizes, fit = 'contain' }) {
   if (!src) {
-    return <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg,#F3EDE6,#E7DFD3)' }} />;
+    return <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg,#f3e8ff,#e9d5ff)' }} />;
   }
-  return <Image src={src} alt={alt || ''} fill sizes={sizes} style={{ objectFit: 'cover' }} />;
+  return <Image src={src} alt={alt || ''} fill sizes={sizes} style={fit === 'cover' ? { objectFit: 'cover' } : { objectFit: 'contain', padding: '6%' }} />;
 }
 
 function SectionPlaceholder({ minHeight = '260px' }) {
-  return <div aria-hidden style={{ minHeight, background: '#FBFAF9' }} />;
+  return <div aria-hidden style={{ minHeight, background: '#FFFFFF' }} />;
+}
+
+/* ============================================================================
+ * #welcome — sits directly under the hero banner (app/components/HeroSection.js,
+ * rendered in app/page.js). Two real, live-data pieces:
+ *  - a personalized status bar (name/avatar/tier/points from useAuth() +
+ *    loyaltyData, only shown when signed in) with a shortcut back into the
+ *    #routine builder and the #circle tier card further down this page;
+ *  - a "shop by category" strip built from the live categories table
+ *    (useAppContext().categories, from GET /api/categories) — never a fixed
+ *    list, so it always reflects whatever categories actually exist and have
+ *    products, ranked by product count.
+ * ==========================================================================*/
+
+function Welcome() {
+  const { categories, loyaltyData } = useAppContext();
+  const { user, isAuthenticated } = useAuth();
+
+  const tier = loyaltyData?.stats?.tier;
+  const points = Number(loyaltyData?.stats?.points || 0);
+  const lifetimeSpend = Number(loyaltyData?.stats?.lifetimeSpend || 0);
+  const isMember = isAuthenticated && TIERS.some((t) => t.name === tier);
+  const currentTierIdx = isMember ? TIERS.findIndex((t) => t.name === tier) : -1;
+  const nextTier = currentTierIdx > -1 ? TIERS[currentTierIdx + 1] || null : null;
+  const spendToNext = nextTier ? Math.max(0, nextTier.min - lifetimeSpend) : 0;
+
+  const topCategories = useMemo(
+    () =>
+      [...(categories || [])]
+        .filter((c) => Number(c.productsCount) > 0)
+        .sort((a, b) => Number(b.productsCount) - Number(a.productsCount))
+        .slice(0, 6),
+    [categories]
+  );
+
+  if (!isAuthenticated && topCategories.length === 0) return null;
+
+  return (
+    <section id="welcome" style={{ padding: 'clamp(18px,2.2vw,26px) clamp(20px,4vw,52px) clamp(24px,3vw,36px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(24px,2.8vw,32px)' }}>
+      {isAuthenticated && (
+        <>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px 24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {user?.profile_image ? (
+                <span style={{ position: 'relative', width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                  <Image src={user.profile_image} alt={user.first_name || ''} fill style={{ objectFit: 'cover' }} />
+                </span>
+              ) : (
+                <InitialsAvatar initials={initialsFromName(`${user?.first_name || ''} ${user?.last_name || ''}`)} size={44} />
+              )}
+              <div>
+                <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 'clamp(20px,2.2vw,26px)', color: '#3b0764' }}>
+                  Welcome back, {user?.first_name || 'there'}
+                </h2>
+                <p style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: 300, color: '#6b21a8' }}>
+                  {isMember
+                    ? `${tier} · ${points.toLocaleString()} points${nextTier ? ` · AED ${spendToNext.toLocaleString()} from ${nextTier.name}` : ' · Our top tier'}`
+                    : 'Good to see you again.'}
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              <a href="#routine" className="transition-colors duration-300 hover:opacity-90" style={{ whiteSpace: 'nowrap', background: '#9333ea', color: '#FFFFFF', padding: '13px 26px', borderRadius: '999px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                Resume your routine
+              </a>
+              {isMember && (
+                <a href="#circle" className="transition-colors duration-300 hover:border-b-[#3b0764]" style={{ whiteSpace: 'nowrap', fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#3b0764', borderBottom: '1px solid rgba(216,180,254,0.4)', paddingBottom: '3px' }}>
+                  View your standing
+                </a>
+              )}
+            </div>
+          </div>
+          {topCategories.length > 0 && <div style={{ height: '1px', background: 'rgba(216,180,254,0.4)' }} />}
+        </>
+      )}
+
+      {topCategories.length > 0 && (
+        <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,180px),1fr))', gap: 'clamp(14px,1.6vw,20px)', '--hc-card': '180px' }}>
+          {topCategories.map((cat) => (
+            <Link key={cat.id} href={cat.slug ? `/collections/${cat.slug}` : `/collections/${cat.id}`} className="group" style={{ display: 'block' }}>
+              <div style={{ position: 'relative', aspectRatio: '1.15', borderRadius: '14px', overflow: 'hidden', background: '#e9d5ff' }}>
+                {cat.image_url ? (
+                  <Image
+                    src={cat.image_url}
+                    alt={cat.name}
+                    fill
+                    sizes="(max-width: 768px) 45vw, 220px"
+                    className="transition-transform duration-300 group-hover:scale-105"
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg,#f3e8ff,#e9d5ff)' }} />
+                )}
+              </div>
+              <div style={{ padding: '12px 2px 0' }}>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: '#3b0764' }}>{cat.name}</p>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', fontWeight: 300, color: 'rgba(59,7,100,0.5)' }}>{Number(cat.productsCount).toLocaleString()} products</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
 /* ============================================================================
@@ -373,7 +480,10 @@ function Provenance({ brands, products }) {
           const prices = brandProducts.map((p) => num(p.price)).filter((p) => p > 0);
           const min = prices.length ? Math.min(...prices) : null;
           const max = prices.length ? Math.max(...prices) : null;
-          const img = [...brandProducts].sort((a, b2) => num(b2.averageRating) - num(a.averageRating))[0]?.imageUrl || null;
+          // Prefer the brand's own picture (set on /admin/brands) — this card is
+          // about the house, not any one product — and only fall back to a
+          // product photo for brands that haven't uploaded one yet.
+          const img = b.imageurl || [...brandProducts].sort((a, b2) => num(b2.averageRating) - num(a.averageRating))[0]?.imageUrl || null;
           const facts = [`${brandProducts.length} product${brandProducts.length === 1 ? '' : 's'}`];
           if (min != null) facts.push(min === max ? money(min) : `${money(min)} – ${money(max)}`);
           return {
@@ -394,28 +504,32 @@ function Provenance({ brands, products }) {
   return (
     <section
       id="provenance"
-      style={{ padding: 'clamp(64px,7.6vw,118px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(38px,4.4vw,62px)' }}
+      style={{ padding: 'clamp(32px,4vw,60px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(38px,4.4vw,62px)' }}
     >
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px 44px' }}>
         <div style={{ display: 'grid', gap: '16px', maxWidth: '24ch' }}>
           <Eyebrow>Provenance</Eyebrow>
           <SectionHeading style={{ fontFamily: sans }}>Our three houses.</SectionHeading>
         </div>
-        <p style={{ margin: 0, maxWidth: '40ch', fontSize: '15px', fontWeight: 300, lineHeight: 1.78, color: '#6B6C82' }}>
+        <p style={{ margin: 0, maxWidth: '40ch', fontSize: '15px', fontWeight: 300, lineHeight: 1.78, color: '#6b21a8' }}>
           Every product on Naya Lumière carries the name of the house that made it. Here is who they are.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,332px),1fr))', gap: 'clamp(20px,2.4vw,34px)' }}>
+      <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,332px),1fr))', gap: 'clamp(20px,2.4vw,34px)', '--hc-card': '85vw' }}>
         {cards.map((p) => (
           <article
             key={p.key}
-            className="transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_36px_62px_-36px_rgba(58,26,74,0.44)] hover:border-[#E4DACE]"
-            style={{ display: 'grid', alignContent: 'start', border: '1px solid #EFEBE4', borderRadius: '26px', background: '#FFFFFF', overflow: 'hidden' }}
+            className="transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_36px_62px_-36px_rgba(147,51,234,0.44)] hover:border-[rgba(216,180,254,0.4)]"
+            style={{ display: 'grid', alignContent: 'start', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '26px', background: '#FFFFFF', overflow: 'hidden' }}
           >
-            <span style={{ position: 'relative', display: 'block', aspectRatio: '5/4', overflow: 'hidden', background: '#F3EDE6' }}>
-              <ProductImage src={p.img} alt={p.title} sizes="(max-width: 768px) 100vw, 33vw" />
-              <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(42,18,64,0.5) 0%,rgba(42,18,64,0) 54%)', pointerEvents: 'none' }} />
+            <span style={{ position: 'relative', display: 'block', aspectRatio: '5/4', overflow: 'hidden', background: '#f3e8ff' }}>
+              {p.img ? (
+                <Image src={p.img} alt={p.title} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} />
+              ) : (
+                <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg,#f3e8ff,#e9d5ff)' }} />
+              )}
+              <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top,rgba(59,7,100,0.5) 0%,rgba(59,7,100,0) 54%)', pointerEvents: 'none' }} />
               <span
                 style={{
                   position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: '8px',
@@ -431,17 +545,17 @@ function Provenance({ brands, products }) {
               </span>
             </span>
             <div style={{ display: 'grid', gap: '14px', padding: 'clamp(24px,2.5vw,32px)' }}>
-              <h3 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 'clamp(27px,2.6vw,34px)', lineHeight: 1.06, letterSpacing: '-0.01em', color: '#4A2360' }}>
+              <h3 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 'clamp(27px,2.6vw,34px)', lineHeight: 1.06, letterSpacing: '-0.01em', color: '#3b0764' }}>
                 {p.title}
               </h3>
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: 300, lineHeight: 1.7, color: '#6B6C82' }}>{p.body}</p>
-              <span style={{ display: 'flex', flexWrap: 'wrap', gap: '7px 18px', borderTop: '1px solid #F4F1EA', paddingTop: '15px', fontSize: '11px', fontWeight: 400, letterSpacing: '0.02em', color: '#8C8DA2' }}>
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: 300, lineHeight: 1.7, color: '#6b21a8' }}>{p.body}</p>
+              <span style={{ display: 'flex', flexWrap: 'wrap', gap: '7px 18px', borderTop: '1px solid rgba(216,180,254,0.4)', paddingTop: '15px', fontSize: '11px', fontWeight: 400, letterSpacing: '0.02em', color: 'rgba(59,7,100,0.5)' }}>
                 {p.facts.map((f) => <span key={f}>{f}</span>)}
               </span>
               <Link
                 href="/collections"
-                className="hover:text-[#8B5CF6]"
-                style={{ justifySelf: 'start', display: 'flex', alignItems: 'center', gap: '9px', marginTop: '2px', fontSize: '11.5px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#4A2360', borderBottom: '1px solid #DCD3EE', paddingBottom: '4px' }}
+                className="hover:text-[#9333ea]"
+                style={{ justifySelf: 'start', display: 'flex', alignItems: 'center', gap: '9px', marginTop: '2px', fontSize: '11.5px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#3b0764', borderBottom: '1px solid rgba(216,180,254,0.4)', paddingBottom: '4px' }}
               >
                 Explore {p.title.split(' ')[0]}
                 <ArrowRightIcon />
@@ -456,9 +570,10 @@ function Provenance({ brands, products }) {
 
 /* ============================================================================
  * #topsellers — real in-stock products, ranked by real reviews/rating.
- * (The mockup's live-viewer counter and "sold in the last 24h" stat had no
- * real backing data anywhere in this app and have been removed rather than
- * re-faked; per-product urgency now comes from the real stock_quantity.)
+ * "Sold in the last 24h" comes from real order line items (see
+ * /api/products/sales-velocity); per-product urgency comes from the real
+ * stock_quantity. (The mockup's live-viewer counter had no real backing data
+ * anywhere in this app and has been removed rather than re-faked.)
  * ==========================================================================*/
 
 function stockUrgency(stock) {
@@ -469,52 +584,123 @@ function stockUrgency(stock) {
 }
 
 function TopSellers({ items, onAdd }) {
+  const [velocity, setVelocity] = useState({});
+  const [liveByProduct, setLiveByProduct] = useState({});
+  const [liveSitewide, setLiveSitewide] = useState(0);
+  const [totalViews, setTotalViews] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => Promise.all([
+      fetch('/api/products/sales-velocity').then((r) => (r.ok ? r.json() : { velocity: {} })),
+      fetch('/api/products/live-viewers').then((r) => (r.ok ? r.json() : { live: {} })),
+      fetch('/api/live-visitors').then((r) => (r.ok ? r.json() : { live: 0 })),
+      fetch('/api/products/view-count').then((r) => (r.ok ? r.json() : { views: {} })),
+    ])
+      .then(([sold, perProduct, sitewide, viewed]) => {
+        if (cancelled) return;
+        setVelocity(sold.velocity || {});
+        setLiveByProduct(perProduct.live || {});
+        setLiveSitewide(sitewide.live || 0);
+        setTotalViews(viewed.views || {});
+      })
+      .catch(() => {});
+    load();
+    const id = setInterval(load, 30_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
   if (!items.length) return null;
 
+  const maxSold = Math.max(1, ...items.map((t) => num(velocity[t.id])));
+
   return (
-    <section id="topsellers" style={{ padding: 'clamp(56px,7vw,104px) clamp(20px,4vw,52px)', display: 'grid', gap: 'clamp(26px,3vw,40px)', background: '#FBFAF9' }}>
+    <section id="topsellers" style={{ padding: 'clamp(28px,3.6vw,52px) clamp(20px,4vw,52px)', display: 'grid', gap: 'clamp(26px,3vw,40px)', background: '#FFFFFF' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '20px' }}>
         <div style={{ display: 'grid', gap: '13px', maxWidth: '34ch' }}>
-          <Eyebrow>Loved by the Circle</Eyebrow>
-          <SectionHeading style={{ fontFamily: sans }}>Top sellers</SectionHeading>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <span className="home-live-dot" />
+            <span style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9333ea' }}>Live now</span>
+          </span>
+          <SectionHeading style={{ fontFamily: sans }}>Top sellers this week</SectionHeading>
         </div>
-        <Link href="/collections" className="hover:text-[#8B5CF6]" style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#4A2360' }}>
-          See all →
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+          {liveSitewide > 0 && (
+            <span style={{ fontSize: '13px', color: 'rgba(59,7,100,0.5)' }}>
+              <span style={{ fontWeight: 700, color: '#3b0764' }}>{liveSitewide.toLocaleString()}</span> people browsing right now
+            </span>
+          )}
+          <Link href="/collections" className="hover:text-[#9333ea]" style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#3b0764' }}>
+            See all →
+          </Link>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,232px),1fr))', gap: 'clamp(12px,1.4vw,18px)' }}>
+      <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,232px),1fr))', gap: 'clamp(12px,1.4vw,18px)', '--hc-card': '232px' }}>
         {items.map((t, i) => {
           const stock = num(t.stock_quantity);
           const urgency = stockUrgency(stock);
           const reviewCount = num(t.reviewCount);
           const rating = num(t.averageRating);
           const outOfStock = stock <= 0;
+          const sold = num(velocity[t.id]);
+          const liveViewers = num(liveByProduct[t.id]);
+          const views = num(totalViews[t.id]);
           return (
             <article
               key={t.id}
-              className="transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_44px_-34px_rgba(58,26,74,0.5)] hover:border-[#E0D8CB]"
-              style={{ display: 'grid', border: '1px solid #EFEBE4', borderRadius: '18px', background: '#FFFFFF', overflow: 'hidden' }}
+              className="transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_44px_-34px_rgba(147,51,234,0.5)] hover:border-[rgba(216,180,254,0.4)]"
+              style={{ display: 'grid', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '18px', background: '#FFFFFF', overflow: 'hidden' }}
             >
-              <span style={{ position: 'relative', display: 'block', aspectRatio: '4/5', overflow: 'hidden', background: '#F3EDE6' }}>
+              <span style={{ position: 'relative', display: 'block', aspectRatio: '4/5', overflow: 'hidden', background: '#FFFFFF' }}>
                 <ProductImage src={t.imageUrl} alt={t.name} sizes="(max-width: 768px) 50vw, 25vw" />
-                <span style={{ position: 'absolute', top: 11, left: 11, display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: '50%', background: '#4A2360', color: '#FFFFFF', fontSize: '11px', fontWeight: 600 }}>
+                <span style={{ position: 'absolute', top: 11, left: 11, display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: '50%', background: '#9333ea', color: '#FFFFFF', fontSize: '11px', fontWeight: 600 }}>
                   {i + 1}
                 </span>
+                {liveViewers > 0 && (
+                  <span style={{ position: 'absolute', left: 11, bottom: 11, display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 11px', borderRadius: '999px', background: 'rgba(255,255,255,0.94)', border: '1px solid rgba(216,180,254,0.4)', boxShadow: '0 4px 14px -6px rgba(147,51,234,0.25)' }}>
+                    <EyeIcon size={12} color="#9333ea" />
+                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#3b0764', fontVariantNumeric: 'tabular-nums' }}>{shortCount(liveViewers)}</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 400, color: 'rgba(59,7,100,0.5)' }}>viewing</span>
+                  </span>
+                )}
               </span>
               <span style={{ display: 'grid', gap: '7px', padding: '15px 16px 17px' }}>
                 <OriginTag origin={t.brand} />
-                <Link href={t.slug ? `/product/${t.slug}` : '/collections'} className="hover:text-[#8B5CF6]" style={{ fontSize: '15.5px', fontWeight: 600, letterSpacing: '-0.01em', color: '#4A2360' }}>
+                <Link
+                  href={t.slug ? `/product/${t.slug}` : '/collections'}
+                  className="hover:text-[#9333ea]"
+                  style={{
+                    fontSize: '15.5px', fontWeight: 600, letterSpacing: '-0.01em', color: '#3b0764',
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.28,
+                  }}
+                >
                   {t.name}
                 </Link>
-                {reviewCount > 0 ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <StarRow rating={rating} size={11} />
-                    <span style={{ fontSize: '11px', fontWeight: 500, color: '#4A2360', fontVariantNumeric: 'tabular-nums' }}>{rating.toFixed(1)}</span>
-                    <span style={{ fontSize: '11px', fontWeight: 300, color: '#8C8DA2', fontVariantNumeric: 'tabular-nums' }}>({reviewCount})</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  {reviewCount > 0 ? (
+                    <>
+                      <StarRow rating={rating} size={11} />
+                      <span style={{ fontSize: '11px', fontWeight: 500, color: '#3b0764', fontVariantNumeric: 'tabular-nums' }}>{rating.toFixed(1)}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 300, color: 'rgba(59,7,100,0.5)', fontVariantNumeric: 'tabular-nums' }}>({reviewCount})</span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: '11px', fontWeight: 300, color: 'rgba(59,7,100,0.5)' }}>No reviews yet</span>
+                  )}
+                  {views > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 300, color: 'rgba(59,7,100,0.5)', fontVariantNumeric: 'tabular-nums' }}>
+                      <EyeIcon size={11} color="rgba(59,7,100,0.5)" /> {shortCount(views)} views
+                    </span>
+                  )}
+                </span>
+                {sold > 0 && (
+                  <span style={{ display: 'grid', gap: '5px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(59,7,100,0.5)' }}>{sold} sold in the last 24 hours</span>
+                    <span style={{ display: 'block', height: '4px', borderRadius: '999px', background: 'rgba(216,180,254,0.4)', overflow: 'hidden' }}>
+                      <span style={{ display: 'block', height: '100%', width: `${Math.round((sold / maxSold) * 100)}%`, borderRadius: '999px', background: urgency.ink }} />
+                    </span>
                   </span>
-                ) : (
-                  <span style={{ fontSize: '11px', fontWeight: 300, color: '#9A9BB0' }}>No reviews yet</span>
                 )}
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '2px' }}>
                   <span style={{ fontSize: '14px', fontWeight: 600 }}>{money(t.price)}</span>
@@ -522,8 +708,8 @@ function TopSellers({ items, onAdd }) {
                 </span>
                 {!outOfStock && (
                   <AddButton
-                    className="cursor-pointer justify-self-start transition-colors duration-300 hover:bg-[#4A2360] hover:border-[#4A2360] hover:text-white"
-                    style={{ marginTop: '4px', border: '1px solid #E3E0EC', borderRadius: '999px', padding: '9px 17px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#4A2360' }}
+                    className="cursor-pointer justify-self-start transition-colors duration-300 hover:bg-[#3b0764] hover:border-[#3b0764] hover:text-white"
+                    style={{ marginTop: '4px', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '999px', padding: '9px 17px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#3b0764' }}
                     onAdd={() => onAdd(t)}
                   />
                 )}
@@ -578,7 +764,7 @@ function Reviews({ products }) {
   }, [products, totalReviews]);
 
   return (
-    <section id="reviews" style={{ padding: 'clamp(56px,7vw,104px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(26px,3vw,40px)' }}>
+    <section id="reviews" style={{ padding: 'clamp(28px,3.6vw,52px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(26px,3vw,40px)' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '20px' }}>
         <div style={{ display: 'grid', gap: '13px', maxWidth: '34ch' }}>
           <Eyebrow>Verified reviews</Eyebrow>
@@ -590,55 +776,55 @@ function Reviews({ products }) {
         <div
           style={{
             display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'clamp(22px,2.8vw,40px)',
-            padding: 'clamp(24px,2.8vw,34px)', border: '1px solid #EFEBE4', borderRadius: '22px', background: '#FBFAF9',
+            padding: 'clamp(24px,2.8vw,34px)', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '22px', background: '#FFFFFF',
           }}
         >
           <div style={{ display: 'grid', gap: '9px', justifyItems: 'start' }}>
             <span style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-              <span style={{ fontFamily: serif, fontSize: 'clamp(46px,5vw,62px)', lineHeight: 0.84, letterSpacing: '-0.02em', color: '#4A2360' }}>{avgRating.toFixed(1)}</span>
-              <span style={{ fontSize: '13px', fontWeight: 300, color: '#8C8DA2', paddingBottom: '6px' }}>/ 5</span>
+              <span style={{ fontFamily: serif, fontSize: 'clamp(46px,5vw,62px)', lineHeight: 0.84, letterSpacing: '-0.02em', color: '#3b0764' }}>{avgRating.toFixed(1)}</span>
+              <span style={{ fontSize: '13px', fontWeight: 300, color: 'rgba(59,7,100,0.5)', paddingBottom: '6px' }}>/ 5</span>
             </span>
             <PartialStarRow rating={avgRating} />
-            <span style={{ fontSize: '12px', fontWeight: 300, color: '#6B6C82' }}>
-              <strong style={{ fontWeight: 600, color: '#4A2360', fontVariantNumeric: 'tabular-nums' }}>{totalReviews}</strong> verified review{totalReviews === 1 ? '' : 's'}
+            <span style={{ fontSize: '12px', fontWeight: 300, color: '#6b21a8' }}>
+              <strong style={{ fontWeight: 600, color: '#3b0764', fontVariantNumeric: 'tabular-nums' }}>{totalReviews}</strong> verified review{totalReviews === 1 ? '' : 's'}
             </span>
           </div>
-          <span style={{ maxWidth: '34ch', fontSize: '12.5px', fontWeight: 300, lineHeight: 1.65, color: '#8C8DA2' }}>
+          <span style={{ maxWidth: '34ch', fontSize: '12.5px', fontWeight: 300, lineHeight: 1.65, color: 'rgba(59,7,100,0.5)' }}>
             Reviews are collected directly from Naya Lumière customers — nothing here is gifted or incentivised.
           </span>
         </div>
       ) : (
-        <div style={{ padding: 'clamp(24px,2.8vw,34px)', border: '1px solid #EFEBE4', borderRadius: '22px', background: '#FBFAF9', fontSize: '13.5px', fontWeight: 300, color: '#6B6C82' }}>
+        <div style={{ padding: 'clamp(24px,2.8vw,34px)', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '22px', background: '#FFFFFF', fontSize: '13.5px', fontWeight: 300, color: '#6b21a8' }}>
           No reviews yet — be the first to leave one after your order arrives.
         </div>
       )}
 
       {cards.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,290px),1fr))', gap: 'clamp(14px,1.6vw,20px)', alignItems: 'start' }}>
+        <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,290px),1fr))', gap: 'clamp(14px,1.6vw,20px)', alignItems: 'start', '--hc-card': '280px' }}>
           {cards.map((r) => (
             <article
               key={r.id}
-              className="transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_44px_-34px_rgba(58,26,74,0.5)] hover:border-[#E0D8CB]"
-              style={{ display: 'grid', gap: '14px', alignContent: 'start', padding: 'clamp(20px,2.2vw,26px)', border: '1px solid #EFEBE4', borderRadius: '20px', background: '#FFFFFF' }}
+              className="transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_44px_-34px_rgba(147,51,234,0.5)] hover:border-[rgba(216,180,254,0.4)]"
+              style={{ display: 'grid', gap: '14px', alignContent: 'start', padding: 'clamp(20px,2.2vw,26px)', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '20px', background: '#FFFFFF' }}
             >
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                 <StarRow rating={r.rating} />
-                <span style={{ fontSize: '11px', fontWeight: 300, color: '#9A9BB0', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '11px', fontWeight: 300, color: 'rgba(59,7,100,0.5)', whiteSpace: 'nowrap' }}>
                   {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </span>
-              <span style={{ fontFamily: serif, fontSize: '20px', lineHeight: 1.3, color: '#4A2360' }}>{r.comment}</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '11px', borderTop: '1px solid #F4F1EA', paddingTop: '14px' }}>
+              <span style={{ fontFamily: serif, fontSize: '20px', lineHeight: 1.3, color: '#3b0764' }}>{r.comment}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '11px', borderTop: '1px solid rgba(216,180,254,0.4)', paddingTop: '14px' }}>
                 <InitialsAvatar initials={initialsFromName(r.username)} />
                 <span style={{ display: 'grid', gap: '3px', minWidth: 0 }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#4A2360' }}>{r.username}</span>
-                  <span style={{ fontSize: '11px', fontWeight: 300, color: '#8C8DA2' }}>Naya Lumière customer</span>
+                  <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#3b0764' }}>{r.username}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 300, color: 'rgba(59,7,100,0.5)' }}>Naya Lumière customer</span>
                 </span>
               </span>
               <Link
                 href={r.productSlug ? `/product/${r.productSlug}` : '/collections'}
-                className="hover:text-[#8B5CF6]"
-                style={{ justifySelf: 'start', fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#4A2360', borderBottom: '1px solid #E3E0EC', paddingBottom: '3px' }}
+                className="hover:text-[#9333ea]"
+                style={{ justifySelf: 'start', fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#3b0764', borderBottom: '1px solid rgba(216,180,254,0.4)', paddingBottom: '3px' }}
               >
                 on {r.productName}
               </Link>
@@ -668,20 +854,20 @@ function Signature({ items, onAdd }) {
       id="signature"
       style={{
         position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(152deg,#FCF8F3 0%,#F4E7DA 54%,#EEDACA 100%)',
+        background: '#FFFFFF',
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,400px),1fr))', alignItems: 'stretch',
       }}
     >
-      <div style={{ display: 'grid', alignContent: 'center', gap: 'clamp(20px,2.4vw,30px)', padding: 'clamp(40px,5vw,84px)' }}>
+      <div style={{ display: 'grid', alignContent: 'center', gap: 'clamp(20px,2.4vw,30px)', padding: 'clamp(28px,3.6vw,52px)' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#8A5E22' }}>
           <span style={{ width: 22, height: 1, background: '#C79A4E' }} />
           Signature selection
         </span>
-        <h2 style={{ margin: 0, fontFamily: sans, fontWeight: 600, fontSize: 'clamp(24px,2.6vw,32px)', lineHeight: 1.24, letterSpacing: '-0.01em', color: '#4A2360' }}>
+        <h2 style={{ margin: 0, fontFamily: sans, fontWeight: 600, fontSize: 'clamp(24px,2.6vw,32px)', lineHeight: 1.24, letterSpacing: '-0.01em', color: '#3b0764' }}>
           {sig.name}
         </h2>
         {sig.description && (
-          <p style={{ margin: 0, maxWidth: '38ch', fontSize: '14.5px', fontWeight: 300, lineHeight: 1.75, color: '#5E5348' }}>{truncate(sig.description, 220)}</p>
+          <p style={{ margin: 0, maxWidth: '38ch', fontSize: '14.5px', fontWeight: 300, lineHeight: 1.75, color: '#6b21a8' }}>{truncate(sig.description, 220)}</p>
         )}
 
         {items.length > 1 && (
@@ -698,7 +884,7 @@ function Signature({ items, onAdd }) {
                   style={{
                     cursor: 'pointer', padding: '11px 20px', borderRadius: '999px', fontSize: '11px', fontWeight: 500,
                     letterSpacing: '0.03em', textTransform: 'uppercase', whiteSpace: 'nowrap',
-                    border: `1px solid ${on ? '#4A2360' : '#DCD2C4'}`, background: on ? '#4A2360' : 'transparent', color: on ? '#FFFFFF' : '#4A2360',
+                    border: `1px solid ${on ? '#9333ea' : 'rgba(216,180,254,0.4)'}`, background: on ? '#9333ea' : 'transparent', color: on ? '#FFFFFF' : '#3b0764',
                     transition: 'border-color .25s ease, background .25s ease, color .25s ease',
                   }}
                 >
@@ -710,7 +896,7 @@ function Signature({ items, onAdd }) {
         )}
 
         <div style={{ display: 'grid', gap: 0, maxWidth: 430 }}>
-          <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px', padding: '13px 0', borderTop: '1px solid #E4D2C1', fontSize: '13px', fontWeight: 300, color: '#5E5348' }}>
+          <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px', padding: '13px 0', borderTop: '1px solid rgba(216,180,254,0.4)', fontSize: '13px', fontWeight: 300, color: '#6b21a8' }}>
             Brand
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '11px', letterSpacing: '0.04em', textTransform: 'uppercase', color: tint }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: tint }} />
@@ -718,25 +904,25 @@ function Signature({ items, onAdd }) {
             </span>
           </span>
           {notes && (
-            <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px', padding: '13px 0', borderTop: '1px solid #E4D2C1', fontSize: '13px', fontWeight: 300, color: '#5E5348' }}>
-              Notes<span style={{ fontWeight: 400, color: '#4A2360', textAlign: 'right' }}>{notes}</span>
+            <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px', padding: '13px 0', borderTop: '1px solid rgba(216,180,254,0.4)', fontSize: '13px', fontWeight: 300, color: '#6b21a8' }}>
+              Notes<span style={{ fontWeight: 400, color: '#3b0764', textAlign: 'right' }}>{notes}</span>
             </span>
           )}
           {format && (
-            <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px', padding: '13px 0', borderTop: '1px solid #E4D2C1', borderBottom: '1px solid #E4D2C1', fontSize: '13px', fontWeight: 300, color: '#5E5348' }}>
-              Format<span style={{ fontWeight: 400, color: '#4A2360' }}>{format}</span>
+            <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px', padding: '13px 0', borderTop: '1px solid rgba(216,180,254,0.4)', borderBottom: '1px solid rgba(216,180,254,0.4)', fontSize: '13px', fontWeight: 300, color: '#6b21a8' }}>
+              Format<span style={{ fontWeight: 400, color: '#3b0764' }}>{format}</span>
             </span>
           )}
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '18px' }}>
-          <span style={{ fontFamily: serif, fontSize: '30px', lineHeight: 1, color: '#4A2360' }}>{money(sig.price)}</span>
+          <span style={{ fontFamily: serif, fontSize: '30px', lineHeight: 1, color: '#3b0764' }}>{money(sig.price)}</span>
           {num(sig.stock_quantity) > 0 ? (
             <AddButton
               label="Add to bag"
               addedLabel="Added to bag"
-              className="cursor-pointer transition-colors duration-300 hover:bg-[#2A1240]"
-              style={{ whiteSpace: 'nowrap', background: '#4A2360', color: '#FFFFFF', padding: '16px 32px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}
+              className="cursor-pointer transition-colors duration-300 hover:opacity-90"
+              style={{ whiteSpace: 'nowrap', background: '#9333ea', color: '#FFFFFF', padding: '16px 32px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}
               onAdd={() => onAdd(sig)}
             />
           ) : (
@@ -745,8 +931,8 @@ function Signature({ items, onAdd }) {
         </div>
       </div>
 
-      <span style={{ position: 'relative', display: 'block', minHeight: 'clamp(340px,52vh,620px)', background: '#F3EDE6' }}>
-        <ProductImage src={sig.imageUrl} alt={sig.name} sizes="(max-width: 768px) 100vw, 50vw" />
+      <span style={{ position: 'relative', display: 'block', minHeight: 'clamp(340px,52vh,620px)', background: '#FFFFFF' }}>
+        <ProductImage src={sig.signatureImageUrl || sig.imageUrl} alt={sig.name} sizes="(max-width: 768px) 100vw, 50vw" fit="cover" />
       </span>
     </section>
   );
@@ -759,26 +945,26 @@ function Signature({ items, onAdd }) {
 function Essentials({ items, onAdd }) {
   if (!items.length) return null;
   return (
-    <section id="collections" style={{ padding: 'clamp(56px,7vw,104px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(30px,3.6vw,46px)' }}>
+    <section id="collections" style={{ padding: 'clamp(28px,3.6vw,52px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(30px,3.6vw,46px)' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '20px' }}>
         <div style={{ display: 'grid', gap: '13px' }}>
           <Eyebrow>Across the house</Eyebrow>
           <SectionHeading style={{ fontFamily: sans }}>The house essentials</SectionHeading>
         </div>
-        <Link href="/collections" className="hover:text-[#8B5CF6]" style={{ whiteSpace: 'nowrap', fontSize: '11.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#4A2360', borderBottom: '1px solid #DCD3EE', paddingBottom: '3px' }}>
+        <Link href="/collections" className="hover:text-[#9333ea]" style={{ whiteSpace: 'nowrap', fontSize: '11.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#3b0764', borderBottom: '1px solid rgba(216,180,254,0.4)', paddingBottom: '3px' }}>
           View all products
         </Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))', gap: 'clamp(16px,2vw,26px)' }}>
+      <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))', gap: 'clamp(16px,2vw,26px)', '--hc-card': '230px' }}>
         {items.map((p) => (
           <article key={p.id} style={{ display: 'grid', gap: '16px' }}>
-            <span style={{ position: 'relative', display: 'block', aspectRatio: '4/5', borderRadius: '16px', overflow: 'hidden', background: '#F3EDE6' }}>
+            <span style={{ position: 'relative', display: 'block', aspectRatio: '4/5', borderRadius: '16px', overflow: 'hidden', background: '#FFFFFF' }}>
               <ProductImage src={p.imageUrl} alt={p.name} sizes="(max-width: 768px) 50vw, 25vw" />
               <span
                 style={{
                   position: 'absolute', top: 12, left: 12, zIndex: 2, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: '7px',
-                  padding: '7px 12px', borderRadius: '999px', background: 'rgba(255,255,255,0.95)', boxShadow: '0 3px 12px -6px rgba(58,26,74,0.6)',
+                  padding: '7px 12px', borderRadius: '999px', background: 'rgba(255,255,255,0.95)', boxShadow: '0 3px 12px -6px rgba(147,51,234,0.6)',
                   fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: brandTint(p.brand),
                 }}
               >
@@ -788,16 +974,16 @@ function Essentials({ items, onAdd }) {
             </span>
             <div style={{ display: 'grid', gap: '7px' }}>
               <Link href={p.slug ? `/product/${p.slug}` : '/collections'} style={{ display: 'block' }}>
-                <h3 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: '23px', lineHeight: 1.2, color: '#4A2360' }}>{p.name}</h3>
+                <h3 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: '23px', lineHeight: 1.2, color: '#3b0764' }}>{p.name}</h3>
               </Link>
               {(p.size || p.form) && (
-                <p style={{ margin: 0, fontSize: '12.5px', fontWeight: 300, color: '#6B6C82' }}>{[p.size, p.form].filter(Boolean).join(' · ')}</p>
+                <p style={{ margin: 0, fontSize: '12.5px', fontWeight: 300, color: '#6b21a8' }}>{[p.size, p.form].filter(Boolean).join(' · ')}</p>
               )}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '5px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: '#4A2360' }}>{money(p.price)}</span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#3b0764' }}>{money(p.price)}</span>
                 <AddButton
-                  className="cursor-pointer transition-colors duration-300 hover:bg-[#4A2360] hover:border-[#4A2360] hover:text-white"
-                  style={{ border: '1px solid #E3E0EC', borderRadius: '999px', padding: '9px 17px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#4A2360' }}
+                  className="cursor-pointer transition-colors duration-300 hover:bg-[#3b0764] hover:border-[#3b0764] hover:text-white"
+                  style={{ border: '1px solid rgba(216,180,254,0.4)', borderRadius: '999px', padding: '9px 17px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#3b0764' }}
                   onAdd={() => onAdd(p)}
                 />
               </div>
@@ -826,23 +1012,23 @@ function StepOptionCard({ option, active, onPick }) {
       style={{
         display: 'grid', gridTemplateColumns: '19px 1fr auto', alignItems: 'start', columnGap: '15px', rowGap: '8px',
         padding: '15px 18px', borderRadius: '15px',
-        border: `1px solid ${active ? '#8B5CF6' : '#EFEDF4'}`,
+        border: `1px solid ${active ? '#9333ea' : 'rgba(216,180,254,0.4)'}`,
         background: active ? '#F7F2FE' : '#FFFFFF',
-        boxShadow: active ? '0 16px 30px -22px rgba(58,26,74,0.6)' : 'none',
+        boxShadow: active ? '0 16px 30px -22px rgba(147,51,234,0.6)' : 'none',
         transition: 'border-color .25s ease, background .25s ease, box-shadow .3s ease',
       }}
     >
       <span
         style={{
           marginTop: 3, width: 19, height: 19, borderRadius: '50%', display: 'grid', placeItems: 'center',
-          border: `1px solid ${active ? '#8B5CF6' : '#DCD8E8'}`, background: active ? '#8B5CF6' : 'transparent',
+          border: `1px solid ${active ? '#9333ea' : 'rgba(216,180,254,0.4)'}`, background: active ? '#9333ea' : 'transparent',
         }}
       >
         {active && <CheckIcon />}
       </span>
       <span style={{ display: 'grid', gap: '6px', minWidth: 0 }}>
         <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 11px' }}>
-          <span style={{ fontFamily: serif, fontSize: '21px', lineHeight: 1.1, color: '#4A2360' }}>{option.name}</span>
+          <span style={{ fontFamily: serif, fontSize: '21px', lineHeight: 1.1, color: '#3b0764' }}>{option.name}</span>
           <OriginTag origin={option.brand} />
         </span>
         {option.recommended && (
@@ -851,7 +1037,7 @@ function StepOptionCard({ option, active, onPick }) {
           </span>
         )}
       </span>
-      <span style={{ fontSize: '13px', fontWeight: 500, color: '#4A2360', whiteSpace: 'nowrap', marginTop: '2px' }}>{money(option.price)}</span>
+      <span style={{ fontSize: '13px', fontWeight: 500, color: '#3b0764', whiteSpace: 'nowrap', marginTop: '2px' }}>{money(option.price)}</span>
     </span>
   );
 }
@@ -861,8 +1047,28 @@ function Routine({ routine, onAddRoutine }) {
     stepOptions, concernOptions, concern, setConcern,
     cleanseIdx, treatIdx, protectIdx, pick,
     gross, save, total, routineAdded,
-    tabbyFirst, tabbyRest, routinePoints,
+    tabbyRest, routinePoints,
   } = routine;
+
+  // The "Treat" step photo is the one homepage image with no product/category/brand
+  // behind it — admins can swap it from /admin/homepage, which writes to
+  // /api/homepage-images. Falls back to the shipped default asset otherwise.
+  const treatSlot = getSlot('routine_treat');
+  const [treatImageOverride, setTreatImageOverride] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/homepage-images')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data) => {
+        if (!cancelled && data?.routine_treat) setTreatImageOverride(data.routine_treat);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const treatImageSrc = treatImageOverride?.imageUrl || treatSlot.fallbackUrl;
+  const treatImageAlt = treatImageOverride?.altText || treatSlot.alt;
 
   const indices = { cleanse: cleanseIdx, treat: treatIdx, protect: protectIdx };
   const treatOption = stepOptions.treat[treatIdx];
@@ -875,22 +1081,20 @@ function Routine({ routine, onAddRoutine }) {
   return (
     <section
       id="routine"
-      style={{ padding: 'clamp(56px,7vw,104px) clamp(20px,4vw,52px)', background: 'linear-gradient(178deg,#FBF8F4 0%,#FAF6F1 62%,#F8F4EF 100%)', display: 'grid', gap: 'clamp(30px,3.6vw,46px)' }}
+      style={{ padding: 'clamp(28px,3.6vw,52px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(30px,3.6vw,46px)' }}
     >
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px' }}>
-        <div style={{ display: 'grid', gap: '14px', maxWidth: '30ch' }}>
-          <Eyebrow>Build your routine</Eyebrow>
-          <SectionHeading style={{ fontFamily: sans }}>A routine, three steps.</SectionHeading>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '20px 44px' }}>
+        <div style={{ display: 'grid', gap: '12px', maxWidth: '32ch' }}>
+          <Eyebrow style={{ letterSpacing: '0.16em' }}>Build your routine</Eyebrow>
+          <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 'clamp(28px,3.1vw,38px)', lineHeight: 1.12, letterSpacing: '-0.005em', color: '#3b0764' }}>Three steps, priced as one</h2>
         </div>
-        <div style={{ display: 'grid', gap: '14px', maxWidth: '36ch' }}>
-          <p style={{ margin: 0, fontSize: '14.5px', fontWeight: 300, lineHeight: 1.75, color: '#6B6C82' }}>
-            Choose one from each step. Mix products across our three houses as you like — we price the trio as a bundle.
-          </p>
-        </div>
+        <p style={{ margin: 0, fontSize: '12.5px', fontWeight: 300, lineHeight: 1.75, maxWidth: '34ch', color: '#6b21a8' }}>
+          Pick one formula per step. Mix the atelier, the French laboratory and the Emirates edition as you like — the trio is priced as a bundle.
+        </p>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '9px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#6B6C82', marginRight: '6px' }}>Skin concern</span>
+        <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#6b21a8', marginRight: '6px' }}>Skin concern</span>
         {concernOptions.map((c) => {
           const on = concern.key === c.key;
           return (
@@ -903,7 +1107,7 @@ function Routine({ routine, onAddRoutine }) {
               className="cursor-pointer transition-colors duration-300"
               style={{
                 whiteSpace: 'nowrap', padding: '10px 17px', borderRadius: '999px', fontSize: '12px', fontWeight: 500,
-                border: `1px solid ${on ? '#4A2360' : '#E3E0EC'}`, background: on ? '#4A2360' : '#FFFFFF', color: on ? '#FFFFFF' : '#3A3B4F',
+                border: `1px solid ${on ? '#9333ea' : 'rgba(216,180,254,0.4)'}`, background: on ? '#9333ea' : '#FFFFFF', color: on ? '#FFFFFF' : '#6b21a8',
               }}
             >
               {c.label}
@@ -919,37 +1123,37 @@ function Routine({ routine, onAddRoutine }) {
             <span
               style={{
                 position: 'relative', display: 'block', aspectRatio: '1/1', borderRadius: '24px', overflow: 'hidden',
-                background: 'linear-gradient(162deg,#FFFFFF 0%,#FAF6F1 100%)',
-                boxShadow: '0 44px 76px -50px rgba(58,26,74,0.42), inset 0 1px 0 rgba(255,255,255,0.9)',
+                background: '#FFFFFF',
+                boxShadow: '0 44px 76px -50px rgba(147,51,234,0.42), inset 0 1px 0 rgba(255,255,255,0.9)',
               }}
             >
               <Image
-                src={IMG.routineTreat}
-                alt="Applying the eye treatment with a spatula"
+                src={treatImageSrc}
+                alt={treatImageAlt}
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"
                 style={{ objectFit: 'cover', objectPosition: '52% 13%' }}
               />
-              <span style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(to top,#FAF6F1 0%,rgba(250,246,241,0.86) 13%,rgba(250,246,241,0) 40%)' }} />
-              <span style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 13px', borderRadius: '999px', background: 'rgba(255,255,255,0.94)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#4A2360' }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#8B5CF6' }} />
+              <span style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(to top,#FFFFFF 0%,rgba(255,255,255,0.86) 13%,rgba(255,255,255,0) 40%)' }} />
+              <span style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 13px', borderRadius: '999px', background: 'rgba(255,255,255,0.94)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#3b0764' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#9333ea' }} />
                 Step 02 · Treat
               </span>
               <span
                 style={{
                   position: 'absolute', left: 16, right: 16, bottom: 16, display: 'grid', gap: '9px', padding: '16px 18px', borderRadius: '18px',
-                  background: 'rgba(255,255,255,0.93)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 20px 34px -26px rgba(58,26,74,0.4)',
+                  background: 'rgba(255,255,255,0.93)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 20px 34px -26px rgba(147,51,234,0.4)',
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px' }}>
-                  <span style={{ fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#9A8E7E' }}>On skin now</span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#4A2360' }}>{money(treatOption.price)}</span>
+                  <span style={{ fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'rgba(59,7,100,0.5)' }}>On skin now</span>
+                  <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#3b0764' }}>{money(treatOption.price)}</span>
                 </span>
-                <span style={{ fontFamily: serif, fontSize: '23px', lineHeight: 1.1, color: '#4A2360' }}>{treatOption.name}</span>
+                <span style={{ fontFamily: serif, fontSize: '23px', lineHeight: 1.1, color: '#3b0764' }}>{treatOption.name}</span>
                 <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 12px', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: brandTint(treatOption.brand) }}>
                   <span style={{ width: 5, height: 5, borderRadius: '50%', background: brandTint(treatOption.brand) }} />
                   {treatOption.brand}
-                  <span style={{ fontWeight: 400, letterSpacing: '0.03em', textTransform: 'none', color: '#6B6C82' }}>{concernLabel}</span>
+                  <span style={{ fontWeight: 400, letterSpacing: '0.03em', textTransform: 'none', color: '#6b21a8' }}>{concernLabel}</span>
                 </span>
               </span>
             </span>
@@ -964,10 +1168,10 @@ function Routine({ routine, onAddRoutine }) {
               return (
                 <div key={step} style={{ display: 'grid', gap: '13px' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '13px' }}>
-                    <span style={{ fontFamily: serif, fontSize: '16px', lineHeight: 1, color: '#C0A9E8' }}>{String(['cleanse', 'treat', 'protect'].indexOf(step) + 1).padStart(2, '0')}</span>
-                    <span style={{ fontSize: '11.5px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#4A2360' }}>{meta.label}</span>
-                    <span style={{ fontSize: '11px', fontWeight: 300, color: '#A79CB4' }}>{meta.when}</span>
-                    <span style={{ flex: 1, height: 1, background: '#EAE2F0' }} />
+                    <span style={{ fontFamily: serif, fontSize: '16px', lineHeight: 1, color: '#c4b5fd' }}>{String(['cleanse', 'treat', 'protect'].indexOf(step) + 1).padStart(2, '0')}</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#3b0764' }}>{meta.label}</span>
+                    <span style={{ fontSize: '11px', fontWeight: 300, color: 'rgba(59,7,100,0.5)' }}>{meta.when}</span>
+                    <span style={{ flex: 1, height: 1, background: 'rgba(216,180,254,0.4)' }} />
                   </span>
                   {options.map((o, i) => (
                     <StepOptionCard
@@ -983,55 +1187,26 @@ function Routine({ routine, onAddRoutine }) {
           </div>
         </div>
 
-        {/* Routine summary card */}
-        <div
-          style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,240px),1fr))', gap: 'clamp(22px,2.6vw,40px)', alignItems: 'center',
-            padding: 'clamp(26px,3vw,38px)', borderRadius: '22px', border: '1px solid #EBE1F1',
-            background: 'radial-gradient(130% 150% at 6% 0%,#FFFFFF 0%,#FBF7FF 44%,#F3ECFB 100%)',
-            boxShadow: '0 32px 62px -46px rgba(58,26,74,0.5), inset 0 1px 0 rgba(255,255,255,0.9)', color: '#4A2360',
-          }}
-        >
-          <div style={{ display: 'grid', gap: '14px' }}>
-            <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px' }}>
-              <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#7C4DC4' }}>Your routine</span>
-              <span style={{ fontSize: '10px', fontWeight: 400, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9A8E7E' }}>3 items</span>
-            </span>
-            <div style={{ display: 'grid' }}>
-              <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '14px', padding: '11px 0', borderTop: '1px solid rgba(74,35,96,0.14)', fontSize: '13px', fontWeight: 400 }}>
-                Cleanse<span style={{ fontWeight: 300, color: '#6B5A7C' }}>{cleanseOption.name}</span>
-              </span>
-              <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '14px', padding: '11px 0', borderTop: '1px solid rgba(74,35,96,0.14)', fontSize: '13px', fontWeight: 400 }}>
-                Treat<span style={{ fontWeight: 300, color: '#6B5A7C' }}>{treatOption.name}</span>
-              </span>
-              <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '14px', padding: '11px 0', borderTop: '1px solid rgba(74,35,96,0.14)', borderBottom: '1px solid rgba(74,35,96,0.14)', fontSize: '13px', fontWeight: 400 }}>
-                Protect<span style={{ fontWeight: 300, color: '#6B5A7C' }}>{protectOption.name}</span>
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gap: '9px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#6B5A7C' }}>Routine price</span>
+        {/* Routine summary bar */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '18px 32px', paddingTop: '22px', borderTop: '1px solid rgba(216,180,254,0.4)' }}>
+          <div style={{ display: 'grid', gap: '7px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(59,7,100,0.5)' }}>Your routine · 3 items</span>
             <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '12px' }}>
-              <span style={{ fontFamily: serif, fontSize: 'clamp(34px,4vw,44px)', lineHeight: 1, color: '#4A2360' }}>{money(total)}</span>
-              <span style={{ fontSize: '14px', fontWeight: 300, color: '#6E6080', textDecoration: 'line-through' }}>{money(gross)}</span>
+              <span style={{ fontFamily: serif, fontSize: 'clamp(30px,3.4vw,40px)', lineHeight: 1, color: '#3b0764', fontVariantNumeric: 'tabular-nums' }}>{money(total)}</span>
+              <span style={{ fontSize: '13.5px', fontWeight: 300, color: 'rgba(59,7,100,0.5)', textDecoration: 'line-through' }}>{money(gross)}</span>
+              <span style={{ fontSize: '12px', fontWeight: 500, color: '#7C4DBE' }}>Bundle saves {money(save)}</span>
             </span>
-            <span style={{ justifySelf: 'start', padding: '6px 12px', borderRadius: '999px', background: '#E4F6EE', color: '#12664B', fontSize: '11px', fontWeight: 600 }}>
-              Routine bundle — save {money(save)}
-            </span>
-            <span style={{ fontSize: '12px', fontWeight: 300, lineHeight: 1.6, color: '#6B5A7C' }}>4 payments with Tabby — {money(tabbyFirst)} today, then {money(tabbyRest)}</span>
-            <span style={{ fontSize: '12px', fontWeight: 300, lineHeight: 1.6, color: '#6B5A7C' }}>Earns {routinePoints} points</span>
+            <span style={{ fontSize: '12px', fontWeight: 300, lineHeight: 1.6, color: 'rgba(59,7,100,0.5)' }}>{cleanseOption.name}, {treatOption.name}, {protectOption.name}</span>
+            <span style={{ fontSize: '12px', fontWeight: 300, lineHeight: 1.6, color: 'rgba(59,7,100,0.5)' }}>Four payments of {money(tabbyRest)} · earns {routinePoints} points</span>
           </div>
-
           <AddButton
             label="Add routine to bag"
             addedLabel={routineAdded ? 'Added to bag' : 'Add routine to bag'}
             onAdd={() => onAddRoutine([cleanseOption, treatOption, protectOption])}
-            className="cursor-pointer transition-transform duration-300 hover:-translate-y-0.5"
+            className="cursor-pointer transition-colors duration-300 hover:opacity-90"
             style={{
-              alignSelf: 'center', textAlign: 'center', whiteSpace: 'nowrap', background: 'linear-gradient(90deg,#C084FC 0%,#8B5CF6 100%)', color: '#FFFFFF',
-              padding: '15px 26px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
-              boxShadow: '0 14px 30px -16px rgba(139,92,246,0.9)',
+              whiteSpace: 'nowrap', background: '#9333ea', color: '#FFFFFF',
+              padding: '15px 30px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
             }}
           />
         </div>
@@ -1056,36 +1231,36 @@ function ForYou({ fallbackProducts, onAdd }) {
   if (list.length === 0) return null;
 
   return (
-    <section id="foryou" style={{ padding: 'clamp(56px,7vw,104px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(28px,3.4vw,42px)' }}>
+    <section id="foryou" style={{ padding: 'clamp(28px,3.6vw,52px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(28px,3.4vw,42px)' }}>
       <div style={{ display: 'grid', gap: '13px' }}>
         <Eyebrow>{usingRecent ? 'Recently viewed' : 'You might also like'}</Eyebrow>
         <SectionHeading style={{ fontFamily: sans }}>{usingRecent ? 'Pick up where you left off.' : 'A few more from the house.'}</SectionHeading>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 'clamp(16px,2vw,26px)' }}>
+      <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 'clamp(16px,2vw,26px)', '--hc-card': '280px' }}>
         {list.map((p) => {
           const brand = p.brand || p.brandName || '';
           const stock = num(p.stock_quantity);
           return (
             <article
               key={p.id}
-              className="transition-all duration-300 hover:border-[#D9CDF4] hover:-translate-y-1"
-              style={{ display: 'grid', gridTemplateColumns: '104px 1fr', gap: '18px', alignItems: 'center', padding: '16px', border: '1px solid #EFEDF4', borderRadius: '18px' }}
+              className="transition-all duration-300 hover:border-[rgba(216,180,254,0.4)] hover:-translate-y-1"
+              style={{ display: 'grid', gridTemplateColumns: '104px 1fr', gap: '18px', alignItems: 'center', padding: '16px', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '18px' }}
             >
-              <span style={{ position: 'relative', display: 'block', width: 104, aspectRatio: '4/5', borderRadius: '12px', overflow: 'hidden', background: '#F3EDE6' }}>
+              <span style={{ position: 'relative', display: 'block', width: 104, aspectRatio: '4/5', borderRadius: '12px', overflow: 'hidden', background: '#FFFFFF' }}>
                 <ProductImage src={p.imageUrl} alt={p.name} sizes="104px" />
               </span>
               <span style={{ display: 'grid', gap: '7px' }}>
                 {brand && <OriginTag origin={brand} fontSize="9.5px" />}
                 <Link href={p.slug ? `/product/${p.slug}` : '/collections'}>
-                  <span style={{ fontFamily: serif, fontSize: '21px', lineHeight: 1.15, color: '#4A2360' }}>{p.name}</span>
+                  <span style={{ fontFamily: serif, fontSize: '21px', lineHeight: 1.15, color: '#3b0764' }}>{p.name}</span>
                 </Link>
-                <span style={{ fontSize: '12.5px', fontWeight: 300, color: '#6B6C82' }}>{money(p.price)}</span>
+                <span style={{ fontSize: '12.5px', fontWeight: 300, color: '#6b21a8' }}>{money(p.price)}</span>
                 {stock > 0 ? (
                   <AddButton
                     label="Add to bag"
                     className="justify-self-start cursor-pointer whitespace-nowrap"
-                    style={{ marginTop: '3px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', borderBottom: '1px solid #DCD3EE', paddingBottom: '3px', color: '#4A2360' }}
+                    style={{ marginTop: '3px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', borderBottom: '1px solid rgba(216,180,254,0.4)', paddingBottom: '3px', color: '#3b0764' }}
                     onAdd={() => onAdd(p)}
                   />
                 ) : (
@@ -1101,152 +1276,159 @@ function ForYou({ fallbackProducts, onAdd }) {
 }
 
 /* ============================================================================
- * #circle — the real 3-tier loyalty ladder (Silver/Gold/Platinum, lifetime
- * AED spend), matching app/account/loyalty/page.js exactly. The mockup's
- * fictional 4th "Diamond" tier and point-based thresholds have been dropped.
+ * #circle — the real 4-tier loyalty ladder (Silver/Gold/Platinum/Diamond,
+ * lifetime AED spend), matching app/account/loyalty/page.js exactly.
  * ==========================================================================*/
 
 const TIERS = [
-  {
-    roman: 'I', name: 'Silver', code: 'NL–01', min: 0, multiplier: 1,
-    metal: 'linear-gradient(135deg,#EDEFF3,#B9BEC9 45%,#FBFCFE 60%,#A9AEBA)', ink: '#3D4250',
-    long: 'Earn 1 point per AED spent, redeemable at checkout, plus a birthday gift every year.',
-  },
-  {
-    roman: 'II', name: 'Gold', code: 'NL–02', min: 2000, multiplier: 1.5,
-    metal: 'linear-gradient(135deg,#F6E9C2,#C9A85C 45%,#FAF1D8 60%,#B4913F)', ink: '#5C4718', badge: true,
-    long: 'Everything in Silver, plus 1.5× points, free shipping and early access to new editions.',
-  },
-  {
-    roman: 'III', name: 'Platinum', code: 'NL–03', min: 5000, multiplier: 2,
-    metal: 'linear-gradient(135deg,#F4EEFF,#A899CC 44%,#FCFAFF 60%,#8878B0)', ink: '#3A2A5C',
-    long: 'Everything in Gold, plus 2× points, exclusive samples and priority support.',
-  },
+  { name: 'Silver', min: 0, multiplier: '1×', shipping: false, earlyAccess: false, gift: true, samples: false, priority: false, concierge: false },
+  { name: 'Gold', min: 2000, multiplier: '1.5×', shipping: true, earlyAccess: true, gift: true, samples: false, priority: false, concierge: false, badge: true },
+  { name: 'Platinum', min: 5000, multiplier: '2×', shipping: true, earlyAccess: true, gift: true, samples: true, priority: true, concierge: false },
+  { name: 'Diamond', min: 10000, multiplier: '2.5×', shipping: true, earlyAccess: true, gift: true, samples: true, priority: true, concierge: true },
 ];
 
-const REAL_PERKS = ['Points never expire', 'Free shipping from Gold', 'Exclusive samples at Platinum'];
+const TIER_ROWS = [
+  { label: 'Points per dirham', get: (t) => t.multiplier },
+  { label: 'Free shipping', get: (t) => (t.shipping ? 'Included' : '—') },
+  { label: 'Early access to new editions', get: (t) => (t.earlyAccess ? 'Included' : '—') },
+  { label: 'Birthday gift', get: (t) => (t.gift ? 'Every year' : '—') },
+  { label: 'Exclusive samples', get: (t) => (t.samples ? 'Included' : '—') },
+  { label: 'Priority support', get: (t) => (t.priority ? 'Included' : '—') },
+  { label: 'Dedicated concierge', get: (t) => (t.concierge ? 'Included' : '—') },
+];
 
-function Circle({ loyaltyData }) {
-  const currentTierName = loyaltyData?.stats?.tier;
-  const defaultIdx = Math.max(0, TIERS.findIndex((t) => t.name === currentTierName));
-  const [plateIdx, setPlateIdx] = useState(defaultIdx);
+const TIER_DOT = { Silver: '#B7B9C2', Gold: '#D9A441', Platinum: '#7C5CD6', Diamond: '#6FA8DC' };
+
+function Circle() {
+  const { loyaltyData } = useAppContext();
+  const { user, isAuthenticated } = useAuth();
+
+  const tier = loyaltyData?.stats?.tier;
+  const points = Number(loyaltyData?.stats?.points || 0);
+  const lifetimeSpend = Number(loyaltyData?.stats?.lifetimeSpend || 0);
+  const isMember = isAuthenticated && TIERS.some((t) => t.name === tier);
+  const currentTierIdx = isMember ? TIERS.findIndex((t) => t.name === tier) : -1;
+  const currentTier = currentTierIdx > -1 ? TIERS[currentTierIdx] : null;
+  const nextTier = currentTierIdx > -1 ? TIERS[currentTierIdx + 1] || null : null;
+  const spendToNext = nextTier ? Math.max(0, nextTier.min - lifetimeSpend) : 0;
+  const progress = nextTier ? Math.min(100, Math.round((lifetimeSpend / nextTier.min) * 100)) : 100;
+  const memberName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Member';
 
   return (
-    <section id="circle" style={{ padding: 'clamp(56px,7vw,104px) clamp(20px,4vw,52px)', background: '#FFFFFF' }}>
-      <div
-        style={{
-          position: 'relative', overflow: 'hidden', borderRadius: '26px',
-          background: 'linear-gradient(112deg,#F5EFFF 0%,#F3EDE6 58%,#EFE7FB 100%)', border: '1px solid #EAE3F5',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7), 0 26px 48px -30px rgba(58,26,74,0.34), 0 64px 90px -60px rgba(58,26,74,0.26)',
-          padding: 'clamp(30px,3.8vw,52px)', display: 'grid', gap: 'clamp(24px,2.8vw,36px)',
-        }}
-      >
-        <span
-          aria-hidden
-          style={{
-            position: 'absolute', left: '-6%', bottom: '-30%', width: '34%', aspectRatio: '405/352', opacity: 0.09,
-            WebkitMaskImage: `url(${IMG.lotusMask})`, WebkitMaskPosition: 'center', WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat',
-            maskImage: `url(${IMG.lotusMask})`, maskPosition: 'center', maskSize: 'contain', maskRepeat: 'no-repeat',
-            background: '#5B21B6', pointerEvents: 'none',
-          }}
-        />
-        <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '26px 44px' }}>
-          <div style={{ display: 'grid', gap: '13px', maxWidth: '36ch' }}>
-            <Eyebrow>Membership</Eyebrow>
-            <SectionHeading style={{ fontFamily: sans }}>The Circle rewards you.</SectionHeading>
-            <p style={{ margin: 0, fontSize: '14.5px', fontWeight: 300, lineHeight: 1.75, color: '#5C5A70' }}>
-              Three tiers, based on your lifetime spend. Points never expire, and every tier keeps what came before.
-            </p>
+    <section id="circle" style={{ padding: 'clamp(28px,3.4vw,44px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(24px,3vw,34px)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '18px 44px' }}>
+          <div style={{ display: 'grid', gap: '11px', maxWidth: '40ch' }}>
+            <Eyebrow style={{ letterSpacing: '0.16em' }}>The Circle</Eyebrow>
+            <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 'clamp(28px,3.1vw,38px)', lineHeight: 1.12, color: '#3b0764' }}>What each tier gives you</h2>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-            <Link href="/auth" className="transition-colors duration-300 hover:bg-[#2A1240]" style={{ whiteSpace: 'nowrap', background: '#4A2360', color: '#FFFFFF', padding: '16px 30px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              Sign in
-            </Link>
-            <Link href="/account/loyalty" className="transition-colors duration-300 hover:bg-[#4A2360] hover:text-white" style={{ whiteSpace: 'nowrap', border: '1px solid #4A2360', color: '#4A2360', padding: '16px 30px', borderRadius: '999px', fontSize: '12px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              See the tiers
-            </Link>
-          </div>
+          <p style={{ margin: 0, maxWidth: '34ch', fontSize: '12.5px', fontWeight: 300, lineHeight: 1.7, color: '#6b21a8' }}>
+            Every order counts toward the same lifetime total — reach a tier once, and you keep it.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3" style={{ position: 'relative', gap: 'clamp(12px,1.4vw,16px)' }}>
-          {TIERS.map((p, i) => {
-            const on = plateIdx === i;
-            return (
-              <span
-                key={p.name}
-                role="button"
-                tabIndex={0}
-                aria-pressed={on}
-                onClick={() => setPlateIdx(i)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPlateIdx(i); } }}
-                className="cursor-pointer transition-all duration-300 hover:border-[#B7A6D6] hover:-translate-y-1"
-                style={{
-                  display: 'grid', alignContent: 'start', gap: '15px', padding: '16px 16px 19px', borderRadius: '20px',
-                  border: `1px solid ${on ? '#B08FD8' : 'rgba(74,35,96,0.12)'}`,
-                  background: on ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.44)',
-                  boxShadow: on ? '0 16px 30px -22px rgba(58,26,74,0.45)' : 'none',
-                }}
+        {isMember && currentTier && (
+          <div style={{ background: '#FFFFFF', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '18px', padding: 'clamp(22px,2.8vw,32px)', display: 'flex', flexWrap: 'wrap', gap: 'clamp(20px,3vw,40px)' }}>
+            <div style={{ display: 'grid', gap: '10px', alignContent: 'center', minWidth: '200px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#9333ea' }}>Your standing</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <span style={{ fontFamily: serif, fontSize: 'clamp(32px,3.4vw,40px)', lineHeight: 1, color: '#3b0764' }}>{points.toLocaleString()}</span>
+                <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(59,7,100,0.5)' }}>points</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 300, color: '#6b21a8' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: TIER_DOT[currentTier.name], flexShrink: 0 }} />
+                {currentTier.name} member · {memberName}
+              </div>
+            </div>
+
+            <div style={{ flex: '1 1 320px', display: 'grid', gap: '10px', alignContent: 'center' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '10px 20px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 400, color: '#3b0764' }}>
+                  {nextTier ? `AED ${spendToNext.toLocaleString()} more to ${nextTier.name}` : "You're at our highest tier"}
+                </span>
+                <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'rgba(59,7,100,0.5)' }}>
+                  AED {lifetimeSpend.toLocaleString()}{nextTier ? ` of ${nextTier.min.toLocaleString()}` : ''}
+                </span>
+              </div>
+              <div
+                style={{ height: '6px', background: 'rgba(216,180,254,0.4)', borderRadius: '999px', overflow: 'hidden' }}
+                role="progressbar"
+                aria-valuenow={progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={nextTier ? `Progress toward ${nextTier.name} tier` : 'Top tier reached'}
               >
-                <span
+                <div style={{ height: '100%', width: `${progress}%`, borderRadius: '999px', background: '#3b0764' }} />
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '10px 20px' }}>
+                <span style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3b0764' }}>{currentTier.name}</span>
+                {nextTier && (
+                  <span style={{ fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(59,7,100,0.5)' }}>
+                    {nextTier.name} · {nextTier.multiplier} points
+                  </span>
+                )}
+              </div>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 300, color: 'rgba(59,7,100,0.5)' }}>
+                Points never expire — your tier is based on lifetime spend, so once you reach one, you keep it.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div style={{ background: '#FFFFFF', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '14px', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{ minWidth: 700, display: 'grid', gridTemplateColumns: `minmax(0,1.5fr) repeat(${TIERS.length},minmax(0,1fr))` }}>
+
+              <div style={{ padding: '24px 22px 20px', borderBottom: '1px solid rgba(216,180,254,0.4)' }} />
+              {TIERS.map((t) => (
+                <div
+                  key={t.name}
                   style={{
-                    position: 'relative', display: 'grid', gridTemplateRows: 'auto 1fr auto', width: '100%', aspectRatio: '1.586',
-                    borderRadius: '11px', overflow: 'hidden', padding: '11px 12px', background: p.metal, opacity: on ? 1 : 0.72,
-                    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.6), inset 0 -14px 28px -18px rgba(30,22,10,0.45)',
+                    display: 'grid', gap: '6px', padding: '24px 14px 20px', borderBottom: '1px solid rgba(216,180,254,0.4)', borderLeft: '1px solid rgba(216,180,254,0.4)', textAlign: 'center',
+                    background: t.badge ? '#FBF7F1' : 'transparent', boxShadow: t.badge ? 'inset 0 3px 0 #9C7A2E' : 'none',
                   }}
                 >
-                  <span style={{ position: 'absolute', inset: 0, opacity: 0.3, pointerEvents: 'none', background: 'repeating-linear-gradient(112deg,rgba(255,255,255,0.3) 0 1px,rgba(255,255,255,0) 1px 6px)' }} />
-                  <span style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(102deg,rgba(255,255,255,0) 28%,rgba(255,255,255,0.38) 46%,rgba(255,255,255,0) 62%)' }} />
-                  <span style={{ position: 'relative', fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: p.ink, opacity: 0.86 }}>Naya Lumière</span>
-                  <span
-                    style={{
-                      position: 'relative', alignSelf: 'center', width: 24, aspectRatio: '1.32', borderRadius: '3.5px',
-                      background: 'linear-gradient(135deg,#F7E9BE,#D8BC76 48%,#FBF3DA 62%,#C2A356)',
-                      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.5), 0 1px 2px rgba(30,22,10,0.26)',
-                      display: 'grid', gridTemplate: 'repeat(2,1fr)/repeat(3,1fr)',
-                    }}
-                  >
-                    <span style={{ borderRight: '1px solid rgba(96,72,22,0.28)', borderBottom: '1px solid rgba(96,72,22,0.28)' }} />
-                    <span style={{ borderBottom: '1px solid rgba(96,72,22,0.28)' }} />
-                    <span style={{ borderLeft: '1px solid rgba(96,72,22,0.28)', borderBottom: '1px solid rgba(96,72,22,0.28)' }} />
-                    <span style={{ borderRight: '1px solid rgba(96,72,22,0.28)' }} />
-                    <span />
-                    <span style={{ borderLeft: '1px solid rgba(96,72,22,0.28)' }} />
+                  <span style={{ fontFamily: serif, fontSize: '23px', lineHeight: 1, color: '#3b0764' }}>{t.name}</span>
+                  <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: t.badge ? '#9C7A2E' : '#6b21a8' }}>
+                    {t.min === 0 ? 'First order' : `AED ${t.min.toLocaleString()}`}
                   </span>
-                  <span style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px' }}>
-                    <span style={{ fontFamily: serif, fontSize: '19px', fontWeight: 300, lineHeight: 0.9, color: p.ink, textShadow: '0 1px 0 rgba(255,255,255,0.5)' }}>{p.roman}</span>
-                    <span style={{ fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: p.ink, opacity: 0.82, fontVariantNumeric: 'tabular-nums' }}>{p.code}</span>
-                  </span>
-                </span>
+                </div>
+              ))}
 
-                <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '10px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 600, letterSpacing: '-0.005em', color: on ? '#4A2360' : '#5C5A70' }}>{p.name}</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.03em', color: on ? '#7C4DBE' : '#8C8DA2', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                    {p.min === 0 ? 'From AED 0' : `From AED ${p.min.toLocaleString()}`}
-                  </span>
-                </span>
-
-                <span style={{ display: 'grid', gap: '9px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 300, lineHeight: 1.6, color: on ? '#4C4860' : '#7B788C' }}>{p.long}</span>
-                  {p.badge && (
-                    <span style={{ justifySelf: 'start', padding: '5px 11px', borderRadius: '999px', background: 'rgba(139,92,246,0.13)', fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#5B21B6' }}>
-                      Most held tier
-                    </span>
-                  )}
-                </span>
-              </span>
-            );
-          })}
+              {TIER_ROWS.map((row, ri) => (
+                <React.Fragment key={row.label}>
+                  <div style={{ padding: '17px 22px', borderBottom: ri === TIER_ROWS.length - 1 ? 'none' : '1px solid rgba(216,180,254,0.4)', fontSize: '12.5px', fontWeight: 400, color: '#6b21a8' }}>
+                    {row.label}
+                  </div>
+                  {TIERS.map((t) => {
+                    const val = row.get(t);
+                    return (
+                      <div
+                        key={t.name}
+                        style={{
+                          padding: '17px 14px', borderBottom: ri === TIER_ROWS.length - 1 ? 'none' : '1px solid rgba(216,180,254,0.4)', borderLeft: '1px solid rgba(216,180,254,0.4)', textAlign: 'center',
+                          fontSize: '12.5px', fontWeight: t.badge ? 500 : 300, color: val === '—' ? 'rgba(59,7,100,0.5)' : t.badge ? '#3b0764' : '#6b21a8',
+                          background: t.badge ? '#FBF7F1' : 'transparent',
+                        }}
+                      >
+                        {val}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', gap: '11px 28px', borderTop: '1px solid rgba(74,35,96,0.12)', paddingTop: '18px' }}>
-          {REAL_PERKS.map((perk) => (
-            <span key={perk} style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '12px', fontWeight: 400, color: '#4C4860' }}>
-              <span style={{ flex: 'none', width: 5, height: 5, borderRadius: '50%', background: '#8B5CF6' }} />
-              {perk}
-            </span>
-          ))}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '14px 24px' }}>
+          <Link href={isMember ? '/account/loyalty' : '/auth'} className="transition-colors duration-300 hover:opacity-90" style={{ whiteSpace: 'nowrap', background: '#9333ea', color: '#FFFFFF', padding: '15px 30px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            {isMember ? 'View my rewards' : 'Join the Circle'}
+          </Link>
+          <Link href="/account/loyalty" className="transition-colors duration-300 hover:border-b-[#3b0764]" style={{ whiteSpace: 'nowrap', fontSize: '11.5px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#3b0764', borderBottom: '1px solid rgba(216,180,254,0.4)', paddingBottom: '4px' }}>
+            Read the full terms
+          </Link>
+          <span style={{ fontSize: '12px', fontWeight: 300, color: 'rgba(59,7,100,0.5)' }}>No joining fee · Points never expire · Once you reach a tier, you keep it</span>
         </div>
-      </div>
     </section>
   );
 }
@@ -1256,166 +1438,48 @@ function Circle({ loyaltyData }) {
  * not product data — fed the real routine total computed above.
  * ==========================================================================*/
 
-const PAY_FACTS = [
-  '0% interest, zero fees — never a late charge',
-  '3-D Secure 2.0 and PCI DSS Level 1 processing',
-  'Card details tokenised — we never see or store them',
-  'Free returns within 14 days, collected from your door',
+const PAY_STATS = [
+  { stat: '0%', label: 'interest, fees or late charges', body: 'Split with Tabby, approved in seconds with your Emirates ID.' },
+  { stat: '3-D', label: 'Secure on every card payment', body: 'Your bank confirms each charge. We hold a token, never a card number.' },
+  { stat: '14 days', label: 'for free returns', body: 'Collected from your door, refunded to the method you paid with.' },
+  { stat: 'AED 400', label: 'and delivery is on us', body: 'Same-day across Dubai, next day to the rest of the Emirates.' },
 ];
 
 const PAY_METHODS = ['VISA', 'Mastercard', 'Amex', 'Apple Pay', 'Cash on delivery'];
 
 function Pay({ routine }) {
-  const { total, tabbyFirst, tabbyRest, tabbyPlan, cardPoints, spendPct, spendMsg } = routine;
+  const { total, tabbyRest, cardPoints } = routine;
 
   return (
-    <section id="pay" style={{ padding: 'clamp(56px,7vw,104px) clamp(20px,4vw,52px)', display: 'grid', gap: 'clamp(28px,3.4vw,44px)', background: '#FBFAF9' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '22px 44px' }}>
-        <div style={{ display: 'grid', gap: '13px', maxWidth: '30ch' }}>
-          <Eyebrow>Payments &amp; security</Eyebrow>
-          <SectionHeading style={{ fontFamily: sans }}>Pay your way. Keep your points.</SectionHeading>
+    <section id="pay" style={{ padding: 'clamp(26px,3.2vw,42px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(28px,3.4vw,40px)' }}>
+        <div style={{ display: 'grid', gap: '12px', maxWidth: '50ch' }}>
+          <Eyebrow style={{ letterSpacing: '0.16em' }}>Payments &amp; security</Eyebrow>
+          <h2 style={{ margin: 0, fontFamily: serif, fontWeight: 400, fontSize: 'clamp(27px,3.2vw,40px)', lineHeight: 1.1, letterSpacing: '-0.005em', color: '#3b0764' }}>
+            Earn {cardPoints} points on this basket, however you pay.
+          </h2>
+          <p style={{ margin: 0, fontSize: '13.5px', fontWeight: 300, lineHeight: 1.75, color: '#6b21a8' }}>
+            Four payments of {money(tabbyRest)}, or one of {money(total)} — same price, and it earns points either way.
+          </p>
         </div>
-        <p style={{ margin: 0, flex: '1 1 340px', maxWidth: '46ch', fontSize: '14.5px', fontWeight: 300, lineHeight: 1.75, color: '#6B6C82' }}>
-          Two routes, one price. Split any order over six weeks at no cost, or settle in full by card — the full order value earns points either way, and no card number ever touches our servers.
-        </p>
-      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,340px),1fr))', gap: 'clamp(14px,1.6vw,20px)', alignItems: 'stretch' }}>
-        {/* Tabby split card */}
-        <article style={{ display: 'grid', gap: '22px', alignContent: 'start', padding: 'clamp(24px,2.6vw,34px)', borderRadius: '24px', background: 'linear-gradient(158deg,#D6FBEC 0%,#B4F2DA 44%,#8FE9C6 100%)', color: '#0B3B2C', position: 'relative', overflow: 'hidden' }}>
-          <span
-            aria-hidden
-            style={{
-              position: 'absolute', right: '-14%', bottom: '-30%', width: '46%', aspectRatio: '405/352', opacity: 0.16,
-              WebkitMaskImage: `url(${IMG.lotusMask})`, WebkitMaskPosition: 'center', WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat',
-              maskImage: `url(${IMG.lotusMask})`, maskPosition: 'center', maskSize: 'contain', maskRepeat: 'no-repeat',
-              background: '#0B3B2C', pointerEvents: 'none',
-            }}
-          />
-          <span style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <span style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#0E5A42' }}>Split it</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '6px 8px 6px 13px', borderRadius: '999px', background: 'rgba(255,255,255,0.6)' }}>
-              <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.03em', color: '#1B5D48' }}>with</span>
-              <span style={{ display: 'grid', placeItems: 'center', padding: '5px 11px', borderRadius: '999px', background: '#3FDCA0', color: '#0B3B2C', fontSize: '12px', fontWeight: 700, letterSpacing: '0.01em', lineHeight: 1 }}>tabby</span>
-            </span>
-            <span style={{ padding: '6px 13px', borderRadius: '999px', background: '#0B3B2C', fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#8FE9C6' }}>0% interest</span>
-          </span>
-
-          <span style={{ position: 'relative', display: 'grid', gap: '7px' }}>
-            <span style={{ fontFamily: serif, fontSize: 'clamp(38px,4.4vw,54px)', fontWeight: 400, lineHeight: 1 }}>{money(tabbyRest)}</span>
-            <span style={{ fontSize: '13.5px', fontWeight: 400, color: '#1B5D48' }}>per payment · four payments over six weeks</span>
-          </span>
-
-          <span style={{ position: 'relative', display: 'grid', gap: '12px' }}>
-            <span style={{ position: 'relative', display: 'block', height: 3, borderRadius: 3, background: 'rgba(11,59,44,0.16)' }}>
-              <span style={{ position: 'absolute', inset: '0 auto 0 0', width: '12.5%', borderRadius: 3, background: '#0B3B2C' }} />
-            </span>
-            <span style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}>
-              {tabbyPlan.map((t) => (
-                <span key={t.when} style={{ display: 'grid', gap: '6px' }}>
-                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: t.isFirst ? '#0B3B2C' : 'rgba(11,59,44,0.26)' }} />
-                  <span style={{ fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: t.isFirst ? '#0E5A42' : '#1B5D48' }}>{t.when}</span>
-                  <span style={{ fontSize: '13.5px', fontWeight: 500, color: t.isFirst ? '#0B3B2C' : '#1B5D48', whiteSpace: 'nowrap' }}>{t.amount}</span>
-                </span>
-              ))}
-            </span>
-          </span>
-
-          <span style={{ position: 'relative', display: 'grid', gap: '10px', padding: '16px 18px', borderRadius: '14px', background: 'rgba(255,255,255,0.55)' }}>
-            <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', fontSize: '12.5px', fontWeight: 400, color: '#1B5D48' }}>
-              Order total<span style={{ fontWeight: 600, color: '#0B3B2C' }}>{money(total)}</span>
-            </span>
-            <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', fontSize: '12.5px', fontWeight: 400, color: '#1B5D48' }}>
-              Fees and interest<span style={{ fontWeight: 600, color: '#0B3B2C' }}>AED 0</span>
-            </span>
-            <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', paddingTop: '11px', borderTop: '1px solid rgba(11,59,44,0.14)', fontSize: '12.5px', fontWeight: 400, color: '#1B5D48' }}>
-              Due today<span style={{ fontSize: '17px', fontWeight: 600, color: '#0B3B2C' }}>{money(tabbyFirst)}</span>
-            </span>
-          </span>
-
-          <span style={{ position: 'relative', fontSize: '12.5px', fontWeight: 400, lineHeight: 1.7, color: '#1B5D48' }}>
-            Approved in seconds with your Emirates ID. Nothing is added to the price.
-          </span>
-        </article>
-
-        {/* Pay in full card */}
-        <article style={{ display: 'grid', gap: '22px', alignContent: 'start', padding: 'clamp(24px,2.6vw,34px)', border: '1px solid #EFEBE4', borderRadius: '24px', background: '#FFFFFF' }}>
-          <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <span style={{ fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8C7B68' }}>Pay in full</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '6px 13px', borderRadius: '999px', border: '1px solid #E7E2DB', fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#5E5348' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5E5348" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="4.6" y="10.4" width="14.8" height="9.8" rx="3" />
-                <path d="M8.2 10.4V7.9a3.8 3.8 0 0 1 7.6 0v2.5" />
-              </svg>
-              3-D Secure
-            </span>
-          </span>
-
-          <span style={{ display: 'grid', gap: '7px' }}>
-            <span style={{ fontFamily: serif, fontSize: 'clamp(38px,4.4vw,54px)', fontWeight: 400, lineHeight: 1, color: '#4A2360' }}>{money(total)}</span>
-            <span style={{ fontSize: '13.5px', fontWeight: 300, color: '#6B6C82' }}>charged once · earns {cardPoints} points</span>
-          </span>
-
-          <span
-            style={{
-              position: 'relative', display: 'block', aspectRatio: '1.586', width: '100%', maxWidth: 330, borderRadius: '16px', overflow: 'hidden',
-              background: 'linear-gradient(150deg,#EDE6FB 0%,#DCD2F5 46%,#F3ECDE 100%)', boxShadow: '0 22px 44px -30px rgba(90,64,160,0.42), inset 0 1px 0 rgba(255,255,255,0.7)',
-            }}
-          >
-            <span
-              aria-hidden
-              style={{
-                position: 'absolute', right: '-12%', bottom: '-24%', width: '52%', aspectRatio: '405/352', opacity: 0.13,
-                WebkitMaskImage: `url(${IMG.lotusMask})`, WebkitMaskPosition: 'center', WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat',
-                maskImage: `url(${IMG.lotusMask})`, maskPosition: 'center', maskSize: 'contain', maskRepeat: 'no-repeat',
-                background: '#4B3B7A',
-              }}
-            />
-            <span style={{ position: 'absolute', inset: 0, padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <span style={{ fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#4B3B7A' }}>Naya Lumière</span>
-                <span style={{ fontSize: '10px', fontWeight: 300, color: '#5A4E85' }}>09 / 29</span>
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ width: 36, aspectRatio: '1.32', borderRadius: '5px', background: 'linear-gradient(135deg,#E8DFC6,#B9A97F 46%,#F3ECD9 62%,#A2926A)' }} />
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#8B7CC0" strokeWidth="1.6" strokeLinecap="round">
-                  <path d="M8.6 6.4a8 8 0 0 1 0 11.2" />
-                  <path d="M12.4 3.8a12 12 0 0 1 0 16.4" />
-                </svg>
-              </span>
-              <span style={{ fontFamily: 'ui-monospace,Menlo,monospace', fontSize: '12.5px', letterSpacing: '0.05em', color: '#3B2F63' }}>•••• •••• •••• 4482</span>
-            </span>
-          </span>
-
-          <span style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {PAY_METHODS.map((m) => (
-              <span key={m} style={{ padding: '8px 14px', border: '1px solid #E7E2DB', borderRadius: '10px', fontSize: '11.5px', fontWeight: 500, color: '#5E5348' }}>{m}</span>
-            ))}
-          </span>
-
-          <span style={{ fontSize: '12.5px', fontWeight: 300, lineHeight: 1.7, color: '#6B6C82' }}>
-            Tokenised at the processor the moment you type it. We hold a reference, never a number.
-          </span>
-        </article>
-      </div>
-
-      <div style={{ display: 'grid', gap: '16px', padding: 'clamp(20px,2.2vw,28px) clamp(20px,2.4vw,32px)', border: '1px solid #EFEBE4', borderRadius: '20px', background: '#FFFFFF' }}>
-        <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 500, color: '#4A2360' }}>{spendMsg}</span>
-          <span style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#9A8E7E' }}>Basket {money(total)}</span>
-        </span>
-        <span style={{ display: 'block', height: 5, borderRadius: '999px', background: '#F1EDE6', overflow: 'hidden' }}>
-          <span className="transition-[width] duration-500" style={{ display: 'block', height: '100%', borderRadius: '999px', background: '#4A2360', width: `${spendPct}%` }} />
-        </span>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,210px),1fr))', gap: '14px', paddingTop: '4px' }}>
-          {PAY_FACTS.map((fact) => (
-            <span key={fact} style={{ display: 'flex', alignItems: 'flex-start', gap: '11px', fontSize: '12.5px', fontWeight: 300, lineHeight: 1.6, color: '#5E5348' }}>
-              <CheckCircleIcon color="#8C7B68" size={15} />
-              {fact}
-            </span>
+        <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,206px),1fr))', gap: '1px', background: '#E9DFF3', '--hc-card': '206px' }}>
+          {PAY_STATS.map((s) => (
+            <div key={s.label} style={{ display: 'grid', gap: '9px', alignContent: 'start', padding: '24px 22px 26px', background: '#FFFFFF' }}>
+              <span style={{ fontFamily: serif, fontSize: 'clamp(28px,2.9vw,34px)', fontWeight: 400, lineHeight: 1, color: '#3b0764' }}>{s.stat}</span>
+              <span style={{ fontSize: '12.5px', fontWeight: 500, lineHeight: 1.45, color: '#3b0764' }}>{s.label}</span>
+              <span style={{ fontSize: '12px', fontWeight: 300, lineHeight: 1.65, color: '#6b21a8' }}>{s.body}</span>
+            </div>
           ))}
         </div>
-      </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '14px 28px' }}>
+          <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px 16px', fontSize: '12px', fontWeight: 500, letterSpacing: '0.03em', color: '#6b21a8' }}>
+            {PAY_METHODS.map((m) => <span key={m}>{m}</span>)}
+          </span>
+          <Link href="/checkout" style={{ whiteSpace: 'nowrap', fontSize: '11.5px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#3b0764', borderBottom: '1px solid rgba(216,180,254,0.4)', paddingBottom: '4px' }}>
+            How instalments work
+          </Link>
+        </div>
     </section>
   );
 }
@@ -1458,8 +1522,6 @@ const SOCIAL_LINKS = [
 
 function Social() {
   const [posts, setPosts] = useState([]);
-  const [mailMsg, setMailMsg] = useState('');
-  const mailRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -1478,16 +1540,8 @@ function Social() {
     };
   }, []);
 
-  const subscribe = (e) => {
-    e.preventDefault();
-    const v = (mailRef.current && mailRef.current.value) || '';
-    const ok = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(v.trim());
-    setMailMsg(ok ? 'Welcome — first letter arrives Thursday.' : 'Enter a complete email address.');
-    if (ok && mailRef.current) mailRef.current.value = '';
-  };
-
   return (
-    <section id="social" style={{ padding: 'clamp(56px,7vw,104px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(26px,3vw,38px)' }}>
+    <section id="social" style={{ padding: 'clamp(28px,3.6vw,52px) clamp(20px,4vw,52px)', background: '#FFFFFF', display: 'grid', gap: 'clamp(26px,3vw,38px)' }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '20px' }}>
         <div style={{ display: 'grid', gap: '13px' }}>
           <Eyebrow>@nayalc</Eyebrow>
@@ -1500,8 +1554,8 @@ function Social() {
               href={s.href}
               target={s.href.startsWith('http') ? '_blank' : undefined}
               rel={s.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-              className="transition-colors duration-300 hover:bg-[#4A2360] hover:border-[#4A2360] hover:text-white"
-              style={{ display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap', padding: '13px 22px', border: '1px solid #E3E0EC', borderRadius: '999px', fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#4A2360' }}
+              className="transition-colors duration-300 hover:bg-[#3b0764] hover:border-[#3b0764] hover:text-white"
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap', padding: '13px 22px', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '999px', fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#3b0764' }}
             >
               {s.icon}
               {s.label}
@@ -1511,44 +1565,20 @@ function Social() {
       </div>
 
       {posts.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 'clamp(10px,1.4vw,16px)' }}>
+        <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,150px),1fr))', gap: 'clamp(10px,1.4vw,16px)', '--hc-card': '150px' }}>
           {posts.map((p) => (
             <a
               key={p.id}
               href={p.instagram_url || 'https://www.instagram.com/nayalc'}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ position: 'relative', display: 'block', aspectRatio: '1', borderRadius: '14px', overflow: 'hidden', background: '#F3EDE6' }}
+              style={{ position: 'relative', display: 'block', maxWidth: 200, aspectRatio: '1', borderRadius: '14px', overflow: 'hidden', background: '#f3e8ff' }}
             >
-              <Image src={p.image_url} alt={p.caption || 'From Naya Lumière'} fill sizes="(max-width: 768px) 33vw, 16vw" style={{ objectFit: 'cover' }} />
+              <Image src={p.image_url} alt={p.caption || 'From Naya Lumière'} fill sizes="(max-width: 768px) 33vw, 200px" style={{ objectFit: 'cover' }} />
             </a>
           ))}
         </div>
       )}
-
-      <div style={{ display: 'grid', gap: '14px', maxWidth: '420px' }}>
-        <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#4A2360' }}>Letters from the house</span>
-        <p style={{ margin: 0, fontSize: '12.5px', fontWeight: 300, lineHeight: 1.7, color: '#6B6C82' }}>New editions, restocks and rituals. Once a month, never more.</p>
-        <form onSubmit={subscribe} style={{ display: 'flex', gap: '9px', flexWrap: 'wrap', minWidth: 0 }} noValidate>
-          <input
-            ref={mailRef}
-            type="email"
-            name="newsletter"
-            placeholder="Email address"
-            aria-label="Email address"
-            className="focus:outline-none focus:border-[#C4B5FD]"
-            style={{ flex: '1 1 150px', minWidth: 0, fontFamily: sans, fontSize: '13px', fontWeight: 300, color: '#4A2360', background: '#F7F5FB', border: '1px solid #EFEDF4', borderRadius: '11px', padding: '12px 14px' }}
-          />
-          <button
-            type="submit"
-            className="cursor-pointer transition-colors duration-300 hover:bg-[#2A1240]"
-            style={{ fontFamily: sans, border: 0, background: '#4A2360', color: '#FFFFFF', padding: '12px 20px', borderRadius: '11px', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}
-          >
-            Join
-          </button>
-        </form>
-        <span aria-live="polite" style={{ fontSize: '12px', fontWeight: 300, color: '#8B5CF6', minHeight: 16 }}>{mailMsg}</span>
-      </div>
     </section>
   );
 }
@@ -1559,7 +1589,7 @@ function Social() {
  * ==========================================================================*/
 
 export default function NayaLumiereHome() {
-  const { products, concerns, brands, loyaltyData } = useAppContext();
+  const { products, concerns, brands } = useAppContext();
   const { addToCart } = useCart();
 
   const loading = !products || products.length === 0;
@@ -1676,14 +1706,15 @@ export default function NayaLumiereHome() {
 
   if (loading) {
     return (
-      <div style={{ fontFamily: sans, color: '#4A2360', background: '#FBFAF9' }}>
+      <div style={{ fontFamily: sans, color: '#3b0764', background: '#FFFFFF' }}>
         <SectionPlaceholder minHeight="1200px" />
       </div>
     );
   }
 
   return (
-    <div style={{ fontFamily: sans, color: '#4A2360', background: '#FBFAF9' }}>
+    <div style={{ fontFamily: sans, color: '#3b0764', background: '#FFFFFF' }}>
+      <Welcome />
       <Provenance brands={brands} products={products} />
       <TopSellers items={topSellers} onAdd={handleAddProduct} />
       <Reviews products={products} />
@@ -1691,7 +1722,7 @@ export default function NayaLumiereHome() {
       <Essentials items={essentials} onAdd={handleAddProduct} />
       <Routine routine={routine} onAddRoutine={handleAddRoutine} />
       <ForYou fallbackProducts={forYouFallback} onAdd={handleAddProduct} />
-      <Circle loyaltyData={loyaltyData} />
+      <Circle />
       <Pay routine={routine} />
       <Social />
     </div>

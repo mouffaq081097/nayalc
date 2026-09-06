@@ -46,6 +46,7 @@ export function FeaturedProducts() {
                     image={product.imageUrl}
                     averageRating={product.averageRating}
                     reviewCount={product.reviewCount}
+                    viewCount={product.viewCount}
                     category={product.categoryName || product.category}
                     brandName={product.brandName}
                     stock_quantity={product.stock_quantity}

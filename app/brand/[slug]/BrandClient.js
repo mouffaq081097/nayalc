@@ -316,6 +316,7 @@ export default function BrandClient({ brand: serverBrand }) {
                             image={product.imageUrl}
                             averageRating={product.averageRating}
                             reviewCount={product.reviewCount}
+                            viewCount={product.viewCount}
                             isNew={product.isNew}
                             isBestseller={product.isBestseller}
                             brandName={product.brand}

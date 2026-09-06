@@ -32,18 +32,19 @@ export async function GET(request, context) {
         const productSql = `
             SELECT
                 p.id, p.name, p.description, p.price, b.name as "brand", b.name as "brandName", b.id as "brand_id", b.imageurl as "brandImageUrl", p.stock_quantity,
-                p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, p.size, p.form, p.status, p.is_active,
+                p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, p.size, p.form, p.status, p.is_active, p.signature_image_url as "signatureImageUrl",
                 pi.image_url as "imageUrl",
                 pi.alt_text as "altText",
                 COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
-                COUNT(r.id) as "reviewCount"
+                COUNT(r.id) as "reviewCount",
+                (SELECT COUNT(*) FROM product_views WHERE product_id = p.id AND created_at >= NOW() - INTERVAL '30 days') as "viewCount"
             FROM products p
             LEFT JOIN reviews r ON p.id = r.product_id
             LEFT JOIN brands b ON p.brand_id = b.id
             LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
             WHERE p.id = $1
             GROUP BY p.id, p.name, p.description, p.price, p.vendor, p.stock_quantity,
-                     p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, b.name, b.id, b.imageurl, pi.image_url, pi.alt_text, p.size, p.form;
+                     p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, b.name, b.id, b.imageurl, pi.image_url, pi.alt_text, p.size, p.form, p.signature_image_url;
         `;
         let productRows;
         try {
@@ -55,6 +56,13 @@ export async function GET(request, context) {
             let fallbackSql = productSql;
             if (dbError.message.includes('is_active')) {
                 fallbackSql = fallbackSql.replace('p.is_active,', 'TRUE as "is_active",');
+            }
+            if (dbError.message.includes('signature_image_url')) {
+                fallbackSql = fallbackSql.replace('p.signature_image_url as "signatureImageUrl",', 'NULL as "signatureImageUrl",');
+                fallbackSql = fallbackSql.replace(', p.signature_image_url;', ';');
+            }
+            if (dbError.message.includes('product_views')) {
+                fallbackSql = fallbackSql.replace(/\(SELECT COUNT\(\*\) FROM product_views WHERE product_id = p\.id AND created_at >= NOW\(\) - INTERVAL '30 days'\) as "viewCount"/g, '0 as "viewCount"');
             }
             const result = await client.query(fallbackSql, [id]);
             productRows = result.rows;
@@ -69,6 +77,7 @@ export async function GET(request, context) {
         product.price = product.price ? parseFloat(product.price) : 0;
         product.comparedprice = product.comparedprice ? parseFloat(product.comparedprice) : null;
         product.averageRating = product.averageRating ? parseFloat(product.averageRating) : 0;
+        product.viewCount = Number(product.viewCount) || 0;
 
         // Fetch related data in separate queries to avoid complexity/errors in main query
         try {

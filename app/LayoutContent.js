@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useCart } from './context/CartContext';
 import Header from './components/Header';
+import { PromoBar } from './components/PromoBar';
 import Footer from './components/Footer';
 import MobileBottomNav from './components/MobileBottomNav';
 import SideCart from './components/SideCart';
 import GlobalLoader from './components/GlobalLoader';
+import WelcomePopup from './components/WelcomePopup';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -49,7 +51,9 @@ export default function LayoutContent({ children }) {
   return (
     <>
       <GlobalLoader isLoading={isTransitioning} />
+      {showMobileChrome && <WelcomePopup />}
       {showMobileChrome && chatReady && <Suspense fallback={null}><ChatWidget /></Suspense>}
+      {showMobileChrome && <PromoBar />}
       {showMobileChrome && <Header />}
       <SideCart /> {/* Add SideCart component here */}
       <div

@@ -9,6 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PROMO_BAR_H } from './PromoBar';
 
 const CONCERN_META = {
   'anti-aging':    { icon: Clock,     desc: 'Restore your youthful glow' },
@@ -30,6 +31,7 @@ function getConcernMeta(name = '') {
 
 const NAV_LINKS = [
   { label: 'Shop',        href: '/all-products', hasDropdown: 'shop' },
+  { label: 'Best Seller', href: '/all-products?bestseller=true', highlight: true },
   { label: 'Collections', href: '/collections' },
   { label: 'Skin Quiz',   href: '/skin-quiz' },
   { label: 'Brands',      href: '/brands', hasDropdown: 'brands' },
@@ -78,9 +80,10 @@ const Header = forwardRef((_, ref) => {
       {/* ── Main Header ─────────────────────────────────────────── */}
       <header
         ref={ref}
-        className={`fixed top-0 left-0 right-0 z-[150] transition-all duration-300 ${
+        className={`fixed left-0 right-0 z-[150] transition-all duration-300 ${
           isScrolled ? 'pt-3 px-4' : 'pt-0 px-0'
         }`}
+        style={{ top: PROMO_BAR_H }}
       >
         <div
           className={`mx-auto bg-white transition-all duration-300 ${
@@ -195,6 +198,18 @@ const Header = forwardRef((_, ref) => {
                   );
                 }
 
+                if (item.highlight) {
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="text-[13px] font-bold text-red-600 pb-[6px] border-b-2 border-transparent transition-colors duration-[120ms] hover:text-red-700"
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
+
                 return (
                   <Link key={item.label} href={item.href} className={navLink(isActive)}>
                     {item.label}
@@ -245,7 +260,7 @@ const Header = forwardRef((_, ref) => {
                   const nextPts    = loyaltyData?.stats?.nextTierPoints ?? 2000;
                   const ptsToNext  = Math.max(0, nextPts - points);
                   const pct        = Math.min(100, Math.round((points / nextPts) * 100));
-                  const tierNext   = tier === 'Gold' ? 'Platinum' : tier === 'Silver' ? 'Gold' : tier === 'Member' ? 'Silver' : 'Top';
+                  const tierNext   = tier === 'Platinum' ? 'Diamond' : tier === 'Gold' ? 'Platinum' : tier === 'Silver' ? 'Gold' : tier === 'Member' ? 'Silver' : 'Top';
                   const initials   = [user.first_name?.[0], user.last_name?.[0]].filter(Boolean).join('').toUpperCase() || 'NL';
                   return (
                     <div className="absolute top-[calc(100%+0.75rem)] right-0 w-[300px] bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_12px_40px_rgba(17,17,20,.13)] opacity-0 invisible group-hover/account:opacity-100 group-hover/account:visible transition-all duration-200 translate-y-2 group-hover/account:translate-y-0 z-[200] overflow-hidden">
@@ -425,8 +440,9 @@ const Header = forwardRef((_, ref) => {
         </AnimatePresence>
       </header>
 
-      {/* Spacer */}
-      <div className="h-14 md:h-[60px] w-full" />
+      {/* Spacer — matches header height plus the promo bar it's offset below */}
+      <div style={{ height: `calc(56px + ${PROMO_BAR_H}px)` }} className="w-full md:hidden" />
+      <div style={{ height: `calc(60px + ${PROMO_BAR_H}px)` }} className="w-full hidden md:block" />
 
       {/* ── Mobile Sidebar ─────────────────────────────────────── */}
       <AnimatePresence>
@@ -460,6 +476,7 @@ const Header = forwardRef((_, ref) => {
               <div className="flex-1 overflow-y-auto py-4 px-3">
                 {[
                   { label: 'Shop',        href: '/all-products' },
+                  { label: 'Best Seller', href: '/all-products?bestseller=true', highlight: true },
                   { label: 'Collections', href: '/collections' },
                   { label: 'Skin Quiz',   href: '/skin-quiz' },
                   { label: 'Brands',      href: '/brands' },
@@ -470,10 +487,12 @@ const Header = forwardRef((_, ref) => {
                     key={item.href}
                     type="button"
                     onClick={() => { router.push(item.href); setIsMenuOpen(false); }}
-                    className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors ${
+                      item.highlight ? 'text-red-600 hover:bg-red-50' : 'text-[#2a2a31] hover:bg-[#f3f3f5]'
+                    }`}
                   >
                     {item.label}
-                    <ChevronRight size={14} className="text-[#8a8a93]" />
+                    <ChevronRight size={14} className={item.highlight ? 'text-red-400' : 'text-[#8a8a93]'} />
                   </button>
                 ))}
 

@@ -237,6 +237,8 @@ export default function AllProductsPage() {
     if (category) setSelectedCategories([category]);
   }, [searchParams]);
 
+  const bestsellerOnly = searchParams.get('bestseller') === 'true';
+
   useEffect(() => {
     const load = async () => {
       try { await fetchProducts(); } finally { setIsLoading(false); }
@@ -271,6 +273,7 @@ export default function AllProductsPage() {
 
   const filteredAndSortedProducts = useMemo(() => {
     let f = [...allProducts];
+    if (bestsellerOnly) f = f.filter(p => p.isBestseller);
     if (searchTerm) {
       const t = searchTerm.toLowerCase();
       f = f.filter(p => p.name.toLowerCase().includes(t) || (p.brand && p.brand.toLowerCase().includes(t)));
@@ -289,7 +292,7 @@ export default function AllProductsPage() {
       default: f.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
     }
     return f;
-  }, [searchTerm, selectedCategories, selectedBrands, priceRange, showInStock, sortBy, allProducts]);
+  }, [searchTerm, selectedCategories, selectedBrands, priceRange, showInStock, sortBy, allProducts, bestsellerOnly]);
 
   const displayedProducts = filteredAndSortedProducts.slice(0, visibleCount);
 
@@ -399,10 +402,12 @@ export default function AllProductsPage() {
             className="font-bold leading-none tracking-tight"
             style={{ fontSize: 'clamp(32px, 4vw, 52px)', color: '#2a1408' }}
           >
-            All Products
+            {bestsellerOnly ? 'Best Sellers' : 'All Products'}
           </h1>
           <p className="mt-2.5 text-[13px] leading-relaxed" style={{ color: 'rgba(100,60,20,0.55)' }}>
-            {allProducts.length > 0 ? `${allProducts.length} products curated for you` : 'Curated luxury beauty'}
+            {bestsellerOnly
+              ? 'Our real top sellers, ranked by actual units sold'
+              : allProducts.length > 0 ? `${allProducts.length} products curated for you` : 'Curated luxury beauty'}
           </p>
         </div>
       </div>
@@ -612,6 +617,7 @@ export default function AllProductsPage() {
                         image={product.imageUrl}
                         averageRating={product.averageRating}
                         reviewCount={product.reviewCount}
+                        viewCount={product.viewCount}
                         isNew={product.isNew}
                         isBestseller={product.isBestseller}
                         brandName={product.brand}

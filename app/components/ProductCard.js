@@ -2,13 +2,26 @@ import React, { useState, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartContext } from '../context/CartContext';
-import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, BadgeCheck, Share2, Flame } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, Timer, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, BadgeCheck, Share2, Flame } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
 import { Badge } from './ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MadeInFranceBadge } from './MadeInFranceBadge';
+import { MadeInUAEBadge } from './MadeInUAEBadge';
+import { getDeliveryInfo } from '../../lib/shipping';
+
+// Live, UAE-cutoff-accurate delivery estimate — the exact same calculation the
+// product detail page uses (lib/shipping.getDeliveryInfo), so the two never disagree.
+function useDeliveryEstimate() {
+  const [info, setInfo] = useState(() => getDeliveryInfo());
+  useEffect(() => {
+    const id = setInterval(() => setInfo(getDeliveryInfo()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return info;
+}
 
 const TypewriterText = ({ text, speed = 10 }) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -27,9 +40,20 @@ const TypewriterText = ({ text, speed = 10 }) => {
   return <div className="whitespace-pre-wrap">{displayedText}</div>;
 };
 
-const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, isNew, isBestseller, category, brandName, stock_quantity, description, size, variant = 'light', concerns = [] }) => {
+// Honest bucketing — only shows "N+" once the real count has actually reached
+// that threshold (never rounds a real number up past what it is).
+function viewCountLabel(n) {
+  if (n >= 500) return '500+';
+  if (n >= 100) return '100+';
+  if (n >= 50) return '50+';
+  if (n >= 25) return '25+';
+  if (n >= 10) return '10+';
+  return String(n);
+}
+
+const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, viewCount, isNew, isBestseller, rank, category, brandName, stock_quantity, description, size, variant = 'light', concerns = [], initialWishlisted = false, onWishlistChange }) => {
   const { addToCart } = useContext(CartContext);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(initialWishlisted);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [aiResult, setAiResult] = useState('');
@@ -40,6 +64,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const [imgError, setImgError] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const delivery = useDeliveryEstimate();
 
   const showComparePrice = originalPrice && originalPrice > price;
   const discount = showComparePrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
@@ -97,7 +122,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, productId: id })
       });
-      if (response.ok) setIsWishlisted(!isWishlisted);
+      if (response.ok) {
+        setIsWishlisted(!isWishlisted);
+        onWishlistChange?.(id, !isWishlisted);
+      }
     } catch (error) {
       console.error('Error toggling wishlist:', error);
     }
@@ -155,35 +183,36 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             </AnimatePresence>
           </Link>
 
-          {/* Discount badge — top left, red square */}
-          {discount > 0 && (
-            <span
-              className="absolute top-0 left-0 z-10 text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
-              style={{ background: '#e63939' }}
-            >
-              -{discount}%
-            </span>
-          )}
+          {/* Top-left badge stack. Discount is no longer shown here — it now sits
+              inline before the price instead. */}
+          <div className="absolute top-0 left-0 z-10 flex flex-col items-start">
+            {rank ? (
+              <span
+                className="flex items-center justify-center w-7 h-7 m-2 rounded-full text-[13px] font-bold text-white leading-none"
+                style={{ background: '#ea580c' }}
+              >
+                {rank}
+              </span>
+            ) : (
+              isBestseller && (
+                <span
+                  className="text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
+                  style={{ background: '#ea580c' }}
+                >
+                  Best Seller
+                </span>
+              )
+            )}
 
-          {/* New Arrival badge — top left if no discount */}
-          {isNew && !discount && (
-            <span
-              className="absolute top-0 left-0 z-10 text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
-              style={{ background: '#7c3aed' }}
-            >
-              New
-            </span>
-          )}
-
-          {/* Low stock badge — top left, amber */}
-          {isLowStock && !discount && !isNew && (
-            <span
-              className="absolute top-0 left-0 z-10 text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
-              style={{ background: '#b45309' }}
-            >
-              {stock_quantity} left
-            </span>
-          )}
+            {isNew && !isBestseller && !rank && (
+              <span
+                className="text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
+                style={{ background: '#7c3aed' }}
+              >
+                New
+              </span>
+            )}
+          </div>
 
           {/* Top-right: quick action icons — visible on hover */}
           <div className="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -268,6 +297,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           {brandName && /gern[eé]t/i.test(brandName) && (
             <MadeInFranceBadge variant="light" />
           )}
+          {brandName && /naya\s*lumi[eè]?re?\s*perfumes?/i.test(brandName) && (
+            <MadeInUAEBadge variant="light" />
+          )}
 
           {/* Name */}
           <Link href={productUrl} className="block hover:text-gray-600 transition-colors duration-150">
@@ -302,21 +334,6 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             </span>
           )}
 
-          {/* Price row */}
-          <div className="flex items-center gap-2 mt-0.5">
-            {showComparePrice && (
-              <span className="text-[12px] text-gray-400 line-through font-normal">
-                AED {originalPrice}
-              </span>
-            )}
-            <span
-              className="text-[13px] font-semibold"
-              style={{ color: showComparePrice ? '#7c3aed' : '#1a1a1a' }}
-            >
-              AED {price}
-            </span>
-          </div>
-
           {/* Stars */}
           <div className="flex items-center gap-1.5 mt-0.5">
             <div className="flex gap-0.5">
@@ -332,6 +349,74 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <span className="text-[10px] text-gray-400">({reviewCount})</span>
             )}
           </div>
+
+          {/* Real view count, styled as a prominent social-proof line under the rating */}
+          {viewCount > 0 && (
+            <p className="text-[13px] font-semibold text-green-700 mt-0.5">
+              {viewCountLabel(viewCount)} viewed this month
+            </p>
+          )}
+
+          {/* Price row — wraps instead of squeezing/overflowing on narrow mobile cards */}
+          <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 sm:gap-2 mt-0.5">
+            {discount > 0 && (
+              <span
+                className="flex-shrink-0 text-[10px] font-bold text-white px-1.5 py-0.5 rounded leading-none"
+                style={{ background: '#e63939' }}
+              >
+                -{discount}%
+              </span>
+            )}
+            {showComparePrice && (
+              <span className="whitespace-nowrap text-[11px] sm:text-[12px] text-gray-400 line-through font-normal">
+                AED {originalPrice}
+              </span>
+            )}
+            <span
+              className="whitespace-nowrap text-[13px] font-semibold"
+              style={{ color: showComparePrice ? '#7c3aed' : '#1a1a1a' }}
+            >
+              AED {price}
+            </span>
+          </div>
+
+          {/* Live delivery estimate — same UAE-cutoff calculation as the product page.
+              Only shown for items that can actually ship right now; sold-out items
+              get an honest "Out of stock" label instead of a false delivery promise. */}
+          {stock_quantity > 0 ? (
+            <>
+              {/* Desktop/tablet: full sentence */}
+              <p className="hidden md:flex items-center gap-1.5 text-[12.5px] text-gray-600 mt-1">
+                <Truck size={15} className="flex-shrink-0" style={{ color: '#9333ea' }} />
+                <span>
+                  {delivery.isNextDay ? 'Get it ' : 'Arrives '}
+                  <span className="font-bold text-gray-900">{delivery.relativeLabel}</span>
+                </span>
+                {delivery.isNextDay && delivery.minsLeft != null && (
+                  <span className="text-[11px] font-medium" style={{ color: '#9333ea' }}>
+                    · order in {Math.floor(delivery.minsLeft / 60) > 0 ? `${Math.floor(delivery.minsLeft / 60)}h ` : ''}{delivery.minsLeft % 60}m
+                  </span>
+                )}
+              </p>
+
+              {/* Mobile: compact cutoff chip, e.g. "Tod. 2:00 PM" */}
+              <div className="flex md:hidden items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 mt-1 w-fit">
+                <Timer size={12} className="flex-shrink-0 text-gray-500" />
+                <span className="text-[12px] font-bold text-gray-900 leading-none">
+                  {delivery.isNextDay ? 'Tod.' : 'Tom.'} {delivery.cutoffLabel}
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="text-[12.5px] font-bold text-gray-500 mt-1">Out of stock</p>
+          )}
+
+          {/* Real, exact remaining stock — only when it's actually running low */}
+          {isLowStock && (
+            <p className="text-[11px] font-semibold text-red-600 mt-0.5">
+              Only {stock_quantity} left
+            </p>
+          )}
         </div>
       </div>
 
@@ -474,6 +559,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 </p>
                 {brandName && /gern[eé]t/i.test(brandName) && (
                   <MadeInFranceBadge variant="light" />
+                )}
+                {brandName && /naya\s*lumi[eè]?re?\s*perfumes?/i.test(brandName) && (
+                  <MadeInUAEBadge variant="light" />
                 )}
               </div>
               <h2 className="font-serif text-4xl font-light italic leading-[1.1] mb-6" style={{ color: 'var(--cl-text-deep)' }}>{name}</h2>
