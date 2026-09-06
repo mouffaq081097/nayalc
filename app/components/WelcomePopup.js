@@ -1,41 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { X, Loader2 } from 'lucide-react';
 
 const LAVENDER = 'rgb(147,104,236)';
-const STORAGE_KEY = 'naya_welcome_popup_seen';
 
 /**
- * First-visit welcome popup — real email capture (POSTs to /api/subscribe,
- * the same endpoint that sends the confirmation email) and a real, working
- * coupon code (WELCOME10, 10% off, created in the coupons table) rather than
- * an invented discount that wouldn't actually apply at checkout.
+ * Welcome offer modal — real email capture (POSTs to /api/subscribe, the same
+ * endpoint that sends the confirmation email) and a real, working coupon code
+ * (WELCOME10, 10% off, created in the coupons table) rather than an invented
+ * discount that wouldn't actually apply at checkout.
+ *
+ * Controlled by the parent (see LayoutContent.js), which decides when to
+ * auto-show it on first visit and also opens it when WelcomeCornerBadge is
+ * clicked, so both entry points share one implementation.
  */
-export default function WelcomePopup() {
-  const [visible, setVisible] = useState(false);
+export default function WelcomePopup({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState('');
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(STORAGE_KEY)) return;
-    } catch {
-      // localStorage unavailable — don't nag on every load, just skip.
-      return;
-    }
-    const timer = setTimeout(() => setVisible(true), 1800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const dismiss = () => {
-    setVisible(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, '1');
-    } catch {}
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,25 +35,22 @@ export default function WelcomePopup() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Something went wrong. Please try again.');
       setStatus('success');
-      try {
-        localStorage.setItem(STORAGE_KEY, '1');
-      } catch {}
     } catch (err) {
       setStatus('error');
       setErrorMsg(err.message || 'Something went wrong. Please try again.');
     }
   };
 
-  if (!visible) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Welcome offer">
-      <div className="absolute inset-0 bg-black/50" onClick={dismiss} />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       <div className="relative w-full max-w-3xl bg-white rounded-2xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2">
         <button
           type="button"
-          onClick={dismiss}
+          onClick={onClose}
           aria-label="Close"
           className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
         >
@@ -104,7 +85,7 @@ export default function WelcomePopup() {
                   WELCOME10
                 </span>
               </div>
-              <button type="button" onClick={dismiss} className="text-[12.5px] font-semibold cursor-pointer" style={{ color: LAVENDER }}>
+              <button type="button" onClick={onClose} className="text-[12.5px] font-semibold cursor-pointer" style={{ color: LAVENDER }}>
                 Continue shopping →
               </button>
             </>
@@ -141,7 +122,7 @@ export default function WelcomePopup() {
 
               <button
                 type="button"
-                onClick={dismiss}
+                onClick={onClose}
                 className="mt-4 text-[12.5px] font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
               >
                 No thanks

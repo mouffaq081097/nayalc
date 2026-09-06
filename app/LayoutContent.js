@@ -10,16 +10,38 @@ import MobileBottomNav from './components/MobileBottomNav';
 import SideCart from './components/SideCart';
 import GlobalLoader from './components/GlobalLoader';
 import WelcomePopup from './components/WelcomePopup';
+import { WelcomeCornerBadge } from './components/WelcomeCornerBadge';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ChatWidget = lazy(() => import('./components/ChatWidget'));
+const WELCOME_POPUP_SEEN_KEY = 'naya_welcome_popup_seen';
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [chatReady, setChatReady] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   useCart();
+
+  // Auto-show the welcome popup once per visitor; WelcomeCornerBadge can also
+  // reopen it later (e.g. someone who dismissed it without taking the code).
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(WELCOME_POPUP_SEEN_KEY)) return;
+    } catch {
+      return;
+    }
+    const timer = setTimeout(() => setWelcomeOpen(true), 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const closeWelcome = () => {
+    setWelcomeOpen(false);
+    try {
+      localStorage.setItem(WELCOME_POPUP_SEEN_KEY, '1');
+    } catch {}
+  };
 
   useEffect(() => {
     setIsTransitioning(true);
@@ -51,7 +73,8 @@ export default function LayoutContent({ children }) {
   return (
     <>
       <GlobalLoader isLoading={isTransitioning} />
-      {showMobileChrome && <WelcomePopup />}
+      {showMobileChrome && <WelcomePopup isOpen={welcomeOpen} onClose={closeWelcome} />}
+      {showMobileChrome && !welcomeOpen && <WelcomeCornerBadge onOpen={() => setWelcomeOpen(true)} />}
       {showMobileChrome && chatReady && <Suspense fallback={null}><ChatWidget /></Suspense>}
       {showMobileChrome && <PromoBar />}
       {showMobileChrome && <Header />}

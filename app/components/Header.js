@@ -127,8 +127,8 @@ const Header = forwardRef((_, ref) => {
               </div>
             </Link>
 
-            {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-7 ml-7">
+            {/* Desktop nav — centered in the space between the logo and the action icons */}
+            <nav className="hidden md:flex flex-1 items-center justify-center gap-7">
               {NAV_LINKS.map((item) => {
                 const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
 
@@ -218,8 +218,8 @@ const Header = forwardRef((_, ref) => {
               })}
             </nav>
 
-            {/* Actions — push to right */}
-            <div className="ml-auto flex items-center gap-2">
+            {/* Actions */}
+            <div className="flex items-center gap-2 shrink-0">
               {/* Search */}
               <button
                 type="button"
