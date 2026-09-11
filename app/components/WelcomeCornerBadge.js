@@ -1,16 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Tag } from 'lucide-react';
 
 const LAVENDER = 'rgb(147,104,236)';
 const STORAGE_KEY = 'naya_corner_badge_dismissed';
 
 /**
- * Persistent bottom-left reminder of the same real WELCOME10 offer as
- * PromoBar/WelcomePopup. Opens the same WelcomePopup on click (via onOpen,
- * lifted to LayoutContent.js) rather than duplicating the email-capture form —
- * useful for someone who dismissed the popup earlier without taking the code.
+ * Persistent reminder of the same real WELCOME10 offer as PromoBar/WelcomePopup,
+ * shown as a vertical tab docked to the right edge (clear of the mobile bottom
+ * nav). Opens the same WelcomePopup on click (via onOpen, lifted to
+ * LayoutContent.js) rather than duplicating the email-capture form — useful
+ * for someone who dismissed the popup earlier without taking the code.
  */
 export function WelcomeCornerBadge({ onOpen }) {
   const [hidden, setHidden] = useState(true); // stay hidden until localStorage check resolves, to avoid a flash
@@ -25,7 +26,8 @@ export function WelcomeCornerBadge({ onOpen }) {
 
   if (hidden) return null;
 
-  const handleDismiss = () => {
+  const handleDismiss = (e) => {
+    e.stopPropagation();
     setHidden(true);
     try {
       localStorage.setItem(STORAGE_KEY, '1');
@@ -34,23 +36,29 @@ export function WelcomeCornerBadge({ onOpen }) {
 
   return (
     <div
-      className="fixed bottom-5 left-5 z-[170] flex items-center rounded-full shadow-lg"
-      style={{ background: LAVENDER, boxShadow: '0 10px 28px -8px rgba(147,104,236,0.65)' }}
+      className="fixed right-0 top-[60%] -translate-y-1/2 z-[120] flex flex-col items-center rounded-l-2xl shadow-lg overflow-hidden"
+      style={{ background: LAVENDER, boxShadow: '-6px 8px 24px -8px rgba(147,104,236,0.55)' }}
     >
-      <button
-        type="button"
-        onClick={onOpen}
-        className="pl-4 pr-1.5 py-3 text-white text-[13px] font-bold whitespace-nowrap cursor-pointer"
-      >
-        Get 10% off your first order
-      </button>
       <button
         type="button"
         onClick={handleDismiss}
         aria-label="Dismiss offer"
-        className="flex-shrink-0 w-7 h-7 mr-1.5 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer"
+        className="w-full flex items-center justify-center py-1.5 text-white/75 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
       >
-        <X size={14} />
+        <X size={12} />
+      </button>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex flex-col items-center gap-2 px-2.5 pb-4 pt-1 cursor-pointer"
+      >
+        <span
+          className="text-white text-[11px] font-bold tracking-wide whitespace-nowrap"
+          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+        >
+          GET 10% OFF
+        </span>
+        <Tag size={14} className="text-white" strokeWidth={2} />
       </button>
     </div>
   );

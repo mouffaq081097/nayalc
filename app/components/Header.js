@@ -43,6 +43,7 @@ const Header = forwardRef((_, ref) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery,  setSearchQuery]  = useState('');
   const [isScrolled,   setIsScrolled]   = useState(false);
+  const [expandedMobileSection, setExpandedMobileSection] = useState(null);
 
   const { cartItems } = useCart();
   const { user, logout } = useAuth();
@@ -57,6 +58,11 @@ const Header = forwardRef((_, ref) => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Collapse any open accordion section whenever the mobile sidebar closes
+  useEffect(() => {
+    if (!isMenuOpen) setExpandedMobileSection(null);
+  }, [isMenuOpen]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -219,7 +225,7 @@ const Header = forwardRef((_, ref) => {
             </nav>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
               {/* Search */}
               <button
                 type="button"
@@ -447,7 +453,7 @@ const Header = forwardRef((_, ref) => {
       {/* ── Mobile Sidebar ─────────────────────────────────────── */}
       <AnimatePresence>
         {isMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-[150]">
+          <div className="md:hidden fixed inset-0 z-[300]">
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40"
@@ -474,27 +480,103 @@ const Header = forwardRef((_, ref) => {
 
               {/* Nav links */}
               <div className="flex-1 overflow-y-auto py-4 px-3">
-                {[
-                  { label: 'Shop',        href: '/all-products' },
-                  { label: 'Best Seller', href: '/all-products?bestseller=true', highlight: true },
-                  { label: 'Collections', href: '/collections' },
-                  { label: 'Skin Quiz',   href: '/skin-quiz' },
-                  { label: 'Brands',      href: '/brands' },
-                  { label: 'Journal',     href: '/journal' },
-                  { label: 'Wishlist',    href: '/wishlist' },
-                ].map((item) => (
-                  <button
-                    key={item.href}
-                    type="button"
-                    onClick={() => { router.push(item.href); setIsMenuOpen(false); }}
-                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors ${
-                      item.highlight ? 'text-red-600 hover:bg-red-50' : 'text-[#2a2a31] hover:bg-[#f3f3f5]'
-                    }`}
-                  >
-                    {item.label}
-                    <ChevronRight size={14} className={item.highlight ? 'text-red-400' : 'text-[#8a8a93]'} />
-                  </button>
-                ))}
+                {[...NAV_LINKS, { label: 'Wishlist', href: '/wishlist' }].map((item) => {
+                  if (item.hasDropdown) {
+                    const subLinks = item.hasDropdown === 'shop'
+                      ? [
+                          { name: 'All Products', href: '/all-products' },
+                          { name: 'Skincare',     href: '/SkinCare' },
+                          { name: 'Fragrance',    href: '/fragrance' },
+                          { name: 'New Arrivals', href: '/new-arrivals' },
+                        ]
+                      : (brands || []).map((brand) => ({ name: brand.name, href: `/brand/${brand.slug || brand.id}` }));
+
+                    // No brands loaded yet — fall back to a plain link rather than an empty accordion
+                    if (item.hasDropdown === 'brands' && subLinks.length === 0) {
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => { router.push(item.href); setIsMenuOpen(false); }}
+                          className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors"
+                        >
+                          {item.label}
+                          <ChevronRight size={14} className="text-[#8a8a93]" />
+                        </button>
+                      );
+                    }
+
+                    const isExpanded = expandedMobileSection === item.label;
+
+                    return (
+                      <div key={item.label}>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedMobileSection(isExpanded ? null : item.label)}
+                          aria-expanded={isExpanded}
+                          className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors ${
+                            isExpanded ? 'text-[#7a4fe0] bg-[#f8f5fd]' : 'text-[#2a2a31] hover:bg-[#f3f3f5]'
+                          }`}
+                        >
+                          {item.label}
+                          <ChevronRight
+                            size={14}
+                            className={`transition-transform duration-200 ${isExpanded ? 'rotate-90 text-[#9869f7]' : 'text-[#8a8a93]'}`}
+                          />
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                              className="overflow-hidden"
+                            >
+                              <div className="ml-6 mb-1 pl-3 py-1 flex flex-col gap-0.5 border-l-2 border-[#f0e4fc]">
+                                {subLinks.map((sub) => (
+                                  <button
+                                    key={sub.href}
+                                    type="button"
+                                    onClick={() => { router.push(sub.href); setIsMenuOpen(false); }}
+                                    className="flex items-center justify-between pl-3 pr-3 py-2.5 rounded-lg text-[13.5px] font-medium text-[#5a5a64] hover:bg-[#f8f5fd] hover:text-[#7a4fe0] transition-colors"
+                                  >
+                                    {sub.name}
+                                    <ArrowRight size={12} className="text-[#c9aef2]" />
+                                  </button>
+                                ))}
+                                {item.hasDropdown === 'brands' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => { router.push('/brands'); setIsMenuOpen(false); }}
+                                    className="flex items-center gap-1 pl-3 pr-3 py-2.5 text-[12.5px] font-semibold text-[#9869f7] hover:text-[#7a4fe0] transition-colors"
+                                  >
+                                    View all brands
+                                    <ArrowRight size={11} />
+                                  </button>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={item.href}
+                      type="button"
+                      onClick={() => { router.push(item.href); setIsMenuOpen(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors ${
+                        item.highlight ? 'text-red-600 hover:bg-red-50' : 'text-[#2a2a31] hover:bg-[#f3f3f5]'
+                      }`}
+                    >
+                      {item.label}
+                      <ChevronRight size={14} className={item.highlight ? 'text-red-400' : 'text-[#8a8a93]'} />
+                    </button>
+                  );
+                })}
 
                 {/* Concerns */}
                 {concerns?.length > 0 && (
