@@ -5,31 +5,8 @@ import Link from "next/link";
 import { ArrowRight, Star } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { MadeInFranceBadge } from '../components/MadeInFranceBadge';
-
-// Static metadata for known brands
-const BRAND_META = {
-  'Gernetic': {
-    origin: 'France',
-    year: '1976',
-    category: 'Advanced Skincare',
-    tags: ['CLINICAL', 'BIO-CELLULAR', 'PROFESSIONAL'],
-    filterCategory: 'Advanced Skincare',
-  },
-  'Zorah': {
-    origin: 'Canada',
-    year: '2008',
-    category: 'Natural Beauty',
-    tags: ['VEGAN', 'CRUELTY-FREE', 'ORGANIC'],
-    filterCategory: 'Skincare',
-  },
-  'Naya Lumière Perfumes': {
-    origin: 'UAE',
-    year: '2021',
-    category: 'Fragrance & Body',
-    tags: ['ARTISAN', 'LUXURY', 'HAND-CRAFTED'],
-    filterCategory: 'Fragrance & Body',
-  },
-};
+import { slugify } from '@/lib/slugify';
+import { BRAND_META, getBrandMeta } from '@/lib/brandMeta';
 
 const FILTER_CATEGORIES = [
   'All',
@@ -79,20 +56,14 @@ function ProductCard({ product }) {
 }
 
 function BrandCard({ brand, products }) {
-  const meta = BRAND_META[brand.name] || {
-    origin: 'International',
-    year: '',
-    category: 'Beauty',
-    tags: ['PREMIUM', 'CURATED'],
-    filterCategory: 'All',
-  };
+  const meta = getBrandMeta(brand.name);
 
   const brandProducts = products.filter(p =>
     p.brand_id === brand.id || p.brandName === brand.name || p.brand === brand.name
   );
   const featuredProducts = brandProducts.slice(0, 3);
   const initial = brand.name.charAt(0).toUpperCase();
-  const slug = brand.name.toLowerCase().replace(/\s+/g, '-').replace(/[éè]/g, 'e').replace(/[^a-z0-9-]/g, '');
+  const slug = brand.slug || slugify(brand.name);
 
   return (
     <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-300">
@@ -119,7 +90,7 @@ function BrandCard({ brand, products }) {
           {/* Attribute tags */}
           <div className="flex flex-wrap gap-1.5">
             {meta.tags.map(tag => (
-              <span key={tag} className="text-[10px] font-semibold tracking-wide text-gray-600 border border-gray-200 bg-gray-100/60 rounded-md px-2 py-0.5">
+              <span key={tag} className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 border border-gray-200 bg-gray-100/60 rounded-md px-2 py-0.5">
                 {tag}
               </span>
             ))}

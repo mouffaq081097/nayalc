@@ -1,19 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Chrome, Facebook, Sparkles, ShieldCheck, Star, MailOpen, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, Star, MailOpen, Loader2, Check, X as XIcon } from 'lucide-react';
+import { motion, AnimatePresence, MotionConfig, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
 
 function getSafeCallbackUrl() {
   if (typeof window === 'undefined') return '/';
   const callbackUrl = new URLSearchParams(window.location.search).get('callbackUrl');
   return callbackUrl?.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/';
+}
+
+// Focus the first field on desktop only — on a phone this would throw the
+// keyboard up over the sheet while it is still animating in.
+function useDesktopAutoFocus() {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 1024px)').matches) ref.current?.focus();
+  }, []);
+  return ref;
 }
 
 
@@ -23,6 +33,7 @@ function ForgotPassword({ onBack }) {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const emailRef = useDesktopAutoFocus();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,23 +82,27 @@ function ForgotPassword({ onBack }) {
           <div className="relative group">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
+              ref={emailRef}
               type="email"
+              inputMode="email"
               placeholder="your@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
+              autoComplete="email"
+              disabled={isLoading}
+              className="w-full h-[56px] md:h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
             />
           </div>
         </div>
 
         {message && (
-          <p className="text-emerald-700 text-[12px] font-semibold text-center bg-emerald-50 py-3 rounded-xl border border-emerald-100">
+          <p role="status" className="text-emerald-700 text-[12px] font-semibold text-center bg-emerald-50 py-3 rounded-xl border border-emerald-100">
             {message}
           </p>
         )}
         {error && (
-          <p className="text-amber-700 text-[12px] font-semibold text-center bg-amber-50 py-3 rounded-xl border border-amber-100">
+          <p role="alert" className="text-amber-700 text-[12px] font-semibold text-center bg-amber-50 py-3 rounded-xl border border-amber-100">
             {error}
           </p>
         )}
@@ -95,7 +110,7 @@ function ForgotPassword({ onBack }) {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 mt-1 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
+          className="w-full h-[56px] md:h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 mt-1 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -117,6 +132,7 @@ function Login({ onForgotClick }) {
   const [unverifiedEmail, setUnverifiedEmail] = useState(null);
   const [resending, setResending] = useState(false);
   const [resendMsg, setResendMsg] = useState('');
+  const emailRef = useDesktopAutoFocus();
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -171,13 +187,17 @@ function Login({ onForgotClick }) {
           <div className="relative group">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
             <input
+              ref={emailRef}
               id="signin-email"
               type="email"
+              inputMode="email"
               placeholder="your@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
+              autoComplete="email"
+              disabled={isLoading}
+              className="w-full h-[56px] md:h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
             />
           </div>
         </div>
@@ -202,31 +222,24 @@ function Login({ onForgotClick }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
+              autoComplete="current-password"
+              disabled={isLoading}
+              className="w-full h-[56px] md:h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgba(196,167,254,0.7)] hover:text-[#9333ea] transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-full text-[rgba(196,167,254,0.7)] hover:text-[#9333ea] active:bg-[rgba(196,167,254,0.12)] transition-colors"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 cursor-pointer group">
-          <input
-            type="checkbox"
-            id="remember-me"
-            className="w-4 h-4 rounded-md border-[rgba(196,167,254,0.5)] bg-white text-[#9333ea] focus:ring-[rgba(196,167,254,0.2)] cursor-pointer"
-          />
-          <label htmlFor="remember-me" className="text-[12px] font-medium text-[#555] group-hover:text-[#111] transition-colors cursor-pointer">
-            Remember me
-          </label>
-        </div>
-
         {error && (
           <motion.p
+            role="alert"
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-amber-700 text-[12px] font-semibold text-center bg-amber-50 py-3 rounded-xl border border-amber-100"
@@ -270,7 +283,7 @@ function Login({ onForgotClick }) {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
+          className="w-full h-[56px] md:h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -279,23 +292,6 @@ function Login({ onForgotClick }) {
           )}
         </Button>
       </form>
-
-      <div className="flex items-center gap-3 pt-1">
-        <div className="flex-1 h-px bg-[rgba(216,180,254,0.3)]" />
-        <span className="text-[11px] font-medium text-[#aaa]">or continue with</span>
-        <div className="flex-1 h-px bg-[rgba(216,180,254,0.3)]" />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.5)] bg-white/80 backdrop-blur-sm text-[12px] font-semibold text-[#444] hover:bg-white hover:border-[rgba(147,104,236,0.6)] hover:shadow-[0_2px_10px_rgba(147,104,236,0.1)] transition-all">
-          <Chrome size={15} className="text-[rgba(196,167,254,0.8)]" />
-          Google
-        </button>
-        <button className="h-11 flex items-center justify-center gap-2 rounded-2xl border border-[rgba(216,180,254,0.5)] bg-white/80 backdrop-blur-sm text-[12px] font-semibold text-[#444] hover:bg-white hover:border-[rgba(147,104,236,0.6)] hover:shadow-[0_2px_10px_rgba(147,104,236,0.1)] transition-all">
-          <Facebook size={15} className="text-[rgba(196,167,254,0.8)]" />
-          Facebook
-        </button>
-      </div>
     </motion.div>
   );
 }
@@ -315,6 +311,7 @@ function getPasswordStrength(password) {
 function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [error, setError] = useState(null);
@@ -324,6 +321,7 @@ function Register() {
   const [registeredEmail, setRegisteredEmail] = useState(null);
   const [resending, setResending] = useState(false);
   const [resendMsg, setResendMsg] = useState('');
+  const firstNameRef = useDesktopAutoFocus();
   const { register } = useAuth();
 
   const strength = getPasswordStrength(password);
@@ -332,6 +330,10 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     setIsLoading(true);
     try {
       const autoUsername = `${firstName.toLowerCase()}${lastName.toLowerCase()}${Math.floor(1000 + Math.random() * 9000)}`;
@@ -421,13 +423,16 @@ function Register() {
           <div className="space-y-1.5">
             <label htmlFor="register-firstname" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">First Name</label>
             <input
+              ref={firstNameRef}
               id="register-firstname"
               type="text"
               placeholder="Layla"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               required
-              className="w-full h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
+              autoComplete="given-name"
+              disabled={isLoading}
+              className="w-full h-[56px] md:h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
             />
           </div>
           <div className="space-y-1.5">
@@ -439,7 +444,9 @@ function Register() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               required
-              className="w-full h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
+              autoComplete="family-name"
+              disabled={isLoading}
+              className="w-full h-[56px] md:h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
             />
           </div>
         </div>
@@ -451,11 +458,14 @@ function Register() {
             <input
               id="register-email"
               type="email"
+              inputMode="email"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
+              autoComplete="email"
+              disabled={isLoading}
+              className="w-full h-[56px] md:h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
             />
           </div>
         </div>
@@ -472,12 +482,15 @@ function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[14px] font-medium text-[#111114] placeholder:text-[#bbb]"
+              autoComplete="new-password"
+              disabled={isLoading}
+              className="w-full h-[56px] md:h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgba(196,167,254,0.7)] hover:text-[#9333ea] transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-full text-[rgba(196,167,254,0.7)] hover:text-[#9333ea] active:bg-[rgba(196,167,254,0.12)] transition-colors"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -504,6 +517,41 @@ function Register() {
             <p className="text-[11px] text-[#999]">
               Use 8+ characters <span className="text-[#9368ee]">with a number and a symbol.</span>
             </p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="register-confirm-password" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Confirm Password</label>
+          <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
+            <input
+              id="register-confirm-password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Re-enter your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              disabled={isLoading}
+              className={`w-full h-[56px] md:h-[52px] pl-12 pr-12 rounded-2xl border bg-white transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60 ${
+                confirmPassword ? '' : 'border-[rgba(216,180,254,0.4)] focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)]'
+              }`}
+              style={
+                confirmPassword
+                  ? confirmPassword === password
+                    ? { borderColor: 'rgba(16,185,129,0.5)', boxShadow: '0 0 0 4px rgba(16,185,129,0.08)' }
+                    : { borderColor: 'rgba(239,68,68,0.5)', boxShadow: '0 0 0 4px rgba(239,68,68,0.08)' }
+                  : undefined
+              }
+            />
+            {confirmPassword && (
+              confirmPassword === password
+                ? <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                : <XIcon className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
+            )}
+          </div>
+          {confirmPassword && confirmPassword !== password && (
+            <p className="text-[11px] text-red-500">Passwords don't match.</p>
           )}
         </div>
 
@@ -546,7 +594,7 @@ function Register() {
         </div>
 
         {error && (
-          <p className="text-amber-700 text-[12px] font-semibold text-center bg-amber-50 py-3 rounded-xl border border-amber-100">
+          <p role="alert" className="text-amber-700 text-[12px] font-semibold text-center bg-amber-50 py-3 rounded-xl border border-amber-100">
             {error}
           </p>
         )}
@@ -554,7 +602,7 @@ function Register() {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3 mt-1 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
+          className="w-full h-[56px] md:h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 mt-1 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
         >
           {isLoading ? (
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -579,48 +627,84 @@ function Register() {
 export default function AuthPage() {
   const router = useRouter();
   const [authMode, setAuthMode] = useState('login');
+  const prefersReducedMotion = useReducedMotion();
+
+  // Two different scrollers: on mobile the document scrolls, on desktop only
+  // the right-hand form column does (it's the lg:overflow-y-auto pane).
+  const formPaneRef = useRef(null);
+  const { scrollY } = useScroll();
+  const { scrollYProgress: paneProgress } = useScroll({ container: formPaneRef });
+
+  // Mobile: photo lags behind the page (~0.8x) while the headline dissolves
+  // under the rising sheet.
+  const heroY = useTransform(scrollY, [0, 400], [0, 80]);
+  const heroTextY = useTransform(scrollY, [0, 240], [0, -36]);
+  const heroTextOpacity = useTransform(scrollY, [0, 170], [1, 0]);
+
+  // Desktop: the sticky photo drifts and swells slightly as the form scrolls.
+  const paneY = useTransform(paneProgress, [0, 1], [0, -24]);
+  const paneScale = useTransform(paneProgress, [0, 1], [1, 1.1]);
+
+  const heroMotion = prefersReducedMotion ? undefined : { y: heroY };
+  const heroTextMotion = prefersReducedMotion ? undefined : { y: heroTextY, opacity: heroTextOpacity };
+  const paneMotion = prefersReducedMotion ? undefined : { y: paneY, scale: paneScale };
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="min-h-screen font-sans bg-[#f8f7fb]">
-      <header className="sticky top-0 z-40 border-b border-white/60 bg-white/80 backdrop-blur-xl shadow-sm">
-        <div className="mx-auto relative flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-40 border-b border-[#e5e5ea] bg-white">
+        <div className="mx-auto relative flex h-[56px] md:h-[60px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          {/* Back to store — icon-only on mobile so it never crowds the logo */}
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#4f46e5] hover:text-[#312e81] transition-colors"
+            aria-label="Back to store"
+            className="group shrink-0 flex items-center gap-2 h-[38px] px-3 sm:px-4 rounded-full border border-[#e5e5ea] bg-white text-[12px] font-semibold text-[#2a2a31] hover:bg-[#f3f3f5] hover:border-[#c8c8cf] transition-colors"
           >
-            <ArrowLeft size={14} />
-            Back to store
+            <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
+            <span className="hidden sm:inline">Back to store</span>
           </button>
 
-          <div className="pointer-events-none absolute inset-x-0 flex justify-center">
-            <Link href="/" className="pointer-events-auto inline-flex items-center gap-3 transition-opacity hover:opacity-90">
-              <Image
-                src="/Adobe Express - file (5).png"
-                alt="Naya Lumière"
-                width={38}
-                height={38}
-                className="w-[38px] h-[38px] object-contain"
-              />
-              <div className="hidden sm:flex flex-col leading-tight font-semibold tracking-[0.06em] text-[#111114]">
-                <span className="text-sm">NAYA LUMIÈRE</span>
-                <span className="text-[8px] tracking-[0.3em] uppercase text-[#5a5a64]">COSMETICS</span>
-              </div>
-            </Link>
-          </div>
+          {/* Brand lockup — same proportions as the main site header */}
+          <Link
+            href="/"
+            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-[10px] transition-opacity hover:opacity-80 active:opacity-60"
+          >
+            <Image
+              src="/Adobe Express - file (5).png"
+              alt="Naya Lumière"
+              width={28}
+              height={28}
+              className="w-7 h-7 object-contain shrink-0"
+              priority
+            />
+            <div className="flex flex-col leading-tight font-semibold tracking-[0.06em] text-[#111114]">
+              <span className="text-[15px] md:text-[16px] leading-none">NAYA LUMIÈRE</span>
+              <span className="text-[9px] tracking-[0.32em] text-[#5a5a64] uppercase mt-[2px] leading-none">
+                COSMETICS
+              </span>
+            </div>
+          </Link>
 
-          <div className="w-24" />
+          {/* Trust cue — balances the row and reassures on a password screen */}
+          <div className="shrink-0 hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-[#8a8a93]">
+            <ShieldCheck size={13} className="text-emerald-500" />
+            Secure sign-in
+          </div>
+          <div className="sm:hidden w-[38px]" aria-hidden="true" />
         </div>
       </header>
 
-      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)]">
-        <div className="hidden lg:flex lg:w-1/2 xl:w-[52%] h-screen sticky top-16 flex-col relative overflow-hidden">
-          <Image
-            src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
-            alt="Naya Lumière Cosmetics"
-            fill
-            className="object-cover object-center"
-            priority
-          />
+      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-60px)]">
+        <div className="hidden lg:flex lg:w-1/2 xl:w-[52%] h-[calc(100vh-60px)] sticky top-[60px] flex-col relative overflow-hidden">
+          <motion.div className="absolute inset-0 will-change-transform" style={paneMotion}>
+            <Image
+              src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
+              alt="Naya Lumière Cosmetics"
+              fill
+              className="object-cover object-center"
+              priority
+            />
+          </motion.div>
           <div
             className="absolute inset-0"
             style={{
@@ -690,19 +774,29 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <div className="lg:hidden relative h-[28vh] overflow-hidden flex-shrink-0">
-          <Image
-            src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
-            alt="Naya Lumière Cosmetics"
-            fill
-            className="object-cover object-center"
-            priority
-          />
+        <div className="lg:hidden relative h-[30vh] min-h-[190px] max-h-[260px] overflow-hidden flex-shrink-0">
+          {/* Bleeds 90px past the top and bottom so the parallax shift never
+              exposes an edge. */}
+          <motion.div
+            className="absolute inset-x-0 -top-[90px] h-[calc(100%+180px)] will-change-transform"
+            style={heroMotion}
+          >
+            <Image
+              src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
+              alt="Naya Lumière Cosmetics"
+              fill
+              className="object-cover object-center"
+              priority
+            />
+          </motion.div>
           <div
             className="absolute inset-0"
             style={{ background: 'linear-gradient(180deg, rgba(26,8,56,0.45) 0%, rgba(59,7,100,0.80) 100%)' }}
           />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 px-6 pt-8">
+          <motion.div
+            className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 px-6 pb-8 will-change-transform"
+            style={heroTextMotion}
+          >
             <h1
               className="text-[30px] md:text-[36px] leading-[1.1] text-white"
               style={{ fontFamily: 'var(--font-cormorant), serif', fontStyle: 'italic', fontWeight: 600 }}
@@ -724,11 +818,19 @@ export default function AuthPage() {
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[rgba(216,180,254,0.85)] mt-2 font-sans">
               Your Beauty Sanctuary
             </p>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="flex-1 lg:w-1/2 xl:w-[48%] min-h-screen lg:min-h-0 lg:h-screen lg:overflow-y-auto bg-[#ffffff] flex flex-col">
-          <div className="flex-1 flex items-start lg:items-center justify-center px-6 pt-6 pb-6 lg:py-6">
+        <div
+          ref={formPaneRef}
+          className="relative z-10 -mt-7 rounded-t-[28px] shadow-[0_-8px_30px_rgba(26,8,56,0.16)] lg:mt-0 lg:rounded-none lg:shadow-none flex-1 lg:w-1/2 xl:w-[48%] lg:min-h-0 lg:h-[calc(100vh-60px)] lg:overflow-y-auto bg-[#ffffff] flex flex-col"
+        >
+          {/* Sheet grabber — native-app cue, mobile only */}
+          <div className="lg:hidden flex justify-center pt-2.5 pb-1" aria-hidden="true">
+            <div className="h-1 w-10 rounded-full bg-[#e5e0ec]" />
+          </div>
+
+          <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-6 pt-4 pb-6 lg:py-6">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -736,7 +838,7 @@ export default function AuthPage() {
               className="w-full max-w-[420px]"
             >
               <div className="text-center mb-5">
-                <h2 className="text-[32px] font-black text-[#111114] leading-tight tracking-tight">
+                <h2 className="text-[26px] md:text-[32px] font-black text-[#111114] leading-tight tracking-tight">
                   {authMode === 'register'
                     ? 'Create your account.'
                     : authMode === 'forgot-password'
@@ -757,16 +859,17 @@ export default function AuthPage() {
                 onValueChange={setAuthMode}
                 className="w-full"
               >
-                <TabsList className="flex bg-transparent border-0 border-b border-[rgba(216,180,254,0.4)] rounded-none p-0 mb-5 gap-0 relative">
+                {/* iOS-style segmented control — 44px tall so it's a comfortable tap target */}
+                <TabsList className="grid grid-cols-2 w-full h-11 p-1 mb-5 rounded-full border-0 bg-[#f3f0f9] gap-1">
                   <TabsTrigger
                     value="login"
-                    className="flex-1 pb-3 pt-0 rounded-none bg-transparent border-0 text-[11px] font-bold uppercase tracking-widest transition-all data-[state=active]:text-[#111114] data-[state=active]:shadow-none data-[state=active]:[box-shadow:inset_0_-2px_0_0_#9368ee] text-[#aaa] shadow-none"
+                    className="h-full rounded-full bg-transparent border-0 text-[13px] font-semibold text-[#8a8a93] shadow-none transition-colors duration-200 data-[state=active]:bg-white data-[state=active]:text-[#111114] data-[state=active]:shadow-[0_1px_4px_rgba(26,8,56,0.12)]"
                   >
-                    Sign In
+                    Sign in
                   </TabsTrigger>
                   <TabsTrigger
                     value="register"
-                    className="flex-1 pb-3 pt-0 rounded-none bg-transparent border-0 text-[11px] font-bold uppercase tracking-widest transition-all data-[state=active]:text-[#111114] data-[state=active]:shadow-none data-[state=active]:[box-shadow:inset_0_-2px_0_0_#9368ee] text-[#aaa] shadow-none"
+                    className="h-full rounded-full bg-transparent border-0 text-[13px] font-semibold text-[#8a8a93] shadow-none transition-colors duration-200 data-[state=active]:bg-white data-[state=active]:text-[#111114] data-[state=active]:shadow-[0_1px_4px_rgba(26,8,56,0.12)]"
                   >
                     Register
                   </TabsTrigger>
@@ -788,7 +891,10 @@ export default function AuthPage() {
             </motion.div>
           </div>
 
-          <div className="px-6 py-6 text-center">
+          <div
+            className="px-6 pt-2 pb-4 lg:py-6 text-center"
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+          >
             <p className="text-[10px] font-medium text-[#bbb]">
               © 2026 Naya Lumière Cosmetics · UAE
             </p>
@@ -796,5 +902,6 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+    </MotionConfig>
   );
 }

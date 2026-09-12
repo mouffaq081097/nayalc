@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { slugify } from '@/lib/slugify';
 
 /**
  * @swagger
@@ -49,8 +50,9 @@ export async function GET(request) {
         throw dbError;
       }
     }
+    const withSlugs = rows.map((row) => ({ ...row, slug: slugify(row.name) }));
     const headers = !isAdmin ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } : {};
-    return NextResponse.json(rows, { headers });
+    return NextResponse.json(withSlugs, { headers });
   } catch (error) {
     console.error('Error fetching brands:', error);
     return NextResponse.json({ message: 'Error fetching brands from database' }, { status: 500 });

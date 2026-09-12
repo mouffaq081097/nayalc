@@ -1,4 +1,5 @@
 import db from '@/lib/db';
+import { slugify } from '@/lib/slugify';
 
 export default async function sitemap() {
   const baseUrl = 'https://nayalc.com';
@@ -6,7 +7,7 @@ export default async function sitemap() {
   const [productsResult, categoriesResult, brandsResult] = await Promise.all([
     db.query('SELECT slug, id, updated_at FROM products WHERE is_active = true'),
     db.query('SELECT slug, id, updated_at FROM categories WHERE is_active = true'),
-    db.query('SELECT slug, id, updated_at FROM brands WHERE is_active = true'),
+    db.query('SELECT slug, id, name, updated_at FROM brands WHERE is_active = true'),
   ]);
 
   const productUrls = productsResult.rows.map((product) => ({
@@ -24,7 +25,7 @@ export default async function sitemap() {
   }));
 
   const brandUrls = brandsResult.rows.map((brand) => ({
-    url: `${baseUrl}/brand/${brand.slug || brand.id}`,
+    url: `${baseUrl}/brand/${brand.slug || slugify(brand.name)}`,
     lastModified: brand.updated_at ? new Date(brand.updated_at) : new Date(),
     changeFrequency: 'weekly',
     priority: 0.7,

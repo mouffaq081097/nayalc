@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { ArrowRight, Plus, Minus, ShoppingBag, Truck, Sparkles, X, Gift } from 'lucide-react';
+import { ArrowRight, Plus, Minus, ShoppingBag, Truck, Sparkles, X, Gift, Star } from 'lucide-react';
 import { calcShipping, nextShippingTier, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME } from '@/lib/shipping';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useRouter } from 'next/navigation';
@@ -66,6 +66,11 @@ export default function CartPage() {
   const pointsDiscount = Math.min(pointsToUse, maxPoints);
   const total         = Math.max(0, finalTotal + shipping - pointsDiscount);
   const hasStockIssues = cartItems.some(i => i.stock_quantity === 0 || i.quantity > i.stock_quantity);
+
+  // Keep the redeemed amount in sync if the cart shrinks below the previously-typed points
+  useEffect(() => {
+    setPointsToUse(p => Math.min(p, maxPoints));
+  }, [maxPoints]);
 
   const handleCheckout = () => {
     if (!isAuthenticated) { router.push('/auth?callbackUrl=/checkout'); return; }
@@ -416,34 +421,69 @@ export default function CartPage() {
             {/* Loyalty Points */}
             {isAuthenticated && loyaltyPoints > 0 && (
               <SCard className="p-5">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-[15px] font-semibold text-[#111114]">Loyalty Points</h3>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-white"
+                      style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                    >
+                      <Star size={12} />
+                    </div>
+                    <h3 className="text-[15px] font-semibold text-[#111114] truncate">Loyalty Points</h3>
+                  </div>
                   <span
-                    className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0"
                     style={{ background: 'rgba(152,105,247,0.1)', color: '#9869f7' }}
                   >
                     {loyaltyPoints.toLocaleString()} pts available
                   </span>
                 </div>
                 <p className="text-[12px] text-[#8a8a93] mb-3">
-                  1 point = 1 AED · Use up to {maxPoints} pts on this order
+                  1 point = 1 AED · Use up to {maxPoints.toLocaleString()} pts on this order
                 </p>
                 <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={maxPoints}
-                    value={pointsToUse}
-                    onChange={e => setPointsToUse(Math.min(maxPoints, Math.max(0, parseInt(e.target.value) || 0)))}
-                    className="flex-1 h-11 px-3.5 rounded-xl border border-[#e5e5ea] bg-white text-[14px] text-[#111114] focus:outline-none focus:border-[#9869f7] focus:ring-2 focus:ring-[#9869f7]/15 tabular-nums"
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min={0}
+                      max={maxPoints}
+                      value={pointsToUse}
+                      onChange={e => setPointsToUse(Math.min(maxPoints, Math.max(0, parseInt(e.target.value) || 0)))}
+                      className="w-full h-11 pl-3.5 pr-10 rounded-xl border border-[#e5e5ea] bg-white text-[14px] text-[#111114] focus:outline-none focus:border-[#9869f7] focus:ring-2 focus:ring-[#9869f7]/15 tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[12px] font-medium text-[#c8c8cf] pointer-events-none">
+                      pts
+                    </span>
+                  </div>
                   <button
-                    onClick={() => setPointsToUse(maxPoints)}
-                    className="h-11 px-4 rounded-xl text-[13px] font-semibold text-[#5a5a64] border border-[#e5e5ea] hover:bg-[#f3f3f5] transition-colors whitespace-nowrap"
+                    onClick={() => setPointsToUse(pointsToUse >= maxPoints && maxPoints > 0 ? 0 : maxPoints)}
+                    disabled={maxPoints === 0}
+                    className="h-11 px-4 rounded-xl text-[13px] font-semibold whitespace-nowrap transition-colors disabled:opacity-40"
+                    style={
+                      pointsToUse >= maxPoints && maxPoints > 0
+                        ? { background: 'linear-gradient(90deg,#c087fc,#9869f7)', color: '#fff' }
+                        : { border: '1px solid #e5e5ea', color: '#5a5a64' }
+                    }
                   >
-                    Use Max
+                    {pointsToUse >= maxPoints && maxPoints > 0 ? 'Max applied' : 'Use Max'}
                   </button>
                 </div>
+
+                {pointsDiscount > 0 && (
+                  <div className="mt-3 space-y-1.5">
+                    <div className="h-1.5 rounded-full bg-[#f3f3f5] overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${maxPoints > 0 ? (pointsDiscount / maxPoints) * 100 : 0}%` }}
+                        className="h-full rounded-full"
+                        style={{ background: 'linear-gradient(90deg,#f0abfc,#c087fc)' }}
+                      />
+                    </div>
+                    <p className="text-[11px] font-semibold text-green-600">
+                      You're saving AED {pointsDiscount.toFixed(0)} with points
+                    </p>
+                  </div>
+                )}
               </SCard>
             )}
 

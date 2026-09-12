@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams, useParams } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../../components/ProductCard';
@@ -232,33 +233,53 @@ const CategoryHero = ({ category }) => {
         WebkitMaskImage: 'linear-gradient(90deg, #000 0%, #000 60%, transparent 80%)',
       }} />
 
-      {/* Circular art on right */}
-      <div className="absolute top-0 right-0 h-full pointer-events-none" style={{ width: '46%' }}>
-        <div className="absolute rounded-full" style={{
-          top: '50%', transform: 'translateY(-50%)',
-          right: '-22%', width: '140%', aspectRatio: '1/1',
-          background: '#ecdcff',
-        }} />
-        <div className="absolute rounded-full" style={{
-          top: '50%', transform: 'translateY(-50%)',
-          right: '-26%', width: '128%', aspectRatio: '1/1',
-          background: '#f6ecff',
-        }} />
-        <div className="absolute rounded-full overflow-hidden" style={{
-          top: '50%', transform: 'translateY(-50%)',
-          right: '-34%', width: '118%', aspectRatio: '1/1',
-          background: 'radial-gradient(circle at 30% 30%, #faf3ff 0%, #e6d2fb 60%, #c9a9f3 100%)',
-        }}>
-          {category.imageUrl && (
-            <img
+      {category.imageUrl && (
+        <>
+          {/* Mobile: full-bleed bg, text stays readable — same technique as /all-products */}
+          <div className="md:hidden absolute inset-0 pointer-events-none overflow-hidden">
+            <Image
               src={category.imageUrl}
               alt={category.name}
-              className="absolute inset-0 w-full h-full object-cover opacity-60"
-              style={{ mixBlendMode: 'multiply' }}
+              fill
+              className="object-cover"
+              style={{
+                maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 20%, rgba(0,0,0,0.55) 50%, black 70%)',
+                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 20%, rgba(0,0,0,0.55) 50%, black 70%)',
+              }}
             />
-          )}
-        </div>
-      </div>
+            <div className="absolute inset-0" style={{
+              background: 'linear-gradient(to right, rgba(250,246,255,0.97) 0%, rgba(250,246,255,0.7) 35%, transparent 65%)',
+            }} />
+          </div>
+
+          {/* Desktop: image masked at every edge so it melts into the gradient, no hard-edged card */}
+          <div className="hidden md:block absolute top-0 bottom-0 right-0 pointer-events-none overflow-hidden" style={{ width: '62%' }}>
+            <Image
+              src={category.imageUrl}
+              alt={category.name}
+              fill
+              className="object-cover"
+              style={{
+                maskImage: [
+                  'linear-gradient(to right,  transparent 0%, rgba(0,0,0,0.25) 10%, rgba(0,0,0,0.7) 22%, black 38%, black 88%, rgba(0,0,0,0.4) 100%)',
+                  'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+                ].join(', '),
+                WebkitMaskImage: [
+                  'linear-gradient(to right,  transparent 0%, rgba(0,0,0,0.25) 10%, rgba(0,0,0,0.7) 22%, black 38%, black 88%, rgba(0,0,0,0.4) 100%)',
+                  'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
+                ].join(', '),
+                maskComposite: 'intersect',
+                WebkitMaskComposite: 'destination-in',
+              }}
+            />
+          </div>
+
+          {/* Foreground left anchor — pulls the hero's own background colour across the seam */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: 'linear-gradient(to right, #faf6ff 0%, rgba(250,246,255,0.92) 16%, rgba(250,246,255,0.38) 30%, transparent 44%)',
+          }} />
+        </>
+      )}
 
       {/* Copy */}
       <div className="relative z-10 h-full flex flex-col justify-center px-8 md:px-12 max-w-[60%]">

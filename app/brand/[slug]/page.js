@@ -1,26 +1,32 @@
+import { cache } from 'react';
 import db from '@/lib/db';
 import BrandClient from './BrandClient';
 import Script from 'next/script';
 import { redirect } from 'next/navigation';
+import { slugify } from '@/lib/slugify';
+
+// Brand URLs are matched by a slug computed from the name (see lib/slugify),
+// not a stored DB column — that column exists but nothing ever populates it,
+// which is why "Shop All" links used to 404 into an empty page for any
+// brand whose name has a space or accent (e.g. "Naya Lumière Perfumes").
+const getActiveBrands = cache(async () => {
+  try {
+    const { rows } = await db.query('SELECT id, name, imageurl FROM brands WHERE is_active = true');
+    return rows;
+  } catch (error) {
+    console.error('Error fetching brands:', error);
+    return [];
+  }
+});
 
 async function getBrandBySlug(slug) {
-  try {
-    const { rows } = await db.query('SELECT id, name, imageurl, slug FROM brands WHERE slug = $1 AND is_active = true', [slug]);
-    return rows.length > 0 ? rows[0] : null;
-  } catch (error) {
-    console.error("Error fetching brand by slug:", error);
-    return null;
-  }
+  const brands = await getActiveBrands();
+  return brands.find((b) => slugify(b.name) === slug) || null;
 }
 
 async function getBrandById(id) {
-  try {
-    const { rows } = await db.query('SELECT id, name, imageurl, slug FROM brands WHERE id = $1 AND is_active = true', [id]);
-    return rows.length > 0 ? rows[0] : null;
-  } catch (error) {
-    console.error("Error fetching brand by id:", error);
-    return null;
-  }
+  const brands = await getActiveBrands();
+  return brands.find((b) => String(b.id) === String(id)) || null;
 }
 
 export async function generateMetadata({ params }) {
@@ -50,7 +56,7 @@ export async function generateMetadata({ params }) {
       type: 'website',
     },
     alternates: {
-      canonical: `https://nayalc.com/brand/${brand.slug || brand.id}`
+      canonical: `https://nayalc.com/brand/${slugify(brand.name)}`
     }
   };
 }
@@ -60,8 +66,8 @@ export default async function Page({ params }) {
 
   if (/^\d+$/.test(slug)) {
     const brand = await getBrandById(slug);
-    if (brand && brand.slug) {
-      redirect(`/brand/${brand.slug}`);
+    if (brand) {
+      redirect(`/brand/${slugify(brand.name)}`);
     }
   }
 
@@ -73,7 +79,7 @@ export default async function Page({ params }) {
     '@context': 'https://schema.org',
     '@type': 'Brand',
     name: brand.name,
-    url: `https://nayalc.com/brand/${brand.slug || brand.id}`,
+    url: `https://nayalc.com/brand/${slugify(brand.name)}`,
     logo: brand.imageurl,
   };
 

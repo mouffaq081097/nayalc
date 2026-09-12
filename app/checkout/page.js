@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [shippingAddresses, setShippingAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(selectedShippingAddressId);
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [stripePromise, setStripePromise] = useState(null);
@@ -48,6 +49,7 @@ export default function CheckoutPage() {
   const prevClientSecretRef = useRef('');
 
   const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
+  const selectedAddress = shippingAddresses.find(a => a.id === selectedAddressId) || null;
   const totalQty = cartItems.reduce((s, i) => s + i.quantity, 0);
   const shipping = calcShipping(totalQty);
   const tax = subtotal * 0.05;
@@ -390,76 +392,147 @@ export default function CheckoutPage() {
                       <p className="text-[13px] text-[#5a5a64] mt-1">Where should your order be delivered?</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {shippingAddresses.map((addr) => {
-                        const isSelected = selectedAddressId === addr.id;
-                        return (
-                          <div
-                            key={addr.id}
-                            onClick={() => setSelectedAddressId(addr.id)}
-                            className={`relative p-5 cursor-pointer rounded-xl border transition-all duration-200 ${
-                              isSelected
-                                ? 'border-[#9869f7] bg-[#f9f9fb] shadow-sm'
-                                : 'border-[#e5e5ea] bg-white hover:border-[#c8c8cf]'
-                            }`}
-                          >
-                            {isSelected && (
+                    {shippingAddresses.length > 0 && (showAddressPicker || !selectedAddress) ? (
+                      <div className="space-y-3">
+                        {selectedAddress && (
+                          <div className="flex items-center justify-between">
+                            <p className="text-[12px] font-medium text-[#8a8a93]">Choose a delivery address</p>
+                            <button
+                              onClick={() => setShowAddressPicker(false)}
+                              className="text-[12px] font-semibold"
+                              style={{ color: '#9869f7' }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {shippingAddresses.map((addr) => {
+                            const isSelected = selectedAddressId === addr.id;
+                            return (
                               <div
-                                className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full flex items-center justify-center text-white"
-                                style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                                key={addr.id}
+                                onClick={() => { setSelectedAddressId(addr.id); setShowAddressPicker(false); }}
+                                className={`relative p-5 cursor-pointer rounded-xl border transition-all duration-200 ${
+                                  isSelected
+                                    ? 'border-[#9869f7] bg-[#f9f9fb] shadow-sm'
+                                    : 'border-[#e5e5ea] bg-white hover:border-[#c8c8cf]'
+                                }`}
                               >
-                                <Check size={11} strokeWidth={3} />
-                              </div>
-                            )}
-                            <div className="space-y-1.5 pr-6">
-                              <div className="flex items-center gap-2">
-                                <p className="text-[14px] font-semibold text-[#111114]">
-                                  {addr.addressLabel || addr.customerName || user?.name}
-                                </p>
-                                {addr.isDefault && (
-                                  <span
-                                    className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full text-white"
+                                {isSelected && (
+                                  <div
+                                    className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full flex items-center justify-center text-white"
                                     style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
                                   >
-                                    Default
-                                  </span>
+                                    <Check size={11} strokeWidth={3} />
+                                  </div>
                                 )}
+                                <div className="space-y-1.5 pr-6">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-[14px] font-semibold text-[#111114]">
+                                      {addr.addressLabel || addr.customerName || user?.name}
+                                    </p>
+                                    {addr.isDefault && (
+                                      <span
+                                        className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full text-white"
+                                        style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                                      >
+                                        Default
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[12px] text-[#5a5a64] truncate">{addr.shipping_address || addr.addressLine1}</p>
+                                  <p className="text-[11px] text-[#8a8a93] flex items-center gap-1">
+                                    <MapPin size={10} /> {addr.city}, {addr.country}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#e5e5ea]">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); openAddressModal(addr); }}
+                                    className="flex items-center gap-1.5 text-[11px] font-medium text-[#5a5a64] hover:text-[#111114] transition-colors"
+                                  >
+                                    <Pencil size={11} /> Edit
+                                  </button>
+                                  <span className="text-[#e5e5ea]">·</span>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }}
+                                    className="flex items-center gap-1.5 text-[11px] font-medium text-red-400 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 size={11} /> Remove
+                                  </button>
+                                </div>
                               </div>
-                              <p className="text-[12px] text-[#5a5a64] truncate">{addr.shipping_address || addr.addressLine1}</p>
-                              <p className="text-[11px] text-[#8a8a93] flex items-center gap-1">
-                                <MapPin size={10} /> {addr.city}, {addr.country}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#e5e5ea]">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); openAddressModal(addr); }}
-                                className="flex items-center gap-1.5 text-[11px] font-medium text-[#5a5a64] hover:text-[#111114] transition-colors"
-                              >
-                                <Pencil size={11} /> Edit
-                              </button>
-                              <span className="text-[#e5e5ea]">·</span>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }}
-                                className="flex items-center gap-1.5 text-[11px] font-medium text-red-400 hover:text-red-600 transition-colors"
-                              >
-                                <Trash2 size={11} /> Remove
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
 
-                      {/* Add new address */}
+                          {/* Add new address */}
+                          <button
+                            onClick={() => openAddressModal(null)}
+                            className="min-h-[120px] rounded-xl border-2 border-dashed border-[#e5e5ea] flex flex-col items-center justify-center gap-2 text-[#8a8a93] hover:border-[#9869f7] hover:text-[#9869f7] hover:bg-[#f9f9fb] transition-all duration-200"
+                          >
+                            <div className="w-8 h-8 rounded-lg border border-current flex items-center justify-center">
+                              <Plus size={14} />
+                            </div>
+                            <span className="text-[12px] font-medium">Add new address</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : selectedAddress ? (
+                      <div className="relative p-5 rounded-xl border border-[#9869f7] bg-[#f9f9fb] shadow-sm">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[14px] font-semibold text-[#111114]">
+                              {selectedAddress.addressLabel || selectedAddress.customerName || user?.name}
+                            </p>
+                            {selectedAddress.isDefault && (
+                              <span
+                                className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full text-white"
+                                style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
+                              >
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[12px] text-[#5a5a64]">{selectedAddress.shipping_address || selectedAddress.addressLine1}</p>
+                          <p className="text-[11px] text-[#8a8a93] flex items-center gap-1">
+                            <MapPin size={10} /> {selectedAddress.city}, {selectedAddress.country}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#e5e5ea]">
+                          <button
+                            onClick={() => setShowAddressPicker(true)}
+                            className="text-[11px] font-semibold"
+                            style={{ color: '#9869f7' }}
+                          >
+                            Change address
+                          </button>
+                          <span className="text-[#e5e5ea]">·</span>
+                          <button
+                            onClick={() => openAddressModal(selectedAddress)}
+                            className="flex items-center gap-1.5 text-[11px] font-medium text-[#5a5a64] hover:text-[#111114] transition-colors"
+                          >
+                            <Pencil size={11} /> Edit
+                          </button>
+                          <span className="text-[#e5e5ea]">·</span>
+                          <button
+                            onClick={() => handleDeleteAddress(selectedAddress.id)}
+                            className="flex items-center gap-1.5 text-[11px] font-medium text-red-400 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 size={11} /> Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
                       <button
                         onClick={() => openAddressModal(null)}
-                        className="min-h-[120px] rounded-xl border-2 border-dashed border-[#e5e5ea] flex flex-col items-center justify-center gap-2 text-[#8a8a93] hover:border-[#9869f7] hover:text-[#9869f7] hover:bg-[#f9f9fb] transition-all duration-200"
+                        className="w-full min-h-[120px] rounded-xl border-2 border-dashed border-[#e5e5ea] flex flex-col items-center justify-center gap-2 text-[#8a8a93] hover:border-[#9869f7] hover:text-[#9869f7] hover:bg-[#f9f9fb] transition-all duration-200"
                       >
                         <div className="w-8 h-8 rounded-lg border border-current flex items-center justify-center">
                           <Plus size={14} />
                         </div>
-                        <span className="text-[12px] font-medium">Add new address</span>
+                        <span className="text-[12px] font-medium">Add a shipping address</span>
                       </button>
-                    </div>
+                    )}
                   </div>
                 )}
 
@@ -470,6 +543,19 @@ export default function CheckoutPage() {
                       <h2 className="text-[20px] font-semibold text-[#111114]">Payment</h2>
                       <p className="text-[13px] text-[#5a5a64] mt-1">Choose your preferred payment method.</p>
                     </div>
+
+                    {/* Express checkout — Apple Pay / Google Pay, shown first so shoppers can skip method selection entirely */}
+                    <ExpressCheckoutButton
+                      stripePromise={stripePromise}
+                      amount={Math.round(total * 100)}
+                      disabled={isPlacingOrder}
+                      onBeforePay={() => {
+                        if (!selectedAddressId) { toast.error('Please select a shipping address first.'); return false; }
+                        if (total <= 0) return false;
+                        return true;
+                      }}
+                      onSuccess={handleWalletPayment}
+                    />
 
                     <div className="space-y-2.5">
                       {[
@@ -538,19 +624,6 @@ export default function CheckoutPage() {
                         );
                       })()}
                     </div>
-
-                    {/* Express checkout — Apple Pay / Google Pay (shown under Tabby, no card selection needed) */}
-                    <ExpressCheckoutButton
-                      stripePromise={stripePromise}
-                      amount={Math.round(total * 100)}
-                      disabled={isPlacingOrder}
-                      onBeforePay={() => {
-                        if (!selectedAddressId) { toast.error('Please select a shipping address first.'); return false; }
-                        if (total <= 0) return false;
-                        return true;
-                      }}
-                      onSuccess={handleWalletPayment}
-                    />
 
                     {/* Stripe card form */}
                     <AnimatePresence mode="wait">
@@ -632,16 +705,13 @@ export default function CheckoutPage() {
                           <MapPin size={13} className="text-[#8a8a93]" />
                           <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-widest">Shipping address</p>
                         </div>
-                        {(() => {
-                          const addr = shippingAddresses.find(a => a.id === selectedAddressId);
-                          return addr ? (
-                            <div className="text-[13px] space-y-0.5">
-                              <p className="font-semibold text-[#111114]">{addr.customerName || user?.name}</p>
-                              <p className="text-[#5a5a64]">{addr.shipping_address || addr.addressLine1}</p>
-                              <p className="text-[#8a8a93]">{addr.city}, {addr.country}</p>
-                            </div>
-                          ) : null;
-                        })()}
+                        {selectedAddress && (
+                          <div className="text-[13px] space-y-0.5">
+                            <p className="font-semibold text-[#111114]">{selectedAddress.customerName || user?.name}</p>
+                            <p className="text-[#5a5a64]">{selectedAddress.shipping_address || selectedAddress.addressLine1}</p>
+                            <p className="text-[#8a8a93]">{selectedAddress.city}, {selectedAddress.country}</p>
+                          </div>
+                        )}
                       </div>
 
                       {/* Payment */}
