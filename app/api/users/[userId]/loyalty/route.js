@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { currentSessionUser } from '@/lib/adminAuth';
 
 export async function GET(request, { params }) {
     const { userId } = await params;
+
+    // Customers can only see their own points; admins can see anyone's
+    const sessionUser = await currentSessionUser();
+    if (!sessionUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    if (sessionUser.role !== 'admin' && String(sessionUser.id) !== String(userId)) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
 
     try {
         // 1. Get user loyalty status

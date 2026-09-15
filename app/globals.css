@@ -442,6 +442,11 @@ body {
 }
 .sp-input:focus { outline: none; border-color: var(--sp-focus); box-shadow: 0 0 0 2px rgba(0,91,211,0.20); }
 .sp-input::placeholder { color: var(--sp-text-subdued); }
+/* .sp-input is full width; let w-auto opt out (e.g. a filter select next to a search box) */
+.sp-admin .sp-input.w-auto { width: auto; }
+/* Tailwind v4 dividers default to currentColor (near black) — keep them the light admin border colour */
+.sp-admin .divide-x > *,
+.sp-admin .divide-y > * { border-color: var(--sp-border); }
 
 .sp-table { width: 100%; border-collapse: collapse; }
 .sp-table thead th {
@@ -449,6 +454,7 @@ body {
   text-align: left; padding: 10px 16px; background: var(--sp-surface-sub);
   border-bottom: 1px solid var(--sp-border);
 }
+.sp-table thead th.text-right { text-align: right; }
 .sp-table tbody td { font-size: 13px; color: var(--sp-text); padding: 12px 16px; border-bottom: 1px solid #f1f1f1; }
 .sp-table tbody tr:last-child td { border-bottom: 0; }
 .sp-table tbody tr:hover { background: #fafafa; }
@@ -550,6 +556,12 @@ body {
   box-shadow: 0 1px 0 rgba(0,0,0,0.06), inset 0 0 0 1px rgba(0,0,0,0.04);
   font-weight: 600;
 }
+/* Section containing the current page: bold, without the white "you are here" background */
+.sp-admin .sp-nav-link[data-section='true'] { font-weight: 600; }
+/* Sub-pages listed under their section, e.g. Orders → Abandoned checkouts */
+.sp-admin .sp-nav-sublink { padding: 6px 10px 6px 38px; color: #616161; }
+.sp-admin .sp-nav-sublink:hover,
+.sp-admin .sp-nav-sublink[data-active='true'] { color: #303030; }
 
 /* ──── Homepage mobile carousels ──────────────────────────────────
  * Card grids on NayaLumiereHome.js scroll as a single horizontal, snapping

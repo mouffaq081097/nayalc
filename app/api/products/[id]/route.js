@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { Buffer } from 'buffer'; // Import Buffer for converting File to Buffer
+import { requireAdmin } from '@/lib/adminAuth';
 
 /**
  * @swagger
@@ -116,7 +117,11 @@ export async function GET(request, context) {
         client.release();
     }
 }
+
 export async function PUT(request, context) {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
     const resolvedParams = await context.params;
     const { id } = resolvedParams;
     const client = await db.connect();
@@ -157,13 +162,11 @@ export async function PUT(request, context) {
         const mainAltText = formData.get('mainAltText') || '';
         const existingImageUrl = formData.get('imageUrl'); // Existing image URL if no new file
 
-
         let imageUrl = existingImageUrl; // Start with existing image URL
         if (mainImageFile && mainImageFile.size > 0) { // Check if a new image file is provided
             const imageBuffer = Buffer.from(await mainImageFile.arrayBuffer());
             const uploadResult = await uploadImageToCloudinary(imageBuffer);
             imageUrl = uploadResult.secure_url;
-            // TODO: Potentially delete old image from Cloudinary if desired
         }
 
         // 1. Update products table
@@ -179,41 +182,43 @@ export async function PUT(request, context) {
             return NextResponse.json({ message: 'Product not found' }, { status: 404 });
         }
 
-        // 2. Update product_images table (for main image)
-        if (imageUrl) {
-            // Delete old main image entry for this product
+        // 2. Main image
+        if (!imageUrl && formData.get('removeMainImage') === 'true') {
             await client.query("DELETE FROM product_images WHERE product_id = $1 AND is_main = TRUE", [id]);
-            // Insert new main image entry
+        }
+        if (imageUrl) {
+            await client.query("DELETE FROM product_images WHERE product_id = $1 AND is_main = TRUE", [id]);
             await client.query(
                 "INSERT INTO product_images (product_id, image_url, is_main, display_order, alt_text) VALUES ($1, $2, TRUE, 0, $3)",
                 [id, imageUrl, mainAltText]
             );
         }
 
-        // 2.5 Update additional images
+        // 2.5 Gallery images, in the order the editor lists them. A kept URL may have no gallery row yet
+        // (e.g. the previous main image after another image was made main), so insert it rather than lose it.
         const existingAdditionalImages = formData.getAll('existingAdditionalImages');
         const existingAdditionalAlts = formData.getAll('existingAdditionalAlts');
-        
-        // Delete all non-main images that are not in the list of existing images to keep
-        if (existingAdditionalImages.length > 0) {
-            await client.query(
-                "DELETE FROM product_images WHERE product_id = $1 AND is_main = FALSE AND image_url NOT IN (" + 
-                existingAdditionalImages.map((_, i) => `$${i + 2}`).join(',') + ")",
-                [id, ...existingAdditionalImages]
+        await client.query(
+            'DELETE FROM product_images WHERE product_id = $1 AND is_main = FALSE AND NOT (image_url = ANY($2::text[]))',
+            [id, existingAdditionalImages]
+        );
+        for (let i = 0; i < existingAdditionalImages.length; i++) {
+            const url = existingAdditionalImages[i];
+            if (url === imageUrl) continue;
+            const alt = existingAdditionalAlts[i] || '';
+            const { rowCount: updated } = await client.query(
+                'UPDATE product_images SET alt_text = $1, display_order = $2 WHERE product_id = $3 AND image_url = $4 AND is_main = FALSE',
+                [alt, i + 1, id, url]
             );
-            
-            // Update alt text for the images we kept
-            for (let i = 0; i < existingAdditionalImages.length; i++) {
+            if (updated === 0) {
                 await client.query(
-                    "UPDATE product_images SET alt_text = $1 WHERE product_id = $2 AND image_url = $3",
-                    [existingAdditionalAlts[i] || '', id, existingAdditionalImages[i]]
+                    'INSERT INTO product_images (product_id, image_url, is_main, display_order, alt_text) VALUES ($1, $2, FALSE, $3, $4)',
+                    [id, url, i + 1, alt]
                 );
             }
-        } else {
-            await client.query("DELETE FROM product_images WHERE product_id = $1 AND is_main = FALSE", [id]);
         }
 
-        // Upload and insert new additional images
+        // Upload new gallery images after the kept ones
         const additionalImageFiles = formData.getAll('additionalImages');
         const additionalAlts = formData.getAll('additionalAlts');
         for (let i = 0; i < additionalImageFiles.length; i++) {
@@ -223,8 +228,8 @@ export async function PUT(request, context) {
                 const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
                 const uploadResult = await uploadImageToCloudinary(imageBuffer);
                 await client.query(
-                    'INSERT INTO product_images (product_id, image_url, is_main, alt_text) VALUES ($1, $2, FALSE, $3)',
-                    [id, uploadResult.secure_url, altText]
+                    'INSERT INTO product_images (product_id, image_url, is_main, display_order, alt_text) VALUES ($1, $2, FALSE, $3, $4)',
+                    [id, uploadResult.secure_url, existingAdditionalImages.length + i + 1, altText]
                 );
             }
         }
@@ -258,7 +263,11 @@ export async function PUT(request, context) {
         client.release();
     }
 }
+
 export async function PATCH(request, context) {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
     const params = await context.params;
     const { id } = params;
     try {
@@ -282,19 +291,22 @@ export async function PATCH(request, context) {
     }
 }
 
-export async function DELETE(request, { params }) {
-    const { id } = params;
+export async function DELETE(request, context) {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
+    const { id } = await context.params;
     const client = await db.connect();
     try {
         await client.query('BEGIN');
 
-        // Delete from product_images
         await client.query('DELETE FROM product_images WHERE product_id = $1', [id]);
-
-        // Delete from category_products
         await client.query('DELETE FROM category_products WHERE product_id = $1', [id]);
+        const { rows: [{ hasConcerns }] } = await client.query("SELECT to_regclass('public.product_concerns') IS NOT NULL AS \"hasConcerns\"");
+        if (hasConcerns) {
+            await client.query('DELETE FROM product_concerns WHERE product_id = $1', [id]);
+        }
 
-        // Delete from products
         const deleteProductResult = await client.query('DELETE FROM products WHERE id = $1', [id]);
 
         if (deleteProductResult.rowCount === 0) {
@@ -306,6 +318,10 @@ export async function DELETE(request, { params }) {
         return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
     } catch (error) {
         await client.query('ROLLBACK');
+        // Still referenced elsewhere, e.g. by past orders, reviews or carts
+        if (error.code === '23503') {
+            return NextResponse.json({ message: "This product is linked to past orders or customer data, so it can't be deleted. Hide it from the store instead." }, { status: 409 });
+        }
         console.error(`Error deleting product ${id}:`, error);
         return NextResponse.json({ message: 'Error deleting product', error: error.message }, { status: 500 });
     } finally {

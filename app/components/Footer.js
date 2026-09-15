@@ -2,8 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Instagram, Twitter, Facebook, ArrowRight } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export default function Footer() {
   return (
@@ -15,32 +15,8 @@ export default function Footer() {
           
           {/* Brand & Newsletter */}
           <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left">
-            <Link href="/" className="flex items-center gap-2.5 mb-6 transition-all active:scale-95 group">
-                <Image
-                  src="/Adobe Express - file (5).png"
-                  alt="Naya Lumière Cosmetics"
-                  height={28}
-                  width={28}
-                  className="h-7 w-7 md:h-7 w-auto object-contain shrink-0"
-                />
-                <div className="flex flex-col text-left leading-tight">
-                    <span
-                      className="text-[15px] md:text-[16px] font-bold tracking-[0.06em] uppercase text-ink-900"
-                      style={{
-                        fontFamily: 'var(--font-sans)',
-                      }}
-                    >
-                      NAYA LUMIÈRE
-                    </span>
-                    <span
-                      className="text-[9px] tracking-[0.32em] uppercase text-ink-500 mt-0.5 block leading-none"
-                      style={{
-                        fontFamily: 'var(--font-sans)',
-                      }}
-                    >
-                      COSMETICS
-                    </span>
-                </div>
+            <Link href="/" className="mb-6 rounded-md transition-opacity hover:opacity-75 active:opacity-60">
+                <BrandLogo />
             </Link>
             <p className="text-[13px] text-gray-500 max-w-md leading-relaxed mb-8 font-medium">
               Join our exclusive journal for early access to seasonal previews, botanical insights, and private boutique events.

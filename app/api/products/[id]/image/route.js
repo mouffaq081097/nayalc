@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { requireAdmin } from '@/lib/adminAuth';
 
 export async function POST(request, { params }) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   const resolvedParams = await Promise.resolve(params);
   const productId = resolvedParams.id;
   const client = await db.connect();

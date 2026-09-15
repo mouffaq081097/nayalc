@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { requireAdmin } from '@/lib/adminAuth';
 
 /**
  * @swagger
@@ -88,6 +89,9 @@ export async function GET(request) {
  *         description: Server error.
  */
 export async function POST(request) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   const client = await db.connect();
   try {
     const formData = await request.formData();
@@ -106,7 +110,8 @@ export async function POST(request) {
 
     // Generate unique slug
     const slugify = (text) => text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
-    let baseSlug = slugify(name);
+    // Use the admin's URL handle when given, otherwise derive it from the name
+    let baseSlug = slugify(formData.get('slug') || name);
     let slug = baseSlug;
     let counter = 1;
     while (true) {

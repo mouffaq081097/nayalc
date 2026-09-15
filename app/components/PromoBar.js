@@ -20,7 +20,7 @@ export function PromoBar() {
   const { shippingAddresses } = useUser();
 
   const defaultAddress =
-    shippingAddresses.find((addr) => addr.is_default) || shippingAddresses[0] || null;
+    shippingAddresses.find((addr) => addr.isDefault) || shippingAddresses[0] || null;
   const deliveryLabel = defaultAddress
     ? [defaultAddress.city, defaultAddress.country].filter(Boolean).join(', ')
     : 'United Arab Emirates';

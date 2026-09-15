@@ -134,6 +134,48 @@ const MarketingPage = () => {
     const [showAudienceModal, setShowAudienceModal] = useState(false);
     const [fetchingAudience, setFetchingAudience] = useState(false);
 
+    // Stock clearance offer
+    const [clearance, setClearance] = useState({ code: 'LASTPIECES5', validDays: 14, heroImage: '', testEmail: '' });
+    const [clearancePreview, setClearancePreview] = useState(null);
+    const [clearanceBusy, setClearanceBusy] = useState(null); // 'preview' | 'test' | 'send'
+
+    const previewClearance = async () => {
+        setClearanceBusy('preview');
+        try {
+            const params = new URLSearchParams({ code: clearance.code, validDays: String(clearance.validDays), heroImage: clearance.heroImage });
+            const res = await fetchWithAuth(`/api/admin/campaigns/stock-clearance?${params}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+            setClearancePreview(data);
+        } catch (error) {
+            setStatus({ type: 'error', message: error.message || 'Failed to load preview' });
+        } finally {
+            setClearanceBusy(null);
+        }
+    };
+
+    const sendClearance = async (mode) => {
+        if (mode === 'test' && !clearance.testEmail) { alert('Please provide a test email address'); return; }
+        if (mode === 'send') {
+            const audienceText = clearancePreview ? `${clearancePreview.recipientCount} registered customers` : 'every registered customer';
+            if (!window.confirm(`Create coupon ${clearance.code} (5% off) and email ${audienceText}? This cannot be undone.`)) return;
+        }
+        setClearanceBusy(mode);
+        setStatus(null);
+        try {
+            const res = await fetchWithAuth('/api/admin/campaigns/stock-clearance', {
+                method: 'POST',
+                body: JSON.stringify({ ...clearance, mode }),
+            });
+            const data = await res.json();
+            setStatus({ type: res.ok ? 'success' : 'error', message: data.message || 'Failed to send campaign' });
+        } catch {
+            setStatus({ type: 'error', message: 'An unexpected error occurred' });
+        } finally {
+            setClearanceBusy(null);
+        }
+    };
+
     const audiences = [
         { id: 'all', label: 'All Registered Users', icon: Users, description: 'Send to everyone with an account.' },
         { id: 'selected_users', label: 'Selected Users', icon: UserCheck, description: 'Hand-pick specific recipients.' },
@@ -423,6 +465,78 @@ const MarketingPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* ── LEFT PANEL ── */}
                 <div className="lg:col-span-4 space-y-5">
+
+                    {/* Stock clearance offer */}
+                    <div className="bg-white rounded-3xl p-6 border border-purple-100 shadow-sm space-y-4">
+                        <div>
+                            <p className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Tag size={15} className="text-purple-600" /> Stock clearance offer</p>
+                            <p className="text-xs text-gray-500 mt-1">Emails every registered customer your in-stock products with a 5% off code. The coupon is created when you send a test or launch.</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-medium text-purple-400 mb-1.5">Coupon code</label>
+                                <input type="text" value={clearance.code}
+                                    onChange={e => setClearance(c => ({ ...c, code: e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '') }))}
+                                    className="w-full px-3 py-2 bg-purple-50/50 border border-purple-100 rounded-xl text-xs font-mono font-bold text-gray-900 outline-none focus:border-purple-300"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-purple-400 mb-1.5">Valid for (days)</label>
+                                <input type="number" min={1} max={90} value={clearance.validDays}
+                                    onChange={e => setClearance(c => ({ ...c, validDays: e.target.value }))}
+                                    className="w-full px-3 py-2 bg-purple-50/50 border border-purple-100 rounded-xl text-xs font-bold text-gray-900 outline-none focus:border-purple-300"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-purple-400 mb-1.5">Hero image URL (optional)</label>
+                            <input type="url" value={clearance.heroImage} placeholder="Defaults to the homepage spa photo"
+                                onChange={e => setClearance(c => ({ ...c, heroImage: e.target.value }))}
+                                className="w-full px-3 py-2 bg-purple-50/50 border border-purple-100 rounded-xl text-xs text-gray-900 outline-none focus:border-purple-300"
+                            />
+                        </div>
+                        <button onClick={previewClearance} disabled={!!clearanceBusy}
+                            className="w-full py-2.5 rounded-xl border border-purple-200 text-purple-600 hover:bg-purple-50 text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                        >
+                            {clearanceBusy === 'preview' ? <Loader2 size={13} className="animate-spin" /> : <Eye size={13} />} Preview email
+                        </button>
+                        <div className="flex gap-2">
+                            <input type="email" value={clearance.testEmail} placeholder="Send test to..."
+                                onChange={e => setClearance(c => ({ ...c, testEmail: e.target.value }))}
+                                className="flex-1 min-w-0 px-3 py-2 bg-white border border-purple-100 rounded-xl text-xs outline-none focus:border-purple-300"
+                            />
+                            <button onClick={() => sendClearance('test')} disabled={!!clearanceBusy || !clearance.testEmail}
+                                className="px-3 py-2 rounded-xl border border-purple-200 text-purple-600 hover:bg-purple-50 text-xs font-semibold whitespace-nowrap disabled:opacity-50 transition-colors"
+                            >
+                                {clearanceBusy === 'test' ? <Loader2 size={13} className="animate-spin" /> : 'Send test'}
+                            </button>
+                        </div>
+                        <button onClick={() => sendClearance('send')} disabled={!!clearanceBusy || !clearance.code}
+                            className="w-full py-3 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                            style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}
+                        >
+                            {clearanceBusy === 'send' ? <><Loader2 size={13} className="animate-spin" /> Sending…</> : <><Send size={13} /> Send to all customers</>}
+                        </button>
+                    </div>
+
+                    {/* Stock clearance preview */}
+                    {clearancePreview && (
+                        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                            <div className="bg-white rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                                <div className="p-5 border-b border-purple-100 flex justify-between items-start gap-4">
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-medium text-purple-400">Subject</p>
+                                        <p className="text-sm font-semibold text-gray-900 truncate">{clearancePreview.subject}</p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {clearancePreview.recipientCount} recipient(s) · {clearancePreview.products.length} product(s) featured · Sample name “Layla” is replaced with each customer's first name
+                                        </p>
+                                    </div>
+                                    <button onClick={() => setClearancePreview(null)} className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0"><X size={20} /></button>
+                                </div>
+                                <iframe title="Stock clearance email preview" srcDoc={clearancePreview.html} className="w-full flex-1 min-h-[70vh] bg-white" />
+                            </div>
+                        </div>
+                    )}
 
                     {/* Audience */}
                     <div className="bg-white rounded-3xl p-6 border border-purple-100 shadow-sm space-y-3">

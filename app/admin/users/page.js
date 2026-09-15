@@ -1,765 +1,247 @@
 'use client';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { AlertCircle, Download, Mail, MoreHorizontal, ShieldCheck, ShieldOff, UserCheck, UserRound, Users, UserX } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-import { io } from 'socket.io-client';
-import {
-    Mail, Phone, User, Search, UserCheck, Shield, Calendar,
-    ShieldAlert, ShieldCheck, LayoutGrid, List, MoreHorizontal,
-    EyeOff, Archive, ExternalLink, MapPin, Home, ChevronDown, Circle, Star,
-    X, TrendingUp, Award, Clock, ArrowUpRight, ArrowDownLeft, Gift
-} from 'lucide-react';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
-import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
-import Image from 'next/image';
+import { EmptyState, SearchBox, ViewPill, toolbarSelectStyle } from '../_components/IndexToolbar';
+import { fmtAed } from '../products/_components/productAdmin';
+import {
+  CustomerAvatar, changeAdminAccess, changeSuspension, customerLocation, customerName, fmtDate,
+} from './_components/customerAdmin';
 
-const AllUsersPage = () => {
-    const { fetchWithAuth } = useAppContext();
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [viewMode, setViewMode] = useState('grid');
-    const [expandedUsers, setExpandedUsers] = useState({});
-    const [onlineUsers, setOnlineUsers] = useState([]);
-    const socketRef = useRef(null);
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [clientTab, setClientTab] = useState('overview');
-    const [loyaltyData, setLoyaltyData] = useState({});
-    const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+const text = { color: 'var(--sp-text)' };
+const secondary = { color: 'var(--sp-text-secondary)' };
+const subdued = { color: 'var(--sp-text-subdued)' };
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const response = await fetchWithAuth('/api/users');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch users');
-                }
-                const data = await response.json();
-                setUsers(data);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
+// Admins and Suspended only appear when someone has that status
+const VIEWS = [
+  { id: 'all', label: 'All', match: () => true },
+  { id: 'buyers', label: 'Has ordered', match: c => c.orders_count > 0 },
+  { id: 'prospects', label: 'No orders yet', match: c => c.orders_count === 0 },
+  { id: 'admins', label: 'Admins', match: c => c.is_admin, optional: true },
+  { id: 'suspended', label: 'Suspended', match: c => c.is_suspended, optional: true },
+];
 
-        fetchUsers();
-    }, [fetchWithAuth]);
-
-    useEffect(() => {
-        const initSocket = async () => {
-            await fetch('/api/socket');
-            const socket = io('/', { path: '/api/socket_io' });
-            socketRef.current = socket;
-
-            socket.on('connect', () => {
-                socket.emit('join_room', 'admin');
-                socket.emit('get_online_users', (ids) => {
-                    setOnlineUsers(ids.map(id => Number(id)));
-                });
-            });
-
-            socket.on('user_status_change', ({ userId, status }) => {
-                const id = Number(userId);
-                if (status === 'online') {
-                    setOnlineUsers(prev => prev.includes(id) ? prev : [...prev, id]);
-                } else {
-                    setOnlineUsers(prev => prev.filter(i => i !== id));
-                }
-            });
-        };
-
-        initSocket();
-
-        return () => {
-            if (socketRef.current) socketRef.current.disconnect();
-        };
-    }, []);
-
-    const toggleSuspend = async (userId, currentlySuspended) => {
-        const action = currentlySuspended ? 'reinstate' : 'suspend';
-        if (!window.confirm(`Are you sure you want to ${action} this account?`)) return;
-        try {
-            const response = await fetchWithAuth(`/api/admin/users/${userId}/suspend`, {
-                method: 'PUT',
-                body: JSON.stringify({ is_suspended: !currentlySuspended }),
-            });
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || 'Failed to update account');
-            }
-            setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_suspended: !currentlySuspended } : u));
-            if (selectedUser?.id === userId) setSelectedUser(prev => ({ ...prev, is_suspended: !currentlySuspended }));
-            toast.success(currentlySuspended ? 'Account reinstated.' : 'Account suspended.');
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
-
-    const toggleAdminRole = async (userId, currentStatus) => {
-        const newStatus = !currentStatus;
-        const confirmMsg = newStatus 
-            ? "Are you sure you want to grant Admin privileges to this user?" 
-            : "Are you sure you want to revoke Admin privileges from this user?";
-            
-        if (!window.confirm(confirmMsg)) return;
-
-        try {
-            const response = await fetchWithAuth(`/api/admin/users/${userId}/role`, {
-                method: 'PUT',
-                body: JSON.stringify({ is_admin: newStatus })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to update role');
-            }
-            
-            setUsers(prevUsers => prevUsers.map(u => 
-                u.id === userId ? { ...u, is_admin: newStatus } : u
-            ));
-            
-            toast.success(`Admin privileges ${newStatus ? 'granted' : 'revoked'} successfully.`);
-        } catch (err) {
-            toast.error(err.message);
-        }
-    };
-
-    const toggleUserAddresses = (userId) => {
-        setExpandedUsers(prev => ({ ...prev, [userId]: !prev[userId] }));
-    };
-
-    const fetchLoyalty = async (userId) => {
-        if (loyaltyData[userId]) return;
-        setLoyaltyLoading(true);
-        try {
-            const res = await fetchWithAuth(`/api/users/${userId}/loyalty`);
-            const data = await res.json();
-            setLoyaltyData(prev => ({ ...prev, [userId]: data }));
-        } catch (e) {
-            console.error('Failed to fetch loyalty data', e);
-        } finally {
-            setLoyaltyLoading(false);
-        }
-    };
-
-    const openClient = (user, tab = 'overview') => {
-        setSelectedUser(user);
-        setClientTab(tab);
-        fetchLoyalty(user.id);
-    };
-
-    const closeClient = () => setSelectedUser(null);
-
-    const filteredUsers = users.filter(user =>
-        (user.first_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-        (user.last_name?.toLowerCase() ?? '').includes(searchTerm.toLowerCase()) ||
-        (user.email?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
-    );
-
-    if (loading) return <PageLoader />;
-
-    if (error) {
-        return (
-            <div className="min-h-[400px] flex flex-col items-center justify-center gap-3 text-red-500">
-                <Shield size={36} className="opacity-30" />
-                <p className="font-semibold text-sm">Failed to load users: {error}</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-6 pb-8">
-            {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2" size={15} style={{ color: '#616161' }} />
-                    <input
-                        type="text" placeholder="Search clients…"
-                        className="w-full pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all rounded-full"
-                        style={{
-                            background: 'rgba(255,255,255,0.8)',
-                            border: '1px solid #e3e3e3',
-                            color: '#1a1a1a',
-                        }}
-                        value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                    />
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {/* View toggle */}
-                    <div className="flex rounded-full p-1" style={{ background: '#f7f7f7', border: '1px solid #e3e3e3' }}>
-                        <button onClick={() => setViewMode('grid')}
-                            className="p-1.5 rounded-full transition-all"
-                            style={viewMode === 'grid' ? { background: '#fff', color: '#303030', boxShadow: '0 1px 4px #616161' } : { color: '#616161' }}>
-                            <LayoutGrid size={15} />
-                        </button>
-                        <button onClick={() => setViewMode('list')}
-                            className="p-1.5 rounded-full transition-all"
-                            style={viewMode === 'list' ? { background: '#fff', color: '#303030', boxShadow: '0 1px 4px #616161' } : { color: '#616161' }}>
-                            <List size={15} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Grid / List */}
-            <AnimatePresence mode="wait">
-                {viewMode === 'grid' ? (
-                    <motion.div key="grid" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
-                        {filteredUsers.map(user => (
-                            <div key={user.id}
-                                className="group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300  "
-                                style={{ background: '#f7f7f7', border: '1px solid #e3e3e3' }}
-                            >
-                                {/* Status badges */}
-                                <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-                                    {user.is_admin && (
-                                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-purple-600 text-white shadow-sm flex items-center gap-1 border border-purple-500">
-                                            <ShieldCheck size={8} /> Admin
-                                        </span>
-                                    )}
-                                    {user.is_suspended ? (
-                                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-red-100 text-red-600 border border-red-200 flex items-center gap-1">
-                                            <EyeOff size={8} /> Suspended
-                                        </span>
-                                    ) : (
-                                        <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-white/80 text-gray-600 border border-gray-200 backdrop-blur-sm flex items-center gap-1">
-                                            <UserCheck size={8} /> Active
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Quick-action menu top-right */}
-                                <div className="absolute top-3 right-3 z-10  transition-opacity">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <button className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm border border-purple-100 flex items-center justify-center shadow-sm">
-                                                <MoreHorizontal size={13} className="text-purple-400" />
-                                            </button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="rounded-xl shadow-xl border-purple-100 p-1.5">
-                                            <DropdownMenuItem onClick={() => toggleAdminRole(user.id, user.is_admin)} className="rounded-lg px-3 py-2.5 text-sm gap-2.5">
-                                                {user.is_admin ? <><ShieldAlert size={14} className="text-orange-500" /> Revoke Admin</> : <><ShieldCheck size={14} className="text-purple-500" /> Make Admin</>}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => openClient(user)} className="rounded-lg px-3 py-2.5 text-sm gap-2.5">
-                                                <ExternalLink size={14} className="text-blue-500" /> View Details
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => toggleSuspend(user.id, user.is_suspended)} className="rounded-lg px-3 py-2.5 text-sm gap-2.5 text-red-600 focus:bg-red-50">
-                                                <EyeOff size={14} /> {user.is_suspended ? 'Reinstate Account' : 'Suspend Account'}
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-
-                                {/* Avatar Container — mimics the white product image card */}
-                                <div
-                                    className="relative mx-3 mt-3 rounded-xl overflow-hidden flex flex-col items-center justify-center p-6 cursor-pointer"
-                                    style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.85)' }}
-                                    onClick={() => toggleUserAddresses(user.id)}
-                                >
-                                    <div className="relative w-16 h-16 rounded-full bg-purple-50 flex items-center justify-center text-purple-400 mb-4 border border-purple-100 shadow-sm transition-transform duration-500 overflow-hidden">
-                                        {user.profile_image ? (
-                                            <Image src={user.profile_image} alt={`${user.first_name} ${user.last_name}`} fill className="object-cover" />
-                                        ) : (
-                                            <User size={28} />
-                                        )}
-                                    </div>
-                                    {onlineUsers.includes(Number(user.id)) && (
-                                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 translate-y-4">
-                                            <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-green-100 shadow-sm">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                                <span className="text-[8px] font-bold text-green-600 uppercase">Online</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <h3 className="text-sm font-bold text-gray-900 text-center leading-tight">{user.first_name} {user.last_name}</h3>
-                                    <p className="text-[10px] font-semibold text-gray-400 mt-1">ID: {user.id.toString().padStart(5, '0')}</p>
-                                </div>
-
-                                {/* Info section */}
-                                <div className="px-4 pt-3 pb-4 flex flex-col flex-grow">
-                                    <div className="space-y-2 mb-4">
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <Mail size={12} className="text-purple-400 shrink-0" />
-                                            <span className="text-[11px] truncate">{user.email}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <Phone size={12} className="text-purple-400 shrink-0" />
-                                            <span className="text-[11px] truncate">{user.phone_number || 'No contact'}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <Calendar size={12} className="text-purple-400 shrink-0" />
-                                            <span className="text-[11px]">{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Loyalty Section */}
-                                    <div className="mb-4 pt-3 border-t border-purple-50">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                                <Star size={12} className="text-amber-400 fill-amber-400" />
-                                                <span className="text-[11px] font-bold text-gray-700">Prestige Rewards</span>
-                                            </div>
-                                            <span className="text-[10px] font-black text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
-                                                {user.loyalty_points || 0} pts
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={() => openClient(user, 'loyalty')}
-                                            className="w-full py-1.5 rounded-lg border border-dashed border-purple-200 text-[9px] font-bold text-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-all uppercase tracking-tight"
-                                        >
-                                            View Point history
-                                        </button>
-                                    </div>
-
-                                    {/* Logistics / Address Book Toggle */}
-                                    <div className="mb-4 pt-3 border-t border-purple-50">
-                                        <button 
-                                            onClick={() => toggleUserAddresses(user.id)} 
-                                            className="w-full flex justify-between items-center group/addr"
-                                        >
-                                            <div className="flex items-center gap-2.5">
-                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${expandedUsers[user.id] ? 'bg-purple-600 text-white shadow-md' : 'bg-purple-50 text-purple-400 '}`}>
-                                                    <Home size={14} />
-                                                </div>
-                                                <span className="text-[11px] font-bold text-gray-700">Address Book ({user.addresses?.length || 0})</span>
-                                            </div>
-                                            <ChevronDown size={14} className={`text-gray-300 transition-transform duration-300 ${expandedUsers[user.id] ? 'rotate-180 text-purple-600' : ''}`} />
-                                        </button>
-                                        
-                                        <AnimatePresence>
-                                            {expandedUsers[user.id] && (
-                                                <motion.div 
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    className="overflow-hidden"
-                                                >
-                                                    <div className="mt-3 space-y-2 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
-                                                        {user.addresses && user.addresses.length > 0 ? (
-                                                            user.addresses.map((address) => (
-                                                                <div key={address.id} className="p-3 bg-white/60 rounded-xl border border-purple-100/50 relative group/item">
-                                                                    <div className="flex items-center justify-between mb-1">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <MapPin size={10} className="text-purple-500" />
-                                                                            <p className="text-[9px] font-bold text-gray-800">{address.address_label}</p>
-                                                                        </div>
-                                                                        {address.is_default && <span className="text-[7px] font-black text-white bg-purple-400 rounded-full px-1.5 py-0.5">Default</span>}
-                                                                    </div>
-                                                                    <div className="text-[9px] text-gray-500 leading-relaxed font-medium">
-                                                                        <p>{address.address_line1}</p>
-                                                                        <p className="text-gray-900 font-bold">{address.city}, {address.state}</p>
-                                                                        <p className="text-[8px] opacity-70">{address.country} · {address.zip_code}</p>
-                                                                    </div>
-                                                                </div>
-                                                            ))
-                                                        ) : (
-                                                            <div className="p-4 bg-white/40 rounded-xl border border-dashed border-purple-100 flex items-center justify-center">
-                                                                <p className="text-[9px] text-gray-400 italic">No addresses found</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-
-                                    {/* Action button */}
-                                    <button
-                                        onClick={() => openClient(user)}
-                                        className="mt-auto w-full py-2 rounded-full text-[11px] font-semibold transition-all duration-200 hover:shadow-md"
-                                        style={{
-                                            background: 'rgba(255,255,255,0.7)',
-                                            border: '1px solid #e3e3e3',
-                                            color: '#303030',
-                                        }}
-                                    >
-                                        Manage Client
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </motion.div>
-                ) : (
-                    <motion.div key="list" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                        className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: '#e3e3e3' }}>
-                        <table className="w-full">
-                            <thead>
-                                <tr style={{ background: 'rgba(255,255,255,0.7)' }}>
-                                    {['Client','Contact','Addresses','Loyalty','Status','Joined',''].map((h, i) => (
-                                        <th key={i} className={`px-6 py-4 text-[10px] font-black text-purple-400 ${i>=6 ? 'text-right' : 'text-left'}`}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-purple-50">
-                                {filteredUsers.map(user => (
-                                    <tr key={user.id} className="group transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative w-12 h-12 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-400 flex-shrink-0 overflow-hidden">
-                                                    {user.profile_image ? (
-                                                        <Image src={user.profile_image} alt={`${user.first_name} ${user.last_name}`} fill className="object-cover" />
-                                                    ) : (
-                                                        <User size={18} />
-                                                    )}
-                                                    {onlineUsers.includes(Number(user.id)) && (
-                                                        <div className="absolute inset-0 border-2 border-green-500 rounded-full animate-pulse" />
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-gray-900 text-sm flex items-center gap-2">
-                                                        {user.first_name} {user.last_name}
-                                                        {onlineUsers.includes(Number(user.id)) && (
-                                                            <span className="w-2 h-2 rounded-full bg-green-500" title="Online" />
-                                                        )}
-                                                    </p>
-                                                    <p className="text-[10px] font-medium text-gray-400">ID: {user.id.toString().padStart(5, '0')}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <p className="text-sm font-medium text-gray-700">{user.email}</p>
-                                            <p className="text-[10px] text-gray-400">{user.phone_number || 'No phone'}</p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-[11px] font-bold text-gray-600 hover:bg-white hover:border-purple-200 transition-all">
-                                                        <MapPin size={12} className="text-purple-400" />
-                                                        {user.addresses?.length || 0} Saved
-                                                        <ChevronDown size={10} className="text-gray-400" />
-                                                    </button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="start" className="w-64 p-3 rounded-2xl shadow-xl border-purple-100 max-h-80 overflow-y-auto no-scrollbar">
-                                                    <p className="text-[10px] font-semibold text-purple-500 mb-3 px-1">Saved addresses</p>
-                                                    {user.addresses && user.addresses.length > 0 ? (
-                                                        user.addresses.map((addr) => (
-                                                            <div key={addr.id} className="mb-2 p-3 bg-purple-50/30 rounded-xl border border-purple-100/50 last:mb-0">
-                                                                <div className="flex items-center justify-between mb-1">
-                                                                    <p className="text-[10px] font-bold text-gray-900">{addr.address_label}</p>
-                                                                    {addr.is_default && <span className="text-[7px] font-black text-white bg-purple-400 px-1.5 py-0.5 rounded-full">Primary</span>}
-                                                                </div>
-                                                                <p className="text-[9px] text-gray-500 font-medium">{addr.address_line1}, {addr.city}</p>
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <p className="text-[10px] text-gray-400 text-center py-4">No addresses on file.</p>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <Star size={12} className="text-amber-400 fill-amber-400" />
-                                                <span className="text-sm font-bold text-gray-700">{user.loyalty_points || 0} pts</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                {user.is_admin && (
-                                                    <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-purple-100 text-purple-700 flex items-center gap-1 border border-purple-200">
-                                                        Admin
-                                                    </span>
-                                                )}
-                                                {user.is_suspended ? (
-                                                    <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-red-50 text-red-600 border border-red-200 flex items-center gap-1">
-                                                        <EyeOff size={8} /> Suspended
-                                                    </span>
-                                                ) : (
-                                                    <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full bg-green-50 text-green-600 border border-green-200">
-                                                        Active
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-medium text-gray-600">
-                                            {user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-1.5 transition-opacity">
-                                                <button onClick={() => toggleAdminRole(user.id, user.is_admin)} className="p-2 rounded-lg hover:bg-purple-100 text-gray-400 hover:text-purple-600 transition-all" title="Toggle Admin">
-                                                    <ShieldCheck size={14} />
-                                                </button>
-                                                <button onClick={() => toggleSuspend(user.id, user.is_suspended)} className={`p-2 rounded-lg transition-all ${user.is_suspended ? 'bg-red-50 text-red-500' : 'hover:bg-red-50 text-gray-400 hover:text-red-500'}`} title={user.is_suspended ? 'Reinstate account' : 'Suspend account'}>
-                                                    <EyeOff size={14} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {filteredUsers.length === 0 && (
-                <div className="min-h-[260px] bg-white rounded-2xl border border-dashed flex flex-col items-center justify-center gap-3" style={{ borderColor: '#e3e3e3' }}>
-                    <Archive size={36} className="text-purple-200" />
-                    <p className="text-gray-400 font-medium">No clients found</p>
-                </div>
-            )}
-
-            {/* Client slide-over panel */}
-            <AnimatePresence>
-                {selectedUser && (
-                    <>
-                        {/* Backdrop */}
-                        <motion.div
-                            key="backdrop"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={closeClient}
-                            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
-                        />
-
-                        {/* Drawer */}
-                        <motion.div
-                            key="drawer"
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '100%' }}
-                            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                            className="fixed top-0 right-0 h-full w-full max-w-md z-50 flex flex-col overflow-hidden"
-                            style={{ background: '#ffffff', borderLeft: '1px solid #e3e3e3' }}
-                        >
-                            {/* Header */}
-                            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: '#e3e3e3', background: 'rgba(255,255,255,0.8)' }}>
-                                <div className="flex items-center gap-3">
-                                    <div className="relative w-10 h-10 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-400 overflow-hidden flex-shrink-0">
-                                        {selectedUser.profile_image ? (
-                                            <img src={selectedUser.profile_image} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <User size={18} />
-                                        )}
-                                        {onlineUsers.includes(Number(selectedUser.id)) && (
-                                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-gray-900">{selectedUser.first_name} {selectedUser.last_name}</p>
-                                        <p className="text-[10px] text-purple-400 font-medium">ID #{selectedUser.id?.toString().padStart(5, '0')}</p>
-                                    </div>
-                                </div>
-                                <button onClick={closeClient} className="p-2 rounded-full hover:bg-purple-50 text-gray-400 hover:text-purple-600 transition-all">
-                                    <X size={16} />
-                                </button>
-                            </div>
-
-                            {/* Tabs */}
-                            <div className="flex border-b" style={{ borderColor: '#e3e3e3', background: 'rgba(255,255,255,0.5)' }}>
-                                {[
-                                    { key: 'overview', label: 'Overview' },
-                                    { key: 'addresses', label: 'Addresses' },
-                                    { key: 'loyalty', label: 'Point History' },
-                                ].map(tab => (
-                                    <button
-                                        key={tab.key}
-                                        onClick={() => { setClientTab(tab.key); if (tab.key === 'loyalty') fetchLoyalty(selectedUser.id); }}
-                                        className="flex-1 py-3 text-[11px] font-bold transition-all border-b-2"
-                                        style={clientTab === tab.key
-                                            ? { color: '#303030', borderColor: '#303030' }
-                                            : { color: '#616161', borderColor: 'transparent' }}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Tab content */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-
-                                {/* ── Overview ── */}
-                                {clientTab === 'overview' && (
-                                    <>
-                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
-                                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Contact</p>
-                                            <div className="space-y-2.5">
-                                                <div className="flex items-center gap-3">
-                                                    <Mail size={13} className="text-purple-300 shrink-0" />
-                                                    <span className="text-[12px] text-gray-700 break-all">{selectedUser.email}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <Phone size={13} className="text-purple-300 shrink-0" />
-                                                    <span className="text-[12px] text-gray-700">{selectedUser.phone_number || 'No phone'}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <Calendar size={13} className="text-purple-300 shrink-0" />
-                                                    <span className="text-[12px] text-gray-700">Joined {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
-                                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Loyalty status</p>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <Star size={14} className="text-amber-400 fill-amber-400" />
-                                                    <span className="text-sm font-bold text-gray-800">{selectedUser.loyalty_points || 0} pts</span>
-                                                </div>
-                                                <span className="px-3 py-1 rounded-full text-[10px] font-bold"
-                                                    style={{ background: '#e3e3e3', color: '#303030', border: '1px solid #e3e3e3' }}>
-                                                    {selectedUser.loyalty_tier || 'Bronze'}
-                                                </span>
-                                            </div>
-                                            <button
-                                                onClick={() => setClientTab('loyalty')}
-                                                className="w-full py-1.5 rounded-lg text-[10px] font-bold text-purple-500 hover:bg-purple-50 transition-all border border-dashed border-purple-200"
-                                            >
-                                                View full point history →
-                                            </button>
-                                        </div>
-
-                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
-                                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Role</p>
-                                            <div className="flex items-center gap-2">
-                                                {selectedUser.is_admin ? (
-                                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-[11px] font-bold border border-purple-200">
-                                                        <ShieldCheck size={11} /> Admin
-                                                    </span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-50 text-gray-600 text-[11px] font-bold border border-gray-200">
-                                                        <User size={11} /> Client
-                                                    </span>
-                                                )}
-                                                <button
-                                                    onClick={() => toggleAdminRole(selectedUser.id, selectedUser.is_admin)}
-                                                    className="text-[10px] font-bold text-purple-400 hover:text-purple-600 underline underline-offset-2 transition-colors ml-1"
-                                                >
-                                                    {selectedUser.is_admin ? 'Revoke admin' : 'Make admin'}
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-2xl p-4 space-y-3" style={{ background: selectedUser.is_suspended ? 'rgba(254,242,242,0.8)' : 'rgba(255,255,255,0.7)', border: selectedUser.is_suspended ? '1px solid rgba(252,165,165,0.5)' : '1px solid #e3e3e3' }}>
-                                            <p className="text-[10px] font-black uppercase tracking-wide" style={{ color: selectedUser.is_suspended ? '#dc2626' : '#616161' }}>Account status</p>
-                                            <div className="flex items-center justify-between">
-                                                <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${selectedUser.is_suspended ? 'bg-red-100 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
-                                                    {selectedUser.is_suspended ? <><EyeOff size={11} /> Suspended</> : <><UserCheck size={11} /> Active</>}
-                                                </span>
-                                                <button
-                                                    onClick={() => toggleSuspend(selectedUser.id, selectedUser.is_suspended)}
-                                                    className={`text-[11px] font-bold underline underline-offset-2 transition-colors ${selectedUser.is_suspended ? 'text-green-600 hover:text-green-800' : 'text-red-500 hover:text-red-700'}`}
-                                                >
-                                                    {selectedUser.is_suspended ? 'Reinstate account' : 'Suspend account'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* ── Addresses ── */}
-                                {clientTab === 'addresses' && (
-                                    <div className="space-y-3">
-                                        {selectedUser.addresses && selectedUser.addresses.length > 0 ? (
-                                            selectedUser.addresses.map(addr => (
-                                                <div key={addr.id} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <MapPin size={12} className="text-purple-400" />
-                                                            <span className="text-[11px] font-bold text-gray-800">{addr.address_label}</span>
-                                                        </div>
-                                                        {addr.is_default && (
-                                                            <span className="px-2 py-0.5 rounded-full text-[8px] font-black text-white bg-purple-500">Default</span>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-[11px] text-gray-600 leading-relaxed pl-5">
-                                                        {addr.address_line1}{addr.address_line2 ? `, ${addr.address_line2}` : ''}<br />
-                                                        <span className="font-semibold text-gray-800">{addr.city}, {addr.state}</span><br />
-                                                        {addr.country} · {addr.zip_code}
-                                                    </p>
-                                                    {addr.customer_phone && (
-                                                        <p className="text-[10px] text-purple-400 mt-1.5 pl-5 flex items-center gap-1"><Phone size={9} /> {addr.customer_phone}</p>
-                                                    )}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="min-h-[200px] flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed" style={{ borderColor: '#e3e3e3' }}>
-                                                <MapPin size={28} className="text-purple-200" />
-                                                <p className="text-[11px] text-gray-400">No addresses saved</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* ── Point History ── */}
-                                {clientTab === 'loyalty' && (
-                                    loyaltyLoading ? (
-                                        <div className="min-h-[200px] flex flex-col items-center justify-center gap-2">
-                                            <div className="w-8 h-8 border-4 border-purple-100 border-t-purple-500 rounded-full animate-spin" />
-                                            <p className="text-[11px] text-gray-400">Loading transactions…</p>
-                                        </div>
-                                    ) : loyaltyData[selectedUser.id] ? (
-                                        <>
-                                            {/* Stats row */}
-                                            <div className="grid grid-cols-3 gap-3">
-                                                {[
-                                                    { label: 'Current pts', value: loyaltyData[selectedUser.id].stats?.points ?? 0, icon: <Star size={13} className="text-amber-400 fill-amber-400" /> },
-                                                    { label: 'Tier', value: loyaltyData[selectedUser.id].stats?.tier ?? '—', icon: <Award size={13} className="text-purple-400" /> },
-                                                    { label: 'Lifetime spend', value: loyaltyData[selectedUser.id].stats?.lifetimeSpend ? `AED ${Number(loyaltyData[selectedUser.id].stats.lifetimeSpend).toFixed(0)}` : '—', icon: <TrendingUp size={13} className="text-green-400" /> },
-                                                ].map(stat => (
-                                                    <div key={stat.label} className="rounded-xl p-3 text-center" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #e3e3e3' }}>
-                                                        <div className="flex justify-center mb-1">{stat.icon}</div>
-                                                        <p className="text-[13px] font-black text-gray-800">{stat.value}</p>
-                                                        <p className="text-[9px] text-gray-400 mt-0.5">{stat.label}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            {/* Transactions */}
-                                            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #e3e3e3' }}>
-                                                <div className="px-4 py-3" style={{ background: 'rgba(255,255,255,0.7)' }}>
-                                                    <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">Transactions</p>
-                                                </div>
-                                                <div className="divide-y" style={{ divideColor: '#e3e3e3' }}>
-                                                    {loyaltyData[selectedUser.id].transactions?.length > 0 ? (
-                                                        loyaltyData[selectedUser.id].transactions.map(tx => (
-                                                            <div key={tx.id} className="flex items-center gap-3 px-4 py-3" style={{ background: 'rgba(255,255,255,0.6)' }}>
-                                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${tx.points > 0 ? 'bg-green-50' : 'bg-red-50'}`}>
-                                                                    {tx.points > 0
-                                                                        ? <ArrowUpRight size={13} className="text-green-500" />
-                                                                        : <ArrowDownLeft size={13} className="text-red-400" />
-                                                                    }
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-[11px] font-semibold text-gray-700 truncate">{tx.description || tx.type}</p>
-                                                                    <p className="text-[9px] text-gray-400 flex items-center gap-1 mt-0.5">
-                                                                        <Clock size={8} />
-                                                                        {new Date(tx.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                                                    </p>
-                                                                </div>
-                                                                <span className={`text-[12px] font-black flex-shrink-0 ${tx.points > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                                    {tx.points > 0 ? '+' : ''}{tx.points} pts
-                                                                </span>
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <div className="py-8 flex flex-col items-center gap-2">
-                                                            <Gift size={24} className="text-purple-200" />
-                                                            <p className="text-[11px] text-gray-400">No transactions yet</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="min-h-[200px] flex flex-col items-center justify-center gap-2">
-                                            <p className="text-[11px] text-gray-400">Could not load loyalty data</p>
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-        </div>
-    );
+const SORTS = {
+  newest: { label: 'Newest first',  compare: (a, b) => new Date(b.created_at) - new Date(a.created_at) },
+  spent:  { label: 'Most spent',    compare: (a, b) => b.total_spent - a.total_spent },
+  orders: { label: 'Most orders',   compare: (a, b) => b.orders_count - a.orders_count },
+  name:   { label: 'Name A–Z',      compare: (a, b) => customerName(a).localeCompare(customerName(b)) },
 };
 
-export default AllUsersPage;
+function downloadCsv(customers) {
+  const escape = (value) => {
+    const s = String(value ?? '');
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const rows = [
+    ['Name', 'Email', 'Phone', 'City', 'Country', 'Orders', 'Amount spent (AED)', 'Loyalty points', 'Tier', 'Joined', 'Admin', 'Suspended'],
+    ...customers.map(c => [
+      customerName(c), c.email, c.phone_number, c.city, c.country, c.orders_count, c.total_spent.toFixed(2),
+      c.loyalty_points, c.loyalty_tier, fmtDate(c.created_at), c.is_admin ? 'Yes' : 'No', c.is_suspended ? 'Yes' : 'No',
+    ]),
+  ];
+  // The byte-order mark makes Excel read accented names correctly
+  const blob = new Blob([`﻿${rows.map(r => r.map(escape).join(',')).join('\n')}`], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+const CustomersPage = () => {
+  const router = useRouter();
+  const { fetchWithAuth } = useAppContext();
+  const [customers, setCustomers] = useState(null);
+  const [error, setError] = useState('');
+  const [view, setView] = useState('all');
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('newest');
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/customers', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Customers could not be loaded.');
+      setCustomers(data);
+      setError('');
+    } catch (e) {
+      setError(e.message);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const list = useMemo(() => customers || [], [customers]);
+  const counts = useMemo(() => Object.fromEntries(VIEWS.map(v => [v.id, list.filter(v.match).length])), [list]);
+
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const matchesView = VIEWS.find(v => v.id === view).match;
+    return list
+      .filter(c => matchesView(c)
+        && (!term || `${customerName(c)} ${c.email || ''} ${c.phone_number || ''}`.toLowerCase().includes(term)))
+      .sort(SORTS[sort].compare);
+  }, [list, view, search, sort]);
+
+  if (!customers && !error) return <PageLoader />;
+
+  const updateCustomer = (id, changes) => setCustomers(prev => prev.map(c => (c.id === id ? { ...c, ...changes } : c)));
+  const toggleAdmin = async (customer) => {
+    if (await changeAdminAccess(fetchWithAuth, customer)) updateCustomer(customer.id, { is_admin: !customer.is_admin });
+  };
+  const toggleSuspension = async (customer) => {
+    if (await changeSuspension(fetchWithAuth, customer)) updateCustomer(customer.id, { is_suspended: !customer.is_suspended });
+  };
+
+  const buyers = counts.buyers || 0;
+
+  return (
+    <div className="space-y-4">
+
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-semibold leading-tight" style={text}>Customers</h1>
+          <p className="text-[13px] mt-0.5" style={subdued}>
+            {list.length} customer{list.length !== 1 ? 's' : ''} · {buyers} ha{buyers !== 1 ? 've' : 's'} placed an order
+          </p>
+        </div>
+        <button type="button" onClick={() => downloadCsv(visible)} disabled={visible.length === 0} className="sp-btn sp-btn-secondary self-start sm:self-auto">
+          <Download size={14} />Export
+        </button>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-[13px] text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+          <AlertCircle size={14} />{error}
+        </div>
+      )}
+
+      <div className="sp-card overflow-hidden">
+        {/* Views, sort and search */}
+        <div className="px-3 py-2 flex flex-col lg:flex-row lg:items-center gap-2" style={{ borderBottom: '1px solid var(--sp-border)' }}>
+          <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto no-scrollbar" role="group" aria-label="Views">
+            {VIEWS.filter(v => !v.optional || counts[v.id] > 0 || view === v.id).map(v => (
+              <ViewPill key={v.id} active={view === v.id} count={counts[v.id]} onClick={() => setView(v.id)}>{v.label}</ViewPill>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <select value={sort} onChange={e => setSort(e.target.value)} className="sp-input cursor-pointer" style={toolbarSelectStyle} aria-label="Sort customers">
+              {Object.entries(SORTS).map(([id, s]) => <option key={id} value={id}>{s.label}</option>)}
+            </select>
+            <SearchBox value={search} onChange={setSearch} placeholder="Search name, email or phone" />
+          </div>
+        </div>
+
+        {visible.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title={list.length === 0 ? 'No customers yet' : 'No customers match these filters'}
+            description={list.length === 0 ? 'Customers appear here once they create an account.' : 'Try another view or search term.'}
+            action={list.length > 0 && (
+              <button type="button" onClick={() => { setView('all'); setSearch(''); }} className="sp-btn sp-btn-secondary">Clear filters</button>
+            )}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="sp-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Location</th>
+                  <th>Orders</th>
+                  <th className="text-right">Amount spent</th>
+                  <th>Loyalty</th>
+                  <th>Joined</th>
+                  <th className="w-[52px]" aria-label="Actions" />
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(customer => {
+                  const name = customerName(customer);
+                  const location = customerLocation(customer);
+                  return (
+                    <tr key={customer.id} className="cursor-pointer" onClick={() => router.push(`/admin/users/${customer.id}`)}>
+                      <td>
+                        <div className="flex items-center gap-3 min-w-[260px]">
+                          <CustomerAvatar customer={customer} size={36} />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <Link
+                                href={`/admin/users/${customer.id}`}
+                                onClick={e => e.stopPropagation()}
+                                className="text-[13px] font-semibold truncate max-w-[240px] hover:underline"
+                                style={text}
+                              >
+                                {name}
+                              </Link>
+                              {customer.is_admin && <span className="sp-badge sp-badge-info" style={{ padding: '2px 6px', fontSize: 11 }}>Admin</span>}
+                              {customer.is_suspended && <span className="sp-badge sp-badge-critical" style={{ padding: '2px 6px', fontSize: 11 }}>Suspended</span>}
+                            </div>
+                            <p className="text-[12px] truncate max-w-[300px]" style={subdued}>{customer.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap" style={location ? secondary : subdued}>{location || '—'}</td>
+                      <td className="whitespace-nowrap" style={customer.orders_count ? secondary : subdued}>
+                        {customer.orders_count ? `${customer.orders_count} order${customer.orders_count !== 1 ? 's' : ''}` : 'No orders'}
+                      </td>
+                      <td className="text-right whitespace-nowrap font-semibold" style={customer.total_spent ? text : subdued}>
+                        {fmtAed(customer.total_spent)}
+                      </td>
+                      <td className="whitespace-nowrap" style={secondary}>
+                        {Number(customer.loyalty_points).toLocaleString()} pts
+                        {customer.loyalty_tier && <span className="block text-[12px]" style={subdued}>{customer.loyalty_tier}</span>}
+                      </td>
+                      <td className="whitespace-nowrap" style={secondary}>{fmtDate(customer.created_at)}</td>
+                      <td className="text-right" onClick={e => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button type="button" className="p-1.5 rounded-md hover:bg-[#ebebeb] cursor-pointer" aria-label={`Actions for ${name}`}>
+                              <MoreHorizontal size={16} style={secondary} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-lg p-1 min-w-[200px]">
+                            <DropdownMenuItem onClick={() => router.push(`/admin/users/${customer.id}`)} className="rounded-md px-3 py-2 text-[13px] gap-2">
+                              <UserRound size={14} />View customer
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { window.location.href = `mailto:${customer.email}`; }} className="rounded-md px-3 py-2 text-[13px] gap-2">
+                              <Mail size={14} />Email customer
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toggleAdmin(customer)} className="rounded-md px-3 py-2 text-[13px] gap-2">
+                              {customer.is_admin ? <><ShieldOff size={14} />Remove admin access</> : <><ShieldCheck size={14} />Give admin access</>}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => toggleSuspension(customer)}
+                              className={`rounded-md px-3 py-2 text-[13px] gap-2 ${customer.is_suspended ? '' : 'text-red-600 focus:bg-red-50'}`}
+                            >
+                              {customer.is_suspended ? <><UserCheck size={14} />Reinstate account</> : <><UserX size={14} />Suspend account</>}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {visible.length > 0 && (
+          <p className="px-4 py-2.5 text-[12px]" style={{ ...subdued, borderTop: '1px solid var(--sp-border)' }}>
+            Showing {visible.length} of {list.length} customer{list.length !== 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CustomersPage;

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { requireAdmin } from '@/lib/adminAuth';
 
 /**
  * @swagger
@@ -18,17 +19,19 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
 export async function GET(request, { params }) {
   const resolvedParams = await Promise.resolve(params);
   const idOrSlug = resolvedParams.id;
+  // The admin editor needs every product in the category, including hidden ones and ones without a brand
+  const isAdmin = new URL(request.url).searchParams.get('admin') === 'true';
   try {
     // Try to find by ID first, then by slug
     let categorySql, categoryValues;
     if (!isNaN(parseInt(idOrSlug))) {
-        categorySql = 'SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId" FROM categories WHERE id = $1';
+        categorySql = 'SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive" FROM categories WHERE id = $1';
         categoryValues = [parseInt(idOrSlug)];
     } else {
-        categorySql = 'SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId" FROM categories WHERE slug = $1';
+        categorySql = 'SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive" FROM categories WHERE slug = $1';
         categoryValues = [idOrSlug];
     }
-    
+
     let categoryRows;
     try {
         const result = await db.query(categorySql, categoryValues);
@@ -36,11 +39,11 @@ export async function GET(request, { params }) {
     } catch (dbError) {
         if (dbError.message.includes('column') || dbError.message.includes('banner_url')) {
             // Fallback for old schema
-            const fallbackSql = !isNaN(parseInt(idOrSlug)) 
+            const fallbackSql = !isNaN(parseInt(idOrSlug))
                 ? 'SELECT id, name, slug, image_url as "imageUrl" FROM categories WHERE id = $1'
                 : 'SELECT id, name, slug, image_url as "imageUrl" FROM categories WHERE slug = $1';
             const result = await db.query(fallbackSql, categoryValues);
-            categoryRows = result.rows.map(r => ({ ...r, description: '', bannerUrl: null, parentId: null }));
+            categoryRows = result.rows.map(r => ({ ...r, description: '', bannerUrl: null, parentId: null, isActive: true }));
         } else {
             throw dbError;
         }
@@ -51,6 +54,21 @@ export async function GET(request, { params }) {
     }
     const category = categoryRows[0];
     const id = category.id;
+
+    if (isAdmin) {
+        const { rows } = await db.query(`
+          SELECT p.id, p.name, p.slug, p.price, p.stock_quantity, p.status, p.is_active,
+                 b.name as "brandName", pi.image_url as "imageUrl"
+          FROM products p
+          JOIN category_products cp ON p.id = cp.product_id
+          LEFT JOIN brands b ON p.brand_id = b.id
+          LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
+          WHERE cp.category_id = $1
+          ORDER BY p.name
+        `, [id]);
+        category.products = rows.map(p => ({ ...p, price: parseFloat(p.price) }));
+        return NextResponse.json(category);
+    }
 
         const productsSql = `
           SELECT
@@ -106,10 +124,15 @@ export async function GET(request, { params }) {
  *         description: Bad request.
  *       404:
  *         description: Category not found.
+ *       409:
+ *         description: The URL handle is already used by another category.
  *       500:
  *         description: Server error.
  */
 export async function PUT(request, { params }) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   const resolvedParams = await Promise.resolve(params);
   const id = resolvedParams.id;
   const client = await db.connect();
@@ -118,9 +141,8 @@ export async function PUT(request, { params }) {
     const name = formData.get('name');
     const description = formData.get('description');
     const customSlug = formData.get('slug');
-    const productIdsString = formData.get('product_ids');
     const imageFile = formData.get('image');
-    const image_url = formData.get('image_url'); 
+    const image_url = formData.get('image_url');
     const bannerFile = formData.get('banner');
     const banner_url = formData.get('banner_url');
     const parentId = formData.get('parent_id');
@@ -133,15 +155,21 @@ export async function PUT(request, { params }) {
 
     const { rows: existingRows } = await client.query('SELECT name, slug, image_url, banner_url, parent_id FROM categories WHERE id = $1', [id]);
     if (existingRows.length === 0) {
+        await client.query('ROLLBACK');
         return NextResponse.json({ message: 'Category not found' }, { status: 404 });
     }
 
     // Handle slug update
     const slugify = (text) => text.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
     let slug = existingRows[0].slug;
-    
+
     if (customSlug) {
         slug = slugify(customSlug);
+        const { rows: taken } = await client.query('SELECT id FROM categories WHERE slug = $1 AND id != $2', [slug, id]);
+        if (taken.length > 0) {
+            await client.query('ROLLBACK');
+            return NextResponse.json({ message: 'Another category already uses this URL handle.' }, { status: 409 });
+        }
     } else if (name !== existingRows[0].name || !slug) {
         let baseSlug = slugify(name);
         slug = baseSlug;
@@ -175,17 +203,18 @@ export async function PUT(request, { params }) {
     const updateCategorySql = 'UPDATE categories SET name = $1, description = $2, image_url = $3, banner_url = $4, slug = $5, parent_id = $6 WHERE id = $7';
     await client.query(updateCategorySql, [name, description, newImageUrl, newBannerUrl, slug, parentId ? parseInt(parentId) : null, id]);
 
-    // Update product associations
-    await client.query('DELETE FROM category_products WHERE category_id = $1', [id]);
-    if (productIdsString) {
-      const product_ids = productIdsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id) && id > 0);
+    // Replace product associations only when the request says which products belong here.
+    // Without this check, saving from a form that doesn't send product_ids emptied the category.
+    if (formData.has('product_ids')) {
+      await client.query('DELETE FROM category_products WHERE category_id = $1', [id]);
+      const product_ids = (formData.get('product_ids') || '').split(',').map(pid => parseInt(pid.trim())).filter(pid => !isNaN(pid) && pid > 0);
       if (product_ids.length > 0) {
         const values = [id]; // The category ID is param $1
         const placeholders = product_ids.map((productId, index) => {
             values.push(productId);
             return `($1, $${index + 2})`;
         }).join(',');
-        
+
         const categoryProductsSql = `INSERT INTO category_products (category_id, product_id) VALUES ${placeholders}`;
         await client.query(categoryProductsSql, values);
       }
@@ -204,20 +233,10 @@ export async function PUT(request, { params }) {
   }
 }
 
-/**
- * @swagger
- * /api/categories/{id}:
- *   delete:
- *     summary: Delete a category
- *     responses:
- *       200:
- *         description: Category deleted successfully.
- *       404:
- *         description: Category not found.
- *       500:
- *         description: Server error.
- */
 export async function PATCH(request, { params }) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   const resolvedParams = await Promise.resolve(params);
   const id = resolvedParams.id;
   try {
@@ -234,20 +253,44 @@ export async function PATCH(request, { params }) {
   }
 }
 
+/**
+ * @swagger
+ * /api/categories/{id}:
+ *   delete:
+ *     summary: Delete a category
+ *     responses:
+ *       200:
+ *         description: Category deleted successfully.
+ *       404:
+ *         description: Category not found.
+ *       500:
+ *         description: Server error.
+ */
 export async function DELETE(request, { params }) {
-  const { id } = params;
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
+  const { id } = await Promise.resolve(params);
+  const client = await db.connect();
   try {
-    // The ON DELETE CASCADE constraint on the category_products table will handle deleting associations.
-    const sql = 'DELETE FROM categories WHERE id = $1 RETURNING id';
-    const { rowCount } = await db.query(sql, [id]);
+    await client.query('BEGIN');
+    // Products stay in the catalogue; only their link to this category is removed
+    await client.query('DELETE FROM category_products WHERE category_id = $1', [id]);
+    await client.query('UPDATE categories SET parent_id = NULL WHERE parent_id = $1', [id]);
+    const { rowCount } = await client.query('DELETE FROM categories WHERE id = $1 RETURNING id', [id]);
 
     if (rowCount === 0) {
+      await client.query('ROLLBACK');
       return NextResponse.json({ message: 'Category not found' }, { status: 404 });
     }
 
+    await client.query('COMMIT');
     return NextResponse.json({ message: 'Category deleted successfully' });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error(`Error deleting category ${id}:`, error);
     return NextResponse.json({ message: 'Error deleting category from database', error: error.message }, { status: 500 });
+  } finally {
+    client.release();
   }
 }

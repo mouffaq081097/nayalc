@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAdmin } from '@/lib/adminAuth';
 
-export async function GET(request) {
+// Every customer's contact details and addresses — admins only
+export async function GET() {
+    const unauthorized = await requireAdmin();
+    if (unauthorized) return unauthorized;
+
     const client = await db.connect();
     try {
         await client.query(`

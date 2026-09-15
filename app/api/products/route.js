@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAdmin } from '@/lib/adminAuth';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 export async function GET(request) {
@@ -30,7 +31,7 @@ export async function GET(request) {
 
     // Base selection for all branches
     const baseSelection = `
-      p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.vendor, p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.comparedprice, p.ingredients, p.brand_id, p.size, p.form, p.signature_image_url as "signatureImageUrl",
+      p.id, p.name, p.slug, p.description, p.price, p.stock_quantity, p.status, p.is_active, p.vendor, p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.comparedprice, p.ingredients, p.brand_id, p.size, p.form, p.signature_image_url as "signatureImageUrl",
       b.name as "brandName", b.name as "brand", b.imageurl as "brandImageUrl",
       (SELECT image_url FROM product_images WHERE product_id = p.id AND is_main = TRUE LIMIT 1) as "imageUrl",
       (SELECT alt_text FROM product_images WHERE product_id = p.id AND is_main = TRUE LIMIT 1) as "altText",
@@ -198,6 +199,9 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   const client = await db.connect();
   try {
     const formData = await request.formData();
@@ -279,7 +283,7 @@ export async function POST(request) {
       if (imageFile && imageFile.size > 0) {
         const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
         const uploadResult = await uploadImageToCloudinary(imageBuffer);
-        await client.query('INSERT INTO product_images (product_id, image_url, is_main, alt_text) VALUES ($1, $2, FALSE, $3)', [productId, uploadResult.secure_url, altText]);
+        await client.query('INSERT INTO product_images (product_id, image_url, is_main, display_order, alt_text) VALUES ($1, $2, FALSE, $3, $4)', [productId, uploadResult.secure_url, i + 1, altText]);
       }
     }
 

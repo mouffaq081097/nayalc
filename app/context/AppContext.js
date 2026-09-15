@@ -335,8 +335,9 @@ export const AppProvider = ({ children }) => {
   // Function to add a new brand
   const addBrand = async (brandFormData) => {
     try {
-      await fetchWithAuth(`/api/brands`, { method: 'POST', body: brandFormData });
+      const response = await fetchWithAuth(`/api/brands`, { method: 'POST', body: brandFormData });
       fetchBrands(); fetchAdminBrands();
+      return response;
     } catch (error) {
       console.error('Error adding brand:', error);
       throw error;

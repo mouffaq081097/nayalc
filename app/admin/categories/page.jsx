@@ -1,386 +1,208 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+import { ExternalLink, Eye, EyeOff, FolderOpen, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, Trash2, Search, Loader2, Tag, MoreHorizontal, LayoutGrid, Package, ArrowRight, Image as ImageIcon, CheckCircle2, Edit, Eye, EyeOff } from 'lucide-react';
-import Modal from '../../components/Modal';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
-import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+import { EmptyState, SearchBox, ViewPill, toolbarSelectStyle } from '../_components/IndexToolbar';
+import { apiErrorMessage } from '../products/_components/productAdmin';
+import { categoryStatus, productCount } from './_components/categoryAdmin';
+
+const text = { color: 'var(--sp-text)' };
+const secondary = { color: 'var(--sp-text-secondary)' };
+const subdued = { color: 'var(--sp-text-subdued)' };
+
+// Hidden only appears once a category actually is hidden
+const VIEWS = [
+  { id: 'all', label: 'All', match: () => true },
+  { id: 'visible', label: 'Visible', match: c => categoryStatus(c).id === 'visible' },
+  { id: 'hidden', label: 'Hidden', match: c => categoryStatus(c).id === 'hidden', optional: true },
+  { id: 'empty', label: 'No products', match: c => productCount(c) === 0 },
+];
+
+const SORTS = {
+  name:     { label: 'Name A–Z',      compare: (a, b) => a.name.localeCompare(b.name) },
+  products: { label: 'Most products', compare: (a, b) => productCount(b) - productCount(a) || a.name.localeCompare(b.name) },
+};
 
 const ManageCategories = () => {
-    const { adminCategories: categories, addCategory, updateCategory, deleteCategory, toggleCategoryStatus, loading: isDataLoading } = useAppContext();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [editingCategory, setEditingCategory] = useState(null);
-    const [categoryName, setCategoryName] = useState('');
-    const [categorySlug, setCategorySlug] = useState('');
-    const [categoryDescription, setCategoryDescription] = useState('');
-    const [parentCategoryId, setParentCategoryId] = useState('');
-    const [imageFile, setImageFile] = useState(null);
-    const [bannerFile, setBannerFile] = useState(null);
-    const [categoryProducts, setCategoryProducts] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
+  const { adminCategories: categories, deleteCategory, toggleCategoryStatus, loading } = useAppContext();
+  const [view, setView] = useState('all');
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('name');
 
-    useEffect(() => {
-        if (isModalOpen) {
-            setCategoryName(editingCategory ? editingCategory.name : '');
-            setCategorySlug(editingCategory ? editingCategory.slug : '');
-            setCategoryDescription(editingCategory ? (editingCategory.description || '') : '');
-            setParentCategoryId(editingCategory ? (editingCategory.parentId || '') : '');
-            setImageFile(null);
-            setBannerFile(null);
-        }
-    }, [isModalOpen, editingCategory]);
+  const counts = useMemo(() => Object.fromEntries(VIEWS.map(v => [v.id, categories.filter(v.match).length])), [categories]);
+  const namesById = useMemo(() => new Map(categories.map(c => [c.id, c.name])), [categories]);
 
-    const handleOpenAddModal = () => {
-        setEditingCategory(null);
-        setIsModalOpen(true);
-        setCategoryProducts([]);
-    };
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const matchesView = VIEWS.find(v => v.id === view).match;
+    return categories
+      .filter(c => matchesView(c) && (!term || `${c.name} ${c.slug || ''}`.toLowerCase().includes(term)))
+      .sort(SORTS[sort].compare);
+  }, [categories, view, search, sort]);
 
-    const handleOpenEditModal = async (category) => {
-        setEditingCategory(category);
-        setIsModalOpen(true);
-        try {
-            const response = await fetch(`/api/categories/${category.id}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch category details.');
-            }
-            const data = await response.json();
-            setCategoryProducts(data.products || []);
-        } catch (error) {
-            console.error("Error fetching category products:", error);
-            setCategoryProducts([]);
-        }
-    };
+  if (loading) return <PageLoader />;
 
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setEditingCategory(null);
-        setImageFile(null);
-        setCategoryProducts([]);
-    };
-
-    const handleDelete = (categoryId) => {
-        if (window.confirm('Are you sure you want to delete this universe? This will detach all associated products.')) {
-            deleteCategory(categoryId);
-        }
+  const handleVisibility = async (category) => {
+    const show = category.isActive === false;
+    try {
+      await toggleCategoryStatus(category.id, show);
+      toast.success(show ? `${category.name} is visible on the store` : `${category.name} is hidden from the store`);
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'Visibility could not be changed.'));
     }
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!categoryName.trim()) return;
-        setIsSubmitting(true);
-        try {
-            const formData = new FormData();
-            formData.append('name', categoryName);
-            formData.append('slug', categorySlug);
-            formData.append('description', categoryDescription);
-            formData.append('parent_id', parentCategoryId);
+  const handleDelete = async (category) => {
+    const count = productCount(category);
+    const note = count ? ` Its ${count} product${count !== 1 ? 's stay' : ' stays'} in your catalogue.` : '';
+    if (!window.confirm(`Delete the "${category.name}" category?${note} This can't be undone.`)) return;
+    try {
+      await deleteCategory(category.id);
+      toast.success('Category deleted');
+    } catch (error) {
+      toast.error(apiErrorMessage(error, 'The category could not be deleted.'));
+    }
+  };
 
-            if (imageFile) {
-                formData.append('image', imageFile);
-            } else if (editingCategory && editingCategory.imageUrl) {
-                formData.append('image_url', editingCategory.imageUrl);
-            }
+  const filtersActive = view !== 'all' || search.trim();
 
-            if (bannerFile) {
-                formData.append('banner', bannerFile);
-            } else if (editingCategory && editingCategory.bannerUrl) {
-                formData.append('banner_url', editingCategory.bannerUrl);
-            }
+  return (
+    <div className="space-y-4">
 
-            if (editingCategory) {
-                await updateCategory(editingCategory.id, formData);
-            } else {
-                await addCategory(formData);
-            }
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-semibold leading-tight" style={text}>Categories</h1>
+          <p className="text-[13px] mt-0.5" style={subdued}>
+            {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'} group your products into collections
+          </p>
+        </div>
+        <Link href="/admin/categories/new" className="sp-btn sp-btn-primary self-start sm:self-auto"><Plus size={15} />Add category</Link>
+      </div>
 
-            handleCloseModal();
-        }
- catch (error) {
-            console.error("Failed to save category", error);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+      <div className="sp-card overflow-hidden">
+        {/* Views, sort and search */}
+        <div className="px-3 py-2 flex flex-col lg:flex-row lg:items-center gap-2" style={{ borderBottom: '1px solid var(--sp-border)' }}>
+          <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto no-scrollbar" role="group" aria-label="Views">
+            {VIEWS.filter(v => !v.optional || counts[v.id] > 0 || view === v.id).map(v => (
+              <ViewPill key={v.id} active={view === v.id} count={counts[v.id]} onClick={() => setView(v.id)}>{v.label}</ViewPill>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <select value={sort} onChange={e => setSort(e.target.value)} className="sp-input cursor-pointer" style={toolbarSelectStyle} aria-label="Sort categories">
+              {Object.entries(SORTS).map(([id, s]) => <option key={id} value={id}>{s.label}</option>)}
+            </select>
+            <SearchBox value={search} onChange={setSearch} placeholder="Search categories" />
+          </div>
+        </div>
 
-    const filteredCategories = categories.filter(category =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    if (isDataLoading) return <PageLoader />;
-
-    return (
-        <div className="space-y-8 pb-20">
-            {/* Header Actions */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
-                <div className="relative flex-grow max-w-xl">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search categories..."
-                        className="w-full pl-12 pr-6 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-cl-purple/20 focus:border-cl-purple transition-all text-sm"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                
-                <button
-                    onClick={handleOpenAddModal}
-                    className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98] whitespace-nowrap"
-                >
-                    <Plus size={14} /> Add Category
-                </button>
-            </div>
-
-            {/* Content Area */}
-            <AnimatePresence mode="wait">
-                <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                >
-                    {filteredCategories.map(category => (
-                        <div
-                            key={category.id}
-                            className={`group relative bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col ${category.isActive === false ? 'opacity-60' : ''}`}
-                        >
-                            <div 
-                                className="relative aspect-[4/3] w-full p-6 bg-gray-50/50 cursor-pointer group-hover:bg-white transition-colors duration-500"
-                                onClick={() => handleOpenEditModal(category)}
+        {visible.length === 0 ? (
+          categories.length === 0 ? (
+            <EmptyState
+              icon={FolderOpen}
+              title="Add your first category"
+              description="Categories group products into collections customers can browse, like Anti-Aging or Cleansing."
+              action={<Link href="/admin/categories/new" className="sp-btn sp-btn-primary"><Plus size={15} />Add category</Link>}
+            />
+          ) : (
+            <EmptyState
+              icon={FolderOpen}
+              title="No categories match these filters"
+              description="Try another view or search term."
+              action={filtersActive && (
+                <button type="button" onClick={() => { setView('all'); setSearch(''); }} className="sp-btn sp-btn-secondary">Clear filters</button>
+              )}
+            />
+          )
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="sp-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Products</th>
+                  <th>Status</th>
+                  <th className="w-[52px]" aria-label="Actions" />
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(category => {
+                  const status = categoryStatus(category);
+                  const count = productCount(category);
+                  const parentName = category.parentId ? namesById.get(category.parentId) : null;
+                  return (
+                    <tr key={category.id} className="cursor-pointer" onClick={() => router.push(`/admin/categories/${category.id}`)}>
+                      <td>
+                        <div className="flex items-center gap-3 min-w-[280px]">
+                          <div className="w-11 h-11 rounded-lg shrink-0 overflow-hidden bg-white flex items-center justify-center" style={{ border: '1px solid var(--sp-border)' }}>
+                            {category.imageUrl
+                              ? <img src={category.imageUrl} alt="" className="w-full h-full object-cover" />
+                              : <FolderOpen size={16} style={subdued} />}
+                          </div>
+                          <div className="min-w-0">
+                            <Link
+                              href={`/admin/categories/${category.id}`}
+                              onClick={e => e.stopPropagation()}
+                              className="block text-[13px] font-semibold truncate max-w-[380px] hover:underline"
+                              style={text}
                             >
-                                {category.imageUrl ? (
-                                    <Image 
-                                        src={category.imageUrl} 
-                                        alt={category.name} 
-                                        fill 
-                                        className="object-cover p-2 rounded-2xl transition-transform duration-700 group-hover:scale-105" 
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-200 gap-3 bg-white rounded-2xl border border-gray-50">
-                                        <ImageIcon size={40} />
-                                        <span className="text-[10px] font-black  ">No Portrait</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="p-8 flex flex-col flex-grow">
-                                <div className="flex-grow space-y-1">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-xl font-bold text-gray-900  leading-tight group-hover:text-cl-purple transition-colors">
-                                            {category.name}
-                                        </h3>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <button className="w-8 h-8 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-all">
-                                                    <MoreHorizontal className="h-4 w-4 text-gray-400" />
-                                                </button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="rounded-xl shadow-2xl border-gray-100 p-2">
-                                                <DropdownMenuItem onClick={() => handleOpenEditModal(category)} className="rounded-lg px-3 py-2 text-sm font-medium gap-2">
-                                                    <Edit size={14} className="text-cl-purple" /> Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => toggleCategoryStatus(category.id, category.isActive === false)}
-                                                    className="rounded-lg px-3 py-2 text-sm font-medium gap-2"
-                                                >
-                                                    {category.isActive === false ? (
-                                                        <><Eye size={14} className="text-green-500" /> Activate</>
-                                                    ) : (
-                                                        <><EyeOff size={14} className="text-orange-500" /> Deactivate</>
-                                                    )}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleDelete(category.id)} className="rounded-lg px-3 py-2 text-sm font-medium gap-2 text-red-600">
-                                                    <Trash2 size={14} /> Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                    <p className="text-[10px] font-black text-gray-300   flex items-center gap-2">
-                                        <Package size={10} className="text-cl-purple/40" />
-                                        {category.productsCount || 0} Products Cataloged
-                                    </p>
-                                </div>
-                                
-                                <div className="mt-8 pt-6 border-t border-gray-50">
-                                    <button 
-                                        onClick={() => handleOpenEditModal(category)}
-                                        className="w-full py-3 bg-gray-50 hover:bg-cl-purple hover:text-white text-gray-400 text-[10px] font-black   rounded-xl transition-all flex items-center justify-center gap-3"
-                                    >
-                                        Manage Assets
-                                        <ArrowRight size={14} />
-                                    </button>
-                                </div>
-                            </div>
+                              {category.name}
+                            </Link>
+                            <p className="text-[12px] truncate max-w-[380px]" style={subdued}>
+                              /collections/{category.slug}{parentName ? ` · in ${parentName}` : ''}
+                            </p>
+                          </div>
                         </div>
-                    ))}
-                </motion.div>
-            </AnimatePresence>
-
-            {filteredCategories.length === 0 && (
-                <div className="min-h-[300px] bg-white rounded-[2.5rem] border border-dashed border-gray-200 flex flex-col items-center justify-center gap-4">
-                    <Tag size={40} className="text-gray-200" />
-                    <p className="text-lg font-medium text-gray-400 italic">No universes discovered in the archives.</p>
-                </div>
-            )}
-
-            <Modal 
-                isOpen={isModalOpen} 
-                onClose={handleCloseModal} 
-                title={editingCategory ? 'Universe Architecture' : 'Incept New Universe'}
-                size="max-w-4xl"
-                noBodyPadding
-            >
-                <form onSubmit={handleSubmit} className="p-10 lg:p-14 space-y-12">
-                    <section className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                            <div className="space-y-8">
-                                <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
-                                    <span className="w-10 h-px bg-cl-purple/20"></span>
-                                    Identity
-                                </h3>
-                                <div>
-                                    <label htmlFor="categoryName" className="block text-[11px] font-black text-gray-400   mb-3">Classification Name</label>
-                                    <input
-                                        type="text" id="categoryName" value={categoryName} onChange={(e) => setCategoryName(e.target.value)}
-                                        placeholder="e.g., Cellular Regimes"
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white transition-all text-lg shadow-inner"
-                                        required disabled={isSubmitting}
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="parentCategory" className="block text-[11px] font-black text-gray-400   mb-3">Ancestry (Parent Category)</label>
-                                    <select
-                                        id="parentCategory" value={parentCategoryId} onChange={(e) => setParentCategoryId(e.target.value)}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-bold text-gray-900 focus:bg-white transition-all text-sm shadow-inner appearance-none"
-                                        disabled={isSubmitting}
-                                    >
-                                        <option value="">Top Level (Grand Maison)</option>
-                                        {categories.filter(c => c.id !== editingCategory?.id).map(cat => (
-                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label htmlFor="categoryDescription" className="block text-[11px] font-black text-gray-400   mb-3">Lore & Philosophy (Description)</label>
-                                    <textarea
-                                        id="categoryDescription" value={categoryDescription} onChange={(e) => setCategoryDescription(e.target.value)}
-                                        placeholder="Describe the essence of this collection..."
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 font-medium text-gray-700 focus:bg-white transition-all text-sm shadow-inner min-h-[120px]"
-                                        disabled={isSubmitting}
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="categorySlug" className="block text-[11px] font-black text-gray-400   mb-3">URL Path (Slug)</label>
-                                    <div className="relative">
-                                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300 font-bold">/</span>
-                                        <input
-                                            type="text" id="categorySlug" value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)}
-                                            placeholder="skincare-regimes"
-                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-10 pr-6 py-4 font-medium text-cl-purple focus:bg-white transition-all text-sm shadow-inner"
-                                            disabled={isSubmitting}
-                                        />
-                                    </div>
-                                    <p className="mt-2 text-[9px] text-gray-400 italic">Leave blank to automatically derive from name.</p>
-                                </div>
-                                <div>
-                                    <label htmlFor="image" className="block text-[11px] font-black text-gray-400   mb-3">Visual Anchor (Portrait)</label>
-                                    <div className="relative group/img aspect-[16/9] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-6 transition-all hover:bg-gray-100/50">
-                                        {imageFile ? (
-                                            <Image src={URL.createObjectURL(imageFile)} alt="Preview" fill className="object-cover p-2 rounded-xl" />
-                                        ) : editingCategory?.imageUrl ? (
-                                            <Image src={editingCategory.imageUrl} alt="Current" fill className="object-cover p-2 rounded-xl" />
-                                        ) : (
-                                            <div className="text-gray-200 flex flex-col items-center gap-2">
-                                                <ImageIcon size={32} />
-                                                <span className="text-[9px] font-black  ">Select Image</span>
-                                            </div>
-                                        )}
-                                        <input type="file" onChange={(e) => setImageFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isSubmitting} />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label htmlFor="banner" className="block text-[11px] font-black text-gray-400   mb-3">Cinematic Header (Banner)</label>
-                                    <div className="relative group/banner aspect-[21/9] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center justify-center overflow-hidden p-4 transition-all hover:bg-gray-100/50">
-                                        {bannerFile ? (
-                                            <Image src={URL.createObjectURL(bannerFile)} alt="Banner Preview" fill className="object-cover rounded-xl" />
-                                        ) : editingCategory?.bannerUrl ? (
-                                            <Image src={editingCategory.bannerUrl} alt="Current Banner" fill className="object-cover rounded-xl" />
-                                        ) : (
-                                            <div className="text-gray-200 flex flex-col items-center gap-2">
-                                                <ImageIcon size={32} />
-                                                <span className="text-[9px] font-black  ">Select Banner</span>
-                                            </div>
-                                        )}
-                                        <input type="file" onChange={(e) => setBannerFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer" disabled={isSubmitting} />
-                                    </div>
-                                    <p className="mt-2 text-[9px] text-gray-400 italic text-right">Recommended: 1920x600px</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-8">
-                                <h3 className="text-[10px] font-black   text-cl-purple mb-2 flex items-center gap-3">
-                                    <span className="w-10 h-px bg-cl-purple/20"></span>
-                                    Linked Assets
-                                </h3>
-                                <div className="bg-gray-50/50 rounded-3xl border border-gray-100 p-8">
-                                    {editingCategory ? (
-                                        <div className="space-y-6">
-                                            <p className="text-[11px] font-black text-gray-400  ">Active Masterpieces in Universe</p>
-                                            {categoryProducts.length > 0 ? (
-                                                <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
-                                                    {categoryProducts.map(product => (
-                                                        <div key={product.id} className="flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-50 shadow-sm">
-                                                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-50 p-1">
-                                                                <Image src={product.imageUrl} alt={product.name} fill className="object-contain" />
-                                                            </div>
-                                                            <div className="flex-grow">
-                                                                <p className="text-xs font-bold text-gray-900 truncate max-w-[200px]">{product.name}</p>
-                                                                <p className="text-[9px] text-cl-purple font-medium er">Verified Inclusion</p>
-                                                            </div>
-                                                            <CheckCircle2 size={14} className="text-green-500" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center py-10 text-gray-300 gap-3">
-                                                    <Package size={32} strokeWidth={1} />
-                                                    <p className="text-[10px] font-black   italic text-center">No products currently <br/>assigned to this universe.</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center py-14 text-gray-300 gap-4 text-center">
-                                            <LayoutGrid size={40} strokeWidth={1} />
-                                            <p className="text-sm font-medium text-gray-400">Save the category first before linking products.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </section>
-
-                        <div className="pt-5 border-t border-gray-100 flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={handleCloseModal}
-                                className="px-5 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
-                                disabled={isSubmitting}
-                            >
-                                Cancel
+                      </td>
+                      <td className="whitespace-nowrap" style={count ? secondary : subdued}>
+                        {count ? `${count} product${count !== 1 ? 's' : ''}` : 'No products'}
+                      </td>
+                      <td className="whitespace-nowrap"><span className={`sp-badge ${status.cls}`}>{status.label}</span></td>
+                      <td className="text-right" onClick={e => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button type="button" className="p-1.5 rounded-md hover:bg-[#ebebeb] cursor-pointer" aria-label={`Actions for ${category.name}`}>
+                              <MoreHorizontal size={16} style={secondary} />
                             </button>
-                            <button
-                                type="submit"
-                                className="cl-gradient-btn gap-2 px-6 py-2.5 text-[11px] active:scale-[0.98] disabled:opacity-60"
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : editingCategory ? 'Update category' : 'Add category'}
-                            </button>
-                        </div>
-                                            </form>
-                                        </Modal>
-                                    </div>
-                                );
-                            };
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-lg p-1 min-w-[180px]">
+                            <DropdownMenuItem onClick={() => router.push(`/admin/categories/${category.id}`)} className="rounded-md px-3 py-2 text-[13px] gap-2">
+                              <Pencil size={14} />Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => window.open(`/collections/${category.slug}`, '_blank')} className="rounded-md px-3 py-2 text-[13px] gap-2">
+                              <ExternalLink size={14} />View on store
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleVisibility(category)} className="rounded-md px-3 py-2 text-[13px] gap-2">
+                              {category.isActive === false ? <><Eye size={14} />Show on store</> : <><EyeOff size={14} />Hide from store</>}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(category)} className="rounded-md px-3 py-2 text-[13px] gap-2 text-red-600 focus:bg-red-50">
+                              <Trash2 size={14} />Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {visible.length > 0 && (
+          <p className="px-4 py-2.5 text-[12px]" style={{ ...subdued, borderTop: '1px solid var(--sp-border)' }}>
+            Showing {visible.length} of {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default ManageCategories;

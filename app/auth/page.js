@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, Star, MailOpen, Loader2, Check, X as XIcon } from 'lucide-react';
 import { motion, AnimatePresence, MotionConfig, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
+import BrandLogo from '../components/BrandLogo';
 
 function getSafeCallbackUrl() {
   if (typeof window === 'undefined') return '/';
@@ -667,22 +668,9 @@ export default function AuthPage() {
           {/* Brand lockup — same proportions as the main site header */}
           <Link
             href="/"
-            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-[10px] transition-opacity hover:opacity-80 active:opacity-60"
+            className="absolute left-1/2 -translate-x-1/2 flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60"
           >
-            <Image
-              src="/Adobe Express - file (5).png"
-              alt="Naya Lumière"
-              width={28}
-              height={28}
-              className="w-7 h-7 object-contain shrink-0"
-              priority
-            />
-            <div className="flex flex-col leading-tight font-semibold tracking-[0.06em] text-[#111114]">
-              <span className="text-[15px] md:text-[16px] leading-none">NAYA LUMIÈRE</span>
-              <span className="text-[9px] tracking-[0.32em] text-[#5a5a64] uppercase mt-[2px] leading-none">
-                COSMETICS
-              </span>
-            </div>
+            <BrandLogo priority />
           </Link>
 
           {/* Trust cue — balances the row and reassures on a password screen */}

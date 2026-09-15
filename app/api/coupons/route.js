@@ -1,26 +1,21 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAdmin } from '@/lib/adminAuth';
+import { COUPON_USAGE_COLUMNS, COUPON_USAGE_JOIN, couponCodeTaken, normalizeCoupon, parseCouponInput } from '@/lib/couponRules';
 
-export async function GET(request) {
+// Every discount code with how it has been used — admins only. Checkout uses /api/coupons/validate instead.
+export async function GET() {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   try {
     const { rows } = await db.query(`
-      SELECT c.*, 
-             COALESCE(o.order_count, 0) as actual_order_count
+      SELECT c.*, ${COUPON_USAGE_COLUMNS}
       FROM coupons c
-      LEFT JOIN (
-        SELECT applied_coupon_id, COUNT(*) as order_count
-        FROM (
-          SELECT applied_coupon_id FROM orders WHERE applied_coupon_id IS NOT NULL
-          UNION ALL
-          SELECT applied_coupon_id FROM delivered_orders WHERE applied_coupon_id IS NOT NULL
-          UNION ALL
-          SELECT applied_coupon_id FROM cancelled_orders WHERE applied_coupon_id IS NOT NULL
-        ) all_applied
-        GROUP BY applied_coupon_id
-      ) o ON c.id = o.applied_coupon_id
+      ${COUPON_USAGE_JOIN}
       ORDER BY c.created_at DESC
     `);
-    return NextResponse.json(rows);
+    return NextResponse.json(rows.map(normalizeCoupon));
   } catch (error) {
     console.error('Error fetching coupons:', error);
     return NextResponse.json({ message: 'Error fetching coupons', error: error.message }, { status: 500 });
@@ -28,35 +23,30 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const client = await db.connect();
-  try {
-    const { code, discount_type, discount_value, expiration_date, usage_limit, minimum_purchase_amount, is_active } = await request.json();
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
 
-    if (!code || !discount_type || !discount_value) {
-      return NextResponse.json({ message: 'Missing required fields (code, discount_type, discount_value).' }, { status: 400 });
+  try {
+    const { coupon, error } = parseCouponInput(await request.json());
+    if (error) {
+      return NextResponse.json({ message: error }, { status: 400 });
+    }
+    if (await couponCodeTaken(db, coupon.code)) {
+      return NextResponse.json({ message: 'Another discount already uses this code.' }, { status: 409 });
     }
 
-    await client.query('BEGIN');
-
-    const sql = `
+    const { rows } = await db.query(`
       INSERT INTO coupons (code, discount_type, discount_value, expiration_date, usage_limit, minimum_purchase_amount, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id;
-    `;
-    const values = [code, discount_type, discount_value, expiration_date, usage_limit, minimum_purchase_amount, is_active];
-    const { rows } = await client.query(sql, values);
-    const couponId = rows[0].id;
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `, [coupon.code, coupon.discount_type, coupon.discount_value, coupon.expiration_date, coupon.usage_limit, coupon.minimum_purchase_amount, coupon.is_active]);
 
-    await client.query('COMMIT');
-    return NextResponse.json({ message: 'Coupon added successfully', couponId }, { status: 201 });
-
+    return NextResponse.json({ message: 'Coupon added successfully', couponId: rows[0].id }, { status: 201 });
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('Error adding coupon:', error);
-    if (error.code === '23505') { // Unique violation
-        return NextResponse.json({ message: 'Coupon code already exists.' }, { status: 409 });
+    if (error.code === '23505') {
+      return NextResponse.json({ message: 'Another discount already uses this code.' }, { status: 409 });
     }
     return NextResponse.json({ message: 'Error adding coupon', error: error.message }, { status: 500 });
-  } finally {
-    client.release();
   }
 }

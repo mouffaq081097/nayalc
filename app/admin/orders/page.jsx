@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAppContext } from '../../context/AppContext';
 import {
   Package, Search, ChevronLeft, ChevronRight, Calendar, SlidersHorizontal,
-  RotateCcw, User, MapPin, AlertCircle, Loader2, CheckCircle, Download, Store,
+  RotateCcw, User, MapPin, AlertCircle, Loader2, CheckCircle, Download, Store, ShoppingCart,
 } from 'lucide-react';
 import PageLoader from '@/app/components/PageLoader';
 
@@ -306,6 +306,9 @@ const ManageOrders = () => {
             {id === 'recover' && <RotateCcw size={13} />}{label}
           </button>
         ))}
+        <Link href="/admin/orders/abandoned" className="sp-btn sp-btn-plain text-[13px]">
+          <ShoppingCart size={13} />Abandoned checkouts
+        </Link>
       </div>
 
       {tab === 'recover' && <RecoverFromCart />}

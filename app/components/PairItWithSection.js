@@ -1,102 +1,86 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import { ShoppingBag, Check, Sparkles } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCart } from '../context/CartContext';
-import { motion } from 'framer-motion';
+import CartSuggestionCard from './CartSuggestionCard';
+
+const SHOW = 4;
+
+// Mobile/tablet: swipeable snap rail bleeding to the screen edge. Desktop: 4-up grid.
+const railClass =
+  '-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 scroll-px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 lg:pb-0';
+const slotClass = 'w-[44%] shrink-0 snap-start sm:w-[200px] lg:w-auto';
+
+function RailSkeleton() {
+  return (
+    <div aria-hidden="true" className="motion-safe:animate-pulse">
+      <div className="mb-4 space-y-2">
+        <div className="h-5 w-44 rounded bg-[#f1f1f4]" />
+        <div className="h-3.5 w-32 rounded bg-[#f5f5f7]" />
+      </div>
+      <div className={`${railClass} overflow-hidden`}>
+        {Array.from({ length: SHOW }).map((_, i) => (
+          <div key={i} className={`${slotClass} overflow-hidden rounded-2xl border border-[#eeeef1]`}>
+            <div className="aspect-square bg-[#f5f5f7]" />
+            <div className="space-y-2 p-3">
+              <div className="h-2.5 w-1/2 rounded bg-[#f1f1f4]" />
+              <div className="h-3 w-4/5 rounded bg-[#f1f1f4]" />
+              <div className="h-9 rounded-full bg-[#f5f5f7]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function PairItWithSection({ currentCartItems }) {
-  const { addToCart } = useCart();
-  const [suggestedProducts, setSuggestedProducts] = useState([]);
-  const [addedIds, setAddedIds] = useState(new Set());
+  const { addToCart, closeCart } = useCart();
+  const [products, setProducts] = useState(null); // null while loading
+  // Snapshot of the bag when the section appeared: those products are hidden, but
+  // anything added from here stays in place and flips to "In your bag" instead of vanishing.
+  const [initialCartIds] = useState(() => new Set(currentCartItems.map(i => i.id)));
 
   useEffect(() => {
-    fetch('/api/products/suggestions?limit=4')
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setSuggestedProducts(data))
-      .catch(() => setSuggestedProducts([]));
+    let cancelled = false;
+    // Over-fetch so there are still enough left after dropping what's already in the bag.
+    fetch(`/api/products/suggestions?limit=${SHOW * 2}`)
+      .then(res => (res.ok ? res.json() : []))
+      .then(data => { if (!cancelled) setProducts(Array.isArray(data) ? data : []); })
+      .catch(() => { if (!cancelled) setProducts([]); });
+    return () => { cancelled = true; };
   }, []);
 
-  const filtered = suggestedProducts.filter(p => !currentCartItems.some(c => c.id === p.id));
-  if (filtered.length === 0) return null;
+  const cartIds = useMemo(() => new Set(currentCartItems.map(i => i.id)), [currentCartItems]);
+  const visible = useMemo(
+    () => (products || []).filter(p => !initialCartIds.has(p.id)).slice(0, SHOW),
+    [products, initialCartIds]
+  );
+
+  if (products === null) return <RailSkeleton />;
+  if (visible.length === 0) return null;
 
   const handleAdd = (product) => {
-    const normalized = { ...product, stock_quantity: product.stockQuantity || product.stock_quantity };
-    addToCart(normalized, 1);
-    setAddedIds(prev => new Set([...prev, product.id]));
-    setTimeout(() => setAddedIds(prev => { const n = new Set(prev); n.delete(product.id); return n; }), 2200);
+    addToCart({ ...product, stock_quantity: product.stockQuantity ?? product.stock_quantity }, 1);
+    closeCart(); // already on the bag page — don't slide the drawer over it
   };
 
   return (
-    <div>
-      {/* Section label */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.18em] mb-0.5">
-            Frequently Bought Together
-          </p>
-        </div>
-        <button
-          onClick={() => handleAdd(filtered[0])}
-          className="hidden sm:flex items-center gap-1.5 text-[12px] font-medium text-[#9869f7] hover:underline underline-offset-2 transition-colors"
-        >
-          <Sparkles size={11} strokeWidth={2} />
-          Add all
-        </button>
+    <section aria-labelledby="also-like-heading">
+      {/* The suggestions API returns random active products, so this is labelled as
+          discovery rather than "frequently bought together". */}
+      <div className="mb-4">
+        <h2 id="also-like-heading" className="text-[18px] font-semibold text-[#111114]">You may also like</h2>
+        <p className="mt-0.5 text-[13px] text-[#8a8a93]">More from our collection</p>
       </div>
 
-      {/* Horizontal scroll row */}
-      <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-        {filtered.map((product, i) => {
-          const added = addedIds.has(product.id);
-          return (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.07, duration: 0.25 }}
-              className="flex-shrink-0 w-[168px] border border-[#e5e5ea] rounded-xl overflow-hidden bg-white hover:border-[#c8c8cf] hover:shadow-sm transition-all duration-200 group"
-            >
-              {/* Image with hover quick-add */}
-              <div className="aspect-square bg-[#f9f9fb] border-b border-[#e5e5ea] p-3 overflow-hidden relative">
-                <ImageWithFallback
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-400"
-                />
-                {/* Hover quick-add */}
-                <div className="absolute inset-x-0 bottom-0 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <button
-                    onClick={() => handleAdd(product)}
-                    className="flex items-center gap-1.5 text-[11px] font-semibold px-3 h-7 rounded-full shadow-md transition-all"
-                    style={added
-                      ? { background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }
-                      : { background: 'linear-gradient(90deg,#c087fc,#9869f7)', color: '#fff' }
-                    }
-                  >
-                    {added ? <><Check size={10} strokeWidth={3} /> Added</> : <><ShoppingBag size={10} /> Add</>}
-                  </button>
-                </div>
-              </div>
-
-              {/* Info */}
-              <div className="p-3">
-                <p className="text-[10px] font-semibold text-[#8a8a93] uppercase tracking-[0.1em] mb-0.5 truncate">
-                  {product.brandName || product.brand || 'Naya Lumière'}
-                </p>
-                <p className="text-[13px] font-semibold text-[#111114] leading-snug line-clamp-2 mb-1">
-                  {product.name}
-                </p>
-                <p className="text-[13px] font-semibold text-[#111114] tabular-nums">
-                  AED {parseFloat(product.price).toFixed(0)}
-                  {product.size && <span className="text-[11px] font-normal text-[#8a8a93] ml-1">· {product.size}</span>}
-                </p>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
+      <ul className={railClass}>
+        {visible.map(product => (
+          <li key={product.id} className={slotClass}>
+            <CartSuggestionCard product={product} inBag={cartIds.has(product.id)} onAdd={handleAdd} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

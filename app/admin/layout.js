@@ -2,96 +2,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  Home, ShoppingBag, Tag, Users, MessageSquare, Percent,
-  BarChart3, Store, Image as ImageIcon, Banknote, Send, Globe,
-  Share2, Search, Bell, LogOut, Menu, X, ChevronDown, ExternalLink,
-  LayoutTemplate, BookOpen,
-} from 'lucide-react';
+import { ShoppingBag, MessageSquare, Search, Bell, Menu, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { createFetchWithAuth } from '../lib/api';
 import PageLoader from '@/app/components/PageLoader';
+import AdminSidebar from './_components/AdminSidebar';
 
 const SIDEBAR_W = '232px';
-
-const navItems = [
-  { to: '/admin', text: 'Home', icon: Home },
-  { to: '/admin/orders', text: 'Orders', icon: ShoppingBag },
-  { to: '/admin/products', text: 'Products', icon: Tag },
-  { to: '/admin/categories', text: 'Categories', icon: BarChart3 },
-  { to: '/admin/brands', text: 'Brands', icon: Store },
-  { to: '/admin/coupons', text: 'Discounts', icon: Percent },
-  { to: '/admin/users', text: 'Customers', icon: Users },
-  { to: '/admin/chat', text: 'Inbox', icon: MessageSquare },
-  { to: '/admin/marketing', text: 'Marketing', icon: Send },
-  { to: '/admin/payments', text: 'Payments', icon: Banknote },
-  { to: '/admin/hero', text: 'Hero banner', icon: ImageIcon },
-  { to: '/admin/homepage', text: 'Homepage images', icon: LayoutTemplate },
-  { to: '/admin/journal', text: 'Journal', icon: BookOpen },
-  { to: '/admin/seo', text: 'SEO', icon: Globe },
-  { to: '/admin/social', text: 'Social', icon: Share2 },
-];
-
-const NavLink = ({ item, isActive, onClick, badge }) => (
-  <Link
-    href={item.to}
-    onClick={onClick}
-    className="sp-nav-link"
-    data-active={isActive ? 'true' : undefined}
-  >
-    <item.icon size={18} strokeWidth={2} className="shrink-0" />
-    <span className="text-[13px] font-medium">{item.text}</span>
-    {badge > 0 && (
-      <span className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold bg-[#303030] text-white rounded-full">
-        {badge}
-      </span>
-    )}
-  </Link>
-);
-
-const Sidebar = ({ pathname, onNavigate, notifications, onLogout }) => (
-  <div className="flex flex-col h-full" style={{ background: '#f1f1f1' }}>
-    <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto no-scrollbar">
-      {navItems.map(item => {
-        const isActive = item.to === '/admin'
-          ? pathname === '/admin'
-          : pathname.startsWith(item.to);
-        return (
-          <NavLink
-            key={item.to}
-            item={item}
-            isActive={isActive}
-            onClick={onNavigate}
-            badge={item.to === '/admin/chat' ? notifications.unreadChatsCount : 0}
-          />
-        );
-      })}
-
-      <div className="pt-3 mt-3" style={{ borderTop: '1px solid #e0e0e0' }}>
-        <p className="px-2.5 pb-1.5 text-[11px] font-semibold tracking-wide" style={{ color: '#8a8a8a' }}>
-          Sales channels
-        </p>
-        <Link href="/" target="_blank" className="sp-channel">
-          <Store size={18} strokeWidth={2} className="shrink-0" />
-          <span className="text-[13px] font-medium">Online Store</span>
-          <ExternalLink size={13} className="ml-auto opacity-50" />
-        </Link>
-      </div>
-    </nav>
-
-    <div className="px-3 py-3" style={{ borderTop: '1px solid #e0e0e0' }}>
-      <button
-        onClick={onLogout}
-        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-[#303030] hover:bg-[#ebebeb] transition-colors cursor-pointer"
-      >
-        <LogOut size={18} strokeWidth={2} />
-        Log out
-      </button>
-    </div>
-  </div>
-);
 
 const AdminLayout = ({ children }) => {
   const { user, loading, logout, isAuthenticated } = useAuth();
@@ -304,7 +223,7 @@ const AdminLayout = ({ children }) => {
           }`}
           style={{ width: SIDEBAR_W, borderRight: '1px solid #e0e0e0' }}
         >
-          <Sidebar
+          <AdminSidebar
             pathname={pathname}
             onNavigate={() => setIsSidebarOpen(false)}
             notifications={notifications}

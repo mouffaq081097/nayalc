@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { currentSessionUser } from '@/lib/adminAuth';
 import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail';
 import Stripe from 'stripe';
 import { getTabbyPayment } from '@/lib/tabby';
@@ -102,6 +103,15 @@ const selectOrderFields = (tableName) => `
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+
+    // Customers may only list their own orders; everyone's orders (or another customer's) are admin-only
+    const sessionUser = await currentSessionUser();
+    if (!sessionUser) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    if (sessionUser.role !== 'admin' && (!userId || String(userId) !== String(sessionUser.id))) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
     const statusFilter = searchParams.get('statusFilter') || 'pending'; // 'all', 'pending', 'delivered', 'cancelled'
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);

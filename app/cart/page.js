@@ -1,515 +1,730 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { ArrowRight, Plus, Minus, ShoppingBag, Truck, Sparkles, X, Gift, Star } from 'lucide-react';
-import { calcShipping, nextShippingTier, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME } from '@/lib/shipping';
-import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import BrandLogo from '../components/BrandLogo';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import {
+  ArrowLeft, ArrowRight, ShoppingBag, Sparkles, X, Gift, Star, Trash2,
+  ShieldCheck, ChevronDown, Tag, Truck, Minus, Plus, Check,
+} from 'lucide-react';
+import { calcShipping, nextShippingTier, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME } from '@/lib/shipping';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import PairItWithSection from '../components/PairItWithSection';
 import BuyAgainSection from '../components/BuyAgainSection';
 import TabbyPromo from '../components/TabbyPromo';
-import { motion, AnimatePresence } from 'framer-motion';
 
-/* ── sidebar card wrapper — defined outside to prevent focus loss on re-render ── */
-const SCard = ({ children, className = '' }) => (
-  <div className={`bg-white border border-[#e5e5ea] rounded-2xl ${className}`}>{children}</div>
-);
+const GRADIENT = 'linear-gradient(90deg,#c087fc,#9869f7)';
+const UNDO_WINDOW_MS = 4000;
+
+// Must match app/api/orders/route.js, which rejects orders whose total drifts
+// from its own calculation: VAT is 5% of the pre-discount subtotal, and every
+// 100 loyalty points redeem for AED 5.
+const VAT_RATE = 0.05;
+const POINTS_BLOCK = 100;
+const AED_PER_BLOCK = 5;
+
+const fmt = (n) =>
+  `AED ${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9869f7]/40';
+
+function CartHeader({ onBack }) {
+  return (
+    <header className="sticky top-0 z-40 border-b border-[#e5e5ea] bg-white">
+      <div className="mx-auto relative flex h-[56px] md:h-[60px] max-w-[1180px] items-center justify-between px-4 sm:px-6">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Continue shopping"
+          className={`group shrink-0 flex items-center gap-2 h-[38px] px-3 sm:px-4 rounded-full border border-[#e5e5ea] bg-white text-[12px] font-semibold text-[#2a2a31] hover:bg-[#f3f3f5] hover:border-[#c8c8cf] transition-colors ${focusRing}`}
+        >
+          <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
+          <span className="hidden sm:inline">Continue shopping</span>
+        </button>
+
+        <Link
+          href="/"
+          className="absolute left-1/2 -translate-x-1/2 flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60"
+        >
+          <BrandLogo priority />
+        </Link>
+
+        <div className="shrink-0 hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-[#8a8a93]">
+          <ShieldCheck size={13} className="text-emerald-500" />
+          Secure checkout
+        </div>
+        <div className="sm:hidden w-[38px]" aria-hidden="true" />
+      </div>
+    </header>
+  );
+}
+
+function IconBadge({ children }) {
+  return (
+    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-[#f5f0fd] text-[#9869f7]">
+      {children}
+    </span>
+  );
+}
+
+function SummaryRow({ label, value, positive = false }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <dt className="text-[#5a5a64]">{label}</dt>
+      <dd className={`font-semibold tabular-nums ${positive ? 'text-emerald-600' : 'text-[#111114]'}`}>{value}</dd>
+    </div>
+  );
+}
+
+const stepBtn = `w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center rounded-full text-[#2a2a31] hover:bg-[#f3f3f5] disabled:opacity-30 disabled:hover:bg-transparent transition-colors ${focusRing}`;
+
+function CartItemRow({ item, onQuantity, onRemove }) {
+  const outOfStock = item.stock_quantity === 0;
+  const overStock = !outOfStock && item.quantity > item.stock_quantity;
+  const atStockLimit = item.quantity >= item.stock_quantity;
+  const onSale = item.originalPrice > item.price;
+  const productHref = `/product/${item.id}`;
+
+  return (
+    <div className={`flex gap-3.5 sm:gap-5 px-4 sm:px-6 py-4 sm:py-5 ${outOfStock ? 'bg-red-50/50' : ''}`}>
+      <Link
+        href={productHref}
+        className={`shrink-0 w-[76px] h-[76px] sm:w-[96px] sm:h-[96px] rounded-xl bg-[#f7f7f9] border border-[#eeeef1] overflow-hidden p-2 ${focusRing}`}
+      >
+        <ImageWithFallback
+          src={item.image}
+          alt={item.name}
+          className={`w-full h-full object-contain mix-blend-multiply ${outOfStock ? 'opacity-50' : ''}`}
+        />
+      </Link>
+
+      <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8a8a93] truncate">
+              {item.brand || 'Naya Lumière'}
+            </p>
+            <Link
+              href={productHref}
+              className="mt-0.5 block text-[14px] sm:text-[15px] font-semibold leading-snug text-[#111114] line-clamp-2 hover:underline underline-offset-2"
+            >
+              {item.name}
+            </Link>
+            {(item.size || item.shade) && (
+              <p className="mt-0.5 text-[12px] text-[#8a8a93]">{[item.size, item.shade].filter(Boolean).join(' · ')}</p>
+            )}
+          </div>
+
+          <div className="shrink-0 text-right">
+            <p className="text-[14px] sm:text-[16px] font-semibold text-[#111114] tabular-nums">{fmt(item.price * item.quantity)}</p>
+            {onSale && (
+              <p className="text-[11.5px] text-[#a1a1aa] line-through tabular-nums">{fmt(item.originalPrice * item.quantity)}</p>
+            )}
+            {item.quantity > 1 && (
+              <p className="text-[11px] text-[#8a8a93] tabular-nums">{fmt(item.price)} each</p>
+            )}
+          </div>
+        </div>
+
+        {outOfStock && (
+          <p className="mt-2 self-start rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700">
+            Out of stock — remove to continue
+          </p>
+        )}
+        {overStock && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
+            <span className="font-semibold text-amber-700">Only {item.stock_quantity} left</span>
+            <button
+              type="button"
+              onClick={() => onQuantity(item.id, item.stock_quantity)}
+              className="font-semibold text-[#7c3aed] underline underline-offset-2"
+            >
+              Update to {item.stock_quantity}
+            </button>
+          </div>
+        )}
+
+        <div className="mt-auto pt-3 flex items-center justify-between gap-2">
+          <div
+            role="group"
+            aria-label={`Quantity for ${item.name}`}
+            className="flex items-center rounded-full border border-[#e5e5ea] bg-white"
+          >
+            <button
+              type="button"
+              onClick={() => (item.quantity <= 1 ? onRemove(item.id) : onQuantity(item.id, item.quantity - 1))}
+              aria-label={item.quantity <= 1 ? `Remove ${item.name}` : `Decrease quantity of ${item.name}`}
+              className={stepBtn}
+            >
+              {item.quantity <= 1 ? <Trash2 size={15} /> : <Minus size={15} />}
+            </button>
+            <span aria-live="polite" className="w-8 text-center text-[14px] font-semibold tabular-nums text-[#111114] select-none">
+              {item.quantity}
+            </span>
+            <button
+              type="button"
+              onClick={() => onQuantity(item.id, item.quantity + 1)}
+              disabled={outOfStock || atStockLimit}
+              aria-label={`Increase quantity of ${item.name}`}
+              className={stepBtn}
+            >
+              <Plus size={15} />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onRemove(item.id)}
+            className={`h-11 px-2 -mr-2 inline-flex items-center gap-1.5 rounded-full text-[13px] font-medium text-[#8a8a93] hover:text-red-600 transition-colors ${focusRing}`}
+          >
+            <Trash2 size={14} />
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RemovedRow({ item, onUndo }) {
+  return (
+    <div role="status" className="relative flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-[#faf7ff]">
+      <p className="min-w-0 truncate text-[13px] text-[#5a5a64]">
+        Removed <span className="font-semibold text-[#111114]">{item.name}</span>
+      </p>
+      <button
+        type="button"
+        onClick={() => onUndo(item.id)}
+        className={`shrink-0 h-11 px-4 rounded-full text-[13px] font-semibold text-[#7c3aed] hover:bg-[#f0e6ff] transition-colors ${focusRing}`}
+      >
+        Undo
+      </button>
+      <motion.span
+        aria-hidden="true"
+        className="absolute left-0 bottom-0 h-0.5 w-full origin-left"
+        style={{ background: GRADIENT }}
+        initial={{ scaleX: 1 }}
+        animate={{ scaleX: 0 }}
+        transition={{ duration: UNDO_WINDOW_MS / 1000, ease: 'linear' }}
+      />
+    </div>
+  );
+}
 
 export default function CartPage() {
   const {
     cartItems, removeFromCart, updateQuantity,
-    subtotal, appliedCoupon, discountAmount, finalTotal,
-    applyCoupon, removeCoupon, couponError,
+    appliedCoupon, discountAmount, applyCoupon, removeCoupon, couponError,
   } = useCart();
   const { user, isAuthenticated } = useAuth();
+  const userId = user?.id;
   const router = useRouter();
 
-  const [couponCode,       setCouponCode]       = useState('');
-  const [buyAgainProducts, setBuyAgainProducts] = useState([]);
-  const [loyaltyPoints,    setLoyaltyPoints]    = useState(0);
-  const [pointsToUse,      setPointsToUse]      = useState(0);
-  const [isAiLoading,      setIsAiLoading]      = useState(false);
-  const [aiAdvice,         setAiAdvice]         = useState(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [buyAgainRaw, setBuyAgainRaw] = useState([]);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiAdvice, setAiAdvice] = useState(null);
+  // Ids removed but still inside their undo window (the cart itself isn't touched yet)
+  const [pendingRemoval, setPendingRemoval] = useState(() => new Set());
 
+  const removalTimers = useRef(new Map());
+  const latestRemove = useRef(removeFromCart);
+  useEffect(() => { latestRemove.current = removeFromCart; });
+
+  // Once per signed-in user — previously this refetched on every quantity tap.
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      fetch(`/api/users/${user.id}/buy-again`)
-        .then(r => r.ok ? r.json() : [])
-        .then(d => Array.isArray(d) && setBuyAgainProducts(d.filter(p => !cartItems.some(c => c.id === p.id))))
-        .catch(err => console.error('Buy-again fetch failed:', err));
-      fetch(`/api/users/${user.id}/loyalty`)
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d?.stats) setLoyaltyPoints(d.stats.points || 0); })
-        .catch(() => {});
-    }
-  }, [isAuthenticated, user, cartItems]);
+    if (!isAuthenticated || !userId) return;
+    let cancelled = false;
+    fetch(`/api/users/${userId}/buy-again`)
+      .then(r => (r.ok ? r.json() : []))
+      .then(d => { if (!cancelled && Array.isArray(d)) setBuyAgainRaw(d); })
+      .catch(err => console.error('Buy-again fetch failed:', err));
+    fetch(`/api/users/${userId}/loyalty`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled && d?.stats) setLoyaltyPoints(d.stats.points || 0); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isAuthenticated, userId]);
 
-  const handleAiAdvice = async () => {
-    if (!cartItems.length) return;
-    setIsAiLoading(true); setAiAdvice(null);
-    try {
-      const res = await fetch('/api/ai/cart-advice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cartItems }) });
-      const d = await res.json();
-      setAiAdvice(d.advice || "I'm sorry, I couldn't generate advice at this moment.");
-    } catch { setAiAdvice("I'm sorry, I couldn't generate advice at this moment."); }
-    finally { setIsAiLoading(false); }
+  // Leaving the page mid-undo-window still commits the removal.
+  useEffect(() => {
+    const timers = removalTimers.current;
+    const remove = latestRemove;
+    return () => {
+      timers.forEach((timer, id) => { clearTimeout(timer); remove.current(id); });
+      timers.clear();
+    };
+  }, []);
+
+  const dropPending = (id) =>
+    setPendingRemoval(prev => { const next = new Set(prev); next.delete(id); return next; });
+
+  const scheduleRemove = (id) => {
+    if (removalTimers.current.has(id)) return;
+    setPendingRemoval(prev => new Set(prev).add(id));
+    const timer = setTimeout(() => {
+      removalTimers.current.delete(id);
+      latestRemove.current(id);
+      dropPending(id);
+    }, UNDO_WINDOW_MS);
+    removalTimers.current.set(id, timer);
   };
 
-  const totalQty   = cartItems.reduce((s, i) => s + i.quantity, 0);
-  const shipping   = calcShipping(totalQty);
-  const nextTier   = nextShippingTier(totalQty);
+  const undoRemove = (id) => {
+    clearTimeout(removalTimers.current.get(id));
+    removalTimers.current.delete(id);
+    dropPending(id);
+  };
+
+  const flushPendingRemovals = () => {
+    removalTimers.current.forEach((timer, id) => { clearTimeout(timer); latestRemove.current(id); });
+    removalTimers.current.clear();
+    setPendingRemoval(new Set());
+  };
+
+  const visibleItems = cartItems.filter(i => !pendingRemoval.has(i.id));
+  const totalQty = visibleItems.reduce((s, i) => s + i.quantity, 0);
+  const subtotal = visibleItems.reduce((s, i) => s + i.price * i.quantity, 0);
+  const itemSavings = visibleItems.reduce(
+    (s, i) => s + (i.originalPrice > i.price ? (i.originalPrice - i.price) * i.quantity : 0),
+    0
+  );
+  const shipping = calcShipping(totalQty);
+  const nextTier = nextShippingTier(totalQty);
+  const vat = Math.round(subtotal * VAT_RATE * 100) / 100;
+  const total = Math.max(0, subtotal - discountAmount + shipping + vat);
+  const totalSavings = itemSavings + discountAmount;
+  const hasStockIssues = visibleItems.some(i => i.stock_quantity === 0 || i.quantity > i.stock_quantity);
+  const canCheckout = visibleItems.length > 0 && !hasStockIssues;
+
   const artisanPct = Math.min(100, Math.round((subtotal / ARTISAN_GIFT_THRESHOLD) * 100));
   const artisanGap = Math.max(0, ARTISAN_GIFT_THRESHOLD - subtotal);
-  // Max redeemable: 1 point = 1 AED, capped at subtotal
-  const maxPoints  = Math.min(loyaltyPoints, Math.floor(subtotal));
-  const pointsDiscount = Math.min(pointsToUse, maxPoints);
-  const total         = Math.max(0, finalTotal + shipping - pointsDiscount);
-  const hasStockIssues = cartItems.some(i => i.stock_quantity === 0 || i.quantity > i.stock_quantity);
+  const redeemableAed = Math.floor(loyaltyPoints / POINTS_BLOCK) * AED_PER_BLOCK;
+  const pointsEarned = Math.floor(subtotal);
+  const checkoutLabel = isAuthenticated ? 'Checkout' : 'Sign in to checkout';
 
-  // Keep the redeemed amount in sync if the cart shrinks below the previously-typed points
-  useEffect(() => {
-    setPointsToUse(p => Math.min(p, maxPoints));
-  }, [maxPoints]);
-
-  const handleCheckout = () => {
-    if (!isAuthenticated) { router.push('/auth?callbackUrl=/checkout'); return; }
-    router.push('/need-anything-else');
+  const handleBack = () => {
+    if (window.history.length > 1) router.back();
+    else router.push('/all-products');
   };
 
-  if (cartItems.length === 0) return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-5 px-5">
-      <div className="w-16 h-16 rounded-2xl bg-[#f3f3f5] border border-[#e5e5ea] flex items-center justify-center">
-        <ShoppingBag size={24} strokeWidth={1.5} className="text-[#8a8a93]" />
-      </div>
-      <div className="text-center">
-        <h2 className="text-[22px] font-semibold text-[#111114] mb-1">Your bag is empty</h2>
-        <p className="text-[14px] text-[#5a5a64]">Discover our latest collections.</p>
-      </div>
-      <button
-        onClick={() => router.push('/all-products')}
-        className="h-12 px-8 rounded-full text-[13px] font-semibold uppercase tracking-[0.1em] text-white"
-        style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
-      >
-        Explore Collection
-      </button>
-    </div>
-  );
+  const handleCheckout = () => {
+    if (!canCheckout) return;
+    flushPendingRemovals();
+    router.push(isAuthenticated ? '/need-anything-else' : '/auth?callbackUrl=/checkout');
+  };
 
-  return (
-    <div className="min-h-screen bg-white pb-28">
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim();
+    if (!code || isApplyingCoupon) return;
+    setIsApplyingCoupon(true);
+    try { await applyCoupon(code); } finally { setIsApplyingCoupon(false); }
+  };
 
-      {/* Sticky header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-[#e5e5ea]">
-        <div className="max-w-[1180px] mx-auto px-6 py-4 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 text-[13px] font-medium text-[#5a5a64] hover:text-[#111114] transition-colors group"
-          >
-            <ArrowRight size={14} className="rotate-180 group-hover:-translate-x-0.5 transition-transform" />
-            Continue Shopping
-          </button>
-          <div className="text-center">
-            <p className="text-[15px] font-semibold text-[#111114]">Your Bag</p>
-            <p className="text-[11px] text-[#8a8a93] mt-0.5">
-              {cartItems.reduce((s, i) => s + i.quantity, 0)} {cartItems.reduce((s,i)=>s+i.quantity,0)===1?'item':'items'}
+  const handleAiAdvice = async () => {
+    if (!visibleItems.length) return;
+    setIsAiLoading(true);
+    setAiAdvice(null);
+    try {
+      const res = await fetch('/api/ai/cart-advice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cartItems: visibleItems }),
+      });
+      const d = await res.json();
+      setAiAdvice(d.advice || "I'm sorry, I couldn't generate advice at this moment.");
+    } catch {
+      setAiAdvice("I'm sorry, I couldn't generate advice at this moment.");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col">
+        <CartHeader onBack={handleBack} />
+        <main className="flex-1 flex flex-col items-center justify-center gap-5 px-6 py-16 text-center">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center bg-[#f5f0fd]">
+            <ShoppingBag size={30} strokeWidth={1.5} className="text-[#9869f7]" />
+          </div>
+          <div>
+            <h1 className="text-[24px] font-semibold text-[#111114]">Your bag is empty</h1>
+            <p className="mt-1.5 max-w-xs text-[14px] text-[#5a5a64]">
+              Find something you love — shipping is free from 3 items.
             </p>
           </div>
-          <div className="w-[130px] hidden sm:block" />
-        </div>
+          <Link
+            href="/all-products"
+            className={`inline-flex items-center gap-2 h-12 px-8 rounded-full text-[14px] font-semibold text-white transition-transform active:scale-[0.98] ${focusRing}`}
+            style={{ background: GRADIENT }}
+          >
+            Explore the collection
+            <ArrowRight size={15} />
+          </Link>
+        </main>
       </div>
+    );
+  }
 
-      <div className="max-w-[1180px] mx-auto px-6 pt-10 pb-16">
+  return (
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen bg-white pb-32 lg:pb-16">
+        <CartHeader onBack={handleBack} />
 
-        {/* Page title */}
-        <div className="mb-8">
-          <h1 className="text-[32px] font-semibold tracking-tight text-[#111114]">Your Bag</h1>
-          <p className="text-[14px] text-[#5a5a64] mt-1">
-            {totalQty} {totalQty === 1 ? 'item' : 'items'} · Free shipping with 3+ items
-          </p>
-        </div>
+        <main className="max-w-[1180px] mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
+          <h1 className="mb-5 sm:mb-8 text-[26px] sm:text-[32px] font-semibold tracking-tight text-[#111114]">
+            Your bag
+            <span className="ml-2 text-[15px] sm:text-[17px] font-medium text-[#8a8a93]">
+              ({totalQty} {totalQty === 1 ? 'item' : 'items'})
+            </span>
+          </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-6 lg:gap-10 items-start">
 
-          {/* ── LEFT: items + cross-sell ── */}
-          <div>
-            {/* AI advice banner */}
-            <AnimatePresence>
-              {aiAdvice && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-4 overflow-hidden"
-                >
-                  <div className="flex gap-3 items-start p-4 rounded-xl bg-[#f9f9fb] border border-[#e5e5ea]">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white"
-                      style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}>
-                      <Sparkles size={12} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-widest mb-1">AI Routine Advice</p>
-                      <p className="text-[13px] text-[#2a2a31] leading-relaxed">{aiAdvice}</p>
-                    </div>
-                    <button onClick={() => setAiAdvice(null)} className="text-[#c8c8cf] hover:text-[#5a5a64] transition-colors shrink-0">
-                      <X size={13} />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Cart item rows */}
-            <div className="border border-[#e5e5ea] rounded-2xl overflow-hidden bg-white">
-              {cartItems.map((item, i) => (
-                <motion.div
-                  layout
-                  key={item.id}
-                  className={`flex gap-5 px-6 py-5 ${i < cartItems.length - 1 ? 'border-b border-[#e5e5ea]' : ''}`}
-                >
-                  {/* Thumbnail */}
-                  <div
-                    onClick={() => router.push(`/product/${item.id}`)}
-                    className="w-[88px] h-[88px] rounded-xl bg-[#f9f9fb] border border-[#e5e5ea] flex-shrink-0 overflow-hidden p-2 cursor-pointer"
-                  >
-                    <ImageWithFallback
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-full object-contain mix-blend-multiply"
-                    />
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 min-w-0">
-                    {/* Brand + name */}
-                    <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.12em] mb-0.5">
-                      {item.brand || 'Naya Lumière'}
-                    </p>
-                    <h3
-                      className="text-[15px] font-semibold text-[#111114] leading-snug cursor-pointer hover:underline underline-offset-2"
-                      onClick={() => router.push(`/product/${item.id}`)}
+            {/* ── Items ── */}
+            <section aria-label="Items in your bag" className="min-w-0">
+              <ul className="-mx-4 sm:mx-0 border-y sm:border border-[#e5e5ea] sm:rounded-2xl overflow-hidden bg-white divide-y divide-[#eeeef1]">
+                <AnimatePresence initial={false}>
+                  {cartItems.map(item => (
+                    <motion.li
+                      key={item.id}
+                      layout
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                      className="overflow-hidden"
                     >
-                      {item.name}
-                    </h3>
+                      {pendingRemoval.has(item.id)
+                        ? <RemovedRow item={item} onUndo={undoRemove} />
+                        : <CartItemRow item={item} onQuantity={updateQuantity} onRemove={scheduleRemove} />}
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
+            </section>
 
-                    {/* Variant chips */}
-                    {(item.size || item.shade) && (
-                      <p className="text-[12px] text-[#8a8a93] mt-0.5">
-                        {[item.size, item.shade].filter(Boolean).join(' · ')}
-                      </p>
-                    )}
+            {/* ── Summary (sticky on desktop; directly after the items on mobile) ── */}
+            <aside className="lg:row-span-2 lg:sticky lg:top-[84px] space-y-4 min-w-0">
+              <section aria-labelledby="summary-heading" className="bg-white border border-[#e5e5ea] rounded-2xl p-5 sm:p-6">
+                <h2 id="summary-heading" className="text-[17px] font-semibold text-[#111114]">Order summary</h2>
 
-                    {/* Stock warnings */}
-                    {item.stock_quantity === 0 && (
-                      <p className="text-[11px] font-medium text-red-500 mt-1 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
-                        Out of stock
-                      </p>
-                    )}
-                    {item.stock_quantity > 0 && item.quantity > item.stock_quantity && (
-                      <p className="text-[11px] font-medium text-amber-600 mt-1">Only {item.stock_quantity} left</p>
-                    )}
+                <dl className="mt-4 space-y-2.5 text-[14px]">
+                  <SummaryRow label={`Subtotal (${totalQty} ${totalQty === 1 ? 'item' : 'items'})`} value={fmt(subtotal)} />
+                  {discountAmount > 0 && (
+                    <SummaryRow
+                      label={`Promo${appliedCoupon?.code ? ` (${appliedCoupon.code})` : ''}`}
+                      value={`−${fmt(discountAmount)}`}
+                      positive
+                    />
+                  )}
+                  <SummaryRow label="Shipping" value={shipping === 0 ? 'Free' : fmt(shipping)} positive={shipping === 0} />
+                  <SummaryRow label="VAT (5%)" value={fmt(vat)} />
+                </dl>
 
-                    {/* Bottom row: qty · remove · price */}
-                    <div className="flex items-center gap-4 mt-4">
-                      {/* Qty stepper */}
-                      <div className="flex items-center border border-[#e5e5ea] rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          className="w-8 h-8 flex items-center justify-center text-[#5a5a64] hover:bg-[#f3f3f5] transition-colors disabled:opacity-30 text-[16px] font-light"
-                        >
-                          −
-                        </button>
-                        <span className="w-9 text-center text-[13px] font-semibold text-[#111114] tabular-nums select-none">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          disabled={item.quantity >= item.stock_quantity}
-                          className="w-8 h-8 flex items-center justify-center text-[#5a5a64] hover:bg-[#f3f3f5] transition-colors disabled:opacity-30 text-[16px] font-light"
-                        >
-                          +
-                        </button>
-                      </div>
-
-                      {/* Remove link */}
+                {/* Promo code */}
+                <div className="mt-4 pt-4 border-t border-[#eeeef1]">
+                  {appliedCoupon ? (
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2">
+                      <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-emerald-700">
+                        <Check size={14} className="shrink-0" />
+                        <span className="truncate">{appliedCoupon.code} applied</span>
+                      </span>
                       <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-[13px] text-[#8a8a93] underline underline-offset-2 hover:text-red-500 transition-colors"
+                        type="button"
+                        onClick={removeCoupon}
+                        className={`shrink-0 h-9 px-2 rounded-full text-[12px] font-semibold text-emerald-700 hover:underline ${focusRing}`}
                       >
                         Remove
                       </button>
-
-                      {/* Price — pushed right */}
-                      <div className="ml-auto text-right">
-                        <p className="text-[16px] font-semibold text-[#111114] tabular-nums">
-                          AED {(item.price * item.quantity).toFixed(0)}
-                        </p>
-                        {item.originalPrice && item.originalPrice > item.price && (
-                          <p className="text-[12px] text-[#c8c8cf] line-through tabular-nums">
-                            AED {(item.originalPrice * item.quantity).toFixed(0)}
-                          </p>
-                        )}
-                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setPromoOpen(o => !o)}
+                        aria-expanded={promoOpen}
+                        aria-controls="promo-panel"
+                        className={`w-full h-11 -my-1 flex items-center justify-between rounded-lg text-[14px] font-medium text-[#2a2a31] ${focusRing}`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <Tag size={15} className="text-[#9869f7]" />
+                          Add a promo code
+                        </span>
+                        <ChevronDown size={16} className={`text-[#8a8a93] transition-transform ${promoOpen ? 'rotate-180' : ''}`} />
+                      </button>
 
-            {/* AI advice trigger */}
-            {!aiAdvice && (
-              <button
-                onClick={handleAiAdvice}
-                disabled={isAiLoading}
-                className="mt-3 flex items-center gap-1.5 text-[12px] font-medium text-[#8a8a93] hover:text-[#5a5a64] transition-colors disabled:opacity-50"
-              >
-                <Sparkles size={12} strokeWidth={2} className={isAiLoading ? 'animate-spin' : ''} />
-                {isAiLoading ? 'Getting AI advice…' : 'Get AI routine advice'}
-              </button>
-            )}
-
-            {/* Frequently bought together */}
-            <div className="mt-10">
-              <PairItWithSection currentCartItems={cartItems} />
-            </div>
-
-            {/* Buy again */}
-            {buyAgainProducts.length > 0 && (
-              <div className="mt-8">
-                <BuyAgainSection products={buyAgainProducts} />
-              </div>
-            )}
-          </div>
-
-          {/* ── RIGHT: sidebar ── */}
-          <div className="space-y-3 lg:sticky lg:top-6">
-
-            {/* Order Summary */}
-            <SCard className="p-5">
-              <h3 className="text-[16px] font-semibold text-[#111114] mb-4">Order Summary</h3>
-              <div className="space-y-3 text-[14px]">
-                <div className="flex justify-between">
-                  <span className="text-[#5a5a64]">Subtotal</span>
-                  <span className="font-semibold text-[#111114]">AED {subtotal.toFixed(0)}</span>
-                </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between font-semibold text-green-600">
-                    <span>Discount</span>
-                    <span>−AED {discountAmount.toFixed(0)}</span>
-                  </div>
-                )}
-                {pointsDiscount > 0 && (
-                  <div className="flex justify-between font-semibold text-green-600">
-                    <span>Points</span>
-                    <span>−AED {pointsDiscount.toFixed(0)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-[#5a5a64]">Shipping</span>
-                  <span className={shipping === 0 ? 'font-semibold text-green-600' : 'font-semibold text-[#111114]'}>
-                    {shipping === 0 ? 'Free' : `AED ${shipping.toFixed(0)}`}
-                  </span>
-                </div>
-              </div>
-
-              {/* Shipping tier progress */}
-              <div className="mt-3 space-y-2">
-                {/* Tier badges */}
-                <div className="flex items-center gap-1.5">
-                  {[
-                    { label: '1 item',  cost: 20, active: totalQty >= 1 },
-                    { label: '2 items', cost: 10, active: totalQty >= 2 },
-                    { label: '3+ items', cost: 0, active: totalQty >= 3 },
-                  ].map((tier, i) => (
-                    <div key={i} className="flex items-center gap-1 flex-1">
-                      <div className={`flex-1 text-center py-1 rounded-lg text-[10px] font-semibold border transition-all ${
-                        tier.active
-                          ? 'text-white border-transparent'
-                          : 'text-[#8a8a93] border-[#e5e5ea] bg-[#f3f3f5]'
-                      }`}
-                        style={tier.active ? { background: 'linear-gradient(90deg,#c087fc,#9869f7)', borderColor: 'transparent' } : {}}>
-                        {tier.cost === 0 ? 'FREE' : `AED ${tier.cost}`}
-                        <div className="text-[9px] font-normal opacity-80">{tier.label}</div>
-                      </div>
-                      {i < 2 && <div className="w-2 h-px bg-[#e5e5ea] flex-shrink-0" />}
-                    </div>
-                  ))}
+                      {promoOpen && (
+                        <div id="promo-panel" className="mt-3">
+                          <form
+                            onSubmit={e => { e.preventDefault(); handleApplyCoupon(); }}
+                            className="flex gap-2"
+                          >
+                            <label htmlFor="promo-code" className="sr-only">Promo code</label>
+                            <input
+                              id="promo-code"
+                              value={couponCode}
+                              onChange={e => { setCouponCode(e.target.value); if (couponError) removeCoupon(); }}
+                              placeholder="Enter code"
+                              autoComplete="off"
+                              autoCapitalize="characters"
+                              spellCheck={false}
+                              enterKeyHint="done"
+                              aria-invalid={!!couponError}
+                              aria-describedby={couponError ? 'promo-error' : undefined}
+                              className="flex-1 min-w-0 h-11 px-3.5 rounded-xl border border-[#e5e5ea] bg-white text-[16px] lg:text-[14px] text-[#111114] placeholder:text-[#b4b4bb] focus:outline-none focus:border-[#9869f7] focus:ring-2 focus:ring-[#9869f7]/15"
+                            />
+                            <button
+                              type="submit"
+                              disabled={!couponCode.trim() || isApplyingCoupon}
+                              className="min-w-[84px] h-11 px-5 rounded-xl inline-flex items-center justify-center text-[13px] font-semibold text-white disabled:opacity-40 transition-opacity"
+                              style={{ background: GRADIENT }}
+                            >
+                              {isApplyingCoupon
+                                ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-label="Applying" />
+                                : 'Apply'}
+                            </button>
+                          </form>
+                          {couponError && (
+                            <p id="promo-error" role="alert" className="mt-2 text-[12px] font-medium text-red-600">{couponError}</p>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
-                {nextTier && (
-                  <p className="text-[11px] text-[#8a8a93]">
-                    Add <span className="font-semibold text-[#111114]">{nextTier.itemsNeeded} more item</span> →{' '}
-                    {nextTier.newCost === 0
-                      ? <span className="font-semibold text-green-600">FREE shipping</span>
-                      : <span className="font-semibold">AED {nextTier.newCost} shipping</span>}
-                    {' '}(save AED {nextTier.saving})
+                {/* Total */}
+                <div className="mt-4 pt-4 border-t border-[#e5e5ea]">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="text-[16px] font-semibold text-[#111114]">Total</span>
+                    <span className="text-[22px] font-bold text-[#111114] tabular-nums">{fmt(total)}</span>
+                  </div>
+                  <p className="mt-0.5 text-right text-[11.5px] text-[#8a8a93]">VAT included</p>
+                  {totalSavings > 0 && (
+                    <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-[12.5px] font-semibold text-emerald-700">
+                      You&apos;re saving {fmt(totalSavings)} on this order
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={!canCheckout}
+                  className="hidden lg:flex mt-5 w-full h-14 rounded-full items-center justify-center gap-2.5 text-[15px] font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#9869f7]"
+                  style={{ background: GRADIENT, boxShadow: '0 6px 22px rgba(152,105,247,.32)' }}
+                >
+                  {checkoutLabel}
+                  <ArrowRight size={17} />
+                </button>
+                {hasStockIssues && (
+                  <p role="alert" className="hidden lg:block mt-2.5 text-center text-[12px] font-medium text-red-600">
+                    Remove or update the highlighted items to continue.
                   </p>
                 )}
-                {!nextTier && (
-                  <p className="text-[11px] font-semibold text-green-600">You have free shipping!</p>
-                )}
-              </div>
 
-              {/* Lumière Artisan Gift progress */}
-              <div className="mt-3 pt-3 border-t border-[#f3f3f5]">
-                {artisanGap <= 0 ? (
-                  <div className="flex items-center gap-2 p-2.5 rounded-xl text-[12px] font-semibold"
-                    style={{ background: 'rgba(192,135,252,0.1)', color: '#7c3aed' }}>
-                    <Gift size={13} />
-                    Your free {ARTISAN_GIFT_NAME} is on its way!
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="flex items-center gap-1.5 text-[#5a5a64]">
-                        <Gift size={11} style={{ color: '#c087fc' }} />
-                        AED {artisanGap.toFixed(0)} away from your free{' '}
-                        <span className="font-semibold" style={{ color: '#7c3aed' }}>{ARTISAN_GIFT_NAME}</span>
-                      </span>
-                      <span className="font-semibold text-[#111114]">{artisanPct}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-[#f3f3f5] overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${artisanPct}%` }}
-                        className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg,#f0abfc,#c087fc)' }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-[#e5e5ea] flex justify-between items-baseline">
-                <span className="text-[16px] font-semibold text-[#111114]">Total</span>
-                <span className="text-[20px] font-bold text-[#111114] tabular-nums">AED {total.toFixed(0)}</span>
-              </div>
-            </SCard>
-
-            {/* Promo Code */}
-            <SCard className="p-5">
-              <h3 className="text-[15px] font-semibold text-[#111114] mb-3">Promo Code</h3>
-              {appliedCoupon ? (
-                <div className="flex items-center justify-between text-[13px] font-medium text-green-700 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
-                  <span>✓ {appliedCoupon.code} applied</span>
-                  <button onClick={removeCoupon} className="text-green-600 hover:underline text-[12px]">Remove</button>
+                {/* TabbyPromo renders an empty div when unconfigured — collapse the gap then */}
+                <div className="mt-4 has-[>div:empty]:hidden">
+                  <TabbyPromo price={total} source="cart" />
                 </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    value={couponCode}
-                    onChange={e => setCouponCode(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && couponCode.trim() && applyCoupon(couponCode.trim())}
-                    placeholder="Enter code"
-                    className="flex-1 h-11 px-3.5 rounded-xl border border-[#e5e5ea] bg-white text-[14px] text-[#111114] placeholder:text-[#c8c8cf] focus:outline-none focus:border-[#9869f7] focus:ring-2 focus:ring-[#9869f7]/15"
-                  />
-                  <button
-                    onClick={() => couponCode.trim() && applyCoupon(couponCode.trim())}
-                    disabled={!couponCode.trim()}
-                    className="h-11 px-5 rounded-xl text-[13px] font-semibold tracking-[0.08em] uppercase text-white disabled:opacity-40 transition-opacity"
-                    style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
-                  >
-                    Apply
-                  </button>
-                </div>
+
+                <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11.5px] text-[#8a8a93]">
+                  <li className="flex items-center gap-1">
+                    <ShieldCheck size={12} className="text-emerald-500" />
+                    Secure checkout
+                  </li>
+                  <li aria-hidden="true">·</li>
+                  <li>14-day returns</li>
+                  <li aria-hidden="true">·</li>
+                  <li>Free samples included</li>
+                </ul>
+              </section>
+
+              {totalQty > 0 && (
+                <section aria-label="Delivery and rewards" className="bg-white border border-[#e5e5ea] rounded-2xl p-5 sm:p-6 space-y-5">
+                  {/* Shipping tiers */}
+                  <div>
+                    <div className="flex items-start gap-3">
+                      <IconBadge><Truck size={15} /></IconBadge>
+                      <p className="pt-1.5 text-[13px] leading-snug text-[#2a2a31]">
+                        {!nextTier ? (
+                          <><span className="font-semibold text-emerald-600">Free shipping unlocked</span> on this order</>
+                        ) : (
+                          <>
+                            Add <span className="font-semibold">{nextTier.itemsNeeded} more {nextTier.itemsNeeded === 1 ? 'item' : 'items'}</span>
+                            {nextTier.newCost === 0
+                              ? <> for <span className="font-semibold text-emerald-600">free shipping</span></>
+                              : <> to cut shipping to <span className="font-semibold">AED {nextTier.newCost}</span></>}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-1.5">
+                      {SHIPPING_TIERS.map(tier => {
+                        const reached = totalQty >= tier.minItems;
+                        return (
+                          <div key={tier.label}>
+                            <div className="h-1.5 rounded-full transition-colors" style={{ background: reached ? GRADIENT : '#f1eef6' }} />
+                            <p className={`mt-1.5 text-[11px] ${reached ? 'font-semibold text-[#2a2a31]' : 'text-[#a1a1aa]'}`}>
+                              {tier.label} · {tier.cost === 0 ? 'Free' : `AED ${tier.cost}`}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Artisan gift */}
+                  <div className="pt-5 border-t border-[#eeeef1] flex items-start gap-3">
+                    <IconBadge><Gift size={15} /></IconBadge>
+                    <div className="flex-1 min-w-0 pt-1.5">
+                      <p className="text-[13px] leading-snug text-[#2a2a31]">
+                        {artisanGap <= 0 ? (
+                          <>You&apos;ve unlocked a free <span className="font-semibold text-[#7c3aed]">{ARTISAN_GIFT_NAME}</span></>
+                        ) : (
+                          <><span className="font-semibold">{fmt(artisanGap)}</span> away from a free <span className="font-semibold text-[#7c3aed]">{ARTISAN_GIFT_NAME}</span></>
+                        )}
+                      </p>
+                      {artisanGap > 0 && (
+                        <div
+                          role="progressbar"
+                          aria-label={`Progress to ${ARTISAN_GIFT_NAME}`}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={artisanPct}
+                          className="mt-2.5 h-1.5 rounded-full bg-[#f1eef6] overflow-hidden"
+                        >
+                          <motion.div
+                            className="h-full rounded-full"
+                            style={{ background: GRADIENT }}
+                            initial={false}
+                            animate={{ width: `${artisanPct}%` }}
+                            transition={{ duration: 0.4, ease: 'easeOut' }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Loyalty — informational only; points are redeemed at checkout */}
+                  <div className="pt-5 border-t border-[#eeeef1] flex items-start gap-3">
+                    <IconBadge><Star size={15} /></IconBadge>
+                    <div className="flex-1 min-w-0 pt-1.5 text-[13px] leading-snug text-[#2a2a31]">
+                      {isAuthenticated ? (
+                        <>
+                          <p>
+                            This order earns <span className="font-semibold">{pointsEarned.toLocaleString()} points</span>
+                            <span className="text-[#8a8a93]">, credited on delivery</span>
+                          </p>
+                          {loyaltyPoints >= POINTS_BLOCK ? (
+                            <p className="mt-1 text-[12px] text-[#5a5a64]">
+                              You have {loyaltyPoints.toLocaleString()} points — worth{' '}
+                              <span className="font-semibold text-[#7c3aed]">{fmt(redeemableAed)}</span> off. Redeem them at checkout.
+                            </p>
+                          ) : loyaltyPoints > 0 ? (
+                            <p className="mt-1 text-[12px] text-[#5a5a64]">
+                              You have {loyaltyPoints.toLocaleString()} points. Every {POINTS_BLOCK} points is worth AED {AED_PER_BLOCK} at checkout.
+                            </p>
+                          ) : null}
+                        </>
+                      ) : (
+                        <p>
+                          <Link href="/auth?callbackUrl=/cart" className="font-semibold text-[#7c3aed] underline underline-offset-2">
+                            Sign in
+                          </Link>{' '}
+                          to earn {pointsEarned.toLocaleString()} points on this order
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </section>
               )}
-              {couponError && <p className="text-[11px] font-medium text-red-500 mt-2">{couponError}</p>}
-            </SCard>
+            </aside>
 
-            {/* Loyalty Points */}
-            {isAuthenticated && loyaltyPoints > 0 && (
-              <SCard className="p-5">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-white"
-                      style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
-                    >
-                      <Star size={12} />
-                    </div>
-                    <h3 className="text-[15px] font-semibold text-[#111114] truncate">Loyalty Points</h3>
-                  </div>
-                  <span
-                    className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0"
-                    style={{ background: 'rgba(152,105,247,0.1)', color: '#9869f7' }}
+            {/* ── Advice & cross-sell (below the items on desktop, last on mobile) ── */}
+            <div className="min-w-0 space-y-10">
+              <AnimatePresence mode="wait" initial={false}>
+                {aiAdvice ? (
+                  <motion.div
+                    key="advice"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="flex items-start gap-3 rounded-2xl border border-[#ece3fb] bg-[#faf7ff] p-4"
                   >
-                    {loyaltyPoints.toLocaleString()} pts available
-                  </span>
-                </div>
-                <p className="text-[12px] text-[#8a8a93] mb-3">
-                  1 point = 1 AED · Use up to {maxPoints.toLocaleString()} pts on this order
-                </p>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="number"
-                      min={0}
-                      max={maxPoints}
-                      value={pointsToUse}
-                      onChange={e => setPointsToUse(Math.min(maxPoints, Math.max(0, parseInt(e.target.value) || 0)))}
-                      className="w-full h-11 pl-3.5 pr-10 rounded-xl border border-[#e5e5ea] bg-white text-[14px] text-[#111114] focus:outline-none focus:border-[#9869f7] focus:ring-2 focus:ring-[#9869f7]/15 tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[12px] font-medium text-[#c8c8cf] pointer-events-none">
-                      pts
+                    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white" style={{ background: GRADIENT }}>
+                      <Sparkles size={14} />
                     </span>
-                  </div>
-                  <button
-                    onClick={() => setPointsToUse(pointsToUse >= maxPoints && maxPoints > 0 ? 0 : maxPoints)}
-                    disabled={maxPoints === 0}
-                    className="h-11 px-4 rounded-xl text-[13px] font-semibold whitespace-nowrap transition-colors disabled:opacity-40"
-                    style={
-                      pointsToUse >= maxPoints && maxPoints > 0
-                        ? { background: 'linear-gradient(90deg,#c087fc,#9869f7)', color: '#fff' }
-                        : { border: '1px solid #e5e5ea', color: '#5a5a64' }
-                    }
-                  >
-                    {pointsToUse >= maxPoints && maxPoints > 0 ? 'Max applied' : 'Use Max'}
-                  </button>
-                </div>
-
-                {pointsDiscount > 0 && (
-                  <div className="mt-3 space-y-1.5">
-                    <div className="h-1.5 rounded-full bg-[#f3f3f5] overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${maxPoints > 0 ? (pointsDiscount / maxPoints) * 100 : 0}%` }}
-                        className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg,#f0abfc,#c087fc)' }}
-                      />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-semibold text-[#7c3aed]">Routine advice</p>
+                      <p className="mt-1 text-[13.5px] leading-relaxed text-[#2a2a31]">{aiAdvice}</p>
                     </div>
-                    <p className="text-[11px] font-semibold text-green-600">
-                      You're saving AED {pointsDiscount.toFixed(0)} with points
-                    </p>
-                  </div>
+                    <button
+                      type="button"
+                      onClick={() => setAiAdvice(null)}
+                      aria-label="Dismiss advice"
+                      className={`shrink-0 w-9 h-9 -mt-1 -mr-1 rounded-full flex items-center justify-center text-[#a1a1aa] hover:bg-white hover:text-[#5a5a64] transition-colors ${focusRing}`}
+                    >
+                      <X size={15} />
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="trigger"
+                    type="button"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={handleAiAdvice}
+                    disabled={isAiLoading || visibleItems.length === 0}
+                    className={`inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#e5e5ea] bg-white text-[13px] font-medium text-[#2a2a31] hover:border-[#c8c8cf] hover:bg-[#fafafb] disabled:opacity-50 transition-colors ${focusRing}`}
+                  >
+                    <Sparkles size={14} className={`text-[#9869f7] ${isAiLoading ? 'motion-safe:animate-pulse' : ''}`} />
+                    {isAiLoading ? 'Building your routine advice…' : 'Get routine advice for your bag'}
+                  </motion.button>
                 )}
-              </SCard>
-            )}
+              </AnimatePresence>
 
-            {/* Tabby */}
-            <SCard className="p-5">
-              <TabbyPromo price={total} source="cart" />
-            </SCard>
+              <PairItWithSection currentCartItems={cartItems} />
+              <BuyAgainSection products={buyAgainRaw} cartItems={cartItems} />
+            </div>
+          </div>
+        </main>
 
-            {/* Checkout CTA */}
-            <button
-              onClick={handleCheckout}
-              disabled={hasStockIssues}
-              className="w-full h-14 rounded-full flex items-center justify-center gap-2.5 text-[14px] font-semibold tracking-[0.12em] uppercase text-white disabled:opacity-40 transition-opacity active:scale-[.98]"
-              style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)', boxShadow: '0 4px 20px rgba(152,105,247,.30)' }}
-            >
-              Checkout
-              <ArrowRight size={16} strokeWidth={2} />
-            </button>
-
-            {/* Trust line */}
-            <p className="text-center text-[11px] text-[#8a8a93]">
-              Secure checkout · 14-day returns · Free samples included
+        {/* ── Mobile checkout bar ── */}
+        <div
+          className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-[#e5e5ea] bg-white/95 backdrop-blur-md"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+        >
+          {hasStockIssues && (
+            <p role="alert" className="px-4 pt-2 text-center text-[11.5px] font-medium text-red-600">
+              Remove or update the highlighted items to continue.
             </p>
+          )}
+          <div className="mx-auto flex max-w-[640px] items-center gap-4 px-4 pt-3">
+            <div className="min-w-0">
+              <p className="text-[11px] leading-none text-[#8a8a93]">Total · VAT incl.</p>
+              <p className="mt-1 text-[18px] font-bold leading-none tabular-nums text-[#111114]">{fmt(total)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleCheckout}
+              disabled={!canCheckout}
+              className="flex-1 h-[52px] rounded-full flex items-center justify-center gap-2 text-[15px] font-semibold text-white disabled:opacity-40 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#9869f7]"
+              style={{ background: GRADIENT, boxShadow: '0 6px 20px rgba(152,105,247,.30)' }}
+            >
+              {checkoutLabel}
+              <ArrowRight size={17} />
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </MotionConfig>
   );
 }

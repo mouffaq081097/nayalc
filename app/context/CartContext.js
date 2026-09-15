@@ -6,13 +6,16 @@ import { toast } from 'react-toastify';
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, logout, loading: authLoading } = useAuth();
     // Memoize fetchWithAuth
     const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
     const [cart, setCart] = useState([]); // Manage cart state locally
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [discountAmount, setDiscountAmount] = useState(0);
     const cartLoadedRef = useRef(false);
+    // Which account the cart in state belongs to ('guest' or a user id), so pages
+    // can tell "still loading" apart from "empty" without a stale frame after sign-in.
+    const [cartLoadedFor, setCartLoadedFor] = useState(null);
     const saveDebounceRef = useRef(null);
     const [isCartOpen, setIsCartOpen] = useState(false); // New state for side cart
     const [selectedShippingAddressId, setSelectedShippingAddressId] = useState(null);
@@ -48,14 +51,17 @@ export const CartProvider = ({ children }) => {
                 }));
                 cartLoadedRef.current = true;
                 setCart(parsedCart);
+                setCartLoadedFor(user.id);
             } catch (error) {
                 console.error('Error fetching user cart:', error);
                 cartLoadedRef.current = true;
                 setCart([]); // Clear cart on error
+                setCartLoadedFor(user.id);
             }
         } else {
             cartLoadedRef.current = true;
             setCart([]); // Clear cart if user logs out
+            setCartLoadedFor('guest');
         }
     }, [isAuthenticated, user, fetchWithAuth]);
 
@@ -248,10 +254,12 @@ export const CartProvider = ({ children }) => {
     };
 
     const finalTotal = subtotal - discountAmount;
+    const isCartReady = !authLoading && cartLoadedFor === (isAuthenticated && user?.id ? user.id : 'guest');
 
     return (
         <CartContext.Provider value={{
             cartItems: cart,
+            isCartReady,
             addToCart,
             removeFromCart,
             updateQuantity,

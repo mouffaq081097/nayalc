@@ -10,6 +10,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PROMO_BAR_H } from './PromoBar';
+import BrandLogo from './BrandLogo';
 
 const CONCERN_META = {
   'anti-aging':    { icon: Clock,     desc: 'Restore your youthful glow' },
@@ -115,22 +116,9 @@ const Header = forwardRef((_, ref) => {
             {/* Logo */}
             <Link
               href="/"
-              className="flex items-center gap-[10px] shrink-0 group transition-opacity hover:opacity-80 active:opacity-60 md:static absolute left-1/2 -translate-x-1/2 md:translate-x-0"
+              className="flex items-center shrink-0 rounded-md transition-opacity hover:opacity-75 active:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#9869f7] md:static absolute left-1/2 -translate-x-1/2 md:translate-x-0"
             >
-              <Image
-                src="/Adobe Express - file (5).png"
-                alt="Naya Lumière"
-                width={28}
-                height={28}
-                className="w-7 h-7 object-contain shrink-0"
-                priority
-              />
-              <div className="flex flex-col leading-tight font-semibold tracking-[0.06em] text-[#111114]">
-                <span className="text-[16px] leading-none">NAYA LUMIÈRE</span>
-                <span className="text-[9px] tracking-[0.32em] text-[#5a5a64] uppercase mt-[2px] leading-none">
-                  COSMETICS
-                </span>
-              </div>
+              <BrandLogo priority />
             </Link>
 
             {/* Desktop nav — centered in the space between the logo and the action icons */}
@@ -466,12 +454,8 @@ const Header = forwardRef((_, ref) => {
             >
               {/* Sidebar header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5e5ea]">
-                <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-[10px]">
-                  <Image src="/Adobe Express - file (5).png" alt="Naya Lumière" width={26} height={26} className="w-6.5 h-6.5 object-contain" />
-                  <div className="flex flex-col leading-tight font-semibold tracking-[0.06em] text-[#111114]">
-                    <span className="text-[15px] leading-none">NAYA LUMIÈRE</span>
-                    <span className="text-[9px] tracking-[0.32em] text-[#5a5a64] uppercase mt-[2px] leading-none">COSMETICS</span>
-                  </div>
+                <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60">
+                  <BrandLogo size="sm" />
                 </Link>
                 <button type="button" onClick={() => setIsMenuOpen(false)} className={iconBtn} aria-label="Close">
                   <X size={17} />
