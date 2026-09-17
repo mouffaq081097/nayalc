@@ -200,11 +200,11 @@ export default function SalePage() {
                 { icon: ShieldCheck, title: "Purchase Protocols", items: [
                     "Sale durations are strictly governed by inventory availability.",
                     "Seasonal reductions cannot be combined with recurring offers.",
-                    "Complimentary express shipping on all orders over 200 AED.",
+                    "Complimentary express shipping on all orders of three items or more.",
                     "Boutique selection limit: 5 masterpieces per customer."
                 ]},
                 { icon: RotateCcw, title: "Service Standards", items: [
-                    "Our 30-day return standard applies to all seasonal acquisitions.",
+                    "Our 14-day return standard applies to all seasonal acquisitions.",
                     "Items must remain in original boutique packaging for verification.",
                     "Exchanges are prioritized for potential handling defects.",
                     "Boutique credit available for all finalized reductions."

@@ -16,7 +16,7 @@ export const TopBar = forwardRef(function TopBarComponent(props, ref) {
         </div>
         {/* Welcome/Announcement Message */}
         <div className="hidden lg:flex items-center justify-center flex-1">
-          <p className="text-black font-medium">Free shipping on all orders over AED 200!</p>
+          <p className="text-black font-medium">AED 20 for 1 item &middot; AED 10 for 2 &middot; Free shipping on 3+</p>
         </div>
         <div className="hidden md:flex items-center gap-6">
           <a href="#" className="flex items-center gap-2 hover:text-gray-300">

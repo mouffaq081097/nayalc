@@ -70,6 +70,13 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      // Google account avatars (social sign-in)
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   // Requests to /api/admin/* pass through middleware.js (role check) before

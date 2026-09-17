@@ -6,10 +6,19 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, Star, MailOpen, Loader2, Check, X as XIcon } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, Star, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence, MotionConfig, useScroll, useTransform, useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
+import { FcGoogle } from 'react-icons/fc';
+import { FaApple } from 'react-icons/fa';
 import BrandLogo from '../components/BrandLogo';
+
+// Mirrors the server-side provider gating in lib/auth.js — a provider without
+// credentials configured must not render a button that goes nowhere.
+const SOCIAL_PROVIDERS = {
+  google: process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === 'true',
+  apple: process.env.NEXT_PUBLIC_APPLE_AUTH_ENABLED === 'true',
+};
 
 function getSafeCallbackUrl() {
   if (typeof window === 'undefined') return '/';
@@ -130,47 +139,19 @@ function Login({ onForgotClick }) {
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [unverifiedEmail, setUnverifiedEmail] = useState(null);
-  const [resending, setResending] = useState(false);
-  const [resendMsg, setResendMsg] = useState('');
   const emailRef = useDesktopAutoFocus();
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    setUnverifiedEmail(null);
-    setResendMsg('');
     setIsLoading(true);
     try {
       await login(email, password, getSafeCallbackUrl());
     } catch (err) {
-      if (err.message === 'EMAIL_NOT_VERIFIED') {
-        setUnverifiedEmail(email);
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (!unverifiedEmail) return;
-    setResending(true);
-    setResendMsg('');
-    try {
-      const res = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: unverifiedEmail }),
-      });
-      const data = await res.json();
-      setResendMsg(data.message || 'Verification email sent.');
-    } catch {
-      setResendMsg('Could not send email. Please try again.');
-    } finally {
-      setResending(false);
     }
   };
 
@@ -249,38 +230,6 @@ function Login({ onForgotClick }) {
           </motion.p>
         )}
 
-        {unverifiedEmail && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border p-4 space-y-3"
-            style={{ background: 'rgba(248,240,255,0.9)', borderColor: 'rgba(216,180,254,0.45)' }}
-          >
-            <div className="flex items-start gap-3">
-              <MailOpen size={18} className="text-purple-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-[13px] font-semibold text-[#3b0764]">Email not verified</p>
-                <p className="text-[12px] text-[rgba(59,7,100,0.55)] mt-0.5">
-                  Check your inbox for <span className="font-semibold">{unverifiedEmail}</span> and click the verification link.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleResend}
-              disabled={resending || !!resendMsg}
-              className="w-full py-2.5 rounded-xl text-[12px] font-bold text-white disabled:opacity-50 flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}
-            >
-              {resending
-                ? <><Loader2 size={13} className="animate-spin" />Sending…</>
-                : resendMsg
-                ? resendMsg
-                : 'Resend verification email'}
-            </button>
-          </motion.div>
-        )}
-
         <Button
           type="submit"
           disabled={isLoading}
@@ -294,6 +243,49 @@ function Login({ onForgotClick }) {
         </Button>
       </form>
     </motion.div>
+  );
+}
+
+// One tap, no password, no verification email — the provider already vouched
+// for the address. Rendered above the tabs so it serves sign-in and register
+// alike. Hidden entirely when neither provider is configured.
+function SocialAuthButtons({ disabled }) {
+  const { loginWithProvider } = useAuth();
+  const [pending, setPending] = useState(null);
+
+  const providers = [
+    { id: 'google', label: 'Continue with Google', icon: <FcGoogle size={18} />, enabled: SOCIAL_PROVIDERS.google },
+    { id: 'apple', label: 'Continue with Apple', icon: <FaApple size={18} color="#111114" />, enabled: SOCIAL_PROVIDERS.apple },
+  ].filter((p) => p.enabled);
+
+  if (providers.length === 0) return null;
+
+  const start = (id) => {
+    setPending(id);
+    loginWithProvider(id, getSafeCallbackUrl());
+  };
+
+  return (
+    <div className="space-y-2.5 mb-5">
+      {providers.map((p) => (
+        <button
+          key={p.id}
+          type="button"
+          onClick={() => start(p.id)}
+          disabled={disabled || pending !== null}
+          className="w-full h-[52px] rounded-full border border-[#e5e0ec] bg-white flex items-center justify-center gap-3 text-[14px] font-semibold text-[#111114] transition-colors hover:bg-[#faf8fd] active:scale-[0.99] disabled:opacity-60"
+        >
+          {pending === p.id ? <Loader2 size={16} className="animate-spin" /> : p.icon}
+          {p.label}
+        </button>
+      ))}
+
+      <div className="flex items-center gap-3 pt-1.5">
+        <div className="h-px flex-1 bg-[#eceaf1]" />
+        <span className="text-[11px] font-medium text-[#aaa]">or</span>
+        <div className="h-px flex-1 bg-[#eceaf1]" />
+      </div>
+    </div>
   );
 }
 
@@ -312,17 +304,12 @@ function getPasswordStrength(password) {
 function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailOptIn, setEmailOptIn] = useState(true);
-  const [registeredEmail, setRegisteredEmail] = useState(null);
-  const [resending, setResending] = useState(false);
-  const [resendMsg, setResendMsg] = useState('');
-  const firstNameRef = useDesktopAutoFocus();
+  const fullNameRef = useDesktopAutoFocus();
   const { register } = useAuth();
 
   const strength = getPasswordStrength(password);
@@ -331,85 +318,15 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
     setIsLoading(true);
     try {
-      const autoUsername = `${firstName.toLowerCase()}${lastName.toLowerCase()}${Math.floor(1000 + Math.random() * 9000)}`;
-      const result = await register(autoUsername, email, password, firstName, lastName);
-      if (result?.requiresEmailVerification) {
-        setRegisteredEmail(email);
-      }
+      // Signs in and redirects on success — no "check your email" wall.
+      await register(fullName.trim(), email.trim(), password, getSafeCallbackUrl());
     } catch (err) {
       setError(err.message);
-    } finally {
       setIsLoading(false);
     }
   };
-
-  const handleResend = async () => {
-    if (!registeredEmail) return;
-    setResending(true);
-    setResendMsg('');
-    try {
-      const res = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: registeredEmail }),
-      });
-      const data = await res.json();
-      setResendMsg(data.message || 'Email sent.');
-    } catch {
-      setResendMsg('Could not send. Please try again.');
-    } finally {
-      setResending(false);
-    }
-  };
-
-  // ── Post-registration: "check your email" screen ──
-  if (registeredEmail) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-5 py-4 text-center"
-      >
-        <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'rgba(147,51,234,0.08)' }}>
-            <MailOpen size={30} style={{ color: '#9333ea' }} />
-          </div>
-        </div>
-        <div>
-          <h3 className="text-[20px] font-black text-[#111114]">Check your inbox</h3>
-          <p className="text-[13px] text-[#888] mt-1.5 leading-relaxed">
-            We sent a verification link to<br />
-            <span className="font-semibold text-[#3b0764]">{registeredEmail}</span>
-          </p>
-          <p className="text-[12px] text-[#aaa] mt-2">Click the link in the email to activate your account. It expires in 24 hours.</p>
-        </div>
-        <button
-          onClick={handleResend}
-          disabled={resending || !!resendMsg}
-          className="w-full h-[48px] rounded-full text-[12px] font-bold disabled:opacity-50 flex items-center justify-center gap-2 border transition-colors"
-          style={{ borderColor: 'rgba(216,180,254,0.5)', color: '#9333ea' }}
-        >
-          {resending
-            ? <><Loader2 size={13} className="animate-spin" />Sending…</>
-            : resendMsg
-            ? resendMsg
-            : 'Resend verification email'}
-        </button>
-        <p className="text-[11px] text-[#bbb]">
-          Already verified?{' '}
-          <button onClick={() => setRegisteredEmail(null)} className="text-[#9333ea] hover:underline font-semibold">
-            Back to sign in
-          </button>
-        </p>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
@@ -420,36 +337,20 @@ function Register() {
       className="space-y-5"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label htmlFor="register-firstname" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">First Name</label>
-            <input
-              ref={firstNameRef}
-              id="register-firstname"
-              type="text"
-              placeholder="Layla"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-              autoComplete="given-name"
-              disabled={isLoading}
-              className="w-full h-[56px] md:h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="register-lastname" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Last Name</label>
-            <input
-              id="register-lastname"
-              type="text"
-              placeholder="Ahmed"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-              autoComplete="family-name"
-              disabled={isLoading}
-              className="w-full h-[56px] md:h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
-            />
-          </div>
+        <div className="space-y-1.5">
+          <label htmlFor="register-fullname" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Full Name</label>
+          <input
+            ref={fullNameRef}
+            id="register-fullname"
+            type="text"
+            placeholder="Layla Ahmed"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+            autoComplete="name"
+            disabled={isLoading}
+            className="w-full h-[56px] md:h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -510,49 +411,14 @@ function Register() {
           </div>
           {password && (
             <p className="text-[11px]" style={{ color: segmentColors[strength.score - 1] }}>
-              {strength.label} — Use 8+ characters{' '}
-              <span className="text-[rgba(107,33,168,0.6)]">with a number and a symbol.</span>
+              {strength.label} — at least 8 characters.{' '}
+              <span className="text-[rgba(107,33,168,0.6)]">A number and a symbol make it stronger.</span>
             </p>
           )}
           {!password && (
             <p className="text-[11px] text-[#999]">
-              Use 8+ characters <span className="text-[#9368ee]">with a number and a symbol.</span>
+              At least 8 characters. <span className="text-[#9368ee]">A number and a symbol make it stronger.</span>
             </p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="register-confirm-password" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Confirm Password</label>
-          <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
-            <input
-              id="register-confirm-password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Re-enter your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              disabled={isLoading}
-              className={`w-full h-[56px] md:h-[52px] pl-12 pr-12 rounded-2xl border bg-white transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60 ${
-                confirmPassword ? '' : 'border-[rgba(216,180,254,0.4)] focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)]'
-              }`}
-              style={
-                confirmPassword
-                  ? confirmPassword === password
-                    ? { borderColor: 'rgba(16,185,129,0.5)', boxShadow: '0 0 0 4px rgba(16,185,129,0.08)' }
-                    : { borderColor: 'rgba(239,68,68,0.5)', boxShadow: '0 0 0 4px rgba(239,68,68,0.08)' }
-                  : undefined
-              }
-            />
-            {confirmPassword && (
-              confirmPassword === password
-                ? <Check className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-                : <XIcon className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-red-500" />
-            )}
-          </div>
-          {confirmPassword && confirmPassword !== password && (
-            <p className="text-[11px] text-red-500">Passwords don't match.</p>
           )}
         </div>
 
@@ -835,12 +701,14 @@ export default function AuthPage() {
                 </h2>
                 <p className="text-[13px] text-[#888] mt-1.5 font-normal">
                   {authMode === 'register'
-                    ? 'It takes about thirty seconds.'
+                    ? 'It takes about fifteen seconds.'
                     : authMode === 'forgot-password'
                     ? "We'll send a secure reset link."
                     : 'Sign in to continue your beauty journey.'}
                 </p>
               </div>
+
+              {authMode !== 'forgot-password' && <SocialAuthButtons />}
 
               <Tabs
                 value={authMode === 'forgot-password' ? 'login' : authMode}

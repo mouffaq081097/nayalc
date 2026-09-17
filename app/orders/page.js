@@ -236,7 +236,7 @@ const OrdersPageContent = () => {
                     <div className="space-y-3">
                         <h4 className="text-[17px] font-semibold">Shipping & Delivery</h4>
                         <p className="text-[14px] text-gray-500 leading-relaxed font-medium">
-                            Orders are processed within 24 hours. Enjoy free shipping on orders over 500 AED.
+                            Order before 2 PM UAE time for next business day delivery. Shipping is AED 20 for one item, AED 10 for two, and free on three or more.
                         </p>
                         <Link href="#" className="text-[14px] font-medium text-purple-500 hover:underline block pt-1">Learn about shipping</Link>
                     </div>

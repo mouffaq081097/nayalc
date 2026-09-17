@@ -20,7 +20,7 @@ export const metadata = {
     default: "Naya Lumière Cosmetics | Luxury Beauty & Skincare UAE",
     template: "%s | Naya Lumière Cosmetics"
   },
-  description: "Shop luxury beauty and skincare in the UAE at Naya Lumière Cosmetics. Official retailer of GERnétic, Zorah, and Naya Lumière Perfumes. Free delivery on orders over AED 200.",
+  description: "Shop luxury beauty and skincare in the UAE at Naya Lumière Cosmetics. Official retailer of GERnétic, Zorah, and Naya Lumière Perfumes. Free delivery on orders of 3 items or more.",
   keywords: ["luxury skincare UAE", "GERnétic Dubai", "Zorah beauty", "Naya Lumière Perfumes", "beauty store Dubai", "skincare online UAE", "night cream UAE", "luxury serum Dubai", "fragrance UAE", "gift sets Dubai", "bio-cosmetics UAE"],
   authors: [{ name: 'Naya Lumière Cosmetics' }],
   creator: 'Naya Lumière Cosmetics',

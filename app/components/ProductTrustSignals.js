@@ -65,7 +65,7 @@ export default function ProductTrustSignals({ brand, averageRating, reviewCount 
         <div>
           <p className="text-[13px] font-semibold text-gray-900">Shop with confidence</p>
           <p className="text-[12px] text-gray-500 leading-snug mt-0.5">
-            100% authentic products, backed by our 30-day return policy.
+            100% authentic products, backed by our 14-day return policy.
           </p>
         </div>
       </div>

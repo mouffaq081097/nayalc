@@ -69,6 +69,21 @@ export async function POST(request) {
                 name: '010_add_signature_image_to_products',
                 sql: `ALTER TABLE products ADD COLUMN IF NOT EXISTS signature_image_url TEXT;`
             },
+            {
+                // Moved out of the signup hot path — this used to run as DDL on
+                // every registration, taking an ACCESS EXCLUSIVE lock on users.
+                // DEFAULT true so every pre-existing row stays verified; the
+                // signup route explicitly inserts false for new rows.
+                name: '011_auth_fast_signup',
+                sql: `
+                    ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT true;
+                    -- OAuth users (Google / Apple) never have a password.
+                    ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+                    ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider VARCHAR(32);
+                    -- Every auth path looks users up by LOWER(email).
+                    CREATE INDEX IF NOT EXISTS users_email_lower_idx ON users (LOWER(email));
+                `
+            },
         ];
 
         for (const migration of migrations) {

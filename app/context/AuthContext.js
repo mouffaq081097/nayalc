@@ -15,40 +15,23 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = status === 'authenticated';
 
   const login = useCallback(async (email, password, callbackUrl = '/') => {
-    const result = await signIn('credentials', {
-      redirect: false,
-      email,
-      password,
-    });
+    const result = await signIn('credentials', { redirect: false, email, password });
 
     if (result?.error) {
-      // Check whether the failure is due to an unverified email
-      try {
-        const statusRes = await fetch('/api/auth/check-status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        const statusData = await statusRes.json();
-        if (statusData.needsVerification) {
-          throw new Error('EMAIL_NOT_VERIFIED');
-        }
-      } catch (e) {
-        if (e.message === 'EMAIL_NOT_VERIFIED') throw e;
+      if (result.error === 'ACCOUNT_SUSPENDED') {
+        throw new Error('This account has been suspended. Please contact support.');
       }
       throw new Error('Invalid email or password.');
     }
 
-    if (result?.ok) {
-      router.push(callbackUrl);
-    }
+    if (result?.ok) router.push(callbackUrl);
   }, [router]);
 
-  const register = useCallback(async (username, email, password, firstName, lastName) => {
-    const response = await fetch(`/api/auth/signup`, {
+  const register = useCallback(async (fullName, email, password, callbackUrl = '/') => {
+    const response = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password, firstName, lastName }),
+      body: JSON.stringify({ fullName, email, password, callbackUrl }),
     });
 
     const data = await response.json();
@@ -58,9 +41,24 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data.error || 'Registration failed');
     }
 
-    // Registration successful — do NOT auto-login; email verification is required.
-    // Return the flag so the UI can show the "check your email" screen.
-    return { requiresEmailVerification: data.requiresEmailVerification === true };
+    // Soft verification: the account is live immediately, so sign in right here
+    // rather than parking the user on a "check your email" dead end. The
+    // verification nudge is handled by VerifyEmailBanner.
+    const result = await signIn('credentials', { redirect: false, email, password });
+
+    if (result?.error) {
+      // Account exists but auto-login failed — send them to the form rather
+      // than leaving them stranded on a spinner.
+      throw new Error('Account created. Please sign in to continue.');
+    }
+
+    router.push(callbackUrl);
+    return { emailVerified: false };
+  }, [router]);
+
+  // Google / Apple. NextAuth owns the redirect dance from here.
+  const loginWithProvider = useCallback((provider, callbackUrl = '/') => {
+    return signIn(provider, { callbackUrl });
   }, []);
 
   const logout = useCallback(() => {
@@ -68,7 +66,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, loading, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, register, loginWithProvider, loading, isAuthenticated }}
+    >
       {children}
     </AuthContext.Provider>
   );

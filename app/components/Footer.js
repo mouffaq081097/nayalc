@@ -66,8 +66,8 @@ export default function Footer() {
           <div className="flex flex-col items-center md:items-start gap-3">
             <p className="text-[12px] text-gray-400 font-medium">© 2026 Naya Lumière Cosmetics Inc.</p>
             <div className="flex items-center gap-6 text-[12px] text-gray-400 font-medium">
-              <Link href="#" className="hover:text-black transition-colors">Privacy Policy</Link>
-              <Link href="#" className="hover:text-black transition-colors">Terms of Service</Link>
+              <Link href="/privacy" className="hover:text-black transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-black transition-colors">Terms of Service</Link>
             </div>
           </div>
           

@@ -4,6 +4,7 @@ import { currentSessionUser } from '@/lib/adminAuth';
 import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail';
 import Stripe from 'stripe';
 import { getTabbyPayment } from '@/lib/tabby';
+import { calcShipping } from '@/lib/shipping';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -310,7 +311,11 @@ export async function POST(request) {
         // --- Server-Side Total Calculation (C2) ---
         const serverSubtotal = items.reduce((sum, item) => sum + dbPriceMap[item.productId] * item.quantity, 0);
         const serverTax = Math.round(serverSubtotal * 0.05 * 100) / 100;
-        const serverShipping = serverSubtotal > 200 ? 0 : 30;
+        // Quantity-based tiers from lib/shipping.js — the single source of truth.
+        // This MUST match what the cart and checkout showed the customer, or the
+        // total check below rejects the order after the card has been charged.
+        const serverQty = items.reduce((sum, item) => sum + item.quantity, 0);
+        const serverShipping = calcShipping(serverQty);
         const serverGiftWrap = gift_wrap ? GIFT_WRAP_FEE : 0;
 
         // --- Coupon Revalidation (H1) ---

@@ -1118,7 +1118,7 @@ export default function CheckoutPage() {
                     {[
                       { Icon: Lock, text: 'Secured transaction', color: 'text-emerald-500' },
                       { Icon: ShieldCheck, text: 'Authentic products', color: 'text-[#9869f7]' },
-                      { Icon: RotateCcw, text: '30-day returns', color: 'text-[#9869f7]' },
+                      { Icon: RotateCcw, text: '14-day returns', color: 'text-[#9869f7]' },
                     ].map(({ Icon, text, color }) => (
                       <li key={text} className="flex items-center gap-2.5 text-[12px] text-[#5a5a64]">
                         <Icon size={13} className={color} /> {text}

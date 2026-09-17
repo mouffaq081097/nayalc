@@ -11,6 +11,7 @@ import SideCart from './components/SideCart';
 import GlobalLoader from './components/GlobalLoader';
 import WelcomePopup from './components/WelcomePopup';
 import { WelcomeCornerBadge } from './components/WelcomeCornerBadge';
+import VerifyEmailBanner from './components/VerifyEmailBanner';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -77,6 +78,7 @@ export default function LayoutContent({ children }) {
       {showMobileChrome && !welcomeOpen && <WelcomeCornerBadge onOpen={() => setWelcomeOpen(true)} />}
       {showMobileChrome && chatReady && <Suspense fallback={null}><ChatWidget /></Suspense>}
       {showMobileChrome && <PromoBar />}
+      <VerifyEmailBanner />
       {showMobileChrome && <Header />}
       <SideCart /> {/* Add SideCart component here */}
       <div

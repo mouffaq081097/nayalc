@@ -1,7 +1,8 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { CheckCircle, XCircle, Clock, Loader2, ArrowRight, MailOpen } from 'lucide-react';
@@ -19,19 +20,48 @@ function VerifyEmailContent() {
 
   const success = searchParams.get('success');
   const error   = searchParams.get('error');
+  const grant   = searchParams.get('grant');
   const emailParam = searchParams.get('email') || '';
+
+  const rawCallback = searchParams.get('callbackUrl') || '/';
+  const callbackUrl =
+    rawCallback.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/';
 
   const [resendEmail, setResendEmail] = useState(emailParam);
   const [resending, setResending]     = useState(false);
   const [resendMsg, setResendMsg]     = useState('');
+  const [signingIn, setSigningIn]     = useState(Boolean(success && grant));
 
-  // Auto-redirect to login after successful verification
+  // Redeem the one-time grant so clicking the link lands them inside their
+  // account instead of on a login form — this works even when the mail app
+  // opens the link in its own webview with no existing session.
+  const redeemed = useRef(false);
   useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => router.push('/auth'), 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [success, router]);
+    if (!success || redeemed.current) return;
+    redeemed.current = true;
+
+    let cancelled = false;
+
+    (async () => {
+      if (grant) {
+        try {
+          const result = await signIn('verification-token', { token: grant, redirect: false });
+          if (!cancelled && result?.ok) {
+            router.push(callbackUrl);
+            return;
+          }
+        } catch {
+          // Fall through to the manual sign-in link below.
+        }
+      }
+      if (!cancelled) {
+        setSigningIn(false);
+        setTimeout(() => router.push('/auth'), 3500);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [success, grant, callbackUrl, router]);
 
   const handleResend = async () => {
     if (!resendEmail.trim()) return;
@@ -44,7 +74,7 @@ function VerifyEmailContent() {
         body: JSON.stringify({ email: resendEmail.trim() }),
       });
       const data = await res.json();
-      setResendMsg(data.message || 'Email sent.');
+      setResendMsg(data.message || data.error || 'Email sent.');
     } catch {
       setResendMsg('Something went wrong. Please try again.');
     } finally {
@@ -91,18 +121,23 @@ function VerifyEmailContent() {
               </div>
               <div>
                 <h1 className="text-[22px] font-black text-[#3b0764]">Email verified!</h1>
-                <p className="text-[13px] text-[rgba(59,7,100,0.55)] mt-2">Your account is now active. Redirecting you to sign in…</p>
+                <p className="text-[13px] text-[rgba(59,7,100,0.55)] mt-2">
+                  {signingIn ? 'Your account is active. Signing you in…' : 'Your account is now active.'}
+                </p>
               </div>
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-[rgba(59,7,100,0.35)]">
-                <Loader2 size={12} className="animate-spin" /> Redirecting in a moment…
-              </div>
-              <Link
-                href="/auth"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[13px] font-semibold text-white"
-                style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}
-              >
-                Sign in now <ArrowRight size={13} />
-              </Link>
+              {signingIn ? (
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-[rgba(59,7,100,0.35)]">
+                  <Loader2 size={12} className="animate-spin" /> One moment…
+                </div>
+              ) : (
+                <Link
+                  href="/auth"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-[13px] font-semibold text-white"
+                  style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}
+                >
+                  Sign in now <ArrowRight size={13} />
+                </Link>
+              )}
             </>
           )}
 
@@ -170,7 +205,7 @@ function VerifyEmailContent() {
               </div>
               <div className="text-left space-y-2 pt-1">
                 <label className="text-[11px] font-semibold text-[rgba(59,7,100,0.6)] uppercase tracking-wide">
-                  Didn't receive it? Resend
+                  Didn&apos;t receive it? Resend
                 </label>
                 <div className="flex gap-2">
                   <input
