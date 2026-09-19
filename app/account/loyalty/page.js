@@ -6,9 +6,11 @@ import { Cormorant_Garamond } from 'next/font/google';
 import {
   Star, Award, Crown, Gem,
   Zap, Wallet, Lock, ArrowUpRight, ArrowDownRight, ShoppingBag, Sparkle,
+  Check, Minus, Clock, Infinity as InfinityIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import AccountShell from '../_components/AccountShell';
+import { Carousel, CarouselContent, CarouselItem } from '../../components/ui/carousel.tsx';
 import { useAccountData } from '../_components/useAccountData';
 import { useAuth } from '../../context/AuthContext';
 
@@ -247,35 +249,76 @@ function TierCard({ skin, ariaLabel, front, back, compact = false, locked = fals
   );
 }
 
-function Card({ children, className = '', delay = 0, id }) {
+/* ──────────────────────────────────────────────────────────────────────────
+   Page chrome speaks the homepage's language, not the dashboard's:
+   white blocks, 1.5px gray-200 rounded-2xl cards, bold sans headings over an
+   11px gray eyebrow, the lavender accent (rgb(147,104,236)) used for links,
+   badges and micro-labels, and a mobile carousel wherever the homepage uses
+   one. Only the membership card itself keeps its own serif — it's an object,
+   not page furniture.
+   ────────────────────────────────────────────────────────────────────────── */
+
+const LAVENDER = 'rgb(147,104,236)';
+const LAVENDER_TINT = 'rgba(147,104,236,0.06)';
+const CARD_BORDER = { borderWidth: '1.5px', borderColor: 'rgb(229,231,235)' };
+
+function SectionHead({ eyebrow, title, action, href }) {
   return (
-    <motion.div
-      id={id}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.35 }}
-      className={`w-full bg-white border border-[#eaeaea] rounded-lg overflow-hidden mb-5 ${className}`}
-    >
+    <div className="mb-4 flex flex-row justify-between items-end gap-4">
+      <div className="space-y-1">
+        <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">{eyebrow}</p>
+        <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">{title}</h2>
+      </div>
+      {action && href && (
+        <Link
+          href={href}
+          className="shrink-0 text-sm font-medium transition-colors hover:opacity-70"
+          style={{ color: LAVENDER }}
+        >
+          {action} →
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function Block({ children, className = '' }) {
+  return (
+    <div className={`rounded-2xl border bg-white ${className}`} style={CARD_BORDER}>
       {children}
-    </motion.div>
-  );
-}
-
-function CardHeader({ title }) {
-  return (
-    <div className="px-6 py-4 border-b border-[#eaeaea]">
-      <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-widest">{title}</h2>
     </div>
   );
 }
 
-function InfoRow({ label, value }) {
+function StatTile({ label, value, sub, Icon }) {
   return (
-    <div className="flex items-baseline gap-2 py-2 border-t border-[#f0f0f0] first:border-t-0">
-      <span className="flex-none text-[10px] font-medium uppercase tracking-wide text-gray-400">{label}</span>
-      <span className="flex-1 border-b border-dotted border-gray-200 -translate-y-[3px]" />
-      <span className="flex-none text-[12.5px] text-gray-700">{value}</span>
+    <div className="rounded-2xl border bg-white p-4 flex items-start gap-3" style={CARD_BORDER}>
+      <div
+        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: LAVENDER_TINT, color: LAVENDER }}
+      >
+        <Icon size={16} strokeWidth={1.75} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold tracking-[0.14em] uppercase text-gray-400">{label}</p>
+        <p className="text-[22px] font-bold text-gray-900 leading-tight mt-1 tabular-nums">{value}</p>
+        {sub && <p className="text-[12px] text-gray-500 mt-0.5 truncate">{sub}</p>}
+      </div>
     </div>
+  );
+}
+
+function StatusChip({ label, variant }) {
+  const style =
+    variant === 'current'
+      ? { background: LAVENDER, color: '#fff' }
+      : variant === 'unlocked'
+        ? { background: LAVENDER_TINT, color: LAVENDER }
+        : { background: 'rgb(249,250,251)', color: 'rgb(156,163,175)' };
+  return (
+    <span className="shrink-0 text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded-full" style={style}>
+      {label}
+    </span>
   );
 }
 
@@ -314,412 +357,556 @@ export default function AccountLoyaltyPage() {
     return (
       <AccountShell wishCount={wishCount}>
         <div className="py-16 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: LAVENDER }} />
         </div>
       </AccountShell>
     );
   }
 
-  const points        = Number(loyaltyData?.stats?.points        || 0);
-  const lifetimeSpend  = Number(loyaltyData?.stats?.lifetimeSpend || 0);
-  const history         = loyaltyData?.transactions || [];
+  const points        = Number(loyaltyData?.stats?.points || 0);
+  const lifetimeSpend = Number(loyaltyData?.stats?.lifetimeSpend || 0);
+  const history       = loyaltyData?.transactions || [];
 
   const currentTierIdx = Math.max(0, TIERS.findIndex(t => t.name === tier));
   const currentTier    = TIERS[currentTierIdx];
-  const nextTier        = TIERS[currentTierIdx + 1] || null;
-  const spendToNext     = nextTier ? Math.max(0, nextTier.min - lifetimeSpend) : 0;
-  const progress         = nextTier ? Math.min(100, Math.round((lifetimeSpend / nextTier.min) * 100)) : 100;
+  const nextTier       = TIERS[currentTierIdx + 1] || null;
+  const spendToNext    = nextTier ? Math.max(0, nextTier.min - lifetimeSpend) : 0;
+  const progress       = nextTier
+    ? Math.min(100, Math.max(0, Math.round(((lifetimeSpend - currentTier.min) / (nextTier.min - currentTier.min)) * 100)))
+    : 100;
+
+  // 100 points = AED 5 off at checkout
+  const redeemValue = Math.floor(points / 100) * 5;
 
   const memberName  = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Member';
   const memberSince = user?.createdAt ? new Date(user.createdAt).getFullYear() : null;
-  const heroSkin     = SKINS[currentTier.name];
+  const heroSkin    = SKINS[currentTier.name];
+
+  const heroCard = (
+    <div className="relative w-full max-w-[420px] mx-auto">
+      <AnimatePresence>
+        {justUpgraded && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute left-1/2 -translate-x-1/2 -top-3 z-20 flex items-center gap-1.5 text-white px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.12em] uppercase whitespace-nowrap shadow-lg"
+            style={{ background: LAVENDER }}
+          >
+            <Sparkle size={11} />
+            Welcome to {justUpgraded}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <TierCard
+        skin={heroSkin}
+        ariaLabel={`${tier} membership card for ${memberName}, ${points.toLocaleString()} points. Press Enter to flip.`}
+        front={
+          <>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <LotusMark size={36} invert={heroSkin.invertLogo} />
+                <div>
+                  <p style={{ fontFamily: serif, fontSize: '18px', letterSpacing: '0.1em', lineHeight: 1 }}>NAYA LUMIÈRE</p>
+                  <p style={{ fontSize: '8px', letterSpacing: '0.22em', color: heroSkin.inkSoft, marginTop: '1px' }}>COSMETICS</p>
+                </div>
+              </div>
+              <span style={{ fontSize: '9.5px', letterSpacing: '0.2em', textTransform: 'uppercase', padding: '5px 12px', border: `1px solid ${heroSkin.inkFaint}`, borderRadius: '999px', flexShrink: 0 }}>{tier}</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <CardChip background={heroSkin.chip} />
+              <ContactlessMark />
+              <div className="ml-auto" style={{ width: '26px', aspectRatio: '1', borderRadius: '50%', background: heroSkin.holo, opacity: 0.72 }} />
+            </div>
+
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p style={{ fontSize: '7.5px', letterSpacing: '0.2em', textTransform: 'uppercase', color: heroSkin.inkSoft }}>
+                  {memberSince ? `Member since ${memberSince}` : 'Naya Rewards member'}
+                </p>
+                <p style={{ fontFamily: serif, fontSize: '21px', marginTop: '4px' }}>{memberName}</p>
+                <p style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '12px', letterSpacing: '0.2em', color: heroSkin.inkMid, marginTop: '4px' }}>
+                  •••• •••• {String(user?.id ?? '0000').padStart(4, '0').slice(-4)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p style={{ fontSize: '8px', letterSpacing: '0.2em', textTransform: 'uppercase', color: heroSkin.inkSoft }}>Points</p>
+                <p style={{ fontFamily: serif, fontSize: '25px', lineHeight: 1 }}>{points.toLocaleString()}</p>
+                {nextTier && (
+                  <p style={{ fontSize: '8px', letterSpacing: '0.12em', color: heroSkin.inkSoft, marginTop: '4px' }}>
+                    {spendToNext.toLocaleString()} to {nextTier.name}
+                  </p>
+                )}
+              </div>
+            </div>
+          </>
+        }
+        back={
+          <div className="h-full flex flex-col justify-between">
+            <div>
+              <p style={{ fontSize: '8.5px', letterSpacing: '0.2em', textTransform: 'uppercase', color: heroSkin.backInkSoft }}>{tier} benefits</p>
+              <div className="mt-2 grid gap-1">
+                {perksForTier(currentTierIdx).map(p => (
+                  <span key={p} style={{ fontSize: '12px', fontWeight: 300 }}>{p}</span>
+                ))}
+              </div>
+            </div>
+            <p style={{ fontSize: '9px', color: heroSkin.backInkSoft, fontWeight: 300 }}>
+              {currentTier.multiplier}× points on every order · nayalc.com/account
+            </p>
+          </div>
+        }
+      />
+
+      <p className="mt-3 text-center text-[11px] font-medium text-gray-400">Tap the card to see your benefits</p>
+    </div>
+  );
 
   return (
     <AccountShell wishCount={wishCount}>
 
-      {/* Greeting */}
-      <div className="mb-6">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">Naya Rewards</span>
-        <h1 className="mt-1 text-[30px] leading-tight" style={{ fontFamily: serif, fontWeight: 300 }}>
-          {greetingForHour()}, {user?.first_name || 'there'}.
-        </h1>
-        <p className="mt-1.5 text-[14px] text-gray-500 max-w-lg">
-          Your membership deepens with every order — quiet rewards, earlier access, and points that never expire.
-        </p>
-      </div>
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <Block className="p-5 md:p-8 mb-8">
+        <div className="grid lg:grid-cols-[1fr_minmax(0,420px)] gap-7 lg:gap-10 items-center">
 
-      {/* Hero card + balance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-10">
-        <div className="relative">
-          <AnimatePresence>
-            {justUpgraded && (
-              <motion.div
-                initial={{ opacity: 0, y: 8, scale: 0.92 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute left-1/2 -translate-x-1/2 -top-3 z-20 flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-full text-[10px] font-semibold uppercase tracking-[0.15em] whitespace-nowrap shadow-lg"
+          <div>
+            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Naya Rewards</p>
+            <h1 className="mt-1 text-[30px] md:text-[38px] font-bold text-gray-900 leading-tight">
+              {greetingForHour()}, {user?.first_name || 'there'}
+            </h1>
+            <p className="mt-2 text-[14px] text-gray-500 leading-relaxed max-w-md">
+              You&apos;re a {currentTier.name} member earning {currentTier.multiplier}× points on every order.
+            </p>
+
+            <div className="flex items-end gap-2.5 mt-6">
+              <span className="text-[52px] md:text-[64px] font-extrabold text-gray-900 leading-none tracking-tight tabular-nums">
+                {points.toLocaleString()}
+              </span>
+              <span className="text-[12px] font-bold tracking-[0.14em] uppercase pb-2" style={{ color: LAVENDER }}>points</span>
+            </div>
+            <p className="text-[13px] text-gray-500 mt-2">
+              {redeemValue > 0
+                ? `Worth AED ${redeemValue.toLocaleString()} off your next order.`
+                : 'Earn 100 points to unlock AED 5 off your order.'}
+            </p>
+
+            <div className="mt-6 max-w-md">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <span className="text-[12px] font-semibold text-gray-900">{currentTier.name}</span>
+                <span className="text-[12px] font-medium text-gray-400">{nextTier ? nextTier.name : 'Top tier'}</span>
+              </div>
+              <div
+                className="h-2 rounded-full bg-gray-100 overflow-hidden"
+                role="progressbar"
+                aria-valuenow={progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={nextTier ? `Progress toward ${nextTier.name} tier` : 'Top tier reached'}
               >
-                <Sparkle size={11} />
-                Welcome to {justUpgraded}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <TierCard
-            skin={heroSkin}
-            ariaLabel={`${tier} membership card for ${memberName}, ${points.toLocaleString()} points. Press Enter to flip.`}
-            front={
-              <>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <LotusMark size={38} invert={heroSkin.invertLogo} />
-                    <div>
-                      <p style={{ fontFamily: serif, fontSize: '19px', letterSpacing: '0.1em', lineHeight: 1 }}>NAYA LUMIÈRE</p>
-                      <p style={{ fontSize: '8px', letterSpacing: '0.22em', color: heroSkin.inkSoft, marginTop: '1px' }}>COSMETICS</p>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: '9.5px', letterSpacing: '0.28em', textTransform: 'uppercase', padding: '5px 12px', border: `1px solid ${heroSkin.inkFaint}`, borderRadius: '999px', flexShrink: 0 }}>{tier}</span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <CardChip background={heroSkin.chip} />
-                  <ContactlessMark />
-                  <div className="ml-auto" style={{ width: '26px', aspectRatio: '1', borderRadius: '50%', background: heroSkin.holo, opacity: 0.72 }} />
-                </div>
-
-                <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <p style={{ fontSize: '7.5px', letterSpacing: '0.3em', textTransform: 'uppercase', color: heroSkin.inkSoft }}>
-                      {memberSince ? `Member since ${memberSince}` : 'Naya Rewards member'}
-                    </p>
-                    <p style={{ fontFamily: serif, fontSize: '22px', marginTop: '4px' }}>{memberName}</p>
-                    <p style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '12.5px', letterSpacing: '0.2em', color: heroSkin.inkMid, marginTop: '4px' }}>
-                      •••• •••• {String(user?.id ?? '0000').padStart(4, '0').slice(-4)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p style={{ fontSize: '8px', letterSpacing: '0.26em', textTransform: 'uppercase', color: heroSkin.inkSoft }}>Points</p>
-                    <p style={{ fontFamily: serif, fontSize: '26px', lineHeight: 1 }}>{points.toLocaleString()}</p>
-                    {nextTier && (
-                      <p style={{ fontSize: '8px', letterSpacing: '0.14em', color: heroSkin.inkSoft, marginTop: '4px' }}>
-                        {spendToNext.toLocaleString()} TO {nextTier.name.toUpperCase()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </>
-            }
-            back={
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <p style={{ fontSize: '8.5px', letterSpacing: '0.28em', textTransform: 'uppercase', color: heroSkin.backInkSoft }}>{tier} benefits</p>
-                  <div className="mt-2 grid gap-1">
-                    {perksForTier(currentTierIdx).map(p => (
-                      <span key={p} style={{ fontSize: '12px', fontWeight: 300 }}>{p}</span>
-                    ))}
-                  </div>
-                </div>
-                <p style={{ fontSize: '9px', color: heroSkin.backInkSoft, fontWeight: 300 }}>
-                  {currentTier.multiplier}× points on every order · nayalc.com/account
-                </p>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.9, ease: 'easeOut' }}
+                  className="h-full rounded-full"
+                  style={{ background: LAVENDER }}
+                />
               </div>
-            }
-          />
-        </div>
+              <p className="mt-2 text-[13px] text-gray-500 leading-relaxed">
+                {nextTier
+                  ? `Spend AED ${spendToNext.toLocaleString()} more to reach ${nextTier.name}.`
+                  : `You're at our highest tier — ${currentTier.multiplier}× points on every order, for good.`}
+              </p>
+            </div>
 
-        <div className="grid gap-5">
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">Balance</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span style={{ fontFamily: serif, fontSize: 'clamp(40px,5vw,54px)', fontWeight: 300, lineHeight: 1 }}>{points.toLocaleString()}</span>
-              <span className="text-[13px] uppercase tracking-wide text-gray-400">points</span>
+            <div className="flex flex-wrap items-center gap-3 mt-7">
+              <Link
+                href="/all-products"
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full text-[11px] font-bold tracking-[0.18em] uppercase text-white transition-opacity hover:opacity-90"
+                style={{ background: LAVENDER }}
+              >
+                Shop to earn
+              </Link>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border text-[11px] font-bold tracking-[0.18em] uppercase text-gray-700 hover:bg-gray-50 transition-colors"
+                style={CARD_BORDER}
+              >
+                How it works
+              </a>
             </div>
           </div>
 
-          <div>
-            <div
-              className="h-[3px] bg-[#ebe6f3] rounded-full overflow-hidden"
-              role="progressbar"
-              aria-valuenow={progress}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={nextTier ? `Progress toward ${nextTier.name} tier` : 'Top tier reached'}
-            >
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-                className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg,#B79BE6,#7C5CD6)' }}
-              />
-            </div>
-            <p className="mt-2 text-[14px] font-light text-gray-500">
-              {nextTier
-                ? `AED ${spendToNext.toLocaleString()} to ${nextTier.name} — ${currentTier.multiplier}× points until then.`
-                : `You're at our highest tier — ${currentTier.multiplier}× points on every order, for good.`}
-            </p>
-          </div>
-
-          <div className="flex gap-3 flex-wrap">
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-gray-400 self-center">Tap the card to flip</span>
-            <a href="#rewards" className="border border-[#dad3e6] text-gray-900 px-6 py-3 rounded-full text-[11px] font-semibold uppercase tracking-[0.15em] hover:border-purple-300 transition-colors">
-              How it works
-            </a>
-          </div>
+          <div className="lg:justify-self-end w-full">{heroCard}</div>
         </div>
+      </Block>
+
+      {/* ── Stats ────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-8">
+        <StatTile
+          label="Balance"
+          value={points.toLocaleString()}
+          sub={redeemValue > 0 ? `Worth AED ${redeemValue.toLocaleString()}` : 'AED 5 per 100 points'}
+          Icon={Wallet}
+        />
+        <StatTile
+          label="Lifetime spend"
+          value={`AED ${lifetimeSpend.toLocaleString()}`}
+          sub={memberSince ? `Member since ${memberSince}` : 'Counts toward your tier'}
+          Icon={ShoppingBag}
+        />
+        <StatTile
+          label="Earn rate"
+          value={`${currentTier.multiplier}× points`}
+          sub={nextTier ? `${nextTier.multiplier}× at ${nextTier.name}` : 'Our highest rate'}
+          Icon={Zap}
+        />
       </div>
 
-      {/* Tier ladder */}
-      <Card delay={0.05}>
-        <CardHeader title="Tier Progress" />
-        <div className="px-6 py-6">
-          <div className="flex items-start">
-            {TIERS.map((t, i) => {
-              const achieved = lifetimeSpend >= t.min;
-              const isCurrent = t.name === tier;
-              const Icon = t.Icon;
-              return (
-                <React.Fragment key={t.name}>
-                  <div className="flex flex-col items-center gap-2 flex-1">
+      {/* ── Tier progress ────────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <SectionHead eyebrow="Your standing" title="Tier Progress" />
+        <Block className="px-5 md:px-8 py-7">
+          <div className="relative">
+            {/* Track runs between the first and last node centres (12.5% → 87.5%). */}
+            <div className="absolute left-[12.5%] right-[12.5%] top-[23px] h-[3px] rounded-full bg-gray-100" />
+            <motion.div
+              className="absolute left-[12.5%] top-[23px] h-[3px] rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(75, (75 * (currentTierIdx + progress / 100)) / (TIERS.length - 1))}%` }}
+              transition={{ duration: 0.9, ease: 'easeOut' }}
+              style={{ background: LAVENDER }}
+            />
+
+            <div className="relative flex">
+              {TIERS.map((t, i) => {
+                const achieved = i <= currentTierIdx;
+                const isCurrent = i === currentTierIdx;
+                const Icon = t.Icon;
+                return (
+                  <div key={t.name} className="flex-1 flex flex-col items-center gap-2 text-center">
                     <div
-                      className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${achieved ? 'shadow-md' : 'bg-gray-50 border border-[#eaeaea]'}`}
-                      style={achieved ? { background: SKINS[t.name].edge } : {}}
+                      className="w-12 h-12 rounded-full flex items-center justify-center"
+                      style={
+                        achieved
+                          ? { background: LAVENDER, color: '#fff', boxShadow: isCurrent ? '0 0 0 4px rgba(147,104,236,0.15)' : 'none' }
+                          : { background: 'rgb(249,250,251)', color: 'rgb(209,213,219)', border: '1.5px solid rgb(229,231,235)' }
+                      }
                     >
-                      <Icon size={18} strokeWidth={1.75} className={achieved ? '' : 'text-gray-300'} style={achieved ? { color: SKINS[t.name].ink } : {}} />
+                      <Icon size={18} strokeWidth={1.75} />
                     </div>
-                    <div className="text-center">
-                      <p className={`text-[11px] font-semibold ${isCurrent ? 'text-purple-600' : achieved ? 'text-gray-700' : 'text-gray-300'}`}>{t.name}</p>
-                      <p className="text-[9px] text-gray-300 mt-0.5">AED {t.min.toLocaleString()}+</p>
-                    </div>
-                    {isCurrent && (
-                      <span className="text-[8px] font-bold uppercase tracking-wider text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">Current</span>
-                    )}
-                  </div>
-                  {i < TIERS.length - 1 && (
-                    <div className={`h-0.5 flex-1 mt-5 rounded-full ${lifetimeSpend >= TIERS[i + 1].min ? 'bg-purple-300' : 'bg-[#eaeaea]'}`} />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-      </Card>
-
-      {/* The Collection — one plate per tier */}
-      <div className="mb-2">
-        <div className="h-[2px] bg-gray-900 mb-4" />
-        <div className="flex flex-wrap items-baseline justify-between gap-3 mb-6">
-          <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-gray-900">The Collection</span>
-          <span className="text-[9px] uppercase tracking-[0.3em] text-gray-400">Four tiers · Real rewards</span>
-        </div>
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
-          <h2 style={{ fontFamily: serif, fontWeight: 300, fontSize: 'clamp(28px,3.6vw,40px)' }}>Four levels of care</h2>
-          <p className="text-[13.5px] text-gray-500 max-w-xs">Tap any card to see what it holds. Your tier only ever moves up.</p>
-        </div>
-      </div>
-
-      <div className="border-b border-gray-900/15">
-        {TIERS.map((t, idx) => {
-          const skin = SKINS[t.name];
-          const achieved = currentTierIdx >= idx;
-          const locked = currentTierIdx < idx;
-          const isCurrent = idx === currentTierIdx;
-          const away = locked ? Math.max(0, t.min - lifetimeSpend) : 0;
-
-          let chipLabel, chipStyle;
-          if (isCurrent) {
-            chipLabel = 'Your tier';
-            chipStyle = { background: '#7C5CD6', color: '#fff' };
-          } else if (achieved) {
-            chipLabel = 'Unlocked';
-            chipStyle = { background: '#EFE9FB', color: '#6D4FC4' };
-          } else {
-            chipLabel = `AED ${away.toLocaleString()} away`;
-            chipStyle = { background: '#F3F1F7', color: '#9B93A8' };
-          }
-
-          return (
-            <article key={t.name} className="grid gap-5 py-8 border-t border-gray-900/15">
-              <div className="flex items-baseline justify-between gap-4">
-                <div className="flex items-baseline gap-2.5">
-                  <span style={{ fontFamily: serif, fontSize: '22px', fontWeight: 300, color: '#1C1A22' }}>{['I', 'II', 'III', 'IV'][idx]}</span>
-                  <span className="text-[8.5px] uppercase tracking-[0.32em] text-gray-400">Plate {['one', 'two', 'three', 'four'][idx]}</span>
-                </div>
-                <span className="text-[8.5px] uppercase tracking-[0.28em] text-gray-400">NL–0{idx + 1}</span>
-              </div>
-
-              <div className="flex flex-wrap items-start gap-10">
-                <div className="flex-1 min-w-[280px] max-w-[520px]" style={{ opacity: locked ? 0.9 : 1 }}>
-                  <div className="relative">
-                    <TierCard
-                      compact
-                      skin={skin}
-                      ariaLabel={`${t.name} tier card — press Enter to flip`}
-                      locked={locked}
-                      lockLabel={chipLabel}
-                      front={
-                        <>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2.5">
-                              <LotusMark size={30} invert={skin.invertLogo} />
-                              <div>
-                                <p style={{ fontFamily: serif, fontSize: '16px', letterSpacing: '0.09em', lineHeight: 1 }}>NAYA LUMIÈRE</p>
-                                <p style={{ fontSize: '7.5px', letterSpacing: '0.2em', color: skin.inkSoft, marginTop: '1px' }}>COSMETICS</p>
-                              </div>
-                            </div>
-                            <span style={{ fontSize: '9px', letterSpacing: '0.24em', textTransform: 'uppercase', color: skin.inkSoft, flexShrink: 0 }}>Tier 0{idx + 1}</span>
-                          </div>
-                          <div className="flex items-center gap-2.5">
-                            <CardChip background={skin.chip} />
-                            <ContactlessMark />
-                          </div>
-                          <div className="flex items-end justify-between gap-3">
-                            <div>
-                              <p style={{ fontFamily: serif, fontSize: 'clamp(26px,3vw,34px)', fontWeight: 300, lineHeight: 1 }}>{t.name}</p>
-                              <p style={{ fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: skin.inkSoft, marginTop: '4px' }}>
-                                AED {t.min.toLocaleString()}{idx < TIERS.length - 1 ? ` — ${(TIERS[idx + 1].min - 1).toLocaleString()}` : '+'}
-                              </p>
-                            </div>
-                            <span style={{ fontSize: '9px', letterSpacing: '0.18em', textTransform: 'uppercase', color: skin.inkSoft }}>{t.multiplier}× pts</span>
-                          </div>
-                        </>
-                      }
-                      back={
-                        <div className="h-full flex flex-col justify-between">
-                          <div>
-                            <p style={{ fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', color: skin.backInkSoft }}>{t.name} benefits</p>
-                            <div className="mt-2 grid gap-1">
-                              {perksForTier(idx).map(p => (
-                                <span key={p} style={{ fontSize: '12.5px', fontWeight: 300 }}>{p}</span>
-                              ))}
-                            </div>
-                          </div>
-                          <p style={{ fontSize: '9px', color: skin.backInkSoft, fontWeight: 300 }}>Naya Rewards · {t.name} tier</p>
-                        </div>
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="flex-1 min-w-[260px] grid gap-4 content-start">
-                  <div>
-                    <h3 style={{ fontFamily: serif, fontWeight: 300, fontSize: 'clamp(24px,3vw,30px)' }}>{t.name}</h3>
-                    <p className="text-[13px] text-gray-500 leading-relaxed mt-1">
-                      {idx === 0 && 'The beginning — free to join, points from your very first order.'}
-                      {idx === 1 && `Reached at AED ${t.min.toLocaleString()} lifetime spend — faster points, free shipping, early access.`}
-                      {idx === 2 && `Reached at AED ${t.min.toLocaleString()} lifetime spend — ${t.multiplier}× points and every everyday perk unlocked.`}
-                      {idx === 3 && `Our top tier — AED ${t.min.toLocaleString()}+, ${t.multiplier}× points, a dedicated concierge, and free returns with no minimum.`}
-                    </p>
-                  </div>
-                  <div>
-                    <InfoRow label="Threshold" value={`AED ${t.min.toLocaleString()}+`} />
-                    <InfoRow label="Earn rate" value={`${t.multiplier}× per AED 1`} />
-                    <InfoRow label="Perks" value={`${perksForTier(idx).length} of ${PERKS.length}`} />
-                    <InfoRow label="Finish" value={t.name === 'Silver' ? 'Brushed pewter' : t.name === 'Gold' ? 'Warm gold' : t.name === 'Platinum' ? 'Deep violet' : 'Midnight steel'} />
-                  </div>
-                  <span className="text-[9.5px] font-semibold uppercase tracking-[0.15em] px-3 py-1.5 rounded-full justify-self-start" style={chipStyle}>
-                    {chipLabel}
-                  </span>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      {/* How it works */}
-      <Card delay={0.2} id="rewards">
-        <CardHeader title="How Naya Rewards Works" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[#eaeaea]">
-          <div className="px-6 py-5 flex flex-col items-start gap-2">
-            <div className="w-9 h-9 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Zap size={16} strokeWidth={1.75} />
-            </div>
-            <p className="text-[13px] font-semibold text-gray-900">Earn</p>
-            <p className="text-[12px] text-gray-500">1 point per AED 1 spent, multiplied by your tier — Silver 1×, Gold 1.5×, Platinum 2×, Diamond 2.5×.</p>
-          </div>
-          <div className="px-6 py-5 flex flex-col items-start gap-2">
-            <div className="w-9 h-9 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Wallet size={16} strokeWidth={1.75} />
-            </div>
-            <p className="text-[13px] font-semibold text-gray-900">Redeem</p>
-            <p className="text-[12px] text-gray-500">Every 100 points is worth AED 5 off your order at checkout.</p>
-          </div>
-        </div>
-        <div className="px-6 py-3 border-t border-[#f3f3f5] bg-[#fafafa]">
-          <p className="text-[11px] text-gray-400">Your points never expire, and tier status is based on lifetime spend — once you reach a tier, you keep it.</p>
-        </div>
-      </Card>
-
-      {/* Points History */}
-      <Card delay={0.25}>
-        <CardHeader title="Points History" />
-        {history.length === 0 ? (
-          <div className="px-6 py-10 text-center">
-            <div className="w-11 h-11 rounded-full bg-purple-50 text-purple-500 mx-auto flex items-center justify-center mb-3">
-              <ShoppingBag size={18} strokeWidth={1.75} />
-            </div>
-            <p className="text-[13px] font-semibold text-gray-900">No transactions yet</p>
-            <p className="text-[12px] text-gray-400 mt-1 max-w-xs mx-auto">
-              Your first order earns {currentTier.multiplier}× points — every AED 1 spent counts.
-            </p>
-            <Link
-              href="/all-products"
-              className="inline-flex items-center gap-1.5 mt-4 text-[12px] font-semibold text-purple-600 hover:underline"
-            >
-              Shop now
-            </Link>
-          </div>
-        ) : (
-          <div className="px-6 py-2">
-            {history.map((h, i) => {
-              const isPending = h.type === 'pending' || h.type === 'placed';
-              const isEarn = Number(h.points) > 0;
-              const dateVal = h.createdAt || h.created_at;
-              return (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-2.5 ${
-                      isPending ? 'bg-amber-50 text-amber-500' : isEarn ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
-                    }`}>
-                      {isEarn ? <ArrowUpRight size={13} strokeWidth={2.25} /> : <ArrowDownRight size={13} strokeWidth={2.25} />}
-                    </div>
-                    {i < history.length - 1 && <div className="w-px flex-1 bg-[#eaeaea]" style={{ minHeight: '12px' }} />}
-                  </div>
-                  <div className="flex-1 min-w-0 flex items-center justify-between py-3">
                     <div>
-                      <div className="text-[13px] font-medium text-gray-900">{h.description || h.desc}</div>
-                      <div className="text-[11px] text-gray-400 mt-0.5">
-                        {dateVal ? new Date(dateVal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : h.date}
-                      </div>
+                      <p className={`text-[13px] font-bold ${achieved ? 'text-gray-900' : 'text-gray-400'}`}>{t.name}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">AED {t.min.toLocaleString()}+</p>
+                    </div>
+                    {isCurrent && <StatusChip label="You are here" variant="current" />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Block>
+      </section>
+
+      {/* ── Membership cards ─────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <SectionHead eyebrow="The collection" title="Membership Cards" action="Shop to level up" href="/all-products" />
+
+        {/* Mobile: carousel — consistent with every homepage section */}
+        <div className="md:hidden">
+          <Carousel opts={{ align: 'start', loop: false }} className="w-full">
+            <CarouselContent className="-ml-3">
+              {TIERS.map((t, idx) => (
+                <CarouselItem key={t.name} className="pl-3 basis-[86%]">
+                  <TierPlate
+                    tier={t}
+                    idx={idx}
+                    currentTierIdx={currentTierIdx}
+                    lifetimeSpend={lifetimeSpend}
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        </div>
+
+        {/* Desktop: 2-col grid */}
+        <div className="hidden md:grid md:grid-cols-2 gap-3">
+          {TIERS.map((t, idx) => (
+            <TierPlate
+              key={t.name}
+              tier={t}
+              idx={idx}
+              currentTierIdx={currentTierIdx}
+              lifetimeSpend={lifetimeSpend}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ── Benefits ─────────────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <SectionHead eyebrow="Compare" title="What You Unlock" />
+        <Block className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] border-collapse">
+              <thead>
+                <tr>
+                  <th className="text-left text-[10px] font-bold tracking-[0.14em] uppercase text-gray-400 px-5 md:px-6 py-4 border-b border-gray-100">
+                    Benefit
+                  </th>
+                  {TIERS.map((t, i) => (
+                    <th
+                      key={t.name}
+                      className="text-center px-3 py-4 border-b border-gray-100"
+                      style={i === currentTierIdx ? { background: LAVENDER_TINT } : undefined}
+                    >
+                      <span
+                        className="block text-[12px] font-bold"
+                        style={{ color: i === currentTierIdx ? LAVENDER : 'rgb(17,24,39)' }}
+                      >
+                        {t.name}
+                      </span>
+                      <span className="block text-[11px] font-medium text-gray-400 mt-0.5">{t.multiplier}×</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {PERKS.map((perk, r) => (
+                  <tr key={perk.label}>
+                    <td className={`text-[13px] font-medium text-gray-700 px-5 md:px-6 py-3.5 ${r < PERKS.length - 1 ? 'border-b border-gray-50' : ''}`}>
+                      {perk.label}
+                    </td>
+                    {TIERS.map((t, i) => (
+                      <td
+                        key={t.name}
+                        className={`text-center px-3 py-3.5 ${r < PERKS.length - 1 ? 'border-b border-gray-50' : ''}`}
+                        style={i === currentTierIdx ? { background: LAVENDER_TINT } : undefined}
+                      >
+                        {perk.tierIdx <= i
+                          ? <Check size={16} strokeWidth={2.5} className="mx-auto" style={{ color: LAVENDER }} />
+                          : <Minus size={14} strokeWidth={2} className="mx-auto text-gray-200" />}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Block>
+      </section>
+
+      {/* ── How it works ─────────────────────────────────────────────────── */}
+      <section className="mb-8" id="how-it-works">
+        <SectionHead eyebrow="Simple" title="How It Works" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          {[
+            { key: 'earn', Icon: Zap, label: 'Step one', title: 'Earn', body: `1 point per AED 1 spent, multiplied by your tier — you're on ${currentTier.multiplier}× today.` },
+            { key: 'redeem', Icon: Wallet, label: 'Step two', title: 'Redeem', body: 'Every 100 points is worth AED 5 off, applied at checkout whenever you like.' },
+            { key: 'keep', Icon: InfinityIcon, label: 'Always', title: 'Keep', body: 'Points never expire and your tier only ever moves up — never down.' },
+          ].map(({ key, Icon, label, title, body }, i) => (
+            <div key={key} className="rounded-2xl border bg-white p-5" style={CARD_BORDER}>
+              <div className="flex items-center gap-2.5 mb-3">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                  style={{ background: LAVENDER }}
+                >
+                  <span className="text-[11px] font-bold text-white">{i + 1}</span>
+                </div>
+                <p className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: LAVENDER }}>{label}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Icon size={16} strokeWidth={1.75} className="text-gray-400" />
+                <p className="text-[15px] font-bold text-gray-900">{title}</p>
+              </div>
+              <p className="text-[13px] text-gray-500 leading-relaxed mt-1.5">{body}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[12px] text-gray-400 mt-3">
+          Tier status is based on lifetime spend and never resets. Points are added once your order is delivered.
+        </p>
+      </section>
+
+      {/* ── Points activity ──────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <SectionHead
+          eyebrow="History"
+          title="Points Activity"
+          action={history.length > 0 ? 'View orders' : undefined}
+          href={history.length > 0 ? '/account/orders' : undefined}
+        />
+        <Block className={history.length === 0 ? 'px-5 md:px-6 py-14' : 'px-5 md:px-6 py-2'}>
+          {history.length === 0 ? (
+            <div className="text-center">
+              <div
+                className="w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-4"
+                style={{ background: LAVENDER_TINT, color: LAVENDER }}
+              >
+                <ShoppingBag size={20} strokeWidth={1.75} />
+              </div>
+              <p className="text-[15px] font-bold text-gray-900">No points activity yet</p>
+              <p className="text-[13px] text-gray-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
+                Your first order earns {currentTier.multiplier}× points — every AED 1 spent counts toward your next tier.
+              </p>
+              <Link
+                href="/all-products"
+                className="inline-flex items-center justify-center mt-5 px-8 py-3.5 rounded-full text-[11px] font-bold tracking-[0.18em] uppercase text-white transition-opacity hover:opacity-90"
+                style={{ background: LAVENDER }}
+              >
+                Start shopping
+              </Link>
+            </div>
+          ) : (
+            <div>
+              {history.map((h, i) => {
+                const isPending = h.type === 'pending' || h.type === 'placed';
+                const isEarn = Number(h.points) > 0;
+                const dateVal = h.createdAt || h.created_at;
+                const Icon = isPending ? Clock : isEarn ? ArrowUpRight : ArrowDownRight;
+                return (
+                  <div
+                    key={h.id ?? i}
+                    className={`flex items-center gap-3.5 py-4 ${i < history.length - 1 ? 'border-b border-gray-50' : ''}`}
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                      style={
+                        isPending
+                          ? { background: 'rgb(255,251,235)', color: 'rgb(217,154,43)' }
+                          : isEarn
+                            ? { background: LAVENDER_TINT, color: LAVENDER }
+                            : { background: 'rgb(249,250,251)', color: 'rgb(156,163,175)' }
+                      }
+                    >
+                      <Icon size={15} strokeWidth={2.25} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-gray-900 truncate">{h.description || h.desc}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {dateVal
+                          ? new Date(dateVal).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                          : h.date}
+                      </p>
                     </div>
                     {isPending ? (
-                      <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                      <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
                         Pending
                       </span>
                     ) : (
-                      <span className={`text-[13px] font-semibold tabular-nums ${isEarn ? 'text-green-600' : 'text-red-500'}`}>
+                      <span
+                        className="text-[15px] font-bold tabular-nums shrink-0"
+                        style={{ color: isEarn ? LAVENDER : 'rgb(107,114,128)' }}
+                      >
                         {isEarn ? '+' : ''}{h.points}
                       </span>
                     )}
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
+                );
+              })}
+            </div>
+          )}
+        </Block>
+      </section>
 
-      {/* CTA */}
-      <div className="rounded-2xl p-10 md:p-14 grid gap-3 justify-items-center text-center" style={{ background: 'linear-gradient(120deg,#F3EDFC 0%,#FAF7FE 60%,#F7F3FB 100%)' }}>
-        <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-purple-400">Next ritual</span>
-        <h2 style={{ fontFamily: serif, fontWeight: 300, fontSize: 'clamp(24px,3.4vw,34px)' }} className="max-w-sm">Find your routine, earn as you go</h2>
-        <p className="max-w-md text-[14px] text-gray-500">Take our two-minute skin quiz — every recommendation still earns your {currentTier.multiplier}× points.</p>
-        <Link href="/skin-quiz" className="mt-2 bg-gray-900 text-white px-7 py-3.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] hover:opacity-85 transition-opacity">
+      {/* ── CTA — solid lavender block, same idiom as the Journal hub tile ── */}
+      <section
+        className="rounded-2xl px-6 py-12 md:px-14 md:py-14 text-center"
+        style={{ background: LAVENDER }}
+      >
+        <p className="text-[11px] font-semibold text-white/70 uppercase tracking-[0.18em]">Next ritual</p>
+        <h2 className="mt-2 text-[28px] md:text-[32px] font-extrabold text-white leading-tight max-w-lg mx-auto">
+          Find your routine, earn as you go
+        </h2>
+        <p className="mt-3 text-[14px] text-white/80 max-w-md mx-auto leading-relaxed">
+          Take our two-minute skin quiz — every recommendation still earns your {currentTier.multiplier}× points.
+        </p>
+        <Link
+          href="/skin-quiz"
+          className="inline-flex items-center justify-center mt-6 px-8 py-3.5 rounded-full bg-white text-[11px] font-bold tracking-[0.18em] uppercase transition-opacity hover:opacity-90"
+          style={{ color: LAVENDER }}
+        >
           Take the skin quiz
         </Link>
-      </div>
+      </section>
 
     </AccountShell>
+  );
+}
+
+/* One tier in the collection — the card itself plus a homepage-style caption row. */
+function TierPlate({ tier, idx, currentTierIdx, lifetimeSpend }) {
+  const skin = SKINS[tier.name];
+  const achieved = currentTierIdx >= idx;
+  const isCurrent = idx === currentTierIdx;
+  const locked = !achieved;
+  const away = locked ? Math.max(0, tier.min - lifetimeSpend) : 0;
+
+  const chipLabel = isCurrent ? 'Your tier' : achieved ? 'Unlocked' : `AED ${away.toLocaleString()} away`;
+  const chipVariant = isCurrent ? 'current' : achieved ? 'unlocked' : 'locked';
+
+  return (
+    <div className="rounded-2xl border bg-white p-4 h-full flex flex-col" style={CARD_BORDER}>
+      <TierCard
+        compact
+        skin={skin}
+        ariaLabel={`${tier.name} tier card — press Enter to flip`}
+        locked={locked}
+        lockLabel={chipLabel}
+        front={
+          <>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2.5">
+                <LotusMark size={26} invert={skin.invertLogo} />
+                <div>
+                  <p style={{ fontFamily: serif, fontSize: '14px', letterSpacing: '0.09em', lineHeight: 1 }}>NAYA LUMIÈRE</p>
+                  <p style={{ fontSize: '7px', letterSpacing: '0.2em', color: skin.inkSoft, marginTop: '1px' }}>COSMETICS</p>
+                </div>
+              </div>
+              <span style={{ fontSize: '8.5px', letterSpacing: '0.18em', textTransform: 'uppercase', color: skin.inkSoft, flexShrink: 0 }}>Tier 0{idx + 1}</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <CardChip background={skin.chip} />
+              <ContactlessMark />
+            </div>
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p style={{ fontFamily: serif, fontSize: 'clamp(24px,2.6vw,30px)', fontWeight: 300, lineHeight: 1 }}>{tier.name}</p>
+                <p style={{ fontSize: '8.5px', letterSpacing: '0.16em', textTransform: 'uppercase', color: skin.inkSoft, marginTop: '4px' }}>
+                  AED {tier.min.toLocaleString()}{idx < TIERS.length - 1 ? ` — ${(TIERS[idx + 1].min - 1).toLocaleString()}` : '+'}
+                </p>
+              </div>
+              <span style={{ fontSize: '9px', letterSpacing: '0.14em', textTransform: 'uppercase', color: skin.inkSoft }}>{tier.multiplier}× pts</span>
+            </div>
+          </>
+        }
+        back={
+          <div className="h-full flex flex-col justify-between">
+            <div>
+              <p style={{ fontSize: '9px', letterSpacing: '0.2em', textTransform: 'uppercase', color: skin.backInkSoft }}>{tier.name} benefits</p>
+              <div className="mt-2 grid gap-1">
+                {perksForTier(idx).map(p => (
+                  <span key={p} style={{ fontSize: '12px', fontWeight: 300 }}>{p}</span>
+                ))}
+              </div>
+            </div>
+            <p style={{ fontSize: '9px', color: skin.backInkSoft, fontWeight: 300 }}>Naya Rewards · {tier.name} tier</p>
+          </div>
+        }
+      />
+
+      <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-gray-50">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: LAVENDER }}>Tier 0{idx + 1}</p>
+          <p className="text-[15px] font-bold text-gray-900 leading-snug mt-0.5">{tier.name}</p>
+          <p className="text-[12px] text-gray-500 mt-0.5">
+            {perksForTier(idx).length} benefits · {tier.multiplier}× points
+          </p>
+        </div>
+        <StatusChip label={chipLabel} variant={chipVariant} />
+      </div>
+    </div>
   );
 }
