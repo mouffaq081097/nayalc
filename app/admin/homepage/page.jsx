@@ -1,17 +1,20 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Image as ImageIcon, Loader2, RotateCcw, UploadCloud } from 'lucide-react';
+import { Image as ImageIcon, Images, Loader2, RotateCcw, UploadCloud } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import CloudinaryPicker from '../_components/CloudinaryPicker';
 import PageLoader from '@/app/components/PageLoader';
 
 /** Shared upload/reset card shell — a preview, a "Custom"/"Default" badge, and
- * Replace/Reset buttons. Callers supply the actual network calls. */
-function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onReset }) {
+ * Replace/Reset buttons. Callers supply the actual network calls. Pass
+ * `onPickExisting` to also offer the Cloudinary library as a source. */
+function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onReset, onPickExisting }) {
   const fileInputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -29,6 +32,21 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
     } finally {
       setBusy(false);
       setPreview(null);
+    }
+  };
+
+  const handlePick = async (image) => {
+    if (!image) return;
+    setPickerOpen(false);
+    setError('');
+    setBusy(true);
+    try {
+      await onPickExisting(image);
+    } catch (err) {
+      console.error('Error applying Cloudinary image:', err);
+      setError('Could not apply that image. Please try again.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -89,6 +107,17 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
             <UploadCloud size={14} />
             Replace image
           </button>
+          {onPickExisting && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setPickerOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border border-purple-200 text-purple-600 hover:bg-purple-50 disabled:opacity-60"
+            >
+              <Images size={14} />
+              Choose from library
+            </button>
+          )}
           {isCustom && (
             <button
               type="button"
@@ -103,6 +132,15 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
       </div>
+
+      {onPickExisting && (
+        <CloudinaryPicker
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onSelect={handlePick}
+          title={`Choose a photo for "${label}"`}
+        />
+      )}
     </div>
   );
 }
@@ -145,6 +183,16 @@ function HomepageSlotsSection() {
             form.append('key', slot.key);
             form.append('image', file);
             const res = await fetchWithAuth('/api/admin/homepage-images', { method: 'POST', body: form });
+            const data = await res.json();
+            updateSlot(slot.key, { imageUrl: data.slot.image_url, alt: data.slot.alt_text, isCustom: true, updatedAt: data.slot.updated_at });
+          }}
+          onPickExisting={async (image) => {
+            const res = await fetchWithAuth('/api/admin/homepage-images', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key: slot.key, image_url: image.url }),
+            });
+            if (!res.ok) throw new Error('Could not apply image');
             const data = await res.json();
             updateSlot(slot.key, { imageUrl: data.slot.image_url, alt: data.slot.alt_text, isCustom: true, updatedAt: data.slot.updated_at });
           }}
