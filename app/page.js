@@ -1,15 +1,14 @@
 import React from 'react';
-import Image from 'next/image';
 import { HeroSection } from './components/HeroSection';
 import { Categories } from './components/Categories';
 import { BestSellers } from './components/BestSellers';
 import { FeaturedProducts } from './components/FeaturedProducts';
 import { ForYouSection } from './components/ForYouSection';
 import { SocialFeed } from './components/SocialFeed';
-import TabbyHeroBanner from './components/TabbyHeroBanner';
 import { BuildYourRoutine } from './components/BuildYourRoutine';
 import { JournalSection } from './components/JournalSection';
 import { RewardsSection } from './components/RewardsSection';
+import { SignatureBanner } from './components/SignatureBanner';
 import db from '@/lib/db';
 
 async function getHeroSlides() {
@@ -33,31 +32,11 @@ export default async function HomePage() {
             {/* <PhilosophySection /> */}
             <BuildYourRoutine />
             <FeaturedProducts />
-            <TabbyHeroBanner />
-            <div className="md:hidden my-4">
-                <Image
-                    src="/ChatGPT Image Jun 2, 2026, 03_20_23 PM.png"
-                    alt="Naya Lumière featured collection"
-                    width={600}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                    priority={false}
-                />
-            </div>
+            <SignatureBanner />
             <ForYouSection />
             {/* <ReviewsSection /> */}
             {/* <OurStorySection /> */}
             <SocialFeed />
-            <div className="md:hidden my-4">
-                <Image
-                    src="/ChatGPT Image Jun 3, 2026, 03_23_31 PM1.png"
-                    alt="Naya Lumière handmade collection"
-                    width={600}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                    priority={false}
-                />
-            </div>
             <RewardsSection />
             <JournalSection />
         </div>

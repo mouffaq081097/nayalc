@@ -39,6 +39,18 @@ const NAV_LINKS = [
   { label: 'Journal',     href: '/journal' },
 ];
 
+// Shared by the desktop Shop dropdown and the mobile Shop accordion so the two
+// menus can't drift apart. Cosmetics has no landing page of its own — it points
+// at the all-products list pre-filtered to the NAYA Lumiere Cosmetics brand,
+// which AllProducts resolves case-insensitively against the brands it loaded.
+const SHOP_LINKS = [
+  { name: 'All Products', href: '/all-products' },
+  { name: 'Skincare',     href: '/SkinCare' },
+  { name: 'Cosmetics',    href: '/all-products?brand=NAYA%20Lumiere%20Cosmetics' },
+  { name: 'Fragrance',    href: '/fragrance' },
+  { name: 'New Arrivals', href: '/new-arrivals' },
+];
+
 const Header = forwardRef((_, ref) => {
   const [isMenuOpen,   setIsMenuOpen]   = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -141,12 +153,7 @@ const Header = forwardRef((_, ref) => {
                       <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]" />
 
                       <div className="absolute top-[calc(100%+1rem)] left-0 w-[240px] bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_8px_32px_rgba(17,17,20,.10)] opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-200 translate-y-2 group-hover/shop:translate-y-0 z-[200] p-2">
-                        {[
-                          { name: 'All Products', href: '/all-products' },
-                          { name: 'Skincare',     href: '/SkinCare' },
-                          { name: 'Fragrance',    href: '/fragrance' },
-                          { name: 'New Arrivals', href: '/new-arrivals' },
-                        ].map((link) => (
+                        {SHOP_LINKS.map((link) => (
                           <Link
                             key={link.href}
                             href={link.href}
@@ -467,12 +474,7 @@ const Header = forwardRef((_, ref) => {
                 {[...NAV_LINKS, { label: 'Wishlist', href: '/wishlist' }].map((item) => {
                   if (item.hasDropdown) {
                     const subLinks = item.hasDropdown === 'shop'
-                      ? [
-                          { name: 'All Products', href: '/all-products' },
-                          { name: 'Skincare',     href: '/SkinCare' },
-                          { name: 'Fragrance',    href: '/fragrance' },
-                          { name: 'New Arrivals', href: '/new-arrivals' },
-                        ]
+                      ? SHOP_LINKS
                       : (brands || []).map((brand) => ({ name: brand.name, href: `/brand/${brand.slug || brand.id}` }));
 
                     // No brands loaded yet — fall back to a plain link rather than an empty accordion

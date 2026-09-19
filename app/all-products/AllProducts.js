@@ -256,6 +256,16 @@ export default function AllProductsPage() {
     return Array.from(s).sort();
   }, [allProducts]);
 
+  // ?brand=<name> pre-selects a brand facet — the Shop menu's Cosmetics entry
+  // uses it. Resolved against the loaded brand list case-insensitively rather
+  // than trusted verbatim, because the facet filter matches brand names exactly.
+  useEffect(() => {
+    const brand = searchParams.get('brand');
+    if (!brand) return;
+    const match = brands.find(b => b.toLowerCase() === brand.toLowerCase());
+    if (match) setSelectedBrands([match]);
+  }, [searchParams, brands]);
+
   const maxPrice = useMemo(() => {
     if (!allProducts.length) return 1000;
     return Math.ceil(Math.max(...allProducts.map(p => p.price)));
