@@ -482,7 +482,7 @@ export async function POST(request) {
 
         // Fetch shipping address details
         const { rows: addressRows } = await client.query(
-            "SELECT shipping_address, city, zip_code, country FROM user_addresses WHERE id = $1",
+            "SELECT shipping_address, city, zip_code, country, customer_phone FROM user_addresses WHERE id = $1",
             [user_address_id]
         );
         
@@ -500,6 +500,7 @@ export async function POST(request) {
             country: '',
             state: ''
         };
+        const customerPhone = addressRows.length > 0 ? addressRows[0].customer_phone : null;
 
         // Record a pending loyalty transaction so the loyalty tab shows activity immediately.
         // Points are NOT credited here — they are only added to the balance when the order is
@@ -537,23 +538,37 @@ export async function POST(request) {
             const product = products.find(p => p.id === item.productId);
             return { 
                 ...item, 
+                price: dbPriceMap[item.productId],
                 name: product ? product.name : 'Unknown Product',
                 imageUrl: product ? product.image_url : ''
             };
         });
 
         // Emails are non-blocking — a failure must never prevent the success response
+        const placedAt = new Date();
         let emailSent = true;
         try {
             if (userEmail) {
-                await sendOrderConfirmationEmail(userEmail, firstName, orderId, serverTotal, serverTax, serverCouponDiscount, serverSubtotal, serverShipping, itemsWithDetails, shippingAddress, serverGiftWrap, couponCode, payment_method);
+                await sendOrderConfirmationEmail(userEmail, firstName, orderId, serverTotal, serverTax, serverCouponDiscount, serverSubtotal, serverShipping, itemsWithDetails, shippingAddress, serverGiftWrap, couponCode, payment_method, placedAt);
             }
         } catch (emailErr) {
             emailSent = false;
             console.error(`Customer confirmation email failed for order #${orderId}:`, emailErr);
         }
         try {
-            await sendAdminNotificationEmail(null, orderId, userEmail || 'Unknown', serverTotal, shippingAddress);
+            await sendAdminNotificationEmail(null, orderId, userEmail || 'Unknown', serverTotal, shippingAddress, {
+                customerName: firstName,
+                customerPhone,
+                paymentMethod: payment_method,
+                items: itemsWithDetails,
+                subtotal: serverSubtotal,
+                shippingCost: serverShipping,
+                taxAmount: serverTax,
+                discountAmount: serverCouponDiscount,
+                giftWrapCost: serverGiftWrap,
+                couponCode,
+                placedAt,
+            });
         } catch (emailErr) {
             console.error(`Admin notification email failed for order #${orderId}:`, emailErr);
         }

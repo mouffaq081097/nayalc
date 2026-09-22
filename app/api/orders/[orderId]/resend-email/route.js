@@ -28,6 +28,8 @@ export async function POST(request, { params }) {
                     o.shipping_cost,
                     o.gift_wrap_cost,
                     o.applied_coupon_id,
+                    o.payment_method,
+                    o.created_at,
                     u.email,
                     u.first_name,
                     ua.address_line1 as shipping_address,
@@ -88,7 +90,9 @@ export async function POST(request, { params }) {
             items,
             shippingAddress,
             parseFloat(order.gift_wrap_cost) || 0,
-            couponCode
+            couponCode,
+            order.payment_method,
+            order.created_at
         );
 
         return NextResponse.json({ message: 'Email resent successfully' }, { status: 200 });
