@@ -10,6 +10,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { apiErrorMessage, fmtAed, productStatus, stockState } from './productAdmin';
+import { VAT_RATE, vatFromGross, netFromGross } from '@/lib/vat';
 import {
   AutoGrowTextarea, Card, ERROR_COLOR, Field, FieldMessage, WARNING_COLOR, invalidStyle, secondary, subdued, text,
 } from '../../_components/EditorFields';
@@ -53,6 +54,63 @@ function initialMedia(product) {
 const snapshot = (form, media) => JSON.stringify({ form, media: media.map(m => [m.url || m.file?.name, m.alt]) });
 
 
+
+// The card-processing allowance baked into prices in the Sept 2026 reprice.
+// Illustrative here — nothing is added at checkout, the price already covers it.
+const CARD_FEE_RATE = 0.03;
+// What a price is left worth after VAT comes out and Stripe takes its cut:
+// 1/1.05 - 0.03. Inverted, it turns a target margin back into a shelf price.
+const KEEP_FACTOR = 1 / (1 + VAT_RATE) - CARD_FEE_RATE;
+
+/**
+ * Prices are VAT-inclusive, so the Price field IS what the customer is charged.
+ * This unpacks that figure — VAT out, card fee out, what's left — because the
+ * number worth deciding on is the last one, and it isn't the one being typed.
+ */
+function PriceBreakdown({ price }) {
+  const gross = Number(price);
+  if (!Number.isFinite(gross) || gross <= 0) {
+    return (
+      <p className="text-[12.5px]" style={subdued}>
+        Enter a price to see what it leaves you after VAT and card fees.
+      </p>
+    );
+  }
+
+  const vat  = vatFromGross(gross);
+  const net  = netFromGross(gross);
+  const fee  = Math.round(gross * CARD_FEE_RATE * 100) / 100;
+  const keep = Math.round((net - fee) * 100) / 100;
+
+  const line = (label, value, opts = {}) => (
+    <div className="flex items-baseline justify-between gap-4 py-[3px]">
+      <span className="text-[12.5px]" style={opts.strong ? text : secondary}>{label}</span>
+      <span
+        className={`text-[12.5px] tabular-nums ${opts.strong ? 'font-semibold' : 'font-medium'}`}
+        style={opts.strong ? text : secondary}
+      >
+        {value}
+      </span>
+    </div>
+  );
+
+  return (
+    <div>
+      {line('Customer is charged', fmtAed(gross), { strong: true })}
+      {line(`Less VAT (${(VAT_RATE * 100).toFixed(0)}%, already inside the price)`, `− ${fmtAed(vat)}`)}
+      {line('Net of VAT', fmtAed(net))}
+      {line(`Less card fee (about ${(CARD_FEE_RATE * 100).toFixed(0)}%)`, `− ${fmtAed(fee)}`)}
+      <div className="mt-1.5 pt-1.5" style={{ borderTop: '1px solid var(--sp-border)' }}>
+        {line('You keep', fmtAed(keep), { strong: true })}
+      </div>
+      <p className="text-[11.5px] mt-2 leading-relaxed" style={subdued}>
+        Nothing is added at checkout — this price is exactly what the customer pays.
+        To keep a round {fmtAed(Math.ceil(keep / 10) * 10)}, price it at{' '}
+        <strong style={text}>{fmtAed(Math.ceil((Math.ceil(keep / 10) * 10) / KEEP_FACTOR))}</strong>.
+      </p>
+    </div>
+  );
+}
 
 const MoneyInput = ({ id, value, onChange, error }) => (
   <div className="relative">
@@ -458,7 +516,12 @@ export default function ProductEditor({ product, onSaved }) {
 
             <Card title="Pricing">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Price" htmlFor="price" error={errors.price}>
+                <Field
+                  label="Price"
+                  htmlFor="price"
+                  error={errors.price}
+                  hint="What the customer sees and pays. VAT is already included."
+                >
                   <MoneyInput id="price" value={form.price} onChange={e => setField('price', e.target.value)} error={errors.price} />
                 </Field>
                 <Field
@@ -472,6 +535,16 @@ export default function ProductEditor({ product, onSaved }) {
                   <MoneyInput id="comparedprice" value={form.comparedprice} onChange={e => setField('comparedprice', e.target.value)} />
                   {compareWarning && <FieldMessage color={WARNING_COLOR}>Set it higher than the price, or it won&apos;t show as a sale.</FieldMessage>}
                 </Field>
+              </div>
+
+              <div
+                className="mt-4 rounded-lg px-4 py-3"
+                style={{ background: 'var(--sp-surface-sub)', border: '1px solid var(--sp-border)' }}
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={subdued}>
+                  What this price is worth
+                </p>
+                <PriceBreakdown price={form.price} />
               </div>
             </Card>
 
