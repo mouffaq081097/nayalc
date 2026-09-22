@@ -2,7 +2,7 @@
 
 import { useCart } from '../context/CartContext';
 import { X, ShoppingBag, Minus, Plus, ArrowRight, Sparkles, Truck } from 'lucide-react';
-import { calcShipping, nextShippingTier } from '@/lib/shipping';
+import { calcShipping, nextShippingTier, formatShipping } from '@/lib/shipping';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -108,8 +108,8 @@ export default function SideCart() {
                     {' → '}
                     {nextTier.newCost === 0
                       ? <span className="font-black text-green-600">FREE shipping</span>
-                      : <span className="font-black" style={{ color: 'rgb(126,105,230)' }}>AED {nextTier.newCost}</span>}
-                    <span className="ml-1 opacity-60">(save AED {nextTier.saving})</span>
+                      : <span className="font-black" style={{ color: 'rgb(126,105,230)' }}>{formatShipping(nextTier.newCost)}</span>}
+                    <span className="ml-1 opacity-60">(save {formatShipping(nextTier.saving)})</span>
                   </p>
                 )}
               </div>

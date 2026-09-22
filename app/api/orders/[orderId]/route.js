@@ -289,8 +289,9 @@ export async function PUT(request, context) {
                 "    id, user_address_id, payment_method, total_amount, tax_amount, discount_amount,\n" +
                 "    order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id,\n" +
                 "    tracking_number, courier_name, courier_website, created_at, updated_at, delivered_at,\n" +
-                "    subtotal, shipping_cost, stripe_payment_intent_id, gift_wrap, gift_wrap_cost\n" +
-                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20, $21)";
+                "    subtotal, shipping_cost, stripe_payment_intent_id, gift_wrap, gift_wrap_cost,\n" +
+                "    redeemed_points\n" +
+                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20, $21, $22)";
 
             const deliveredOrderValues = [
                 currentOrder.id,
@@ -310,10 +311,13 @@ export async function PUT(request, context) {
                 currentOrder.created_at,
                 currentOrder.updated_at,
                 currentOrder.subtotal,
-                currentOrder.shippingCost,
+                // The query returns snake_case; reading camelCase here wrote a
+                // null shipping cost onto every delivered order.
+                currentOrder.shipping_cost,
                 currentOrder.stripe_payment_intent_id,
                 currentOrder.gift_wrap,
-                currentOrder.gift_wrap_cost
+                currentOrder.gift_wrap_cost,
+                currentOrder.redeemed_points
             ];
             await client.query(deliveredOrderSql, deliveredOrderValues);
 

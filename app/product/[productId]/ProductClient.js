@@ -13,7 +13,7 @@ import Reviews from '../../components/Reviews';
 import Modal from '../../components/Modal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
-import { calcShipping, getDeliveryInfo, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME } from '../../../lib/shipping';
+import { calcShipping, getDeliveryInfo, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME, formatShipping } from '../../../lib/shipping';
 import ProductCard from '../../components/ProductCard';
 import TabbyPromo from '../../components/TabbyPromo';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '../../components/ui/carousel';
@@ -69,7 +69,7 @@ function DeliveryEstimate({ cartItems }) {
             <span className="mx-1.5 text-gray-300">·</span>
             {shipCost === 0
               ? <span className="font-semibold text-emerald-600">Free shipping</span>
-              : <><span className="font-medium" style={{ color: LAVENDER }}>AED {shipCost} shipping</span>
+              : <><span className="font-medium" style={{ color: LAVENDER }}>{formatShipping(shipCost)} shipping</span>
                 <span className="text-[11px] text-gray-400 ml-1.5">(free with 3+ items)</span></>}
             <button
               onClick={() => setShowModal(true)}

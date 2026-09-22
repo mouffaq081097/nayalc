@@ -8,7 +8,7 @@ import {
   ArrowLeft, ArrowRight, ShoppingBag, Sparkles, X, Gift, Star, Trash2,
   ShieldCheck, ChevronDown, Tag, Truck, Minus, Plus, Check,
 } from 'lucide-react';
-import { calcShipping, nextShippingTier, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME } from '@/lib/shipping';
+import { calcShipping, nextShippingTier, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME, formatShipping } from '@/lib/shipping';
 import { vatFromGross } from '@/lib/vat';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useCart } from '../context/CartContext';
@@ -572,7 +572,7 @@ export default function CartPage() {
                           <div key={tier.label}>
                             <div className="h-1.5 rounded-full transition-colors" style={{ background: reached ? GRADIENT : '#f1eef6' }} />
                             <p className={`mt-1.5 text-[11px] ${reached ? 'font-semibold text-[#2a2a31]' : 'text-[#a1a1aa]'}`}>
-                              {tier.label} · {tier.cost === 0 ? 'Free' : `AED ${tier.cost}`}
+                              {tier.label} · {formatShipping(tier.cost)}
                             </p>
                           </div>
                         );
