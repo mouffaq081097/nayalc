@@ -2,8 +2,8 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Banknote, BookOpen, ExternalLink, Globe, Home, Image as ImageIcon, LayoutTemplate, LogOut,
-  MessageSquare, Percent, Send, Share2, ShoppingBag, Tag, Users,
+  Banknote, BookOpen, Calculator, ExternalLink, Globe, Home, Image as ImageIcon, LayoutTemplate,
+  LogOut, MessageSquare, Percent, Send, Share2, ShoppingBag, Tag, Users,
 } from 'lucide-react';
 
 // Store operations. A section's sub-pages show under it while you're inside that section, like Shopify.
@@ -28,6 +28,7 @@ const MAIN_NAV = [
   { to: '/admin/marketing', text: 'Marketing', icon: Send },
   { to: '/admin/coupons', text: 'Discounts', icon: Percent },
   { to: '/admin/payments', text: 'Payments', icon: Banknote },
+  { to: '/admin/pricing', text: 'Pricing & loyalty', icon: Calculator },
 ];
 
 // Pages that edit what shoppers see on the storefront
