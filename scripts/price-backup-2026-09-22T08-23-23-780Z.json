@@ -1,0 +1,132 @@
+{
+  "takenAt": "2026-09-22T08:23:23.781Z",
+  "rate": 8.15,
+  "mode": "whole",
+  "rows": [
+    {
+      "id": 6,
+      "price": "250.00",
+      "comparedprice": "450.00"
+    },
+    {
+      "id": 7,
+      "price": "195.00",
+      "comparedprice": "0.00"
+    },
+    {
+      "id": 8,
+      "price": "270.00",
+      "comparedprice": "500.00"
+    },
+    {
+      "id": 9,
+      "price": "200.00",
+      "comparedprice": "350.00"
+    },
+    {
+      "id": 10,
+      "price": "180.00",
+      "comparedprice": "0.00"
+    },
+    {
+      "id": 11,
+      "price": "150.00",
+      "comparedprice": "500.00"
+    },
+    {
+      "id": 12,
+      "price": "250.00",
+      "comparedprice": "300.00"
+    },
+    {
+      "id": 13,
+      "price": "187.00",
+      "comparedprice": "250.00"
+    },
+    {
+      "id": 14,
+      "price": "195.14",
+      "comparedprice": "290.00"
+    },
+    {
+      "id": 15,
+      "price": "150.00",
+      "comparedprice": "200.00"
+    },
+    {
+      "id": 17,
+      "price": "177.00",
+      "comparedprice": "250.00"
+    },
+    {
+      "id": 18,
+      "price": "259.00",
+      "comparedprice": "500.00"
+    },
+    {
+      "id": 19,
+      "price": "299.00",
+      "comparedprice": "500.00"
+    },
+    {
+      "id": 20,
+      "price": "177.00",
+      "comparedprice": "200.00"
+    },
+    {
+      "id": 23,
+      "price": "169.00",
+      "comparedprice": "500.00"
+    },
+    {
+      "id": 24,
+      "price": "169.00",
+      "comparedprice": "250.00"
+    },
+    {
+      "id": 25,
+      "price": "210.00",
+      "comparedprice": "450.00"
+    },
+    {
+      "id": 26,
+      "price": "298.89",
+      "comparedprice": "499.50"
+    },
+    {
+      "id": 27,
+      "price": "210.00",
+      "comparedprice": "400.00"
+    },
+    {
+      "id": 28,
+      "price": "145.00",
+      "comparedprice": "165.00"
+    },
+    {
+      "id": 29,
+      "price": "305.38",
+      "comparedprice": "500.00"
+    },
+    {
+      "id": 30,
+      "price": "35.00",
+      "comparedprice": "50.00"
+    },
+    {
+      "id": 31,
+      "price": "169.00",
+      "comparedprice": "200.00"
+    },
+    {
+      "id": 32,
+      "price": "19.56",
+      "comparedprice": "30.00"
+    },
+    {
+      "id": 33,
+      "price": "65.00",
+      "comparedprice": null
+    }
+  ]
+}

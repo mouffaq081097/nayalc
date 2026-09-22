@@ -244,6 +244,7 @@ export default function AccountOrdersPage() {
                     {/* Amount + CTA */}
                     <div className="text-right shrink-0">
                       <div className="text-[15px] font-bold text-gray-900">AED {total.toFixed(0)}</div>
+                      <div className="text-[10px] text-gray-400 leading-none mb-1">VAT included</div>
                       <span className="text-[11px] text-purple-600 font-medium group-hover:underline">View details →</span>
                     </div>
                   </Link>

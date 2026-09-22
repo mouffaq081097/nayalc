@@ -118,7 +118,11 @@ const OrderDetailsPage = () => {
   const isTrackingInfoVisible = ['Shipped', 'Delivered'].includes(newStatus);
   const isCancellationReasonVisible = newStatus === 'Cancelled';
   const isPaid = !!stripePaymentDetails || order.paymentMethod === 'card';
-  const subtotal = order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  // The stored subtotal is what the total was computed from; fall back to the
+  // line items only for older orders that predate the column.
+  const subtotal = Number(order.subtotal) || order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  // Mirrors the order route: 100 points redeem for AED 5.
+  const pointsDiscount = Math.floor((Number(order.redeemed_points) || 0) / 100) * 5;
 
   const headingClass = 'text-[14px] font-semibold mb-3';
 
@@ -192,10 +196,16 @@ const OrderDetailsPage = () => {
               {order.giftWrapCost > 0 && (
                 <div className="flex justify-between text-[13px]"><span style={{ color: 'var(--sp-text-secondary)' }}>Gift wrap</span><span className="font-medium">AED {order.giftWrapCost.toFixed(2)}</span></div>
               )}
+              {pointsDiscount > 0 && (
+                <div className="flex justify-between text-[13px]"><span style={{ color: 'var(--sp-text-secondary)' }}>Loyalty points ({order.redeemed_points} pts)</span><span className="font-medium text-green-600">- AED {pointsDiscount.toFixed(2)}</span></div>
+              )}
               <div className="pt-2.5 flex justify-between items-center" style={{ borderTop: '1px solid var(--sp-border)' }}>
                 <span className="text-[14px] font-semibold">Total</span>
                 <span className="text-[16px] font-semibold">AED {order.totalAmount.toFixed(2)}</span>
               </div>
+              {Number(order.taxAmount) > 0 && (
+                <p className="text-right text-[11px]" style={{ color: 'var(--sp-text-secondary)' }}>Includes VAT of AED {Number(order.taxAmount).toFixed(2)}</p>
+              )}
             </div>
           </div>
 

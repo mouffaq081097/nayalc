@@ -79,7 +79,7 @@ export async function POST(request) {
 
       const result = await client.query(
         `INSERT INTO users (username, email, password_hash, first_name, last_name, email_verified, loyalty_points)
-         VALUES ($1, $2, $3, $4, $5, false, 500)
+         VALUES ($1, $2, $3, $4, $5, false, 0)
          RETURNING id, username, email, first_name, last_name`,
         [provisional, email, hashedPassword, firstName, lastName]
       );
@@ -96,15 +96,6 @@ export async function POST(request) {
       // Everything below this point is off the critical path. The user gets
       // their response — and is signed in by the client — while this runs.
       after(async () => {
-        try {
-          await db.query(
-            'INSERT INTO loyalty_transactions (user_id, type, points, description) VALUES ($1, $2, $3, $4)',
-            [newUser.id, 'bonus', 500, 'Welcome to Lumière Prestige!']
-          );
-        } catch (e) {
-          console.error('Welcome loyalty bonus failed for user', newUser.id, e);
-        }
-
         try {
           const secret = new TextEncoder().encode(process.env.JWT_SECRET);
           const token = await new SignJWT({

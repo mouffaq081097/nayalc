@@ -5,6 +5,8 @@ import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/ma
 import Stripe from 'stripe';
 import { getTabbyPayment } from '@/lib/tabby';
 import { calcShipping } from '@/lib/shipping';
+import { pointsForOrder, pointsToAed } from '@/lib/loyalty';
+import { vatFromGross } from '@/lib/vat';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -310,7 +312,6 @@ export async function POST(request) {
 
         // --- Server-Side Total Calculation (C2) ---
         const serverSubtotal = items.reduce((sum, item) => sum + dbPriceMap[item.productId] * item.quantity, 0);
-        const serverTax = Math.round(serverSubtotal * 0.05 * 100) / 100;
         // Quantity-based tiers from lib/shipping.js — the single source of truth.
         // This MUST match what the cart and checkout showed the customer, or the
         // total check below rejects the order after the card has been charged.
@@ -345,7 +346,18 @@ export async function POST(request) {
 
         // --- Loyalty Points Validation (H2) ---
         const parsedRedeemedPoints = parseInt(redeemed_points, 10) || 0;
-        const serverPointsDiscount = Math.floor(parsedRedeemedPoints / 100) * 5;
+        const serverPointsDiscount = pointsToAed(parsedRedeemedPoints);
+
+        // A coupon and a points redemption are mutually exclusive — one order
+        // carries one discount. Checkout enforces this too; this is the
+        // authoritative backstop, and it runs before any payment is captured.
+        if (serverCouponDiscount > 0 && parsedRedeemedPoints > 0) {
+            await client.query('ROLLBACK');
+            return NextResponse.json(
+                { message: 'Use either a promo code or loyalty points on an order, not both.' },
+                { status: 400 }
+            );
+        }
 
         if (parsedRedeemedPoints > 0) {
             // Lock user row to prevent parallel redemptions
@@ -360,7 +372,10 @@ export async function POST(request) {
         }
 
         // --- Server Total Verification (C2) ---
-        const serverTotal = Math.max(0, serverSubtotal + serverTax + serverShipping + serverGiftWrap - serverCouponDiscount - serverPointsDiscount);
+        // Prices are VAT-inclusive, so VAT is never added here — it is extracted
+        // from the total below, purely for the tax record and the tax invoice.
+        const serverTotal = Math.max(0, serverSubtotal + serverShipping + serverGiftWrap - serverCouponDiscount - serverPointsDiscount);
+        const serverTax = vatFromGross(serverTotal);
         const clientTotal = parseFloat(total_amount);
         if (Math.abs(serverTotal - clientTotal) > 1) {
             await client.query('ROLLBACK');
@@ -459,9 +474,10 @@ export async function POST(request) {
             await client.query('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = $1', [resolvedCouponId]);
         }
 
-        const { rows: userRows } = await client.query('SELECT email, first_name FROM users WHERE id = $1', [user_id]);
+        const { rows: userRows } = await client.query('SELECT email, first_name, loyalty_tier FROM users WHERE id = $1', [user_id]);
         const userEmail = userRows.length > 0 ? userRows[0].email : null;
         const firstName = userRows.length > 0 ? userRows[0].first_name : 'Customer';
+        const userTier = userRows.length > 0 ? userRows[0].loyalty_tier : 'Silver';
 
 
         // Insert order items using server-fetched prices (C1)
@@ -506,7 +522,7 @@ export async function POST(request) {
         // Points are NOT credited here — they are only added to the balance when the order is
         // marked Delivered (see app/api/orders/[orderId]/route.js). Stored with type 'pending'
         // so the UI renders it as pending rather than as already-earned points.
-        const estimatedPoints = Math.floor(serverSubtotal);
+        const estimatedPoints = pointsForOrder(serverSubtotal, userTier);
         await client.query(
             'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
             [user_id, 'pending', estimatedPoints, `Order #${orderId} placed — points credited on delivery`, orderId]

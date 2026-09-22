@@ -27,11 +27,12 @@ function paymentLabel(method) {
   return method || 'Card';
 }
 
-function Section({ title, children, className = '' }) {
+function Section({ title, note, children, className = '' }) {
   return (
     <div className={`bg-white rounded-lg border border-[#eaeaea] overflow-hidden ${className}`}>
-      <div className="px-5 py-3 border-b border-[#f3f3f5]">
+      <div className="px-5 py-3 border-b border-[#f3f3f5] flex items-baseline justify-between gap-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{title}</p>
+        {note && <p className="text-[10.5px] text-gray-400 shrink-0">{note}</p>}
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -87,6 +88,9 @@ export default function OrderDetailPage() {
   }
 
   const items = order.items || [];
+  // Mirrors the order route: 100 points redeem for AED 5. Without this row the
+  // summary lines don't add up to the total.
+  const pointsDiscount = Math.floor((Number(order.redeemed_points) || 0) / 100) * 5;
   const hasShipping = order.shippingAddress || order.city;
   const hasPayment = order.payment_method || order.stripePaymentIntentId;
   const { label, badge, Icon } = statusMeta(order.status);
@@ -187,7 +191,7 @@ export default function OrderDetailPage() {
 
           <div className="lg:col-span-2 space-y-4">
             {items.length > 0 && (
-              <Section title="Items">
+              <Section title="Items" note="Prices include VAT">
                 <div className="space-y-4">
                   {items.map((item, i) => (
                     <div key={item.id || i} className="flex items-center gap-4">
@@ -252,15 +256,20 @@ export default function OrderDetailPage() {
           </div>
 
           <div className="lg:col-span-1 space-y-4">
-            <Section title="Order summary">
+            <Section title="Order summary" note="VAT included">
               <div className="space-y-2.5">
                 <SummaryRow label="Subtotal" value={Number(order.subtotal || 0)} />
                 {Number(order.shippingCost) > 0 && <SummaryRow label="Shipping" value={Number(order.shippingCost)} />}
                 {Number(order.giftWrapCost) > 0 && <SummaryRow label="Gift wrap" value={Number(order.giftWrapCost)} />}
-                {Number(order.taxAmount) > 0 && <SummaryRow label="Tax (VAT)" value={Number(order.taxAmount)} />}
                 {Number(order.discountAmount) > 0 && <SummaryRow label="Discount" value={Number(order.discountAmount)} negative />}
+                {pointsDiscount > 0 && <SummaryRow label={`Loyalty points (${order.redeemed_points} pts)`} value={pointsDiscount} negative />}
                 <div className="pt-2.5 mt-1 border-t border-[#f3f3f5]">
                   <SummaryRow label="Total" value={Number(order.totalAmount || 0)} bold />
+                  {Number(order.taxAmount) > 0 && (
+                    <p className="mt-1 text-right text-[11px] text-gray-400">
+                      Includes VAT of AED {Number(order.taxAmount).toFixed(2)}
+                    </p>
+                  )}
                 </div>
               </div>
             </Section>

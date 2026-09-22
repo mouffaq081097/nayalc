@@ -19,6 +19,8 @@ import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import { createFetchWithAuth } from '../lib/api';
 import { calcShipping } from '@/lib/shipping';
+import { POINTS_BLOCK, AED_PER_BLOCK } from '@/lib/loyalty';
+import { vatFromGross } from '@/lib/vat';
 import CheckoutForm from './CheckoutForm';
 import ExpressCheckoutButton from './ExpressCheckoutButton';
 import TabbyCard from '../components/TabbyCard';
@@ -29,10 +31,9 @@ const AddressInputForm = dynamic(() => import('../components/AddressInputForm'),
 const GRADIENT = 'linear-gradient(90deg,#c087fc,#9869f7)';
 // Must match app/api/orders/route.js, which rejects an order whose total drifts
 // from its own calculation.
-const VAT_RATE = 0.05;
 const GIFT_WRAP_FEE = 100;
-const POINTS_BLOCK = 100;
-const AED_PER_BLOCK = 5;
+// Redemption rate comes from lib/loyalty.js so checkout can never show a
+// discount the order API would compute differently.
 
 const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9869f7]/40';
 const cardClass = 'rounded-2xl border border-[#e5e5ea] bg-white';
@@ -214,26 +215,26 @@ function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, coupon
         {pointsDiscount > 0 && <SummaryRow label="Loyalty points" value={`−${fmt(pointsDiscount)}`} positive />}
         <SummaryRow label="Shipping" value={shipping === 0 ? 'Free' : fmt(shipping)} positive={shipping === 0} />
         {giftWrapFee > 0 && <SummaryRow label="Gift wrap" value={fmt(giftWrapFee)} />}
-        <SummaryRow label="VAT (5%)" value={fmt(tax)} />
       </dl>
 
       <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-[#e5e5ea] pt-4">
         <span className="text-[15px] font-semibold text-[#111114]">Total</span>
         <span className="text-[22px] font-bold tabular-nums text-[#111114]">{fmt(total)}</span>
       </div>
+      <p className="mt-1 text-right text-[11.5px] text-[#8a8a93]">Includes VAT of {fmt(tax)}</p>
     </>
   );
 }
 
-function ToggleRow({ icon, title, description, checked, onChange }) {
+function ToggleRow({ icon, title, description, checked, onChange, disabled = false }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 py-3.5 has-[:focus-visible]:rounded-lg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#9869f7]/40">
+    <label className={`flex items-center gap-3 py-3.5 has-[:focus-visible]:rounded-lg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#9869f7]/40 ${disabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer'}`}>
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f0fd] text-[#9869f7]">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-[14px] font-medium text-[#111114]">{title}</span>
         <span className="block text-[12px] text-[#8a8a93]">{description}</span>
       </span>
-      <input type="checkbox" role="switch" className="sr-only" checked={checked} onChange={e => onChange(e.target.checked)} />
+      <input type="checkbox" role="switch" className="sr-only" checked={checked} disabled={disabled} onChange={e => onChange(e.target.checked)} />
       <span
         aria-hidden="true"
         className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${checked ? '' : 'bg-[#e5e5ea]'}`}
@@ -349,12 +350,16 @@ export default function CheckoutPage() {
   const selectedAddress = shippingAddresses.find(a => a.id === selectedAddressId) || null;
   const totalQty = cartItems.reduce((s, i) => s + i.quantity, 0);
   const shipping = calcShipping(totalQty);
-  // Rounded exactly the way the server rounds VAT when it re-checks the total
-  const tax = Math.round(subtotal * VAT_RATE * 100) / 100;
+  // Prices are VAT-inclusive: VAT is extracted from the total, never added to
+  // it. lib/vat.js is the same module the order API uses to re-check this.
   const giftWrapFee = formData.giftWrap ? GIFT_WRAP_FEE : 0;
   const redeemablePoints = Math.floor(loyaltyPoints / POINTS_BLOCK) * POINTS_BLOCK;
-  const pointsDiscount = usePoints ? (redeemablePoints / POINTS_BLOCK) * AED_PER_BLOCK : 0;
-  const total = Math.max(0, finalTotal + shipping + tax + giftWrapFee - pointsDiscount);
+  // One discount per order — a promo code and a points redemption are mutually
+  // exclusive, and the order API rejects any request carrying both.
+  const pointsLocked = !!appliedCoupon;
+  const pointsDiscount = usePoints && !pointsLocked ? (redeemablePoints / POINTS_BLOCK) * AED_PER_BLOCK : 0;
+  const total = Math.max(0, finalTotal + shipping + giftWrapFee - pointsDiscount);
+  const tax = vatFromGross(total);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.replace('/auth?callbackUrl=/checkout');
@@ -436,13 +441,13 @@ export default function CheckoutPage() {
       taxAmount: parseFloat(tax.toFixed(2)),
       applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
       discount_amount: parseFloat((discountAmount || 0).toFixed(2)),
-      redeemed_points: usePoints ? redeemablePoints : 0,
+      redeemed_points: usePoints && !pointsLocked ? redeemablePoints : 0,
       points_discount: pointsDiscount,
       gift_wrap: formData.giftWrap,
       gift_wrap_cost: giftWrapFee,
     };
     sessionStorage.setItem('pendingCardOrder', JSON.stringify(pendingOrderData));
-  }, [formData.paymentMethod, formData.giftWrap, selectedAddressId, user, subtotal, total, cartItems, discountAmount, usePoints, redeemablePoints, appliedCoupon, giftWrapFee, pointsDiscount, shipping, tax]);
+  }, [formData.paymentMethod, formData.giftWrap, selectedAddressId, user, subtotal, total, cartItems, discountAmount, usePoints, pointsLocked, redeemablePoints, appliedCoupon, giftWrapFee, pointsDiscount, shipping, tax]);
 
   // Record checkout progress so abandoned checkouts show up in the admin portal
   useEffect(() => {
@@ -520,7 +525,7 @@ export default function CheckoutPage() {
         taxAmount: parseFloat(tax.toFixed(2)),
         applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
         discount_amount: parseFloat((discountAmount || 0).toFixed(2)),
-        redeemed_points: usePoints ? redeemablePoints : 0,
+        redeemed_points: usePoints && !pointsLocked ? redeemablePoints : 0,
         points_discount: pointsDiscount,
         gift_wrap: formData.giftWrap,
         gift_wrap_cost: giftWrapFee,
@@ -560,7 +565,7 @@ export default function CheckoutPage() {
       taxAmount: tax,
       applied_coupon_id: appliedCoupon ? appliedCoupon.id : null,
       discount_amount: discountAmount,
-      redeemed_points: usePoints ? redeemablePoints : 0,
+      redeemed_points: usePoints && !pointsLocked ? redeemablePoints : 0,
       points_discount: pointsDiscount,
       gift_wrap: formData.giftWrap,
       gift_wrap_cost: giftWrapFee,
@@ -629,6 +634,10 @@ export default function CheckoutPage() {
   const handleApplyCoupon = async () => {
     const code = couponCode.trim();
     if (!code || isApplyingCoupon) return;
+    if (usePoints) {
+      setUsePoints(false);
+      toast('Loyalty points removed — an order takes either a promo code or points.');
+    }
     setIsApplyingCoupon(true);
     try { await applyCoupon(code); } finally { setIsApplyingCoupon(false); }
   };
@@ -901,9 +910,12 @@ export default function CheckoutPage() {
             <ToggleRow
               icon={<Star size={16} />}
               title="Use loyalty points"
-              description={`Redeem ${redeemablePoints.toLocaleString()} of ${loyaltyPoints.toLocaleString()} points · −${fmt((redeemablePoints / POINTS_BLOCK) * AED_PER_BLOCK)}`}
-              checked={usePoints}
+              description={pointsLocked
+                ? `Remove ${appliedCoupon.code} to redeem points — an order takes one discount`
+                : `Redeem ${redeemablePoints.toLocaleString()} of ${loyaltyPoints.toLocaleString()} points · −${fmt((redeemablePoints / POINTS_BLOCK) * AED_PER_BLOCK)}`}
+              checked={usePoints && !pointsLocked}
               onChange={setUsePoints}
+              disabled={pointsLocked}
             />
           )}
 

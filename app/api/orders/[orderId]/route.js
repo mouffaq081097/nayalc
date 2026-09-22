@@ -4,6 +4,7 @@ import { sendOrderStatusUpdateEmail } from '../../../../lib/mail';
 import Stripe from 'stripe';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../lib/auth';
+import { pointsForOrder, tierForSpend, WELCOME_BONUS_POINTS, WELCOME_BONUS_DESCRIPTION } from '../../../../lib/loyalty';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mouffaq@nayalc.com';
@@ -335,23 +336,39 @@ export async function PUT(request, context) {
 
             if (userLoyaltyRes.rows.length > 0) {
                 const userLoyalty = userLoyaltyRes.rows[0];
-                const tierMultiplier = userLoyalty.loyalty_tier === 'Diamond' ? 2.5 : (userLoyalty.loyalty_tier === 'Platinum' ? 2 : (userLoyalty.loyalty_tier === 'Gold' ? 1.5 : 1));
-                pointsEarned = Math.floor(parseFloat(currentOrder.total_amount) * tierMultiplier);
+
+                // Earn on the product subtotal only — never on the VAT we remit
+                // or the shipping we don't profit from. Rates live in lib/loyalty.js.
+                const earnBase = parseFloat(currentOrder.subtotal) || 0;
+                pointsEarned = pointsForOrder(earnBase, userLoyalty.loyalty_tier);
 
                 await client.query(
                     'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
                     [currentOrder.user_id, 'earn', pointsEarned, `Earned from Order #${orderId}`, orderId]
                 );
 
-                const newLifetimeSpend = parseFloat(userLoyalty.lifetime_spend) + currentOrder.total_amount;
-                let newTier = 'Silver';
-                if (newLifetimeSpend >= 10000) newTier = 'Diamond';
-                else if (newLifetimeSpend >= 5000) newTier = 'Platinum';
-                else if (newLifetimeSpend >= 2000) newTier = 'Gold';
+                // The welcome bonus is paid on the first order a member actually
+                // receives, rather than at signup, so an account alone earns nothing.
+                const { rows: priorWelcome } = await client.query(
+                    "SELECT 1 FROM loyalty_transactions WHERE user_id = $1 AND type = 'welcome' LIMIT 1",
+                    [currentOrder.user_id]
+                );
+                let welcomeBonus = 0;
+                if (priorWelcome.length === 0) {
+                    welcomeBonus = WELCOME_BONUS_POINTS;
+                    await client.query(
+                        'INSERT INTO loyalty_transactions (user_id, type, points, description, order_id) VALUES ($1, $2, $3, $4, $5)',
+                        [currentOrder.user_id, 'welcome', welcomeBonus, WELCOME_BONUS_DESCRIPTION, orderId]
+                    );
+                }
+
+                // Tier progress still tracks what the customer actually paid.
+                const newLifetimeSpend = parseFloat(userLoyalty.lifetime_spend) + parseFloat(currentOrder.total_amount);
+                const newTier = tierForSpend(newLifetimeSpend).name;
 
                 await client.query(
                     'UPDATE users SET loyalty_points = loyalty_points + $1, lifetime_spend = $2, loyalty_tier = $3 WHERE id = $4',
-                    [pointsEarned, newLifetimeSpend, newTier, currentOrder.user_id]
+                    [pointsEarned + welcomeBonus, newLifetimeSpend, newTier, currentOrder.user_id]
                 );
             }
             // --- END LOYALTY SYSTEM ---

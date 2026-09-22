@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { AED_PER_POINT, WELCOME_BONUS_POINTS } from '@/lib/loyalty';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cormorant_Garamond } from 'next/font/google';
 import {
@@ -18,10 +19,10 @@ const cormorant = Cormorant_Garamond({ subsets: ['latin'], weight: ['300', '400'
 const serif = cormorant.style.fontFamily;
 
 const TIERS = [
-  { name: 'Silver',   min: 0,     multiplier: 1,   Icon: Star },
-  { name: 'Gold',     min: 2000,  multiplier: 1.5, Icon: Award },
-  { name: 'Platinum', min: 5000,  multiplier: 2,   Icon: Crown },
-  { name: 'Diamond',  min: 10000, multiplier: 2.5, Icon: Gem },
+  { name: 'Silver',   min: 0,     multiplier: 1,    Icon: Star },
+  { name: 'Gold',     min: 2000,  multiplier: 1.25, Icon: Award },
+  { name: 'Platinum', min: 5000,  multiplier: 1.5,  Icon: Crown },
+  { name: 'Diamond',  min: 10000, multiplier: 2,    Icon: Gem },
 ];
 
 const PERKS = [
@@ -703,7 +704,7 @@ export default function AccountLoyaltyPage() {
         <SectionHead eyebrow="Simple" title="How It Works" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {[
-            { key: 'earn', Icon: Zap, label: 'Step one', title: 'Earn', body: `1 point per AED 1 spent, multiplied by your tier — you're on ${currentTier.multiplier}× today.` },
+            { key: 'earn', Icon: Zap, label: 'Step one', title: 'Earn', body: `1 point per AED ${AED_PER_POINT} of product spend, multiplied by your tier — you're on ${currentTier.multiplier}× today. Credited once your order is delivered.` },
             { key: 'redeem', Icon: Wallet, label: 'Step two', title: 'Redeem', body: 'Every 100 points is worth AED 5 off, applied at checkout whenever you like.' },
             { key: 'keep', Icon: InfinityIcon, label: 'Always', title: 'Keep', body: 'Points never expire and your tier only ever moves up — never down.' },
           ].map(({ key, Icon, label, title, body }, i) => (
@@ -749,7 +750,7 @@ export default function AccountLoyaltyPage() {
               </div>
               <p className="text-[15px] font-bold text-gray-900">No points activity yet</p>
               <p className="text-[13px] text-gray-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
-                Your first order earns {currentTier.multiplier}× points — every AED 1 spent counts toward your next tier.
+                Your first delivered order earns {currentTier.multiplier}× points plus a {WELCOME_BONUS_POINTS}-point welcome bonus — and every AED you spend counts toward your next tier.
               </p>
               <Link
                 href="/all-products"

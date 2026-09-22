@@ -9,6 +9,7 @@ import {
   ShieldCheck, ChevronDown, Tag, Truck, Minus, Plus, Check,
 } from 'lucide-react';
 import { calcShipping, nextShippingTier, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME } from '@/lib/shipping';
+import { vatFromGross } from '@/lib/vat';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +23,6 @@ const UNDO_WINDOW_MS = 4000;
 // Must match app/api/orders/route.js, which rejects orders whose total drifts
 // from its own calculation: VAT is 5% of the pre-discount subtotal, and every
 // 100 loyalty points redeem for AED 5.
-const VAT_RATE = 0.05;
 const POINTS_BLOCK = 100;
 const AED_PER_BLOCK = 5;
 
@@ -297,8 +297,9 @@ export default function CartPage() {
   );
   const shipping = calcShipping(totalQty);
   const nextTier = nextShippingTier(totalQty);
-  const vat = Math.round(subtotal * VAT_RATE * 100) / 100;
-  const total = Math.max(0, subtotal - discountAmount + shipping + vat);
+  // VAT-inclusive prices: extracted from the total, never added to it.
+  const total = Math.max(0, subtotal - discountAmount + shipping);
+  const vat = vatFromGross(total);
   const totalSavings = itemSavings + discountAmount;
   const hasStockIssues = visibleItems.some(i => i.stock_quantity === 0 || i.quantity > i.stock_quantity);
   const canCheckout = visibleItems.length > 0 && !hasStockIssues;
@@ -424,7 +425,6 @@ export default function CartPage() {
                     />
                   )}
                   <SummaryRow label="Shipping" value={shipping === 0 ? 'Free' : fmt(shipping)} positive={shipping === 0} />
-                  <SummaryRow label="VAT (5%)" value={fmt(vat)} />
                 </dl>
 
                 {/* Promo code */}
@@ -505,7 +505,7 @@ export default function CartPage() {
                     <span className="text-[16px] font-semibold text-[#111114]">Total</span>
                     <span className="text-[22px] font-bold text-[#111114] tabular-nums">{fmt(total)}</span>
                   </div>
-                  <p className="mt-0.5 text-right text-[11.5px] text-[#8a8a93]">VAT included</p>
+                  <p className="mt-0.5 text-right text-[11.5px] text-[#8a8a93]">Includes VAT of {fmt(vat)}</p>
                   {totalSavings > 0 && (
                     <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-[12.5px] font-semibold text-emerald-700">
                       You&apos;re saving {fmt(totalSavings)} on this order

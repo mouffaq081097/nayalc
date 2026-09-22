@@ -343,6 +343,7 @@ const AccountPageContent = () => {
                               </div>
                               <div className="text-right">
                                 <p className="text-sm font-bold" style={{ color: CL.textDeep }}>AED {Number(order.totalAmount).toFixed(2)}</p>
+                                <p className="text-[10px]" style={{ color: CL.textSoft }}>VAT included</p>
                                 <p className="text-[9px] font-bold uppercase tracking-wide" style={{ color: CL.purple }}>{order.status}</p>
                               </div>
                             </div>
