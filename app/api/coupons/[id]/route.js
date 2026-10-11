@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireAdmin } from '@/lib/adminAuth';
-import { COUPON_USAGE_COLUMNS, COUPON_USAGE_JOIN, couponCodeTaken, normalizeCoupon, parseCouponInput } from '@/lib/couponRules';
+import { COUPON_USAGE_COLUMNS, COUPON_USAGE_JOIN, couponCodeTaken, ensureCouponProductsColumn, normalizeCoupon, parseCouponInput } from '@/lib/couponRules';
 
 export async function GET(request, { params }) {
   const unauthorized = await requireAdmin();
@@ -9,6 +9,7 @@ export async function GET(request, { params }) {
 
   const { id } = await params;
   try {
+    await ensureCouponProductsColumn(db);
     const { rows } = await db.query(`
       SELECT c.*, ${COUPON_USAGE_COLUMNS}
       FROM coupons c
@@ -35,6 +36,7 @@ export async function PUT(request, { params }) {
     if (error) {
       return NextResponse.json({ message: error }, { status: 400 });
     }
+    await ensureCouponProductsColumn(db);
     if (await couponCodeTaken(db, coupon.code, id)) {
       return NextResponse.json({ message: 'Another discount already uses this code.' }, { status: 409 });
     }
@@ -42,9 +44,9 @@ export async function PUT(request, { params }) {
     const { rowCount } = await db.query(`
       UPDATE coupons
       SET code = $1, discount_type = $2, discount_value = $3, expiration_date = $4, usage_limit = $5,
-          minimum_purchase_amount = $6, is_active = $7, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $8
-    `, [coupon.code, coupon.discount_type, coupon.discount_value, coupon.expiration_date, coupon.usage_limit, coupon.minimum_purchase_amount, coupon.is_active, id]);
+          minimum_purchase_amount = $6, is_active = $7, product_ids = $8, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $9
+    `, [coupon.code, coupon.discount_type, coupon.discount_value, coupon.expiration_date, coupon.usage_limit, coupon.minimum_purchase_amount, coupon.is_active, coupon.product_ids, id]);
 
     if (rowCount === 0) {
       return NextResponse.json({ message: 'Discount not found' }, { status: 404 });

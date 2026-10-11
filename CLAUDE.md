@@ -161,6 +161,12 @@ Active development phases include: chat UI modernization, admin portal improveme
 - **Plain terminology**: Use plain English — "Order items" not "Acquired Masterpieces", "Shipping address" not "Logistics Hub", "Order summary" not "Market Analysis", "Email" not "Direct Portal", "Save status" not "Commit State Update".
 - **Reduced spacing**: `space-y-5` or `space-y-6` for sections, `p-6` for card padding — not `space-y-10` or `p-10`.
 
+### Product-specific discount codes
+- `coupons.product_ids INTEGER[]` — NULL means the code applies to the entire order. The column is added on first use by `ensureCouponProductsColumn()` in `lib/couponRules.js` (also migration `012` in `/api/admin/migrate`).
+- `lib/couponDiscount.js` `calcCouponDiscount(coupon, items)` is the single discount calculation, used by both `CartContext` and `POST /api/orders` so totals always match. A restricted code only discounts its products' lines; a fixed amount is capped at what those lines cost.
+- `/api/coupons/validate` takes `productIds` from the cart and rejects a restricted code when none of its products are in the bag.
+- Admin: "Applies to" card in `CouponEditor.jsx` with `ProductPicker.jsx`.
+
 ### Known Gotchas
 - `fetchWithAuth` must come from `useAppContext()` — do NOT import from `lib/api.js` (that file exports `createFetchWithAuth` factory, not a ready-to-use function).
 - `addToCart(product, quantity)` takes two separate args — NOT a single `{ product, quantity }` object.

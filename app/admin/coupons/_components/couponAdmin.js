@@ -38,8 +38,10 @@ export function discountLabel(type, value) {
 // Plain-language description of what a code does
 export function couponSummary(coupon) {
   const hasValue = Number(coupon.discount_value) > 0;
+  const productCount = coupon.product_ids?.length || 0;
+  const target = productCount ? `${productCount} product${productCount !== 1 ? 's' : ''}` : 'the order subtotal';
   return [
-    hasValue ? `${discountLabel(coupon.discount_type, coupon.discount_value)} the order subtotal` : 'No discount value yet',
+    hasValue ? `${discountLabel(coupon.discount_type, coupon.discount_value)} ${target}` : 'No discount value yet',
     coupon.minimum_purchase_amount ? `Minimum subtotal of AED ${Number(coupon.minimum_purchase_amount).toFixed(2)}` : 'No minimum purchase',
     coupon.usage_limit ? `Limited to ${coupon.usage_limit} use${Number(coupon.usage_limit) !== 1 ? 's' : ''}` : 'No usage limit',
     coupon.expiration_date ? `Ends ${fmtDubaiDate(coupon.expiration_date)}` : 'No end date',

@@ -7,6 +7,8 @@ import { getTabbyPayment } from '@/lib/tabby';
 import { calcShipping } from '@/lib/shipping';
 import { pointsForOrder, pointsToAed } from '@/lib/loyalty';
 import { vatFromGross } from '@/lib/vat';
+import { calcCouponDiscount } from '@/lib/couponDiscount';
+import { ensureCouponProductsColumn } from '@/lib/couponRules';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -259,6 +261,8 @@ export async function POST(request) {
             }
         }
 
+        if (applied_coupon_id) await ensureCouponProductsColumn(db);
+
         await client.query('BEGIN');
 
         // --- Address Ownership Check (H4) ---
@@ -325,18 +329,20 @@ export async function POST(request) {
         let resolvedCouponId = null;
         if (applied_coupon_id) {
             const { rows: couponRows } = await client.query(
-                'SELECT id, code, is_active, expiration_date, usage_limit, usage_count, minimum_purchase_amount, discount_type, discount_value FROM coupons WHERE id = $1',
+                'SELECT id, code, is_active, expiration_date, usage_limit, usage_count, minimum_purchase_amount, discount_type, discount_value, product_ids FROM coupons WHERE id = $1',
                 [applied_coupon_id]
             );
             if (couponRows.length > 0) {
                 const coupon = couponRows[0];
                 const isExpired = coupon.expiration_date && new Date(coupon.expiration_date) < new Date();
                 const isOverLimit = coupon.usage_limit !== null && coupon.usage_count >= coupon.usage_limit;
-                const belowMinimum = coupon.minimum_purchase_amount !== null && serverSubtotal < coupon.minimum_purchase_amount;
-                if (coupon.is_active && !isExpired && !isOverLimit && !belowMinimum) {
-                    serverCouponDiscount = coupon.discount_type === 'percentage'
-                        ? Math.round(serverSubtotal * coupon.discount_value / 100 * 100) / 100
-                        : parseFloat(coupon.discount_value);
+                // Same calculation as the cart: honours the minimum and, for a
+                // product-specific code, only discounts those products' lines
+                const discount = calcCouponDiscount(coupon, items.map(item => ({
+                    productId: item.productId, price: dbPriceMap[item.productId], quantity: item.quantity,
+                })));
+                if (coupon.is_active && !isExpired && !isOverLimit && discount > 0) {
+                    serverCouponDiscount = discount;
                     couponCode = coupon.code;
                     resolvedCouponId = coupon.id;
                 }

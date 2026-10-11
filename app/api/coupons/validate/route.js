@@ -1,14 +1,17 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { ensureCouponProductsColumn, normalizeCoupon } from '@/lib/couponRules';
+import { couponProductIds } from '@/lib/couponDiscount';
 
 export async function POST(request) {
   try {
-    const { code, totalAmount } = await request.json();
+    const { code, totalAmount, productIds: cartProductIds = [] } = await request.json();
 
     if (!code) {
       return NextResponse.json({ message: 'Coupon code is required.' }, { status: 400 });
     }
 
+    await ensureCouponProductsColumn(db);
     const { rows } = await db.query('SELECT * FROM coupons WHERE UPPER(code) = UPPER($1)', [code]);
 
     if (rows.length === 0) {
@@ -33,7 +36,26 @@ export async function POST(request) {
       return NextResponse.json({ message: `You must spend at least ${coupon.minimum_purchase_amount} to use this coupon.` }, { status: 400 });
     }
 
-    return NextResponse.json(coupon);
+    // A product-specific code needs at least one of its products in the cart
+    const productIds = couponProductIds(coupon);
+    if (productIds) {
+      const inCart = Array.isArray(cartProductIds) ? cartProductIds.map(Number) : [];
+      if (!productIds.some(id => inCart.includes(id))) {
+        const { rows: products } = await db.query(
+          'SELECT name FROM products WHERE id = ANY($1::int[]) ORDER BY name LIMIT 3',
+          [productIds]
+        );
+        const names = products.map(p => p.name);
+        const more = productIds.length > names.length ? ' and other selected products' : '';
+        return NextResponse.json({
+          message: names.length
+            ? `This code only applies to ${names.join(', ')}${more}. Add ${productIds.length === 1 ? 'it' : 'one of them'} to your bag to use it.`
+            : 'This code only applies to products that are not in your bag.',
+        }, { status: 400 });
+      }
+    }
+
+    return NextResponse.json(normalizeCoupon(coupon));
 
   } catch (error) {
     console.error('Error validating coupon:', error);

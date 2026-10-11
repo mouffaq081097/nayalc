@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useCallback, useState, use
 import { useAuth } from './AuthContext';
 import { createFetchWithAuth } from '../lib/api';
 import { toast } from 'react-toastify';
+import { calcCouponDiscount } from '@/lib/couponDiscount';
 
 export const CartContext = createContext();
 
@@ -11,7 +12,6 @@ export const CartProvider = ({ children }) => {
     const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
     const [cart, setCart] = useState([]); // Manage cart state locally
     const [appliedCoupon, setAppliedCoupon] = useState(null);
-    const [discountAmount, setDiscountAmount] = useState(0);
     const cartLoadedRef = useRef(false);
     // Which account the cart in state belongs to ('guest' or a user id), so pages
     // can tell "still loading" apart from "empty" without a stale frame after sign-in.
@@ -211,12 +211,19 @@ export const CartProvider = ({ children }) => {
 
     const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
+    // Worked out from the cart on every change, the same way the order API does, so a
+    // product-specific code follows its products in and out of the bag
+    const discountAmount = useMemo(
+        () => calcCouponDiscount(appliedCoupon, cart.map(item => ({ productId: item.id, price: item.price, quantity: item.quantity }))),
+        [appliedCoupon, cart]
+    );
+
     const applyCoupon = async (code) => {
         try {
             const response = await fetch('/api/coupons/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code, totalAmount: subtotal }),
+                body: JSON.stringify({ code, totalAmount: subtotal, productIds: cart.map(item => item.id) }),
             });
 
             const data = await response.json();
@@ -226,31 +233,17 @@ export const CartProvider = ({ children }) => {
                 throw new Error(data.message || 'Failed to apply coupon');
             }
 
-            const coupon = data;
-            let discount = 0;
-            if (coupon.discount_type === 'percentage') {
-                discount = (subtotal * coupon.discount_value) / 100;
-            } else if (coupon.discount_type === 'fixed_amount') {
-                discount = coupon.discount_value;
-            }
-
-            setDiscountAmount(discount);
-            setAppliedCoupon(coupon);
+            setAppliedCoupon(data);
             setCouponError(null); // Clear error on success
-            // addToast('Coupon applied successfully!', 'success'); // Removed toast
         } catch (error) {
-            setDiscountAmount(0);
             setAppliedCoupon(null);
             setCouponError(error.message); // Set error message
-            // addToast(error.message, 'error'); // Removed toast
         }
     };
 
     const removeCoupon = () => {
         setAppliedCoupon(null);
-        setDiscountAmount(0);
         setCouponError(null); // Clear error
-        // addToast('Coupon removed.'); // Removed toast
     };
 
     const finalTotal = subtotal - discountAmount;

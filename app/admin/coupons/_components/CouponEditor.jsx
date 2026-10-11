@@ -10,6 +10,7 @@ import { Card, Field, FieldMessage, WARNING_COLOR, invalidStyle, secondary, subd
 import { apiErrorMessage, fmtAed } from '../../products/_components/productAdmin';
 import { customerName, fmtDate, orderStatusBadge } from '../../users/_components/customerAdmin';
 import { couponStatus, couponSummary, endOfDubaiDay, generateCode, isValidCode, toDubaiDateInput } from './couponAdmin';
+import ProductPicker from './ProductPicker';
 
 const initialForm = (coupon) => ({
   code: coupon?.code || '',
@@ -22,6 +23,8 @@ const initialForm = (coupon) => ({
   hasEnd: Boolean(coupon?.expiration_date),
   end_date: toDubaiDateInput(coupon?.expiration_date),
   is_active: coupon?.is_active !== false,
+  applies_to: coupon?.product_ids?.length ? 'products' : 'order',
+  product_ids: coupon?.product_ids || [],
 });
 
 const AffixInput = ({ id, prefix, suffix, error, ...props }) => (
@@ -57,7 +60,7 @@ const Option = ({ type = 'radio', name, checked, onChange, label, children }) =>
 
 export default function CouponEditor({ coupon, orders = [], onSaved }) {
   const router = useRouter();
-  const { fetchWithAuth } = useAppContext();
+  const { fetchWithAuth, adminProducts = [] } = useAppContext();
   const isNew = !coupon;
 
   const [form, setForm] = useState(() => initialForm(coupon));
@@ -96,6 +99,7 @@ export default function CouponEditor({ coupon, orders = [], onSaved }) {
       if (form.usage_limit === '' || !Number.isInteger(limit) || limit < 1) found.usage_limit = 'Enter a whole number of 1 or more.';
     }
     if (form.hasEnd && !form.end_date) found.end_date = 'Choose an end date.';
+    if (form.applies_to === 'products' && form.product_ids.length === 0) found.product_ids = 'Choose at least one product.';
     return found;
   };
 
@@ -107,6 +111,8 @@ export default function CouponEditor({ coupon, orders = [], onSaved }) {
     usage_limit: form.hasLimit ? Number(form.usage_limit) : null,
     expiration_date: form.hasEnd && form.end_date ? endOfDubaiDay(form.end_date) : null,
     is_active: form.is_active,
+    applies_to: form.applies_to,
+    product_ids: form.applies_to === 'products' ? form.product_ids : null,
   });
 
   const save = async () => {
@@ -305,7 +311,29 @@ export default function CouponEditor({ coupon, orders = [], onSaved }) {
                   {errors.discount_value && <FieldMessage color="#b42318">{errors.discount_value}</FieldMessage>}
                 </div>
               </div>
-              <p className="text-[12px] mt-2" style={subdued}>Taken off the order subtotal, before VAT and delivery. One code can be used per order.</p>
+              <p className="text-[12px] mt-2" style={subdued}>
+                {form.applies_to === 'products'
+                  ? 'Taken off the chosen products only, before delivery. A fixed amount is never more than those products cost. One code can be used per order.'
+                  : 'Taken off the order subtotal, before VAT and delivery. One code can be used per order.'}
+              </p>
+            </Card>
+
+            <Card title="Applies to">
+              <div className="space-y-3">
+                <Option name="applies_to" checked={form.applies_to === 'order'} onChange={() => setField('applies_to', 'order')} label="Entire order" />
+                <Option name="applies_to" checked={form.applies_to === 'products'} onChange={() => setField('applies_to', 'products')} label="Specific products" />
+              </div>
+              {form.applies_to === 'products' && (
+                <div className="mt-3 ml-[26px]">
+                  <ProductPicker
+                    products={adminProducts}
+                    value={form.product_ids}
+                    onChange={ids => setField('product_ids', ids)}
+                    error={errors.product_ids}
+                  />
+                  <p className="text-[12px] mt-2" style={subdued}>The code is only accepted when one of these products is in the bag, and only discounts those products.</p>
+                </div>
+              )}
             </Card>
 
             <Card title="Minimum purchase requirements">

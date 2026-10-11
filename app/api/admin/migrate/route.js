@@ -84,6 +84,11 @@ export async function POST(request) {
                     CREATE INDEX IF NOT EXISTS users_email_lower_idx ON users (LOWER(email));
                 `
             },
+            {
+                // NULL = the code applies to the entire order
+                name: '012_product_specific_coupons',
+                sql: `ALTER TABLE coupons ADD COLUMN IF NOT EXISTS product_ids INTEGER[];`
+            },
         ];
 
         for (const migration of migrations) {

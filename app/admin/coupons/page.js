@@ -193,7 +193,8 @@ const DiscountsPage = () => {
                             {coupon.code}
                           </Link>
                           <p className="text-[12px]" style={subdued}>
-                            {discountLabel(coupon.discount_type, coupon.discount_value)} · {minimumLine}
+                            {discountLabel(coupon.discount_type, coupon.discount_value)}
+                            {coupon.product_ids?.length ? ` · ${coupon.product_ids.length} product${coupon.product_ids.length !== 1 ? 's' : ''} only` : ''} · {minimumLine}
                           </p>
                         </div>
                       </td>
