@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import crypto from 'crypto';
 import { sendOrderStatusUpdateEmail } from '@/lib/mail';
+import { completeTabbyOrder } from '@/lib/tabbyOrders';
+import { tabbyStatus } from '@/lib/tabby';
 
 // Tabby sends webhook events when payment status changes.
 // Supported events: payment.authorized, payment.closed, payment.rejected, payment.expired
@@ -23,13 +25,20 @@ export async function POST(req) {
     }
 
     const payload = JSON.parse(rawBody);
-    const { id: paymentId, status, reference_id: referenceId } = payload;
+    const { id: paymentId, reference_id: referenceId } = payload;
+    const status = tabbyStatus(payload.status);
 
     if (!paymentId || !status) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
     if (status === 'authorized' || status === 'closed') {
+      // If the customer never made it back to the site, create their order now
+      try {
+        await completeTabbyOrder(paymentId);
+      } catch (err) {
+        console.error(`Tabby webhook: could not create the order for payment ${paymentId}:`, err);
+      }
       // Mirror Stripe webhook: confirm payment and move order to Processing
       await db.query(
         `UPDATE orders

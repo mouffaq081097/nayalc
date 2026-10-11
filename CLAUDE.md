@@ -167,6 +167,13 @@ Active development phases include: chat UI modernization, admin portal improveme
 - `/api/coupons/validate` takes `productIds` from the cart and rejects a restricted code when none of its products are in the bag.
 - Admin: "Applies to" card in `CouponEditor.jsx` with `ProductPicker.jsx`.
 
+### Tabby orders
+- Tabby's API reports statuses in capitals (`AUTHORIZED`, `CLOSED`), webhooks in lowercase. Always compare with `isTabbyPaid()` / `tabbyStatus()` from `lib/tabby.js`. (Comparing to lowercase strings rejected every Tabby payment, so no Tabby order was ever created automatically.)
+- Order creation lives in `lib/placeOrder.js` (`placeOrder(payload)` → `{ status, body }`); `POST /api/orders` is a thin wrapper.
+- `/api/tabby/checkout` saves the order details in `tabby_pending_orders` (keyed by Tabby payment ID) before the customer leaves. `completeTabbyOrder()` in `lib/tabbyOrders.js` creates the order from it, called by `/api/tabby/complete` (the `/tabby-return` page) and by the Tabby webhook. An advisory lock stops both creating it.
+- Admin → Recover order supports Tabby (payment ID lookup, editable products, paid-vs-order difference). Admin → Payments → Tabby shows each payment's order, or "No order" with a Recover button.
+- `tabby_payment_id` is copied to `delivered_orders` / `cancelled_orders` when archiving (`ensureTabbyPaymentColumns()`).
+
 ### Known Gotchas
 - `fetchWithAuth` must come from `useAppContext()` — do NOT import from `lib/api.js` (that file exports `createFetchWithAuth` factory, not a ready-to-use function).
 - `addToCart(product, quantity)` takes two separate args — NOT a single `{ product, quantity }` object.

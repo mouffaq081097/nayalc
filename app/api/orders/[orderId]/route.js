@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../lib/auth';
 import { pointsForOrder, tierForSpend, WELCOME_BONUS_POINTS, WELCOME_BONUS_DESCRIPTION } from '../../../../lib/loyalty';
+import { ensureTabbyPaymentColumns } from '../../../../lib/tabbyOrders';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mouffaq@nayalc.com';
@@ -224,6 +225,9 @@ export async function PUT(request, context) {
             return NextResponse.json({ message: 'Status is required' }, { status: 400 });
         }
 
+        // Archived orders keep their Tabby payment ID (the column is added on first use)
+        await ensureTabbyPaymentColumns();
+
         await client.query('BEGIN');
 
         // Fetch current order details before potential move or update, including fields for email
@@ -232,7 +236,7 @@ export async function PUT(request, context) {
                 o.id, o.user_address_id, o.payment_method, o.total_amount, o.tax_amount, o.discount_amount,
                 o.order_status, o.shipping_scheduled_date, o.payment_confirmed, o.user_id, o.applied_coupon_id,
                 o.tracking_number, o.courier_name, o.courier_website, o.created_at, o.updated_at,
-                o.subtotal, o.shipping_cost, o.stripe_payment_intent_id, o.gift_wrap, o.gift_wrap_cost,
+                o.subtotal, o.shipping_cost, o.stripe_payment_intent_id, o.tabby_payment_id, o.gift_wrap, o.gift_wrap_cost,
                 COALESCE(o.redeemed_points, 0) as redeemed_points,
                 u.email as customer_email,
                 ua.customer_phone,
@@ -290,8 +294,8 @@ export async function PUT(request, context) {
                 "    order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id,\n" +
                 "    tracking_number, courier_name, courier_website, created_at, updated_at, delivered_at,\n" +
                 "    subtotal, shipping_cost, stripe_payment_intent_id, gift_wrap, gift_wrap_cost,\n" +
-                "    redeemed_points\n" +
-                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20, $21, $22)";
+                "    redeemed_points, tabby_payment_id\n" +
+                ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW(), $17, $18, $19, $20, $21, $22, $23)";
 
             const deliveredOrderValues = [
                 currentOrder.id,
@@ -317,7 +321,8 @@ export async function PUT(request, context) {
                 currentOrder.stripe_payment_intent_id,
                 currentOrder.gift_wrap,
                 currentOrder.gift_wrap_cost,
-                currentOrder.redeemed_points
+                currentOrder.redeemed_points,
+                currentOrder.tabby_payment_id ?? null,
             ];
             await client.query(deliveredOrderSql, deliveredOrderValues);
 
@@ -414,8 +419,8 @@ export async function PUT(request, context) {
                     order_status, shipping_scheduled_date, payment_confirmed, user_id, applied_coupon_id,
                     tracking_number, courier_name, courier_website, created_at, updated_at, cancelled_at,
                     cancellation_reason, stripe_payment_intent_id, gift_wrap, gift_wrap_cost,
-                    subtotal, shipping_cost, redeemed_points
-                ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW(),$17,$18,$19,$20,$21,$22,$23)`,
+                    subtotal, shipping_cost, redeemed_points, tabby_payment_id
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW(),$17,$18,$19,$20,$21,$22,$23,$24)`,
                 [
                     currentOrder.id,
                     currentOrder.user_address_id,
@@ -440,6 +445,7 @@ export async function PUT(request, context) {
                     currentOrder.subtotal,
                     currentOrder.shipping_cost,
                     currentOrder.redeemed_points,
+                    currentOrder.tabby_payment_id ?? null,
                 ]
             );
 

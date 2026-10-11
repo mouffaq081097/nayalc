@@ -514,7 +514,7 @@ export default function CheckoutPage() {
     try {
       const shippingDate = new Date();
       shippingDate.setDate(shippingDate.getDate() + 7);
-      sessionStorage.setItem('pendingTabbyOrder', JSON.stringify({
+      const orderData = {
         user_address_id: selectedAddressId,
         subtotal: parseFloat(subtotal.toFixed(2)),
         shipping_cost: parseFloat(shipping.toFixed(2)),
@@ -529,7 +529,9 @@ export default function CheckoutPage() {
         points_discount: pointsDiscount,
         gift_wrap: formData.giftWrap,
         gift_wrap_cost: giftWrapFee,
-      }));
+        gift_message: formData.giftMessage || null,
+      };
+      sessionStorage.setItem('pendingTabbyOrder', JSON.stringify(orderData));
       const res = await fetch('/api/tabby/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -539,6 +541,7 @@ export default function CheckoutPage() {
           buyer: { email: user.email, name: user.name || user.first_name || '', phone: addr.customerPhone || addr.customer_phone || '' },
           shippingAddress: { city: addr.city || 'Dubai', address: addressLine(addr), zip: addr.zipCode || addr.zip_code || '00000' },
           taxAmount: tax, shippingAmount: shipping, discountAmount: discountAmount || 0,
+          orderData,
         }),
       });
       const data = await res.json();

@@ -480,6 +480,7 @@ function TabbyPanel() {
                   <th className="text-right">Amount</th>
                   <th className="text-right">Captured</th>
                   <th className="text-right">Refunded</th>
+                  <th>Order</th>
                 </tr>
               </thead>
               <tbody>
@@ -499,6 +500,20 @@ function TabbyPanel() {
                       <td className="text-right whitespace-nowrap font-semibold">{payment.currency} {grouped(payment.amount)}</td>
                       <td className="text-right whitespace-nowrap" style={secondary}>{payment.currency} {grouped(payment.captured)}</td>
                       <td className="text-right whitespace-nowrap" style={payment.refunded ? text : subdued}>{payment.currency} {grouped(payment.refunded)}</td>
+                      <td className="whitespace-nowrap">
+                        {payment.order_id ? (
+                          <Link href={`/admin/orders/${payment.order_id}`} className="hover:underline" style={text}>#{payment.order_id}</Link>
+                        ) : payment.possible_order_id ? (
+                          <Link href={`/admin/orders/${payment.possible_order_id}`} className="hover:underline" style={secondary} title="A Tabby order for this customer that isn't linked to a payment">
+                            Probably #{payment.possible_order_id}
+                          </Link>
+                        ) : payment.paid && !payment.is_test ? (
+                          <span className="flex items-center gap-2">
+                            <span className="sp-badge sp-badge-critical">No order</span>
+                            <Link href={`/admin/recover-order?tabby=${encodeURIComponent(payment.id)}`} className="sp-btn sp-btn-secondary h-7 px-2.5 text-[12px]">Recover</Link>
+                          </span>
+                        ) : <span style={subdued}>—</span>}
+                      </td>
                     </tr>
                   );
                 })}

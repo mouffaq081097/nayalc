@@ -16,7 +16,7 @@ function TabbyReturn() {
   const router = useRouter();
   const { clearCart } = useCart();
 
-  const [phase, setPhase] = useState('verifying'); // verifying | placing | success | error
+  const [phase, setPhase] = useState('placing'); // placing | success | error
   const [errorMsg, setErrorMsg] = useState('');
 
   const status = searchParams.get('status');
@@ -27,47 +27,40 @@ function TabbyReturn() {
     if (status === 'failure') { setPhase('error'); setErrorMsg('Payment failed. Please try a different payment method.'); return; }
     if (status !== 'success' || !paymentId) { setPhase('error'); setErrorMsg('Invalid return state.'); return; }
 
+    const finish = (orderId) => {
+      sessionStorage.removeItem('pendingTabbyOrder');
+      clearCart();
+      setPhase('success');
+      setTimeout(() => router.push(`/account/orders/${orderId}`), 1500);
+    };
+
     async function completeOrder() {
       try {
-        // 1. Verify payment with Tabby
-        setPhase('verifying');
-        const verifyRes = await fetch(`/api/tabby/verify?paymentId=${paymentId}`);
-        const verifyData = await verifyRes.json();
-
-        if (!verifyRes.ok || (verifyData.status !== 'authorized' && verifyData.status !== 'closed')) {
-          throw new Error(`Payment not authorized (status: ${verifyData.status || 'unknown'})`);
-        }
-
-        // 2. Read pending order from sessionStorage
-        const raw = sessionStorage.getItem('pendingTabbyOrder');
-        if (!raw) throw new Error('Order data not found. Please restart checkout.');
-        const orderData = JSON.parse(raw);
-
-        // 3. Place the order
+        // The server verifies the payment with Tabby and creates the order from the checkout it saved,
+        // so this works even in a different browser or tab than the one checkout started in
         setPhase('placing');
+        const res = await fetch('/api/tabby/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentId }),
+        });
+        const result = await res.json().catch(() => ({}));
+
+        // 409 = the order already exists (Tabby's webhook or an earlier visit created it)
+        if ((res.ok || res.status === 409) && result.orderId) return finish(result.orderId);
+
+        // Checkouts started before orders were saved on the server only have the copy in this tab
+        const raw = res.status === 404 ? sessionStorage.getItem('pendingTabbyOrder') : null;
+        if (!raw) throw new Error(result.message || 'Something went wrong. Please contact us — your payment is safe.');
+
         const orderRes = await fetch('/api/orders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...orderData, payment_method: 'tabby', tabby_payment_id: paymentId }),
+          body: JSON.stringify({ ...JSON.parse(raw), payment_method: 'tabby', tabby_payment_id: paymentId }),
         });
-        const result = await orderRes.json();
-
-        // 409 = order was already created for this payment (duplicate return page visit)
-        if (orderRes.status === 409 && result.orderId) {
-          sessionStorage.removeItem('pendingTabbyOrder');
-          clearCart();
-          setPhase('success');
-          setTimeout(() => router.push(`/account/orders/${result.orderId}`), 1500);
-          return;
-        }
-
-        if (!orderRes.ok) throw new Error(result.message || 'Order creation failed');
-
-        // 4. Cleanup and redirect
-        sessionStorage.removeItem('pendingTabbyOrder');
-        clearCart();
-        setPhase('success');
-        setTimeout(() => router.push(`/account/orders/${result.orderId}`), 1500);
+        const orderResult = await orderRes.json().catch(() => ({}));
+        if ((orderRes.ok || orderRes.status === 409) && orderResult.orderId) return finish(orderResult.orderId);
+        throw new Error(orderResult.message || 'Order creation failed. Please contact us — your payment is safe.');
       } catch (err) {
         console.error('Tabby return error:', err);
         setPhase('error');
@@ -80,8 +73,7 @@ function TabbyReturn() {
   }, [status, paymentId]);
 
   const phaseConfig = {
-    verifying: { Icon: Loader2,     spin: true,  color: '#7e69e6', title: 'Verifying Payment', msg: 'Confirming your Tabby authorization…' },
-    placing:   { Icon: Loader2,     spin: true,  color: '#7e69e6', title: 'Placing Order',      msg: 'Creating your order…' },
+    placing:   { Icon: Loader2,     spin: true,  color: '#7e69e6', title: 'Placing Order',      msg: 'Confirming your Tabby payment and creating your order…' },
     success:   { Icon: CheckCircle, spin: false, color: '#16a34a', title: 'Order Placed!',      msg: 'Redirecting to your order…' },
     error:     { Icon: XCircle,     spin: false, color: '#dc2626', title: 'Payment Issue',      msg: errorMsg },
   };

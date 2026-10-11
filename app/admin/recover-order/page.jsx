@@ -1,85 +1,138 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, AlertTriangle, CheckCircle, Loader2, ShoppingCart, User, MapPin } from 'lucide-react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { AlertTriangle, CheckCircle, Loader2, Plus, Search, ShoppingCart, User, MapPin, X } from 'lucide-react';
+import { useAppContext } from '@/app/context/AppContext';
+import { calcShipping } from '@/lib/shipping';
 
-const card  = { background: 'rgba(255,255,255,0.72)', border: '1px solid #e3e3e3', borderRadius: 16, padding: 24 };
-const inp   = { background: 'rgba(255,255,255,0.6)', border: '1px solid #e3e3e3', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#1a1a1a', width: '100%', outline: 'none' };
-const lbl   = { fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'rgba(59,7,100,0.5)', display: 'block', marginBottom: 6 };
-const btn   = { background: 'var(--brand-gradient)', boxShadow: '0 4px 14px rgba(168,85,247,0.28)', color: '#fff', borderRadius: 99, padding: '10px 24px', fontSize: 12, fontWeight: 900, cursor: 'pointer', border: 'none' };
+const text = { color: 'var(--sp-text)' };
+const secondary = { color: 'var(--sp-text-secondary)' };
+const subdued = { color: 'var(--sp-text-subdued)' };
+const fmt = (n) => `AED ${(Number(n) || 0).toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function RecoverOrderPage() {
-    // Step 1 — find user by email
-    const [email, setEmail]         = useState('');
-    const [userInfo, setUserInfo]   = useState(null); // { user, cart, addresses }
-    const [userLoading, setUserLoading] = useState(false);
-    const [userError, setUserError] = useState(null);
+const METHODS = [['tabby', 'Tabby'], ['card', 'Card (Stripe)'], ['cashOnDelivery', 'Cash on delivery']];
 
-    // Step 2 — payment
-    const [paymentMethod, setPaymentMethod] = useState('card');
-    const [pi, setPi]               = useState('');
-    const [piInfo, setPiInfo]       = useState(null);
-    const [piLoading, setPiLoading] = useState(false);
-    const [piError, setPiError]     = useState(null);
+const Notice = ({ tone = 'info', children }) => {
+    const tones = {
+        info: { background: '#eef4ff', border: '1px solid #c9dcff', color: '#1d3f8f' },
+        success: { background: 'rgba(22,163,74,0.07)', border: '1px solid rgba(22,163,74,0.3)', color: '#14532d' },
+        warning: { background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.45)', color: '#78350f' },
+        error: { background: '#fef2f2', border: '1px solid #fecaca', color: '#b42318' },
+    };
+    return <div className="rounded-lg px-3 py-2.5 text-[13px] space-y-1" style={tones[tone]}>{children}</div>;
+};
 
-    // Step 3 — address + items
+function RecoverOrder() {
+    const searchParams = useSearchParams();
+    const { adminProducts = [] } = useAppContext();
+
+    const [paymentMethod, setPaymentMethod] = useState(searchParams.get('tabby') ? 'tabby' : 'card');
+
+    // Customer
+    const [email, setEmail] = useState(searchParams.get('email') || '');
+    const [customer, setCustomer] = useState(null); // { user, cart, addresses }
+    const [customerLoading, setCustomerLoading] = useState(false);
+    const [customerError, setCustomerError] = useState(null);
+
+    // Payment
+    const [paymentRef, setPaymentRef] = useState(searchParams.get('tabby') || '');
+    const [payment, setPayment] = useState(null);
+    const [paymentLoading, setPaymentLoading] = useState(false);
+    const [paymentError, setPaymentError] = useState(null);
+
+    // Order
     const [selectedAddressId, setSelectedAddressId] = useState('');
-    const [items, setItems]         = useState([]); // auto-filled from cart
+    const [items, setItems] = useState([]);
 
-    // Step 4 — recovery result
     const [recoverLoading, setRecoverLoading] = useState(false);
-    const [recoverResult, setRecoverResult]   = useState(null);
-    const [recoverError, setRecoverError]     = useState(null);
+    const [recoverResult, setRecoverResult] = useState(null);
+    const [recoverError, setRecoverError] = useState(null);
 
-    const loadUser = async () => {
-        setUserLoading(true); setUserError(null); setUserInfo(null);
-        setPiInfo(null); setRecoverResult(null); setRecoverError(null);
+    const applyCustomer = useCallback((data, { addressId, itemsOverride } = {}) => {
+        setCustomer(data);
+        setEmail(data.user.email);
+        setItems(itemsOverride || data.cart.map(i => ({ productId: i.productId, quantity: i.quantity, price: Number(i.price), name: i.name })));
+        const preferred = data.addresses.find(a => a.id === addressId) || data.addresses.find(a => a.is_default) || data.addresses[0];
+        setSelectedAddressId(preferred ? String(preferred.id) : '');
+    }, []);
+
+    const loadCustomer = async () => {
+        setCustomerLoading(true); setCustomerError(null); setRecoverResult(null); setRecoverError(null);
         try {
-            const res  = await fetch(`/api/admin/recover-order?email=${encodeURIComponent(email.trim())}`);
+            const res = await fetch(`/api/admin/recover-order?email=${encodeURIComponent(email.trim())}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
-            setUserInfo(data);
-            setItems(data.cart.map(i => ({ productId: i.productId, quantity: i.quantity, price: i.price, name: i.name })));
-            const def = data.addresses.find(a => a.is_default) || data.addresses[0];
-            if (def) setSelectedAddressId(String(def.id));
-        } catch (e) { setUserError(e.message); }
-        finally { setUserLoading(false); }
+            applyCustomer(data);
+        } catch (e) { setCustomerError(e.message); setCustomer(null); }
+        finally { setCustomerLoading(false); }
     };
 
-    const lookupPi = async () => {
-        setPiLoading(true); setPiError(null); setPiInfo(null);
+    const lookupPayment = useCallback(async (method, ref) => {
+        setPaymentLoading(true); setPaymentError(null); setPayment(null); setRecoverResult(null); setRecoverError(null);
         try {
-            const res  = await fetch(`/api/admin/recover-order?pi=${pi.trim()}`);
+            const param = method === 'tabby' ? 'tabby' : 'pi';
+            const res = await fetch(`/api/admin/recover-order?${param}=${encodeURIComponent(ref.trim())}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.message);
-            setPiInfo(data);
-        } catch (e) { setPiError(e.message); }
-        finally { setPiLoading(false); }
+            setPayment(data);
+            // A Tabby payment brings its customer and the products they paid for
+            if (method === 'tabby' && data.customer) {
+                applyCustomer(data.customer, {
+                    addressId: data.savedCheckout?.addressId,
+                    itemsOverride: data.paidItems.length ? data.paidItems : undefined,
+                });
+            }
+        } catch (e) { setPaymentError(e.message); }
+        finally { setPaymentLoading(false); }
+    }, [applyCustomer]);
+
+    // Opened from the payments page with ?tabby=<payment id>
+    useEffect(() => {
+        const tabby = searchParams.get('tabby');
+        if (tabby) lookupPayment('tabby', tabby);
+    }, [searchParams, lookupPayment]);
+
+    const switchMethod = (method) => {
+        setPaymentMethod(method);
+        setPayment(null); setPaymentError(null); setPaymentRef('');
     };
 
-    const updateItem = (i, field, value) =>
-        setItems(prev => prev.map((item, idx) => idx === i ? { ...item, [field]: value } : item));
+    const updateItem = (index, patch) => setItems(prev => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+    const chooseProduct = (index, productId) => {
+        const product = adminProducts.find(p => String(p.id) === String(productId));
+        updateItem(index, product
+            ? { productId: product.id, name: product.name, price: Number(product.price) }
+            : { productId: '', name: '', price: '' });
+    };
 
-    const totalAmount = items.reduce((s, i) => s + parseFloat(i.price || 0) * parseInt(i.quantity || 0), 0);
+    const subtotal = items.reduce((s, i) => s + (Number(i.price) || 0) * (parseInt(i.quantity, 10) || 0), 0);
+    const shipping = calcShipping(items.reduce((s, i) => s + (parseInt(i.quantity, 10) || 0), 0));
+    const total = subtotal + shipping;
 
-    const canRecover = userInfo &&
-        selectedAddressId &&
-        items.length > 0 &&
-        items.every(i => i.productId && i.price && i.quantity) &&
-        (paymentMethod !== 'card' || (piInfo && piInfo.stripe?.status === 'succeeded' && !piInfo.existingOrder));
+    const tabbyPaid = paymentMethod === 'tabby' && payment?.tabby?.paid;
+    const cardPaid = paymentMethod === 'card' && payment?.stripe?.status === 'succeeded';
+    const existingOrderId = paymentMethod === 'tabby' ? payment?.existingOrderId : payment?.existingOrder?.id;
+    const paymentReady = paymentMethod === 'cashOnDelivery' || ((tabbyPaid || cardPaid) && !existingOrderId);
+    const itemsReady = items.length > 0 && items.every(i => i.productId && Number(i.price) >= 0 && parseInt(i.quantity, 10) >= 1);
+    const canRecover = customer && selectedAddressId && itemsReady && paymentReady;
+    const paidAmount = tabbyPaid ? payment.tabby.amount - payment.tabby.refunded : null;
+    const difference = paidAmount === null ? null : Math.round((paidAmount - total) * 100) / 100;
 
     const recover = async () => {
         setRecoverLoading(true); setRecoverError(null); setRecoverResult(null);
         try {
-            const res  = await fetch('/api/admin/recover-order', {
+            const res = await fetch('/api/admin/recover-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    pi: paymentMethod === 'card' ? pi.trim() : undefined,
                     payment_method: paymentMethod,
-                    user_id: userInfo.user.id,
-                    user_address_id: parseInt(selectedAddressId),
-                    items: items.map(i => ({ productId: parseInt(i.productId), quantity: parseInt(i.quantity), price: parseFloat(i.price) })),
+                    pi: paymentMethod === 'card' ? paymentRef.trim() : undefined,
+                    tabby_payment_id: paymentMethod === 'tabby' ? payment.tabby.id : undefined,
+                    user_id: customer.user.id,
+                    user_address_id: parseInt(selectedAddressId, 10),
+                    items: items.map(i => ({ productId: parseInt(i.productId, 10), quantity: parseInt(i.quantity, 10), price: Number(i.price) })),
                 }),
             });
             const data = await res.json();
@@ -90,202 +143,268 @@ export default function RecoverOrderPage() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-6 space-y-6">
+        <div className="max-w-[760px] mx-auto space-y-4">
             <div>
-                <h1 className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>Recover Missing Order</h1>
-                <p className="text-sm mt-1" style={{ color: 'rgba(59,7,100,0.5)' }}>
-                    Customer paid but no order was created. Enter their email to load their cart automatically.
+                <h1 className="text-[20px] font-semibold" style={text}>Recover missing order</h1>
+                <p className="text-[13px] mt-1" style={secondary}>
+                    For a customer who paid but has no order. Check the payment, correct the products if needed, then create the order.
                 </p>
             </div>
 
-            {/* Step 1 — Find customer */}
-            <div style={card} className="space-y-4">
-                <div className="flex items-center gap-2 mb-1">
-                    <User size={15} style={{ color: 'var(--brand-purple-darker)' }} />
-                    <h2 className="text-sm font-bold" style={{ color: '#1a1a1a' }}>Step 1 — Find customer</h2>
+            {/* Payment */}
+            <section className="sp-card sp-card-pad space-y-4">
+                <h2 className="sp-section-title">Payment</h2>
+                <div className="inline-flex p-0.5 rounded-lg" style={{ background: '#f1f1f1' }} role="radiogroup" aria-label="Payment method">
+                    {METHODS.map(([value, label]) => {
+                        const selected = paymentMethod === value;
+                        return (
+                            <button
+                                key={value}
+                                type="button"
+                                role="radio"
+                                aria-checked={selected}
+                                onClick={() => switchMethod(value)}
+                                className="h-8 px-3 rounded-md text-[13px] font-medium cursor-pointer transition-colors whitespace-nowrap"
+                                style={selected ? { background: '#ffffff', color: 'var(--sp-text)', boxShadow: '0 1px 2px rgba(0,0,0,0.12)' } : secondary}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {paymentMethod !== 'cashOnDelivery' && (
+                    <div>
+                        <label htmlFor="payment-ref" className="block text-[13px] font-medium mb-1.5" style={secondary}>
+                            {paymentMethod === 'tabby' ? 'Tabby payment ID' : 'Stripe payment intent ID'}
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                id="payment-ref"
+                                value={paymentRef}
+                                onChange={e => setPaymentRef(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && paymentRef.trim() && lookupPayment(paymentMethod, paymentRef)}
+                                placeholder={paymentMethod === 'tabby' ? 'e.g. 3f2c…' : 'pi_…'}
+                                className="sp-input flex-1"
+                            />
+                            <button type="button" onClick={() => lookupPayment(paymentMethod, paymentRef)} disabled={paymentLoading || !paymentRef.trim()} className="sp-btn sp-btn-primary">
+                                {paymentLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}Check payment
+                            </button>
+                        </div>
+                        {paymentMethod === 'tabby' && (
+                            <p className="text-[12px] mt-1.5" style={subdued}>
+                                Find it under <Link href="/admin/payments" className="underline">Payments → Tabby</Link>: payments without an order have a Recover button.
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {paymentError && <Notice tone="error">{paymentError}</Notice>}
+
+                {paymentMethod === 'tabby' && payment?.tabby && (
+                    <Notice tone={existingOrderId ? 'warning' : payment.tabby.paid ? 'success' : 'warning'}>
+                        <p className="font-semibold">
+                            {payment.tabby.paid ? 'Paid' : `Not paid (${payment.tabby.status})`} · {fmt(payment.tabby.amount)}
+                            {payment.tabby.refunded > 0 && ` · ${fmt(payment.tabby.refunded)} refunded`}
+                        </p>
+                        {payment.tabby.buyer && <p>{payment.tabby.buyer.name} · {payment.tabby.buyer.email}</p>}
+                        {existingOrderId
+                            ? <p>This payment already has <Link href={`/admin/orders/${existingOrderId}`} className="underline font-semibold">order #{existingOrderId}</Link>.</p>
+                            : payment.tabby.paid && <p>No order exists for this payment yet.</p>}
+                        {payment.unlinkedOrders?.length > 0 && (
+                            <p>
+                                Check this isn&apos;t a duplicate: this customer has Tabby order{payment.unlinkedOrders.length !== 1 ? 's' : ''}{' '}
+                                {payment.unlinkedOrders.map((o, i) => (
+                                    <span key={o.id}>{i > 0 && ', '}<Link href={`/admin/orders/${o.id}`} className="underline font-semibold">#{o.id}</Link> ({fmt(o.total)})</span>
+                                ))}{' '}
+                                not linked to any payment.
+                            </p>
+                        )}
+                        {payment.savedCheckout?.lastError && <p>Why the order wasn&apos;t created automatically: {payment.savedCheckout.lastError}</p>}
+                        {!payment.customer && <p>No account matches the buyer email. Find the customer below.</p>}
+                    </Notice>
+                )}
+
+                {paymentMethod === 'card' && payment?.stripe && (
+                    <Notice tone={existingOrderId ? 'warning' : cardPaid ? 'success' : 'warning'}>
+                        <p className="font-semibold">{cardPaid ? 'Paid' : `Not paid (${payment.stripe.status})`} · {payment.stripe.amountFormatted}</p>
+                        {existingOrderId
+                            ? <p>This payment already has <Link href={`/admin/orders/${existingOrderId}`} className="underline font-semibold">order #{existingOrderId}</Link>.</p>
+                            : cardPaid && <p>No order exists for this payment yet.</p>}
+                    </Notice>
+                )}
+            </section>
+
+            {/* Customer */}
+            <section className="sp-card sp-card-pad space-y-3">
+                <div className="flex items-center gap-2">
+                    <User size={15} style={secondary} />
+                    <h2 className="sp-section-title">Customer</h2>
                 </div>
                 <div className="flex gap-2">
                     <input
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && loadUser()}
+                        onKeyDown={e => e.key === 'Enter' && email.trim() && loadCustomer()}
                         placeholder="customer@email.com"
-                        style={{ ...inp, flex: 1 }}
+                        className="sp-input flex-1"
+                        aria-label="Customer email"
                     />
-                    <button onClick={loadUser} disabled={userLoading || !email.trim()} style={btn} className="flex items-center gap-2 disabled:opacity-50">
-                        {userLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />} Find
+                    <button type="button" onClick={loadCustomer} disabled={customerLoading || !email.trim()} className="sp-btn sp-btn-secondary">
+                        {customerLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}Find
                     </button>
                 </div>
-                {userError && <p className="text-sm text-red-500 flex items-center gap-1"><AlertTriangle size={13} />{userError}</p>}
-                {userInfo && (
-                    <div className="rounded-xl p-3 space-y-1" style={{ background: '#616161', border: '1px solid #e3e3e3' }}>
-                        <p className="text-sm font-bold" style={{ color: '#1a1a1a' }}>{userInfo.user.firstName} — {userInfo.user.email}</p>
-                        <p className="text-xs" style={{ color: 'rgba(59,7,100,0.5)' }}>User ID: {userInfo.user.id} · {userInfo.cart.length} item(s) in cart · {userInfo.addresses.length} address(es)</p>
-                        {userInfo.cart.length === 0 && (
-                            <p className="text-xs text-amber-600 font-semibold">⚠ Cart is empty — enter items manually below.</p>
-                        )}
-                    </div>
+                {customerError && <Notice tone="error">{customerError}</Notice>}
+                {customer && (
+                    <p className="text-[13px]" style={text}>
+                        {customer.user.firstName} · {customer.user.email}
+                        <span className="block text-[12px]" style={subdued}>{customer.addresses.length} saved address{customer.addresses.length !== 1 ? 'es' : ''} · {customer.cart.length} item{customer.cart.length !== 1 ? 's' : ''} in their bag now</span>
+                    </p>
                 )}
-            </div>
+            </section>
 
-            {userInfo && (
+            {customer && (
                 <>
-                    {/* Step 2 — Payment */}
-                    <div style={card} className="space-y-4">
-                        <h2 className="text-sm font-bold" style={{ color: '#1a1a1a' }}>Step 2 — Payment method</h2>
-                        <div className="flex gap-3">
-                            {['card', 'cashOnDelivery'].map(m => (
-                                <button
-                                    key={m}
-                                    onClick={() => setPaymentMethod(m)}
-                                    className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all"
-                                    style={paymentMethod === m
-                                        ? { background: 'var(--brand-gradient)', color: '#fff' }
-                                        : { border: '1px solid #e3e3e3', color: '#616161' }}
-                                >
-                                    {m === 'card' ? 'Card (Stripe)' : 'Cash on Delivery'}
-                                </button>
-                            ))}
-                        </div>
-
-                        {paymentMethod === 'card' && (
-                            <div className="space-y-3">
-                                <div>
-                                    <label style={lbl}>Stripe Payment Intent ID</label>
-                                    <div className="flex gap-2">
-                                        <input value={pi} onChange={e => setPi(e.target.value)} placeholder="pi_..." style={{ ...inp, flex: 1 }} />
-                                        <button onClick={lookupPi} disabled={piLoading || !pi.trim()} style={btn} className="flex items-center gap-2 disabled:opacity-50">
-                                            {piLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />} Verify
-                                        </button>
-                                    </div>
-                                </div>
-                                {piError && <p className="text-sm text-red-500 flex items-center gap-1"><AlertTriangle size={13} />{piError}</p>}
-                                {piInfo && (
-                                    <div className="rounded-xl p-3 text-xs space-y-1" style={{ background: piInfo.stripe.status === 'succeeded' ? 'rgba(22,163,74,0.07)' : 'rgba(251,191,36,0.1)', border: `1px solid ${piInfo.stripe.status === 'succeeded' ? 'rgba(22,163,74,0.3)' : 'rgba(251,191,36,0.4)'}` }}>
-                                        <p className="font-bold" style={{ color: '#1a1a1a' }}>
-                                            {piInfo.stripe.status === 'succeeded' ? '✓' : '⚠'} {piInfo.stripe.status.toUpperCase()} — {piInfo.stripe.amountFormatted}
-                                        </p>
-                                        {piInfo.existingOrder
-                                            ? <p className="text-amber-700">Order #{piInfo.existingOrder.id} already exists for this payment.</p>
-                                            : <p style={{ color: 'rgba(59,7,100,0.5)' }}>No existing order — safe to recover.</p>}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Step 3 — Address */}
-                    <div style={card} className="space-y-4">
+                    {/* Address */}
+                    <section className="sp-card sp-card-pad space-y-3">
                         <div className="flex items-center gap-2">
-                            <MapPin size={15} style={{ color: 'var(--brand-purple-darker)' }} />
-                            <h2 className="text-sm font-bold" style={{ color: '#1a1a1a' }}>Step 3 — Shipping address</h2>
+                            <MapPin size={15} style={secondary} />
+                            <h2 className="sp-section-title">Shipping address</h2>
                         </div>
-                        {userInfo.addresses.length === 0 ? (
-                            <p className="text-xs text-amber-600">No saved addresses for this user.</p>
+                        {customer.addresses.length === 0 ? (
+                            <Notice tone="warning">This customer has no saved addresses. Ask them to add one in their account first.</Notice>
                         ) : (
                             <div className="space-y-2">
-                                {userInfo.addresses.map(addr => (
-                                    <label
-                                        key={addr.id}
-                                        className="flex items-start gap-3 p-3 rounded-xl cursor-pointer"
-                                        style={String(selectedAddressId) === String(addr.id)
-                                            ? { background: '#e3e3e3', border: '1.5px solid #e3e3e3' }
-                                            : { border: '1px solid #e3e3e3' }}
-                                    >
-                                        <input type="radio" name="address" value={addr.id} checked={String(selectedAddressId) === String(addr.id)} onChange={() => setSelectedAddressId(String(addr.id))} className="mt-0.5" />
-                                        <div>
-                                            <p className="text-xs font-bold" style={{ color: '#1a1a1a' }}>{addr.address_label || addr.shipping_address}</p>
-                                            <p className="text-xs" style={{ color: 'rgba(59,7,100,0.5)' }}>{addr.city}, {addr.country} · ID: {addr.id}</p>
-                                        </div>
-                                        {addr.is_default && <span className="ml-auto text-[9px] font-black px-1.5 py-0.5 rounded text-white" style={{ background: 'var(--brand-purple-2)' }}>Default</span>}
-                                    </label>
-                                ))}
+                                {customer.addresses.map(addr => {
+                                    const selected = String(selectedAddressId) === String(addr.id);
+                                    return (
+                                        <label key={addr.id} className="flex items-start gap-3 p-3 rounded-lg cursor-pointer" style={{ border: `1px solid ${selected ? 'var(--sp-text)' : '#e3e3e3'}` }}>
+                                            <input type="radio" name="address" checked={selected} onChange={() => setSelectedAddressId(String(addr.id))} className="mt-0.5" style={{ accentColor: 'var(--sp-primary)' }} />
+                                            <span className="flex-1 min-w-0">
+                                                <span className="block text-[13px] font-medium truncate" style={text}>{addr.address_label || addr.shipping_address}</span>
+                                                <span className="block text-[12px]" style={subdued}>{addr.shipping_address}{addr.city ? `, ${addr.city}` : ''}</span>
+                                            </span>
+                                            {addr.is_default && <span className="sp-badge sp-badge-neutral">Default</span>}
+                                        </label>
+                                    );
+                                })}
                             </div>
                         )}
-                    </div>
+                    </section>
 
-                    {/* Step 4 — Items */}
-                    <div style={card} className="space-y-4">
+                    {/* Items */}
+                    <section className="sp-card sp-card-pad space-y-3">
                         <div className="flex items-center gap-2">
-                            <ShoppingCart size={15} style={{ color: 'var(--brand-purple-darker)' }} />
-                            <h2 className="text-sm font-bold" style={{ color: '#1a1a1a' }}>
-                                Step 4 — Order items {userInfo.cart.length > 0 && <span className="font-normal text-xs" style={{ color: 'rgba(59,7,100,0.45)' }}>(auto-loaded from cart)</span>}
-                            </h2>
+                            <ShoppingCart size={15} style={secondary} />
+                            <h2 className="sp-section-title">Products</h2>
                         </div>
+                        <p className="text-[12px]" style={subdued}>
+                            {paymentMethod === 'tabby' && payment?.paidItems?.length
+                                ? 'Loaded from the checkout the customer paid for. Change them to what the customer confirmed they want.'
+                                : 'Loaded from the customer’s bag. Change them to what the customer confirmed they want.'}
+                        </p>
 
-                        <div className="space-y-2">
-                            {items.map((item, i) => (
-                                <div key={i} className="grid grid-cols-12 gap-2 items-center text-xs">
-                                    <div className="col-span-5">
-                                        {item.name
-                                            ? <p className="font-semibold truncate" style={{ color: '#1a1a1a' }}>{item.name}</p>
-                                            : null}
-                                        <input value={item.productId} onChange={e => updateItem(i, 'productId', e.target.value)} placeholder="Product ID" style={{ ...inp, padding: '7px 10px', fontSize: 12 }} />
-                                    </div>
-                                    <div className="col-span-3">
-                                        <input value={item.quantity} onChange={e => updateItem(i, 'quantity', e.target.value)} type="number" min="1" placeholder="Qty" style={{ ...inp, padding: '7px 10px', fontSize: 12 }} />
-                                    </div>
-                                    <div className="col-span-3">
-                                        <input value={item.price} onChange={e => updateItem(i, 'price', e.target.value)} type="number" step="0.01" placeholder="Price" style={{ ...inp, padding: '7px 10px', fontSize: 12 }} />
-                                    </div>
-                                    <button onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))} disabled={items.length === 1} className="col-span-1 text-red-400 hover:text-red-600 disabled:opacity-30 text-lg font-bold">×</button>
-                                </div>
+                        {items.length === 0 && <p className="text-[13px]" style={subdued}>No products yet.</p>}
+                        <ul className="space-y-2">
+                            {items.map((item, index) => (
+                                <li key={index} className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                                    <select
+                                        value={item.productId ? String(item.productId) : ''}
+                                        onChange={e => chooseProduct(index, e.target.value)}
+                                        className="sp-input flex-1 min-w-[200px] cursor-pointer"
+                                        aria-label="Product"
+                                    >
+                                        <option value="">Choose a product</option>
+                                        {item.productId && !adminProducts.some(p => String(p.id) === String(item.productId)) && (
+                                            <option value={String(item.productId)}>{item.name || `Product #${item.productId}`}</option>
+                                        )}
+                                        {adminProducts.map(p => <option key={p.id} value={String(p.id)}>{p.name}</option>)}
+                                    </select>
+                                    <input
+                                        type="number" min="1" step="1"
+                                        value={item.quantity}
+                                        onChange={e => updateItem(index, { quantity: e.target.value })}
+                                        className="sp-input w-[76px]"
+                                        aria-label="Quantity"
+                                    />
+                                    <input
+                                        type="number" min="0" step="0.01"
+                                        value={item.price}
+                                        onChange={e => updateItem(index, { price: e.target.value })}
+                                        className="sp-input w-[110px]"
+                                        aria-label="Unit price (AED)"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setItems(prev => prev.filter((_, i) => i !== index))}
+                                        className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-[#e3e3e3] transition-colors"
+                                        style={secondary}
+                                        aria-label="Remove product"
+                                    >
+                                        <X size={15} />
+                                    </button>
+                                </li>
                             ))}
-                        </div>
-
-                        <button
-                            onClick={() => setItems(prev => [...prev, { productId: '', quantity: 1, price: '' }])}
-                            className="text-xs font-bold"
-                            style={{ color: 'var(--brand-purple-darker)' }}
-                        >
-                            + Add item
+                        </ul>
+                        <button type="button" onClick={() => setItems(prev => [...prev, { productId: '', quantity: 1, price: '' }])} className="sp-btn sp-btn-secondary">
+                            <Plus size={14} />Add product
                         </button>
 
-                        <div className="flex justify-between text-sm pt-2" style={{ borderTop: '1px solid #e3e3e3' }}>
-                            <span style={{ color: 'rgba(59,7,100,0.5)' }}>Order total</span>
-                            <span className="font-bold" style={{ color: '#1a1a1a' }}>AED {totalAmount.toFixed(2)}</span>
-                        </div>
-                    </div>
+                        <dl className="pt-3 space-y-1.5 text-[13px]" style={{ borderTop: '1px solid #ebebeb' }}>
+                            <div className="flex justify-between"><dt style={secondary}>Subtotal</dt><dd style={text}>{fmt(subtotal)}</dd></div>
+                            <div className="flex justify-between"><dt style={secondary}>Delivery</dt><dd style={text}>{shipping ? fmt(shipping) : 'Free'}</dd></div>
+                            <div className="flex justify-between font-semibold"><dt style={text}>Order total (incl. VAT)</dt><dd style={text}>{fmt(total)}</dd></div>
+                            {paidAmount !== null && (
+                                <div className="flex justify-between"><dt style={secondary}>Paid on Tabby</dt><dd style={text}>{fmt(paidAmount)}</dd></div>
+                            )}
+                        </dl>
+                        {difference !== null && itemsReady && difference > 0.009 && (
+                            <Notice tone="warning">The customer paid {fmt(difference)} more than this order. Refund the difference in your Tabby merchant dashboard after creating the order.</Notice>
+                        )}
+                        {difference !== null && itemsReady && difference < -0.009 && (
+                            <Notice tone="warning">This order is {fmt(-difference)} more than the customer paid on Tabby. Collect the difference or adjust the products before creating it.</Notice>
+                        )}
+                    </section>
 
-                    {/* Recover button */}
-                    <div style={card} className="space-y-4">
-                        {recoverError && (
-                            <div className="flex items-start gap-2 text-sm text-red-500">
-                                <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {recoverError}
-                            </div>
+                    {/* Create */}
+                    <section className="sp-card sp-card-pad space-y-3">
+                        {recoverError && <Notice tone="error"><span className="flex items-start gap-2"><AlertTriangle size={14} className="mt-0.5 shrink-0" />{recoverError}</span></Notice>}
+                        {recoverResult ? (
+                            <Notice tone="success">
+                                <p className="flex items-center gap-2 font-semibold">
+                                    <CheckCircle size={15} />
+                                    Order #{recoverResult.orderId} created{recoverResult.emailSent ? ' and confirmation email sent' : ''}.
+                                    <Link href={`/admin/orders/${recoverResult.orderId}`} className="underline">View order</Link>
+                                </p>
+                                {recoverResult.difference > 0.009 && <p>Remember to refund {fmt(recoverResult.difference)} in the Tabby merchant dashboard.</p>}
+                            </Notice>
+                        ) : (
+                            <>
+                                <button type="button" onClick={recover} disabled={recoverLoading || !canRecover} className="sp-btn sp-btn-primary w-full justify-center">
+                                    {recoverLoading ? <><Loader2 size={14} className="animate-spin" />Creating order…</> : 'Create order and send confirmation'}
+                                </button>
+                                {!canRecover && (
+                                    <ul className="text-[12px] space-y-0.5" style={subdued}>
+                                        {paymentMethod !== 'cashOnDelivery' && !payment && <li>Check the payment first</li>}
+                                        {payment && existingOrderId && <li>This payment already has an order</li>}
+                                        {payment && !existingOrderId && !(tabbyPaid || cardPaid) && <li>The payment hasn&apos;t been completed</li>}
+                                        {!selectedAddressId && <li>Choose a shipping address</li>}
+                                        {!itemsReady && <li>Choose a product, quantity and price for every line</li>}
+                                    </ul>
+                                )}
+                            </>
                         )}
-                        {recoverResult && (
-                            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'rgb(22,163,74)' }}>
-                                <CheckCircle size={16} />
-                                Order <strong>#{recoverResult.orderId}</strong> created and confirmation email sent!
-                                <a href={`/admin/orders/${recoverResult.orderId}`} className="underline ml-1" style={{ color: 'var(--brand-purple-darker)' }}>View order</a>
-                            </div>
-                        )}
-                        {!recoverResult && (
-                            <button
-                                onClick={recover}
-                                disabled={recoverLoading || !canRecover}
-                                style={btn}
-                                className="w-full py-4 disabled:opacity-50"
-                            >
-                                {recoverLoading
-                                    ? <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" />Creating order…</span>
-                                    : 'Create order & send confirmation email'}
-                            </button>
-                        )}
-                        {!canRecover && !recoverResult && (
-                            <ul className="text-xs space-y-1" style={{ color: 'rgba(59,7,100,0.45)' }}>
-                                {!userInfo && <li>· Find customer first</li>}
-                                {!selectedAddressId && <li>· Select a shipping address</li>}
-                                {paymentMethod === 'card' && !piInfo && <li>· Verify Stripe payment intent</li>}
-                                {paymentMethod === 'card' && piInfo?.existingOrder && <li>· An order already exists for this payment</li>}
-                                {paymentMethod === 'card' && piInfo && piInfo.stripe?.status !== 'succeeded' && <li>· Payment intent is not succeeded</li>}
-                                {items.some(i => !i.productId || !i.price) && <li>· Fill in all item fields</li>}
-                            </ul>
-                        )}
-                    </div>
+                    </section>
                 </>
             )}
         </div>
+    );
+}
+
+export default function RecoverOrderPage() {
+    return (
+        <Suspense fallback={null}>
+            <RecoverOrder />
+        </Suspense>
     );
 }

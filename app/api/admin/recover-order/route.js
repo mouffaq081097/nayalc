@@ -4,11 +4,54 @@ import { authOptions } from '@/lib/auth';
 import Stripe from 'stripe';
 import db from '@/lib/db';
 import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail';
+import { getTabbyPayment, isTabbyPaid, tabbyStatus } from '@/lib/tabby';
+import { ensureTabbyPendingTable, findOrderForTabbyPayment, findUnlinkedTabbyOrders, getPendingTabbyOrder } from '@/lib/tabbyOrders';
+import { calcShipping } from '@/lib/shipping';
+import { vatFromGross } from '@/lib/vat';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// GET  /api/admin/recover-order?pi=pi_xxx  → Stripe PI lookup
-// GET  /api/admin/recover-order?email=x@y.com → user info + cart + addresses
+const sum = (entries) => (entries || []).reduce((total, entry) => total + (parseFloat(entry.amount) || 0), 0);
+
+async function loadCustomer(where, value) {
+    const userRes = await db.query(`SELECT id, first_name, email FROM users WHERE ${where} LIMIT 1`, [value]);
+    if (userRes.rows.length === 0) return null;
+    const user = userRes.rows[0];
+    const [cartRes, addressRes] = await Promise.all([
+        db.query(
+            `SELECT p.id as "productId", uc.quantity, p.name, p.price,
+                    (SELECT pi2.image_url FROM product_images pi2 WHERE pi2.product_id = p.id AND pi2.is_main = TRUE LIMIT 1) as "imageUrl"
+             FROM user_carts uc JOIN products p ON uc.product_id = p.id
+             WHERE uc.user_id = $1`,
+            [user.id]
+        ),
+        db.query(
+            'SELECT id, shipping_address, city, country, address_label, is_default FROM user_addresses WHERE user_id = $1 ORDER BY is_default DESC',
+            [user.id]
+        ),
+    ]);
+    return {
+        user: { id: user.id, firstName: user.first_name, email: user.email },
+        cart: cartRes.rows,
+        addresses: addressRes.rows,
+    };
+}
+
+// Adds current names and prices to a list of { productId, quantity }
+async function describeItems(items) {
+    const ids = items.map(i => Number(i.productId)).filter(Number.isInteger);
+    if (ids.length === 0) return [];
+    const { rows } = await db.query('SELECT id, name, price FROM products WHERE id = ANY($1::int[])', [ids]);
+    const byId = new Map(rows.map(p => [p.id, p]));
+    return items.map(i => {
+        const p = byId.get(Number(i.productId));
+        return { productId: Number(i.productId), quantity: Number(i.quantity), price: p ? Number(p.price) : Number(i.price) || 0, name: p?.name || `Product #${i.productId}` };
+    });
+}
+
+// GET  /api/admin/recover-order?pi=pi_xxx       → Stripe payment lookup
+// GET  /api/admin/recover-order?tabby=<id>      → Tabby payment lookup, with the checkout the customer paid for
+// GET  /api/admin/recover-order?email=x@y.com   → customer + cart + addresses
 export async function GET(request) {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== 'admin') {
@@ -17,42 +60,58 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const pi = searchParams.get('pi');
+    const tabby = searchParams.get('tabby')?.trim();
     const email = searchParams.get('email');
 
-    // --- User cart lookup by email ---
     if (email) {
-        const userRes = await db.query(
-            'SELECT id, first_name, email FROM users WHERE email = $1',
-            [email.trim().toLowerCase()]
-        );
-        if (userRes.rows.length === 0) {
-            return NextResponse.json({ message: 'No user found with that email.' }, { status: 404 });
-        }
-        const user = userRes.rows[0];
+        const customer = await loadCustomer('LOWER(email) = LOWER($1)', email.trim());
+        if (!customer) return NextResponse.json({ message: 'No user found with that email.' }, { status: 404 });
+        return NextResponse.json(customer);
+    }
 
-        const [cartRes, addressRes] = await Promise.all([
-            db.query(
-                `SELECT p.id as "productId", uc.quantity, p.name, p.price,
-                        (SELECT pi2.image_url FROM product_images pi2 WHERE pi2.product_id = p.id AND pi2.is_main = TRUE LIMIT 1) as "imageUrl"
-                 FROM user_carts uc JOIN products p ON uc.product_id = p.id
-                 WHERE uc.user_id = $1`,
-                [user.id]
-            ),
-            db.query(
-                'SELECT id, shipping_address, city, country, address_label, is_default FROM user_addresses WHERE user_id = $1 ORDER BY is_default DESC',
-                [user.id]
-            ),
-        ]);
+    if (tabby) {
+        let payment;
+        try {
+            payment = await getTabbyPayment(tabby);
+        } catch (error) {
+            return NextResponse.json({ message: `Tabby couldn't find this payment: ${error.message}` }, { status: 404 });
+        }
+        const [existingOrderId, pending] = await Promise.all([findOrderForTabbyPayment(tabby), getPendingTabbyOrder(tabby)]);
+
+        // The customer: whoever started the saved checkout, otherwise the account with Tabby's buyer email
+        const customer = pending
+            ? await loadCustomer('id = $1', pending.user_id)
+            : payment.buyer?.email ? await loadCustomer('LOWER(email) = LOWER($1)', payment.buyer.email) : null;
+
+        // What they paid for: the saved checkout, otherwise the items Tabby has on the payment
+        const paidItems = pending
+            ? await describeItems(pending.order_data.items || [])
+            : await describeItems((payment.order?.items || []).map(i => ({ productId: i.reference_id, quantity: i.quantity, price: i.unit_price })));
+
+        // Tabby orders this customer has that aren't linked to any payment — maybe this one, created by hand
+        const unlinkedOrders = existingOrderId ? [] : await findUnlinkedTabbyOrders([payment.buyer?.email, customer?.user.email]);
 
         return NextResponse.json({
-            user: { id: user.id, firstName: user.first_name, email: user.email },
-            cart: cartRes.rows,
-            addresses: addressRes.rows,
+            tabby: {
+                id: payment.id,
+                status: tabbyStatus(payment.status),
+                paid: isTabbyPaid(payment.status),
+                amount: parseFloat(payment.amount) || 0,
+                captured: sum(payment.captures),
+                refunded: sum(payment.refunds),
+                currency: payment.currency,
+                createdAt: payment.created_at,
+                buyer: payment.buyer ? { name: payment.buyer.name, email: payment.buyer.email } : null,
+            },
+            existingOrderId,
+            unlinkedOrders: unlinkedOrders.map(o => ({ id: o.id, total: Number(o.total_amount), createdAt: o.created_at })),
+            savedCheckout: pending ? { addressId: pending.order_data.user_address_id, lastError: pending.last_error } : null,
+            paidItems,
+            customer,
         });
     }
 
-    // --- Stripe PI lookup ---
-    if (!pi) return NextResponse.json({ message: 'Missing pi or email param' }, { status: 400 });
+    if (!pi) return NextResponse.json({ message: 'Missing pi, tabby or email param' }, { status: 400 });
 
     const [piData, existingOrder] = await Promise.all([
         stripe.paymentIntents.retrieve(pi),
@@ -74,7 +133,7 @@ export async function GET(request) {
 }
 
 // POST /api/admin/recover-order
-// Body: { pi?, payment_method, user_id, user_address_id, items: [{ productId, quantity, price }] }
+// Body: { pi?, tabby_payment_id?, payment_method, user_id, user_address_id, items: [{ productId, quantity, price }] }
 // Creates the missing order and sends the confirmation email.
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -82,14 +141,22 @@ export async function POST(request) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { pi, payment_method = 'card', user_id, user_address_id, items } = await request.json();
+    const { pi, tabby_payment_id, payment_method = 'card', user_id, user_address_id, items } = await request.json();
 
     if (!user_id || !user_address_id || !Array.isArray(items) || items.length === 0) {
         return NextResponse.json({ message: 'Missing required fields: user_id, user_address_id, items' }, { status: 400 });
     }
+    if (items.some(i => !Number.isInteger(Number(i.productId)) || !Number.isInteger(Number(i.quantity)) || Number(i.quantity) < 1 || !(Number(i.price) >= 0))) {
+        return NextResponse.json({ message: 'Every item needs a product, a quantity of 1 or more and a price.' }, { status: 400 });
+    }
 
-    let totalAmount;
+    const subtotal = Math.round(items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0) * 100) / 100;
+    const shippingCost = calcShipping(items.reduce((s, i) => s + Number(i.quantity), 0));
+    let totalAmount = subtotal + shippingCost;
     let stripePaymentIntentId = null;
+    let tabbyPaymentId = null;
+    let paidAmount = null;
+    let paymentConfirmed = false;
 
     if (payment_method === 'card') {
         if (!pi) return NextResponse.json({ message: 'Card recovery requires a pi (payment intent ID).' }, { status: 400 });
@@ -106,26 +173,54 @@ export async function POST(request) {
 
         totalAmount = piData.amount / 100;
         stripePaymentIntentId = pi;
-    } else {
-        // For cash-on-delivery / tabby — total derived from items
-        totalAmount = items.reduce((sum, i) => sum + (parseFloat(i.price) * parseInt(i.quantity)), 0);
+        paymentConfirmed = true;
+    } else if (payment_method === 'tabby') {
+        const id = String(tabby_payment_id || '').trim();
+        if (!id) return NextResponse.json({ message: 'Tabby recovery requires the Tabby payment ID.' }, { status: 400 });
+
+        let payment;
+        try {
+            payment = await getTabbyPayment(id);
+        } catch (error) {
+            return NextResponse.json({ message: `Tabby couldn't find this payment: ${error.message}` }, { status: 400 });
+        }
+        if (!isTabbyPaid(payment.status)) {
+            return NextResponse.json({ message: `This Tabby payment is "${tabbyStatus(payment.status)}", so the customer hasn't paid.` }, { status: 400 });
+        }
+        tabbyPaymentId = payment.id;
+        paidAmount = parseFloat(payment.amount) || 0;
+        paymentConfirmed = true;
     }
+
+    const taxAmount = vatFromGross(totalAmount);
+    if (tabbyPaymentId) await ensureTabbyPendingTable();
 
     const client = await db.connect();
     try {
         await client.query('BEGIN');
 
+        if (tabbyPaymentId) {
+            // Same lock as checkout and Tabby's webhook, so only one of them can create this order
+            await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`tabby:${tabbyPaymentId}`]);
+            const existingId = await findOrderForTabbyPayment(tabbyPaymentId);
+            if (existingId) {
+                await client.query('ROLLBACK');
+                return NextResponse.json({ message: `Order already exists for this payment: order #${existingId}`, orderId: existingId }, { status: 409 });
+            }
+        }
+
         const { rows } = await client.query(
             `INSERT INTO orders
                 (user_address_id, payment_method, total_amount, tax_amount, subtotal,
                  shipping_cost, gift_wrap, gift_wrap_cost, discount_amount,
-                 order_status, payment_confirmed, user_id, stripe_payment_intent_id,
+                 order_status, payment_confirmed, user_id, stripe_payment_intent_id, tabby_payment_id,
                  shipping_scheduled_date, redeemed_points)
-             VALUES ($1, $2, $3, 0, $3, 0, false, 0, 0,
-                     'Confirmed', $4, $5, $6,
+             VALUES ($1, $2, $3, $4, $5, $6, false, 0, 0,
+                     'Confirmed', $7, $8, $9, $10,
                      NOW() + INTERVAL '7 days', 0)
              RETURNING id`,
-            [user_address_id, payment_method, totalAmount, payment_method === 'card', user_id, stripePaymentIntentId]
+            [user_address_id, payment_method, totalAmount, taxAmount, subtotal, shippingCost,
+             paymentConfirmed, user_id, stripePaymentIntentId, tabbyPaymentId]
         );
         const orderId = rows[0].id;
 
@@ -143,9 +238,17 @@ export async function POST(request) {
         // Clear the user's cart now that the order is created
         await client.query('DELETE FROM user_carts WHERE user_id = $1', [user_id]);
 
+        if (tabbyPaymentId) {
+            await client.query(
+                'UPDATE tabby_pending_orders SET order_id = $1, last_error = NULL, updated_at = NOW() WHERE tabby_payment_id = $2',
+                [orderId, tabbyPaymentId]
+            );
+        }
+
         await client.query('COMMIT');
 
         // Send confirmation email
+        let emailSent = false;
         try {
             const [userRes, addressRes] = await Promise.all([
                 db.query('SELECT email, first_name FROM users WHERE id = $1', [user_id]),
@@ -158,18 +261,19 @@ export async function POST(request) {
                 ? { street: addr.shipping_address || '', city: addr.city || '', zip: addr.zip_code || '', country: addr.country || 'UAE', state: '' }
                 : { street: '', city: '', zip: '', country: 'UAE', state: '' };
 
-            const productIds = items.map(i => i.productId);
+            const productIds = items.map(i => Number(i.productId));
             const { rows: products } = await db.query(
                 'SELECT p.id, p.name, pi2.image_url FROM products p LEFT JOIN product_images pi2 ON p.id = pi2.product_id AND pi2.is_main = TRUE WHERE p.id = ANY($1)',
                 [productIds]
             );
             const itemsWithDetails = items.map(item => {
-                const p = products.find(pr => pr.id === item.productId);
+                const p = products.find(pr => pr.id === Number(item.productId));
                 return { ...item, name: p?.name || 'Product', imageUrl: p?.image_url || '' };
             });
 
             if (userEmail) {
-                await sendOrderConfirmationEmail(userEmail, firstName, orderId, totalAmount, 0, 0, totalAmount, 0, itemsWithDetails, shippingAddress, 0, null);
+                await sendOrderConfirmationEmail(userEmail, firstName, orderId, totalAmount, taxAmount, 0, subtotal, shippingCost, itemsWithDetails, shippingAddress, 0, null, payment_method, new Date());
+                emailSent = true;
             }
             const adminEmail = process.env.ADMIN_EMAIL;
             if (adminEmail) {
@@ -179,7 +283,15 @@ export async function POST(request) {
             console.error('Recovery email failed (order still created):', emailErr);
         }
 
-        return NextResponse.json({ message: 'Order recovered successfully', orderId }, { status: 201 });
+        return NextResponse.json({
+            message: 'Order recovered successfully',
+            orderId,
+            emailSent,
+            totalAmount,
+            paidAmount,
+            // Positive: the customer paid more than the order costs, so the difference is theirs to refund
+            difference: paidAmount === null ? null : Math.round((paidAmount - totalAmount) * 100) / 100,
+        }, { status: 201 });
     } catch (error) {
         await client.query('ROLLBACK');
         return NextResponse.json({ message: 'Recovery failed', error: error.message }, { status: 500 });

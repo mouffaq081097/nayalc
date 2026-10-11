@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminAuth';
-import { listTabbyPayments } from '@/lib/tabby';
+import db from '@/lib/db';
+import { listTabbyPayments, isTabbyPaid } from '@/lib/tabby';
+import { ensureTabbyPaymentColumns, findUnlinkedTabbyOrders } from '@/lib/tabbyOrders';
 
 const sum = (entries) => (entries || []).reduce((total, entry) => total + (parseFloat(entry.amount) || 0), 0);
 
@@ -24,6 +26,28 @@ export async function GET() {
       captured: sum(p.captures),
       refunded: sum(p.refunds),
     }));
+
+    // Which payments became an order (orders move between these tables as they're fulfilled or cancelled)
+    const ids = payments.map(p => p.id);
+    await ensureTabbyPaymentColumns();
+    const { rows } = ids.length ? await db.query(`
+      SELECT tabby_payment_id, id FROM orders WHERE tabby_payment_id = ANY($1)
+      UNION ALL SELECT tabby_payment_id, id FROM delivered_orders WHERE tabby_payment_id = ANY($1)
+      UNION ALL SELECT tabby_payment_id, id FROM cancelled_orders WHERE tabby_payment_id = ANY($1)
+    `, [ids]) : { rows: [] };
+    const orderByPayment = new Map(rows.map(r => [r.tabby_payment_id, r.id]));
+    for (const p of payments) {
+      p.order_id = orderByPayment.get(p.id) ?? null;
+      p.paid = isTabbyPaid(p.status);
+    }
+
+    // A paid payment with no linked order may still have one that was created by hand without its payment ID
+    const unlinked = await findUnlinkedTabbyOrders(payments.filter(p => p.paid && !p.order_id).map(p => p.buyer?.email));
+    for (const p of payments) {
+      if (p.paid && !p.order_id) {
+        p.possible_order_id = unlinked.find(o => o.email === p.buyer?.email?.toLowerCase())?.id ?? null;
+      }
+    }
     return NextResponse.json({ payments, settlements_available: false });
   } catch (error) {
     console.error('Error fetching Tabby payments:', error);

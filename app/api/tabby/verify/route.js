@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getTabbyPayment } from '@/lib/tabby';
+import { getTabbyPayment, isTabbyPaid, tabbyStatus } from '@/lib/tabby';
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
@@ -12,7 +12,8 @@ export async function GET(req) {
   try {
     const payment = await getTabbyPayment(paymentId);
     return NextResponse.json({
-      status: payment.status,
+      status: tabbyStatus(payment.status),
+      paid: isTabbyPaid(payment.status),
       paymentId: payment.id,
       amount: payment.amount,
       currency: payment.currency,
