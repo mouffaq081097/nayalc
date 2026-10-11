@@ -8,6 +8,8 @@ import { getTabbyPayment, isTabbyPaid, tabbyStatus } from '@/lib/tabby';
 import { ensureTabbyPendingTable, findOrderForTabbyPayment, findUnlinkedTabbyOrders, getPendingTabbyOrder } from '@/lib/tabbyOrders';
 import { calcShipping } from '@/lib/shipping';
 import { vatFromGross } from '@/lib/vat';
+import { calcCouponDiscount } from '@/lib/couponDiscount';
+import { ensureCouponProductsColumn } from '@/lib/couponRules';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -141,7 +143,7 @@ export async function POST(request) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { pi, tabby_payment_id, payment_method = 'card', user_id, user_address_id, items } = await request.json();
+    const { pi, tabby_payment_id, payment_method = 'card', user_id, user_address_id, items, coupon_code } = await request.json();
 
     if (!user_id || !user_address_id || !Array.isArray(items) || items.length === 0) {
         return NextResponse.json({ message: 'Missing required fields: user_id, user_address_id, items' }, { status: 400 });
@@ -152,7 +154,22 @@ export async function POST(request) {
 
     const subtotal = Math.round(items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0) * 100) / 100;
     const shippingCost = calcShipping(items.reduce((s, i) => s + Number(i.quantity), 0));
-    let totalAmount = subtotal + shippingCost;
+
+    // The discount code the customer used, so the order matches what they paid.
+    // Its active / end date / usage limit aren't checked: it was valid when they paid.
+    let coupon = null;
+    let discountAmount = 0;
+    if (coupon_code && String(coupon_code).trim()) {
+        await ensureCouponProductsColumn(db);
+        const { rows } = await db.query('SELECT * FROM coupons WHERE UPPER(code) = UPPER($1)', [String(coupon_code).trim()]);
+        coupon = rows[0];
+        if (!coupon) return NextResponse.json({ message: `There's no discount code "${coupon_code}".` }, { status: 400 });
+        discountAmount = calcCouponDiscount(coupon, items);
+        if (discountAmount <= 0) {
+            return NextResponse.json({ message: `${coupon.code} doesn't take anything off these products (check its minimum subtotal or the products it applies to).` }, { status: 400 });
+        }
+    }
+    let totalAmount = Math.max(0, Math.round((subtotal + shippingCost - discountAmount) * 100) / 100);
     let stripePaymentIntentId = null;
     let tabbyPaymentId = null;
     let paidAmount = null;
@@ -214,13 +231,13 @@ export async function POST(request) {
                 (user_address_id, payment_method, total_amount, tax_amount, subtotal,
                  shipping_cost, gift_wrap, gift_wrap_cost, discount_amount,
                  order_status, payment_confirmed, user_id, stripe_payment_intent_id, tabby_payment_id,
-                 shipping_scheduled_date, redeemed_points)
-             VALUES ($1, $2, $3, $4, $5, $6, false, 0, 0,
+                 shipping_scheduled_date, redeemed_points, applied_coupon_id)
+             VALUES ($1, $2, $3, $4, $5, $6, false, 0, $12,
                      'Confirmed', $7, $8, $9, $10,
-                     NOW() + INTERVAL '7 days', 0)
+                     NOW() + INTERVAL '7 days', 0, $11)
              RETURNING id`,
             [user_address_id, payment_method, totalAmount, taxAmount, subtotal, shippingCost,
-             paymentConfirmed, user_id, stripePaymentIntentId, tabbyPaymentId]
+             paymentConfirmed, user_id, stripePaymentIntentId, tabbyPaymentId, coupon?.id ?? null, discountAmount]
         );
         const orderId = rows[0].id;
 
@@ -234,6 +251,8 @@ export async function POST(request) {
                 [item.quantity, item.productId]
             );
         }
+
+        if (coupon) await client.query('UPDATE coupons SET usage_count = usage_count + 1 WHERE id = $1', [coupon.id]);
 
         // Clear the user's cart now that the order is created
         await client.query('DELETE FROM user_carts WHERE user_id = $1', [user_id]);
@@ -272,7 +291,7 @@ export async function POST(request) {
             });
 
             if (userEmail) {
-                await sendOrderConfirmationEmail(userEmail, firstName, orderId, totalAmount, taxAmount, 0, subtotal, shippingCost, itemsWithDetails, shippingAddress, 0, null, payment_method, new Date());
+                await sendOrderConfirmationEmail(userEmail, firstName, orderId, totalAmount, taxAmount, discountAmount, subtotal, shippingCost, itemsWithDetails, shippingAddress, 0, coupon?.code ?? null, payment_method, new Date());
                 emailSent = true;
             }
             const adminEmail = process.env.ADMIN_EMAIL;

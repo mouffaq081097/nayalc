@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, XCircle, Info, Printer } from 'lucide-react';
+import { Loader2, ArrowLeft, XCircle, Info, Printer, Mail } from 'lucide-react';
+import { toast } from 'react-toastify';
 import PageLoader from '@/app/components/PageLoader';
 import Link from 'next/link';
 import {
@@ -38,6 +39,60 @@ const OrderDetailsPage = () => {
 
   const { fetchWithAuth } = useAppContext();
   const router = useRouter();
+
+  // Discount code and confirmation email
+  const [discountCode, setDiscountCode] = useState('');
+  const [applyingDiscount, setApplyingDiscount] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [tabbyPayment, setTabbyPayment] = useState(null);
+
+  const errorMessage = async (response, fallback) => {
+    const data = await response.json().catch(() => ({}));
+    return data.message || fallback;
+  };
+
+  const applyDiscount = async (code) => {
+    setApplyingDiscount(true);
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/discount`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      if (!response.ok) throw new Error(await errorMessage(response, 'The discount could not be applied.'));
+      const data = await response.json();
+      toast.success(data.couponCode ? `${data.couponCode} applied — new total AED ${data.totalAmount.toFixed(2)}` : 'Discount removed');
+      setDiscountCode('');
+      await fetchOrderDetails();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setApplyingDiscount(false);
+    }
+  };
+
+  const sendConfirmation = async () => {
+    if (!window.confirm(`Send the order confirmation to ${order.customerEmail} again, with the order as it is now?`)) return;
+    setSendingEmail(true);
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/send-confirmation`, { method: 'POST' });
+      if (!response.ok) throw new Error(await errorMessage(response, 'The email could not be sent.'));
+      toast.success(`Confirmation sent to ${order.customerEmail}`);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  // What a Tabby customer actually paid, to check the order total matches it
+  useEffect(() => {
+    if (!order?.tabby_payment_id) return;
+    fetch(`/api/admin/recover-order?tabby=${encodeURIComponent(order.tabby_payment_id)}`)
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => setTabbyPayment(data?.tabby || null))
+      .catch(() => {});
+  }, [order?.tabby_payment_id]);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId) return;
@@ -117,7 +172,10 @@ const OrderDetailsPage = () => {
 
   const isTrackingInfoVisible = ['Shipped', 'Delivered'].includes(newStatus);
   const isCancellationReasonVisible = newStatus === 'Cancelled';
-  const isPaid = !!stripePaymentDetails || order.paymentMethod === 'card';
+  const isPaid = !!stripePaymentDetails || order.paymentMethod === 'card' || order.payment_confirmed === true;
+  const isOpenOrder = !['delivered', 'cancelled'].includes(order.status?.toLowerCase());
+  const tabbyPaid = tabbyPayment ? tabbyPayment.amount - tabbyPayment.refunded : null;
+  const tabbyDifference = tabbyPaid === null ? null : Math.round((tabbyPaid - order.totalAmount) * 100) / 100;
   // The stored subtotal is what the total was computed from; fall back to the
   // line items only for older orders that predate the column.
   const subtotal = Number(order.subtotal) || order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -289,6 +347,60 @@ const OrderDetailsPage = () => {
                   <p>United Arab Emirates</p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Discount code and confirmation email */}
+          <div className="sp-card sp-card-pad space-y-4">
+            <div>
+              <p className={headingClass}>Discount code</p>
+              {order.coupon_code || order.discountAmount > 0 ? (
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[13px]" style={{ color: 'var(--sp-text)' }}>
+                    <span className="font-semibold tracking-wide">{order.coupon_code || 'Discount'}</span>
+                    <span style={{ color: 'var(--sp-text-secondary)' }}> · − AED {order.discountAmount.toFixed(2)}</span>
+                  </p>
+                  {isOpenOrder && order.coupon_code && (
+                    <button type="button" onClick={() => applyDiscount(null)} disabled={applyingDiscount} className="sp-btn sp-btn-secondary h-7 px-2.5 text-[12px]">Remove</button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[13px]" style={{ color: 'var(--sp-text-secondary)' }}>No discount code on this order.</p>
+              )}
+              {isOpenOrder && (
+                <form className="flex gap-2 mt-3" onSubmit={e => { e.preventDefault(); if (discountCode.trim()) applyDiscount(discountCode.trim()); }}>
+                  <input
+                    value={discountCode}
+                    onChange={e => setDiscountCode(e.target.value.replace(/\s/g, ''))}
+                    placeholder={order.coupon_code ? 'Replace with another code' : 'e.g. MGR50'}
+                    className="sp-input flex-1 min-w-0"
+                    aria-label="Discount code"
+                  />
+                  <button type="submit" disabled={applyingDiscount || !discountCode.trim()} className="sp-btn sp-btn-secondary">
+                    {applyingDiscount ? <Loader2 size={14} className="animate-spin" /> : 'Apply'}
+                  </button>
+                </form>
+              )}
+              {isOpenOrder && <p className="text-[12px] mt-1.5" style={{ color: 'var(--sp-text-subdued)' }}>Recalculates the discount and total from this order&apos;s products. The customer isn&apos;t emailed until you send the confirmation below.</p>}
+            </div>
+
+            {tabbyPayment && (
+              <div className="pt-4 space-y-1" style={{ borderTop: '1px solid var(--sp-border)' }}>
+                <div className="flex justify-between text-[13px]"><span style={{ color: 'var(--sp-text-secondary)' }}>Paid on Tabby</span><span className="font-medium">AED {tabbyPaid.toFixed(2)}</span></div>
+                <div className="flex justify-between text-[13px]"><span style={{ color: 'var(--sp-text-secondary)' }}>Order total</span><span className="font-medium">AED {order.totalAmount.toFixed(2)}</span></div>
+                {Math.abs(tabbyDifference) < 0.01
+                  ? <p className="text-[12px] text-green-700">The order matches what the customer paid.</p>
+                  : tabbyDifference > 0
+                    ? <p className="text-[12px]" style={{ color: '#8a6100' }}>The customer paid AED {tabbyDifference.toFixed(2)} more than this order. Check for a discount code they used, or refund the difference in Tabby.</p>
+                    : <p className="text-[12px]" style={{ color: '#8a6100' }}>This order is AED {(-tabbyDifference).toFixed(2)} more than the customer paid on Tabby.</p>}
+              </div>
+            )}
+
+            <div className="pt-4" style={{ borderTop: '1px solid var(--sp-border)' }}>
+              <button type="button" onClick={sendConfirmation} disabled={sendingEmail || !order.customerEmail} className="sp-btn sp-btn-secondary w-full justify-center">
+                {sendingEmail ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}Send order confirmation again
+              </button>
+              <p className="text-[12px] mt-1.5" style={{ color: 'var(--sp-text-subdued)' }}>Emails {order.customerEmail || 'the customer'} the order with its current products, discount and total.</p>
             </div>
           </div>
 

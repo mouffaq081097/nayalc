@@ -173,6 +173,8 @@ Active development phases include: chat UI modernization, admin portal improveme
 - `/api/tabby/checkout` saves the order details in `tabby_pending_orders` (keyed by Tabby payment ID) before the customer leaves. `completeTabbyOrder()` in `lib/tabbyOrders.js` creates the order from it, called by `/api/tabby/complete` (the `/tabby-return` page) and by the Tabby webhook. An advisory lock stops both creating it.
 - Admin → Recover order supports Tabby (payment ID lookup, editable products, paid-vs-order difference). Admin → Payments → Tabby shows each payment's order, or "No order" with a Recover button.
 - `tabby_payment_id` is copied to `delivered_orders` / `cancelled_orders` when archiving (`ensureTabbyPaymentColumns()`).
+- Admin order page: "Discount code" card applies/removes a code on an open order (`POST /api/admin/orders/[orderId]/discount`, recalculates discount, total and VAT, adjusts usage counts), shows paid-on-Tabby vs order total, and resends the confirmation (`POST /api/admin/orders/[orderId]/send-confirmation`). Recover order also takes a discount code.
+- Resend logic lives in `lib/orderConfirmation.js`; `sendOrderConfirmationEmail` returns `{ success }` instead of throwing, so check it.
 
 ### Known Gotchas
 - `fetchWithAuth` must come from `useAppContext()` — do NOT import from `lib/api.js` (that file exports `createFetchWithAuth` factory, not a ready-to-use function).

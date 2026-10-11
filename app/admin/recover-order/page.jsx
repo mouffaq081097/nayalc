@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, CheckCircle, Loader2, Plus, Search, ShoppingCart, User, MapPin, X } from 'lucide-react';
 import { useAppContext } from '@/app/context/AppContext';
 import { calcShipping } from '@/lib/shipping';
+import { calcCouponDiscount } from '@/lib/couponDiscount';
 
 const text = { color: 'var(--sp-text)' };
 const secondary = { color: 'var(--sp-text-secondary)' };
@@ -45,6 +46,16 @@ function RecoverOrder() {
     // Order
     const [selectedAddressId, setSelectedAddressId] = useState('');
     const [items, setItems] = useState([]);
+    const [couponCode, setCouponCode] = useState('');
+    const [coupons, setCoupons] = useState([]);
+
+    // Every discount code, so the total can show the code the customer used
+    useEffect(() => {
+        fetch('/api/coupons', { cache: 'no-store' })
+            .then(res => (res.ok ? res.json() : []))
+            .then(setCoupons)
+            .catch(() => {});
+    }, []);
 
     const [recoverLoading, setRecoverLoading] = useState(false);
     const [recoverResult, setRecoverResult] = useState(null);
@@ -109,14 +120,21 @@ function RecoverOrder() {
 
     const subtotal = items.reduce((s, i) => s + (Number(i.price) || 0) * (parseInt(i.quantity, 10) || 0), 0);
     const shipping = calcShipping(items.reduce((s, i) => s + (parseInt(i.quantity, 10) || 0), 0));
-    const total = subtotal + shipping;
+    const coupon = couponCode.trim() ? coupons.find(c => c.code.toUpperCase() === couponCode.trim().toUpperCase()) : null;
+    const lineItems = items.map(i => ({ productId: i.productId, price: Number(i.price) || 0, quantity: parseInt(i.quantity, 10) || 0 }));
+    const discount = coupon ? calcCouponDiscount(coupon, lineItems) : 0;
+    const couponProblem = couponCode.trim()
+        ? !coupon ? (coupons.length ? `There's no discount code "${couponCode.trim()}".` : null)
+            : discount <= 0 ? `${coupon.code} doesn't take anything off these products.` : null
+        : null;
+    const total = Math.max(0, subtotal + shipping - discount);
 
     const tabbyPaid = paymentMethod === 'tabby' && payment?.tabby?.paid;
     const cardPaid = paymentMethod === 'card' && payment?.stripe?.status === 'succeeded';
     const existingOrderId = paymentMethod === 'tabby' ? payment?.existingOrderId : payment?.existingOrder?.id;
     const paymentReady = paymentMethod === 'cashOnDelivery' || ((tabbyPaid || cardPaid) && !existingOrderId);
     const itemsReady = items.length > 0 && items.every(i => i.productId && Number(i.price) >= 0 && parseInt(i.quantity, 10) >= 1);
-    const canRecover = customer && selectedAddressId && itemsReady && paymentReady;
+    const canRecover = customer && selectedAddressId && itemsReady && paymentReady && !couponProblem;
     const paidAmount = tabbyPaid ? payment.tabby.amount - payment.tabby.refunded : null;
     const difference = paidAmount === null ? null : Math.round((paidAmount - total) * 100) / 100;
 
@@ -133,6 +151,7 @@ function RecoverOrder() {
                     user_id: customer.user.id,
                     user_address_id: parseInt(selectedAddressId, 10),
                     items: items.map(i => ({ productId: parseInt(i.productId, 10), quantity: parseInt(i.quantity, 10), price: Number(i.price) })),
+                    coupon_code: couponCode.trim() || null,
                 }),
             });
             const data = await res.json();
@@ -350,8 +369,21 @@ function RecoverOrder() {
                             <Plus size={14} />Add product
                         </button>
 
+                        <div className="pt-3" style={{ borderTop: '1px solid #ebebeb' }}>
+                            <label htmlFor="coupon-code" className="block text-[13px] font-medium mb-1.5" style={secondary}>Discount code <span className="font-normal" style={subdued}>(optional)</span></label>
+                            <input
+                                id="coupon-code"
+                                value={couponCode}
+                                onChange={e => setCouponCode(e.target.value.replace(/\s/g, ''))}
+                                placeholder="The code the customer used, e.g. MGR50"
+                                className="sp-input max-w-[280px]"
+                            />
+                            {couponProblem && <p className="text-[12px] mt-1.5" style={{ color: '#b42318' }}>{couponProblem}</p>}
+                        </div>
+
                         <dl className="pt-3 space-y-1.5 text-[13px]" style={{ borderTop: '1px solid #ebebeb' }}>
                             <div className="flex justify-between"><dt style={secondary}>Subtotal</dt><dd style={text}>{fmt(subtotal)}</dd></div>
+                            {discount > 0 && <div className="flex justify-between"><dt style={secondary}>Discount ({coupon.code})</dt><dd className="text-green-700">−{fmt(discount)}</dd></div>}
                             <div className="flex justify-between"><dt style={secondary}>Delivery</dt><dd style={text}>{shipping ? fmt(shipping) : 'Free'}</dd></div>
                             <div className="flex justify-between font-semibold"><dt style={text}>Order total (incl. VAT)</dt><dd style={text}>{fmt(total)}</dd></div>
                             {paidAmount !== null && (
@@ -390,6 +422,7 @@ function RecoverOrder() {
                                         {payment && !existingOrderId && !(tabbyPaid || cardPaid) && <li>The payment hasn&apos;t been completed</li>}
                                         {!selectedAddressId && <li>Choose a shipping address</li>}
                                         {!itemsReady && <li>Choose a product, quantity and price for every line</li>}
+                                        {couponProblem && <li>Fix the discount code</li>}
                                     </ul>
                                 )}
                             </>

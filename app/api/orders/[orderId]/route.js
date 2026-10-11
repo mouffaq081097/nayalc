@@ -153,6 +153,11 @@ export async function GET(request, context) {
         order.giftWrapCost   = parseFloat(order.giftWrapCost)   || 0;
         order.subtotal       = parseFloat(order.subtotal)       || 0;
 
+        if (order.applied_coupon_id) {
+            const { rows: couponRows } = await client.query('SELECT code FROM coupons WHERE id = $1', [order.applied_coupon_id]);
+            order.coupon_code = couponRows[0]?.code ?? null;
+        }
+
         // If payment method is card, fetch Stripe details for display
         if (order.paymentMethod === 'card' && order.stripePaymentIntentId) {
             try {
