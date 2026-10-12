@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { parsePhone } from '@/lib/phone';
 
 // UPDATE an address
 export async function PUT(request, { params }) {
@@ -20,6 +21,11 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ message: 'Missing required address fields' }, { status: 400 });
     }
 
+    const phone = parsePhone(customer_phone);
+    if (!phone.ok) {
+        return NextResponse.json({ message: phone.reason, field: 'customer_phone' }, { status: 400 });
+    }
+
     try {
         // If this is the new default, set all others to false first
         if (is_default) {
@@ -31,7 +37,7 @@ export async function PUT(request, { params }) {
              SET shipping_address = $1, address_line1 = $2, city = $3, zip_code = $4, country = $5, address_line2 = $6, state = $7, is_default = $8, address_label = $9, customer_phone = $10
              WHERE id = $11 AND user_id = $12
              RETURNING *`,
-            [address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, customer_phone, addressId, userId]
+            [address_line1, address_line1, city, zip_code, country, address_line2, state, is_default, address_label, phone.e164, addressId, userId]
         );
 
         if (rows.length === 0) {

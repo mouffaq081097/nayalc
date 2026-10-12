@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import PageLoader from '@/app/components/PageLoader';
 import { EmptyState, SearchBox, ViewPill } from '../../_components/IndexToolbar';
-import { internationalPhone } from '../../_components/phone';
+import { internationalPhone, formatPhone } from '../../_components/phone';
 
 const STATUS_BADGE = {
   abandoned:   { label: 'Not recovered', cls: 'sp-badge-warning' },
@@ -82,7 +82,7 @@ const ContactCard = ({ customer, children }) => {
       <div className="text-[13px] space-y-1">
         <p className="font-medium" style={text}>{customerName(customer)}</p>
         <p className="break-all" style={secondary}>{customer.email}</p>
-        {customer.customer_phone && <p style={secondary}>{customer.customer_phone}</p>}
+        {customer.customer_phone && <p style={secondary}>{formatPhone(customer.customer_phone)}</p>}
         {customer.city && <p style={secondary}>{customer.city}</p>}
       </div>
       <div className="flex flex-wrap gap-2">

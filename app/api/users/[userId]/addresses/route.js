@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { parsePhone } from '@/lib/phone';
 
 // GET all addresses for a user
 export async function GET(request, { params }) {
@@ -53,6 +54,13 @@ export async function POST(request, { params }) {
         return NextResponse.json({ message: 'Missing required address fields' }, { status: 400 });
     }
 
+    // The form normalises too, but the route is the last gate before the column:
+    // anything reaching the database is E.164 or it is rejected here.
+    const phone = parsePhone(customer_phone);
+    if (!phone.ok) {
+        return NextResponse.json({ message: phone.reason, field: 'customer_phone' }, { status: 400 });
+    }
+
     try {
         // Auto-default the first address ever added for this user
         const { rows: existing } = await db.query(
@@ -83,16 +91,14 @@ export async function POST(request, { params }) {
                 is_default as "isDefault",
                 address_label as "addressLabel",
                 customer_phone as "customerPhone"`,
-            [userId, address_line1, address_line1, city, zip_code, country, address_line2, state, shouldBeDefault, address_label, customer_phone]
+            [userId, address_line1, address_line1, city, zip_code, country, address_line2, state, shouldBeDefault, address_label, phone.e164]
         );
 
         // SYNC: Update user's main phone number if they don't have one yet
-        if (customer_phone) {
-            await db.query(
-                "UPDATE users SET phone_number = $1 WHERE id = $2 AND (phone_number IS NULL OR phone_number = '')",
-                [customer_phone, userId]
-            );
-        }
+        await db.query(
+            "UPDATE users SET phone_number = $1 WHERE id = $2 AND (phone_number IS NULL OR phone_number = '')",
+            [phone.e164, userId]
+        );
 
         return NextResponse.json(rows[0], { status: 201 });
     } catch (error) {

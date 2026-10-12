@@ -11,7 +11,7 @@ import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { Card, secondary, subdued, text } from '../../_components/EditorFields';
 import { Thumb } from '../../_components/ImageSlot';
-import { internationalPhone } from '../../_components/phone';
+import { internationalPhone, formatPhone, PhoneNeedsCheck } from '../../_components/phone';
 import { fmtAed } from '../../products/_components/productAdmin';
 import {
   CustomerAvatar, changeAdminAccess, changeSuspension, customerName, fmtDate, orderStatusBadge, timeAgo,
@@ -271,7 +271,7 @@ export default function CustomerPage() {
           <Card title="Contact">
             <div className="space-y-1 text-[13px]">
               <a href={`mailto:${customer.email}`} className="block break-all sp-link">{customer.email}</a>
-              <p style={phone ? text : subdued}>{phone || 'No phone number'}</p>
+              <p style={phone ? text : subdued}>{formatPhone(phone, { fallback: 'No phone number' })}<PhoneNeedsCheck phone={phone} /></p>
             </div>
             <div className="flex flex-wrap gap-2 mt-3">
               <a href={`mailto:${customer.email}`} className="sp-btn sp-btn-secondary"><Mail size={14} />Email</a>
@@ -298,7 +298,7 @@ export default function CustomerPage() {
                     {addressLines(address).map((line, i) => (
                       <p key={i} className="text-[13px] leading-snug" style={secondary}>{line}</p>
                     ))}
-                    {address.customer_phone && <p className="text-[12px] mt-1" style={subdued}>{address.customer_phone}</p>}
+                    {address.customer_phone && <p className="text-[12px] mt-1" style={subdued}>{formatPhone(address.customer_phone)}</p>}
                   </li>
                 ))}
               </ul>

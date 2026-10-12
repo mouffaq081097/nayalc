@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import PhoneNumberInput from './PhoneNumberInput';
 import { Tag, MapPin, Building2, Navigation, ChevronDown, Loader2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { parsePhone } from '@/lib/phone';
 
 const UAE_EMIRATES = [
   'Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman',
@@ -100,7 +101,10 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
     if (!form.city)                { errs.city          = 'Please select an emirate'; }
     if (!form.state.trim())        { errs.state         = 'Area / community is required'; }
     if (!form.addressLine1.trim()) { errs.addressLine1  = 'Building / villa / street is required'; }
-    if (!form.customerPhone)       { errs.customerPhone = 'Phone number is required'; }
+    // parsePhone carries the reason, so the customer is told what is wrong with
+    // the number rather than just that something is.
+    const phone = parsePhone(form.customerPhone);
+    if (!phone.ok)                 { errs.customerPhone = phone.reason; }
     return errs;
   };
 
@@ -121,11 +125,14 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
       ? `${rest.addressLine1} (Near ${landmark.trim()})`
       : rest.addressLine1;
 
+    // Store the canonical E.164 form, never whatever shape was typed.
+    const customerPhone = parsePhone(rest.customerPhone).e164;
+
     try {
-      await onSave({ ...rest, addressLine1 });
+      await onSave({ ...rest, addressLine1, customerPhone });
       // Parent closes the modal on success — saving stays true until unmount
-    } catch {
-      setSaveError('Something went wrong. Please try again.');
+    } catch (err) {
+      setSaveError(err?.message || 'Something went wrong. Please try again.');
       setSaving(false);
     }
   };
@@ -238,10 +245,14 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
           <label style={lbl}>
             Phone Number <span style={{ color: 'rgb(196,167,254)' }}>*</span>
           </label>
-          <div style={errors.customerPhone ? { outline: '1px solid rgba(252,165,165,0.9)', borderRadius: '12px' } : {}}>
-            <PhoneNumberInput value={form.customerPhone} onChange={set} />
-          </div>
-          <AnimatePresence><FieldError message={errors.customerPhone} /></AnimatePresence>
+          {/* The input renders its own error styling and message, including the
+              submit-time one we hand it, so there is no second FieldError here. */}
+          <PhoneNumberInput
+            value={form.customerPhone}
+            onChange={set}
+            error={errors.customerPhone}
+            required
+          />
         </div>
 
         {/* ── Label + Default ── */}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { parsePhone } from '@/lib/phone';
 
 // GET contact info
 export async function GET(request, { params }) {
@@ -47,12 +48,17 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ message: 'Phone is required' }, { status: 400 });
     }
 
+    const parsed = parsePhone(phone);
+    if (!parsed.ok) {
+        return NextResponse.json({ message: parsed.reason, field: 'phone' }, { status: 400 });
+    }
+
     try {
         // This will update all addresses for the user.
         // This is a business logic decision that might need to be revisited.
         await db.query(
             'UPDATE user_addresses SET customer_phone = $1 WHERE user_id = $2', // Removed customer_name
-            [phone, userId]
+            [parsed.e164, userId]
         );
 
         return NextResponse.json({ message: 'Contact info updated successfully' });

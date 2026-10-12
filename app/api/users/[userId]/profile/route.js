@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import db from '@/lib/db';
+import { parsePhone } from '@/lib/phone';
 
 export async function GET(request, { params }) {
   const { userId } = await params;
@@ -35,10 +36,18 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ message: 'First name and last name are required' }, { status: 400 });
   }
 
+  // Phone stays optional on the profile, but if one is given it is stored in
+  // the same E.164 shape as every address, not as free text.
+  const raw = phone_number?.trim();
+  const phone = raw ? parsePhone(raw) : null;
+  if (phone && !phone.ok) {
+    return NextResponse.json({ message: phone.reason, field: 'phone_number' }, { status: 400 });
+  }
+
   try {
     const result = await db.query(
       `UPDATE users SET first_name = $1, last_name = $2, phone_number = $3 WHERE id = $4`,
-      [first_name.trim(), last_name.trim(), phone_number?.trim() || null, userId]
+      [first_name.trim(), last_name.trim(), phone ? phone.e164 : null, userId]
     );
     if (result.rowCount === 0) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });

@@ -8,9 +8,16 @@ import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { EmptyState, SearchBox, ViewPill, toolbarSelectStyle } from '../_components/IndexToolbar';
 import { fmtAed } from '../products/_components/productAdmin';
+import { formatPhone, toNsn } from '@/lib/phone';
 import {
   CustomerAvatar, changeAdminAccess, changeSuspension, customerLocation, customerName, fmtDate,
 } from './_components/customerAdmin';
+
+// A phone search matches however the number was typed: "050 123 4567",
+// "+971501234567" and "501234567" all reduce to the same national digits.
+const haystack = (c) => [
+  customerName(c), c.email || '', c.phone_number || '', toNsn(c.phone_number || ''),
+].join(' ').toLowerCase();
 
 const text = { color: 'var(--sp-text)' };
 const secondary = { color: 'var(--sp-text-secondary)' };
@@ -40,7 +47,7 @@ function downloadCsv(customers) {
   const rows = [
     ['Name', 'Email', 'Phone', 'City', 'Country', 'Orders', 'Amount spent (AED)', 'Loyalty points', 'Tier', 'Joined', 'Admin', 'Suspended'],
     ...customers.map(c => [
-      customerName(c), c.email, c.phone_number, c.city, c.country, c.orders_count, c.total_spent.toFixed(2),
+      customerName(c), c.email, formatPhone(c.phone_number), c.city, c.country, c.orders_count, c.total_spent.toFixed(2),
       c.loyalty_points, c.loyalty_tier, fmtDate(c.created_at), c.is_admin ? 'Yes' : 'No', c.is_suspended ? 'Yes' : 'No',
     ]),
   ];
@@ -82,10 +89,14 @@ const CustomersPage = () => {
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
+    // "050 123 4567" and "+971 50 123 4567" have to find the same customer, so
+    // a search that is really a phone number is reduced the same way the
+    // stored numbers are before comparing.
+    const asPhone = toNsn(term);
     const matchesView = VIEWS.find(v => v.id === view).match;
     return list
       .filter(c => matchesView(c)
-        && (!term || `${customerName(c)} ${c.email || ''} ${c.phone_number || ''}`.toLowerCase().includes(term)))
+        && (!term || haystack(c).includes(term) || (asPhone && haystack(c).includes(asPhone))))
       .sort(SORTS[sort].compare);
   }, [list, view, search, sort]);
 

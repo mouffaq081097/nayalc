@@ -9,6 +9,7 @@ import { useAccountData } from '../_components/useAccountData';
 import AccountShell from '../_components/AccountShell';
 import { toast } from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
+import { parsePhone, formatAsYouType, toNsn, DIAL_CODE } from '@/lib/phone';
 
 /* ── Vercel-style section card ──────────────────────────────────────────── */
 function SectionCard({ title, description, children, footer }) {
@@ -62,7 +63,7 @@ export default function ProfilePage() {
 
   // Per-field save state
   const [name,    setName]    = useState({ first: '', last: '', saving: false, saved: false });
-  const [phone,   setPhone]   = useState({ value: '', saving: false, saved: false });
+  const [phone,   setPhone]   = useState({ value: '', saving: false, saved: false, error: null });
 
   const initials  = [user?.first_name?.[0], user?.last_name?.[0]].filter(Boolean).join('').toUpperCase() || 'NL';
   const memberSince = user?.created_at
@@ -76,7 +77,7 @@ export default function ProfilePage() {
       .then(data => {
         setProfile(data);
         setName(n => ({ ...n, first: data.first_name || '', last: data.last_name || '' }));
-        setPhone(p => ({ ...p, value: data.phone_number || '' }));
+        setPhone(p => ({ ...p, value: toNsn(data.phone_number || '') }));
       })
       .catch(() => {});
   }, [user?.id, fetchWithAuth]);
@@ -98,14 +99,26 @@ export default function ProfilePage() {
     } catch { toast.error('Could not save.'); setName(n => ({ ...n, saving: false })); }
   };
 
+  // Live read of what is in the box, for the carrier line under the field.
+  const phoneCheck = parsePhone(phone.value ? DIAL_CODE + phone.value : '');
+
   const savePhone = async () => {
-    setPhone(p => ({ ...p, saving: true }));
+    // Clearing the field is a deliberate action, so an empty value saves as
+    // NULL; anything else has to be a real UAE mobile before it leaves here.
+    const parsed = phone.value ? parsePhone(DIAL_CODE + phone.value) : null;
+    if (parsed && !parsed.ok) {
+      setPhone(p => ({ ...p, error: parsed.reason }));
+      return;
+    }
+    const e164 = parsed ? parsed.e164 : null;
+
+    setPhone(p => ({ ...p, saving: true, error: null }));
     try {
       await fetchWithAuth(`/api/users/${user.id}/profile`, {
         method: 'PUT',
-        body: JSON.stringify({ first_name: profile?.first_name || '', last_name: profile?.last_name || '', phone_number: phone.value }),
+        body: JSON.stringify({ first_name: profile?.first_name || '', last_name: profile?.last_name || '', phone_number: e164 }),
       });
-      setProfile(p => ({ ...p, phone_number: phone.value }));
+      setProfile(p => ({ ...p, phone_number: e164 }));
       setPhone(p => ({ ...p, saving: false, saved: true }));
       setTimeout(() => setPhone(p => ({ ...p, saved: false })), 2000);
       toast.success('Phone updated!');
@@ -214,18 +227,35 @@ export default function ProfilePage() {
         description="Your phone number may be used for delivery updates and account security."
         footer={
           <>
-            <p className="text-[12px] text-gray-400">Include country code, e.g. +971 50 000 0000</p>
+            <p className="text-[12px] text-gray-400">UAE mobile — 9 digits, e.g. 50 123 4567</p>
             <SaveBtn onClick={savePhone} saving={phone.saving} saved={phone.saved} />
           </>
         }
       >
-        <input
-          type="tel"
-          value={phone.value}
-          onChange={e => setPhone(p => ({ ...p, value: e.target.value, saved: false }))}
-          placeholder="+971 50 000 0000"
-          className="w-72 h-9 px-3 text-[13px] text-gray-900 bg-white border border-[#eaeaea] rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 placeholder:text-gray-300"
-        />
+        <div className="flex items-center gap-2">
+          <span className="h-9 px-3 inline-flex items-center gap-1.5 shrink-0 text-[13px] font-medium text-gray-500 bg-[#fafafa] border border-[#eaeaea] rounded-md select-none">
+            <span aria-hidden="true">🇦🇪</span>{DIAL_CODE}
+          </span>
+          <input
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel-national"
+            value={formatAsYouType(phone.value)}
+            onChange={e => setPhone(p => ({ ...p, value: toNsn(e.target.value), saved: false, error: null }))}
+            placeholder="50 123 4567"
+            aria-invalid={phone.error ? true : undefined}
+            className={`w-48 h-9 px-3 text-[13px] text-gray-900 bg-white border rounded-md focus:outline-none focus:ring-2 placeholder:text-gray-300 ${
+              phone.error
+                ? 'border-red-300 focus:ring-red-100 focus:border-red-400'
+                : 'border-[#eaeaea] focus:ring-gray-200 focus:border-gray-300'
+            }`}
+          />
+        </div>
+        {phone.error
+          ? <p className="mt-2 text-[12px] font-medium text-red-600">{phone.error}</p>
+          : phoneCheck.ok
+            ? <p className="mt-2 text-[12px] text-gray-400">{phoneCheck.carrier ? `${phoneCheck.carrier} · ` : ''}{phoneCheck.display}</p>
+            : null}
       </SectionCard>
 
       {/* Skin Profile */}

@@ -1,188 +1,218 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, MapPin, Phone, AlertTriangle } from 'lucide-react';
+import { toast } from 'react-toastify';
+import AccountShell from '../../_components/AccountShell';
+import { useAccountData } from '../../_components/useAccountData';
 import { useUser } from '../../../context/UserContext';
-import { AccountMobileTopBar } from '../../_components/AccountMobileTopBar';
 import Modal from '../../../components/Modal';
 import AddressInputForm from '../../../components/AddressInputForm';
-import { MapPin, Edit2, Trash2, ArrowLeft, Phone, Building2, Navigation } from 'lucide-react';
-import { toast } from 'react-toastify';
+import {
+  addressLabel, addressLines, canDeleteAddress, formattedAddressPhone,
+  addressPhoneNeedsFixing, isDefaultAddress,
+} from '../../_components/addressDisplay';
 
-const glass = {
-  background: 'rgba(255,255,255,0.72)',
-  border: '1px solid rgba(216,180,254,0.35)',
-  backdropFilter: 'blur(20px)',
-  boxShadow: '0 2px 16px rgba(147,51,234,0.06)',
-};
-
+/**
+ * One saved address, with room to show it properly.
+ *
+ * This page used to be built from the older lavender glass system while the
+ * rest of the account area is flat and white, and it rendered the same address
+ * twice in two stacked cards. It now matches its neighbours and says each
+ * thing once.
+ */
 export default function AddressDetailPage() {
   const { addressId } = useParams();
   const router = useRouter();
-  const { shippingAddresses, updateShippingAddress, deleteShippingAddress } = useUser();
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const { wishlistItems } = useAccountData();
+  const { shippingAddresses, addressesLoading, updateShippingAddress, deleteShippingAddress } = useUser();
+
+  const [isEditOpen, setIsEditOpen]     = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy]                 = useState(false);
 
-  const addr = shippingAddresses.find(a => String(a.id) === String(addressId));
+  const wishCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
+  const addr = (shippingAddresses || []).find(a => String(a.id) === String(addressId));
 
-  if (!addr) {
+  const backLink = (
+    <Link
+      href="/account/addresses"
+      className="inline-flex items-center gap-1.5 text-[12px] font-medium text-gray-500 hover:text-gray-900 transition-colors"
+    >
+      <ArrowLeft size={14} />
+      All addresses
+    </Link>
+  );
+
+  if (addressesLoading) {
     return (
-      <>
-        <AccountMobileTopBar title="Address" />
-        <div className="px-4 pt-6 pb-28 text-center">
-          <p className="text-sm" style={{ color: 'rgba(59,7,100,0.45)' }}>Address not found.</p>
-          <button onClick={() => router.back()} className="mt-4 text-sm font-bold" style={{ color: 'rgb(126,105,230)' }}>Go back</button>
+      <AccountShell wishCount={wishCount} title="Address">
+        <div className="py-16 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
         </div>
-      </>
+      </AccountShell>
     );
   }
 
+  if (!addr) {
+    return (
+      <AccountShell wishCount={wishCount} title="Address">
+        <div className="w-full max-w-4xl space-y-4">
+          {backLink}
+          <div className="bg-white rounded-lg border border-[#eaeaea] py-14 px-6 text-center">
+            <p className="text-[14px] font-semibold text-gray-900">This address isn&apos;t on your account</p>
+            <p className="mt-1 text-[13px] text-gray-500">It may have been removed. Your other addresses are still saved.</p>
+            <Link
+              href="/account/addresses"
+              className="mt-5 inline-flex items-center h-9 px-4 rounded-md bg-purple-600 text-white text-[13px] font-medium hover:bg-purple-700 transition-colors"
+            >
+              Back to addresses
+            </Link>
+          </div>
+        </div>
+      </AccountShell>
+    );
+  }
+
+  const isDefault   = isDefaultAddress(addr);
+  const lines       = addressLines(addr);
+  const phone       = formattedAddressPhone(addr);
+  const removable   = canDeleteAddress(addr);
+  const phoneBroken = addressPhoneNeedsFixing(addr);
+
   const handleSave = async (formData) => {
+    await updateShippingAddress({ ...formData, id: addr.id });
+    toast.success('Address updated.');
+    setIsEditOpen(false);
+  };
+
+  const handleUseThis = async () => {
+    setBusy(true);
     try {
-      await updateShippingAddress({ ...formData, id: addr.id });
-      toast.success('Address updated');
-      setIsEditOpen(false);
-    } catch {
-      toast.error('Error updating address');
+      await updateShippingAddress({ ...addr, isDefault: true });
+      toast.success(`Orders will ship to ${addressLabel(addr)}.`);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleDelete = async () => {
     if (!confirmDelete) { setConfirmDelete(true); return; }
+    setBusy(true);
     try {
       await deleteShippingAddress(addr.id);
-      toast.success('Address removed');
+      toast.success('Address removed.');
       router.push('/account/addresses');
-    } catch {
-      toast.error('Error removing address');
+    } catch (err) {
+      toast.error(err.message);
+      setBusy(false);
+      setConfirmDelete(false);
     }
   };
 
   return (
-    <>
-      <AccountMobileTopBar title={addr.addressLabel || 'Address'} />
+    <AccountShell wishCount={wishCount} title={addressLabel(addr)}>
+      <div className="w-full max-w-4xl space-y-4">
+        {backLink}
 
-      <div className="px-4 pb-28 pt-4">
-        <div className="mx-auto max-w-2xl space-y-4">
-
-          {/* Back + actions row */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-[12px] font-bold"
-              style={{ color: 'rgb(126,105,230)' }}
-            >
-              <ArrowLeft size={15} />
-              Addresses
-            </button>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsEditOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-[0.1em] transition-all"
-                style={{ background: 'rgba(196,167,254,0.18)', color: 'rgb(126,105,230)', border: '1px solid rgba(196,167,254,0.35)' }}
-              >
-                <Edit2 size={12} /> Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                onBlur={() => setConfirmDelete(false)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-bold uppercase tracking-[0.1em] transition-all"
-                style={confirmDelete
-                  ? { background: 'rgb(220,38,38)', color: 'white', border: '1px solid rgb(220,38,38)' }
-                  : { background: 'rgba(254,226,226,0.5)', color: 'rgb(248,113,113)', border: '1px solid rgba(252,165,165,0.3)' }}
-              >
-                <Trash2 size={12} /> {confirmDelete ? 'Confirm?' : 'Remove'}
-              </button>
-            </div>
-          </div>
-
-          {/* Address overview card */}
-          <div
-            className="rounded-3xl p-6"
-            style={{ background: 'var(--brand-gradient)', border: '1px solid var(--ink-200)' }}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(196,167,254,0.25)', color: 'rgb(126,105,230)' }}>
-                <MapPin size={20} strokeWidth={1.75} />
+        <div
+          className="bg-white rounded-lg border overflow-hidden"
+          style={{
+            borderColor: isDefault ? '#d8b4fe' : '#eaeaea',
+            boxShadow: isDefault ? 'inset 3px 0 0 0 #9333ea' : undefined,
+          }}
+        >
+          <div className="p-5">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-gray-50 border border-[#eaeaea] flex items-center justify-center shrink-0">
+                <MapPin size={16} className="text-gray-400" />
               </div>
+              <div className="min-w-0">
+                <h2 className="text-[15px] font-semibold text-gray-900">{addressLabel(addr)}</h2>
+                <p className="text-[12px] text-gray-500 mt-0.5">
+                  {isDefault ? 'Your orders ship here' : 'Saved address'}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-[#f0f0f0] grid gap-5 lg:grid-cols-[1fr_16rem]">
               <div>
-                <p className="text-[17px] font-bold tracking-tight" style={{ color: '#3b0764' }}>{addr.addressLabel || 'Delivery Address'}</p>
-                <p className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'rgb(196,167,254)' }}>{addr.city || 'UAE'}</p>
+                <p className="text-[12px] text-gray-400 mb-1">Delivering to</p>
+                {lines.length > 0
+                  ? lines.map((line, i) => (
+                      <p key={i} className="text-[13px] text-gray-700 leading-relaxed">{line}</p>
+                    ))
+                  : <p className="text-[13px] text-gray-400">No street address saved</p>}
               </div>
-            </div>
-            <div className="space-y-2" style={{ borderTop: '1px solid rgba(216,180,254,0.25)', paddingTop: '16px' }}>
-              {addr.addressLine1 && (
-                <div className="flex items-start gap-2.5">
-                  <Building2 size={13} className="mt-0.5 flex-shrink-0" style={{ color: 'rgb(196,167,254)' }} />
-                  <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(59,7,100,0.7)' }}>
-                    {[addr.addressLine1, addr.addressLine2].filter(Boolean).join(', ')}
-                  </p>
+
+              <div className="lg:pl-6 lg:border-l lg:border-[#f0f0f0]">
+                <p className="text-[12px] text-gray-400 mb-1">Contact number</p>
+                <div className="flex items-center gap-1.5">
+                  <Phone size={12} className="text-gray-400 shrink-0" />
+                  <p className="text-[13px] text-gray-700">{phone || 'No number saved'}</p>
                 </div>
-              )}
-              {(addr.state || addr.city) && (
-                <div className="flex items-start gap-2.5">
-                  <Navigation size={13} className="mt-0.5 flex-shrink-0" style={{ color: 'rgb(196,167,254)' }} />
-                  <p className="text-[13px]" style={{ color: 'rgba(59,7,100,0.55)' }}>
-                    {[addr.state, addr.city, addr.country].filter(Boolean).join(', ')}
-                  </p>
-                </div>
-              )}
+                {phoneBroken && (
+                  <div className="mt-2 flex items-start gap-1.5 rounded-md bg-amber-50 border border-amber-200 px-2.5 py-2">
+                    <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-amber-700 leading-relaxed">
+                      We can&apos;t reach this number. Edit the address to correct it, or the courier won&apos;t be able to call.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Address info card */}
-          <div className="rounded-3xl p-6 space-y-4" style={glass}>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(196,167,254,0.18)', color: 'rgb(126,105,230)' }}>
-                  <MapPin size={18} strokeWidth={1.75} />
-                </div>
-                <div>
-                  <p className="text-[16px] font-bold tracking-tight" style={{ color: '#3b0764' }}>{addr.addressLabel || 'Address'}</p>
-                  {addr.isDefault && (
-                    <span className="text-[8px] font-black uppercase tracking-[0.1em] px-2 py-0.5 rounded-full text-white inline-block mt-1" style={{ background: 'var(--brand-gradient)' }}>
-                      Primary
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2" style={{ borderTop: '1px solid rgba(216,180,254,0.25)' }}>
-              {addr.addressLine1 && (
-                <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(59,7,100,0.65)' }}>
-                  {[addr.addressLine1, addr.addressLine2].filter(Boolean).join(', ')}
-                </p>
-              )}
-              {(addr.city || addr.country) && (
-                <p className="text-[13px]" style={{ color: 'rgba(59,7,100,0.55)' }}>
-                  {[addr.city, addr.state, addr.country].filter(Boolean).join(', ')}
-                </p>
-              )}
-            </div>
-
-            {addr.customerPhone && (
-              <div className="flex items-center gap-2 pt-2" style={{ borderTop: '1px solid rgba(216,180,254,0.25)' }}>
-                <Phone size={13} style={{ color: 'rgb(196,167,254)' }} />
-                <p className="text-[13px] font-medium" style={{ color: 'rgba(59,7,100,0.65)' }}>{addr.customerPhone}</p>
-              </div>
+          <div className="flex items-center gap-3 px-5 py-3 border-t border-[#f0f0f0] bg-[#fcfcfc]">
+            <button
+              onClick={() => setIsEditOpen(true)}
+              disabled={busy}
+              className="h-8 px-3 rounded-md bg-gray-900 text-white text-[12px] font-medium hover:bg-gray-700 disabled:opacity-40 transition-colors"
+            >
+              Edit address
+            </button>
+            {!isDefault && (
+              <button
+                onClick={handleUseThis}
+                disabled={busy}
+                className="text-[12px] font-medium text-purple-600 hover:text-purple-700 disabled:opacity-40"
+              >
+                Use this address
+              </button>
             )}
+            <div className="ml-auto">
+              {removable ? (
+                <button
+                  onClick={handleDelete}
+                  onBlur={() => setConfirmDelete(false)}
+                  disabled={busy}
+                  className={`text-[12px] font-medium disabled:opacity-40 ${
+                    confirmDelete ? 'text-red-600' : 'text-gray-500 hover:text-red-600'
+                  }`}
+                >
+                  {confirmDelete ? 'Confirm removal' : 'Remove'}
+                </button>
+              ) : (
+                <span className="text-[12px] text-gray-400 cursor-default">
+                  Kept — it&apos;s on a past order
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <Modal
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        title="Edit Address"
-        size="max-w-3xl"
-      >
+      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} size="max-w-3xl">
         <AddressInputForm
           initialData={addr}
           onSave={handleSave}
           onCancel={() => setIsEditOpen(false)}
         />
       </Modal>
-    </>
+    </AccountShell>
   );
 }

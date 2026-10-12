@@ -5,6 +5,20 @@ import { createFetchWithAuth } from '../lib/api';
 
 const UserContext = createContext(null);
 
+// fetchWithAuth throws Error("Request failed with status: 400, Body: {json}"),
+// so the server's own message is in there — pull it out rather than showing
+// the customer a status code, or worse, a success toast.
+const apiErrorMessage = (error, fallback) => {
+  const body = String(error?.message || '').match(/Body:\s*([\s\S]*)$/)?.[1];
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed?.message) return parsed.message;
+  } catch { /* not JSON — fall through */ }
+  return fallback;
+};
+
+
+
 export const UserProvider = ({ children }) => {
   const { user, isAuthenticated, logout } = useAuth(); // Get user and isAuthenticated from AuthContext
   const fetchWithAuth = createFetchWithAuth(logout);
@@ -15,6 +29,7 @@ export const UserProvider = ({ children }) => {
     phone: '',
   });
   const [shippingAddresses, setShippingAddresses] = useState([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
 
   // Function to fetch contact info from the backend
   const fetchContactInfo = useCallback(async () => {
@@ -43,6 +58,7 @@ export const UserProvider = ({ children }) => {
     if (!isAuthenticated || !user?.id) {
 
       setShippingAddresses([]);
+      setAddressesLoading(false);
       return;
     }
 
@@ -54,6 +70,8 @@ export const UserProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching shipping addresses:', error);
       setShippingAddresses([]);
+    } finally {
+      setAddressesLoading(false);
     }
   }, [isAuthenticated, user]);
 
@@ -137,6 +155,7 @@ export const UserProvider = ({ children }) => {
       fetchShippingAddresses();
     } catch (error) {
       console.error('Error adding shipping address:', error);
+      throw new Error(apiErrorMessage(error, 'Could not save this address. Please try again.'));
     }
   };
 
@@ -148,7 +167,7 @@ export const UserProvider = ({ children }) => {
         city: updatedAddress.city || '',
         zip_code: updatedAddress.zipCode || updatedAddress.zip_code || '',
         country: updatedAddress.country || '',
-        address_line2: updatedAddress.apartment || updatedAddress.address_line2 || null,
+        address_line2: updatedAddress.apartment || updatedAddress.addressLine2 || updatedAddress.address_line2 || null,
         state: updatedAddress.state || null,
         is_default: updatedAddress.isDefault || updatedAddress.is_default || false,
         address_label: updatedAddress.addressLabel || updatedAddress.addressLine1 || 'Other',
@@ -162,6 +181,7 @@ export const UserProvider = ({ children }) => {
       fetchShippingAddresses();
     } catch (error) {
       console.error('Error updating shipping address:', error);
+      throw new Error(apiErrorMessage(error, 'Could not update this address. Please try again.'));
     }
   };
 
@@ -174,6 +194,7 @@ export const UserProvider = ({ children }) => {
       fetchShippingAddresses();
     } catch (error) {
       console.error('Error deleting shipping address:', error);
+      throw new Error(apiErrorMessage(error, 'Could not remove this address. Please try again.'));
     }
   };
 
@@ -184,6 +205,7 @@ export const UserProvider = ({ children }) => {
       setUserData,
       contactInfo,
       shippingAddresses,
+      addressesLoading,
       updateContactInfo,
       addShippingAddress,
       updateShippingAddress,

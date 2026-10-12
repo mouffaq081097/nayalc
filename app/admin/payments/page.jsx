@@ -1,4 +1,5 @@
 'use client';
+import { formatPhone } from '@/lib/phone';
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
@@ -578,7 +579,7 @@ function CashOnDeliveryPanel({ overview }) {
                         {order.customer_id ? (
                           <Link href={`/admin/users/${order.customer_id}`} className="block truncate hover:underline" style={text}>{customerName(order)}</Link>
                         ) : <span style={subdued}>Unknown customer</span>}
-                        {order.customer_phone && <span className="block text-[12px]" style={subdued}>{order.customer_phone}</span>}
+                        {order.customer_phone && <span className="block text-[12px]" style={subdued}>{formatPhone(order.customer_phone)}</span>}
                       </td>
                       <td className="whitespace-nowrap" style={order.city ? secondary : subdued}>{order.city || '—'}</td>
                       <td className="whitespace-nowrap"><span className={`sp-badge ${badge.cls}`}>{badge.label}</span></td>

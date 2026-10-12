@@ -1,4 +1,5 @@
 'use client';
+import { formatPhone } from '@/lib/phone';
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -289,7 +290,7 @@ export default function OrderDetailPage() {
                         {[order.city, order.state, order.country].filter(Boolean).join(', ')}
                       </p>
                     )}
-                    {order.customerPhone && <p className="text-[12px] mt-1 text-gray-400">{order.customerPhone}</p>}
+                    {order.customerPhone && <p className="text-[12px] mt-1 text-gray-400">{formatPhone(order.customerPhone)}</p>}
                   </div>
                 </div>
               </Section>
