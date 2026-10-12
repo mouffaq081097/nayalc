@@ -1,9 +1,9 @@
 import React from 'react';
 import { HeroSection } from './components/HeroSection';
+import { TrustStrip } from './components/home/TrustStrip';
 import { Categories } from './components/Categories';
 import { BestSellers } from './components/BestSellers';
 import { FeaturedProducts } from './components/FeaturedProducts';
-import { ForYouSection } from './components/ForYouSection';
 import { SocialFeed } from './components/SocialFeed';
 import { BuildYourRoutine } from './components/BuildYourRoutine';
 import { JournalSection } from './components/JournalSection';
@@ -27,13 +27,13 @@ export default async function HomePage() {
     return (
         <div className="flex flex-col bg-transparent min-h-screen">
             <HeroSection dbSlides={dbSlides} />
+            <TrustStrip />
             <Categories />
             <BestSellers />
             {/* <PhilosophySection /> */}
             <BuildYourRoutine />
             <FeaturedProducts />
             <SignatureBanner />
-            <ForYouSection />
             {/* <ReviewsSection /> */}
             {/* <OurStorySection /> */}
             <SocialFeed />

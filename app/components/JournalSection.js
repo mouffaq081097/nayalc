@@ -6,6 +6,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Container } from './ui/Container';
 import { BookOpen } from 'lucide-react';
 import { useJournalArticles } from '../hooks/useJournalArticles';
+import { SectionHeading } from './home/SectionHeading';
 
 const LAVENDER = 'rgb(147,104,236)';
 
@@ -57,21 +58,9 @@ export function JournalSection() {
   const secondHalf = articles.slice(Math.ceil(articles.length / 2));
 
   return (
-    <section className="py-4 relative overflow-hidden bg-white">
+    <section className="py-8 md:py-12 relative overflow-hidden bg-white">
       <Container className="relative z-10">
-        <div className="mb-4 flex flex-row justify-between items-end gap-4">
-          <div className="space-y-1">
-            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">The Journal</p>
-            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Stories from the house</h2>
-          </div>
-          <Link
-            href="/journal"
-            className="shrink-0 text-sm font-medium transition-colors hover:opacity-70"
-            style={{ color: LAVENDER }}
-          >
-            View all →
-          </Link>
-        </div>
+        <SectionHeading eyebrow="The Journal" title="Stories from the house" href="/journal" linkLabel="View all →" />
 
         {loading ? (
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">

@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem } from './ui/carousel.tsx';
+import { SectionHeading } from './home/SectionHeading';
 
-const LAVENDER = 'rgb(147,104,236)';
 
 function PostTile({ post, i, sizes }) {
   return (
@@ -24,7 +23,7 @@ function PostTile({ post, i, sizes }) {
         sizes={sizes}
       />
       {/* Like count on first tile */}
-      {i === 0 && post.likes && (
+      {i === 0 && Number(post.likes) > 0 && (
         <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/40 rounded-md px-1.5 py-0.5">
           <Heart size={10} className="text-white fill-white" />
           <span className="text-[10px] font-medium text-white">{Number(post.likes).toLocaleString()}</span>
@@ -60,24 +59,9 @@ export const SocialFeed = () => {
   if (!loading && posts.length === 0) return null;
 
   return (
-    <section className="py-4 bg-white">
+    <section className="py-8 md:py-12 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-row items-end justify-between gap-4 mb-4">
-          <div className="space-y-1">
-            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">@nayalumiere</p>
-            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Follow the glow</h2>
-          </div>
-          <Link
-            href="https://instagram.com/nayalumiere"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 text-sm font-medium transition-colors whitespace-nowrap"
-            style={{ color: LAVENDER }}
-          >
-            Follow on Instagram →
-          </Link>
-        </div>
+        <SectionHeading eyebrow="@nayalumiere" title="Follow the glow" href="https://instagram.com/nayalumiere" linkLabel="Follow on Instagram →" external />
 
         {/* Loading skeleton */}
         {loading && (

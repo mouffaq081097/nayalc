@@ -216,7 +216,7 @@ function SignatureSelectionSection() {
   const [overrides, setOverrides] = useState({}); // productId -> signatureImageUrl | null
 
   const fragranceProducts = adminProducts.filter((p) =>
-    (p.categoryNames || '').split(',').map((s) => s.trim()).includes('Fragrence')
+    (p.categoryNames || '').split(',').some((s) => FRAGRANCE_CATEGORY.test(s.trim()))
   );
 
   const effectiveUrl = (p) => (p.id in overrides ? overrides[p.id] : p.signatureImageUrl) || p.imageUrl;
@@ -301,6 +301,9 @@ function ProvenanceSection() {
     </div>
   );
 }
+
+// The category was once spelled "Fragrence"; match either spelling
+const FRAGRANCE_CATEGORY = /^fragr[ae]nce$/i;
 
 export default function AdminHomepageImages() {
   return (

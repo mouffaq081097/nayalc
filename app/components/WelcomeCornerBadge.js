@@ -35,8 +35,10 @@ export function WelcomeCornerBadge({ onOpen }) {
   };
 
   return (
+    // Phones: a short "10%" tab low on the edge, just above the bottom nav, so it doesn't
+    // sit over the hero copy and product cards mid-screen. Desktop: the full tab, mid-edge.
     <div
-      className="fixed right-0 top-[60%] -translate-y-1/2 z-[120] flex flex-col items-center rounded-l-2xl shadow-lg overflow-hidden"
+      className="fixed right-0 bottom-[96px] md:bottom-auto md:top-[60%] md:-translate-y-1/2 z-[120] flex flex-col items-center rounded-l-2xl shadow-lg overflow-hidden"
       style={{ background: LAVENDER, boxShadow: '-6px 8px 24px -8px rgba(147,104,236,0.55)' }}
     >
       <button
@@ -50,13 +52,15 @@ export function WelcomeCornerBadge({ onOpen }) {
       <button
         type="button"
         onClick={onOpen}
-        className="flex flex-col items-center gap-2 px-2.5 pb-4 pt-1 cursor-pointer"
+        aria-label="Get 10% off your first order"
+        className="flex flex-col items-center gap-1.5 md:gap-2 px-2 md:px-2.5 pb-3 md:pb-4 pt-1 cursor-pointer"
       >
         <span
           className="text-white text-[11px] font-bold tracking-wide whitespace-nowrap"
           style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
         >
-          GET 10% OFF
+          <span className="md:hidden">10% OFF</span>
+          <span className="hidden md:inline">GET 10% OFF</span>
         </span>
         <Tag size={14} className="text-white" strokeWidth={2} />
       </button>

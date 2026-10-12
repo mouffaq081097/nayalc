@@ -3,8 +3,8 @@
 import { Carousel, CarouselContent, CarouselItem } from './ui/carousel.tsx';
 import { Container } from './ui/Container';
 import ProductCard from './ProductCard';
-import Link from 'next/link';
 import { useAppContext } from '../context/AppContext';
+import { SectionHeading } from './home/SectionHeading';
 
 /**
  * Real top 4 best sellers, ranked 1-4 by actual units sold (product.isBestseller /
@@ -15,7 +15,7 @@ import { useAppContext } from '../context/AppContext';
 export function BestSellers() {
   const { products } = useAppContext();
   const topSellers = [...products]
-    .filter((p) => p.isBestseller)
+    .filter((p) => p.isBestseller && Number(p.stock_quantity) > 0)
     .sort((a, b) => Number(b.totalSold || 0) - Number(a.totalSold || 0))
     .slice(0, 4);
 
@@ -36,21 +36,9 @@ export function BestSellers() {
   });
 
   return (
-    <section className="py-4 relative overflow-hidden bg-white">
+    <section className="py-8 md:py-12 relative overflow-hidden bg-white">
       <Container className="relative z-10">
-        <div className="mb-4 flex flex-row justify-between items-end gap-4">
-          <div className="space-y-1">
-            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Most loved</p>
-            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Best Sellers</h2>
-          </div>
-          <Link
-            href="/all-products"
-            className="shrink-0 text-sm font-medium transition-colors hover:opacity-70"
-            style={{ color: 'rgb(147,104,236)' }}
-          >
-            View all →
-          </Link>
-        </div>
+        <SectionHeading eyebrow="Most loved" title="Best Sellers" href="/all-products" linkLabel="View all →" />
 
         {/* Mobile: carousel */}
         <div className="md:hidden">

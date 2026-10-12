@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { useAppContext } from '../context/AppContext';
 import { Carousel, CarouselContent, CarouselItem } from './ui/carousel.tsx';
 import { Container } from './ui/Container';
+import { SectionHeading } from './home/SectionHeading';
+import { formatAED } from '../lib/utils';
 
 // Real routine steps, matched against each product's actual category names
 // (product.categoryNames, a real ", "-joined string from the live catalog) —
@@ -49,8 +51,6 @@ export function BuildYourRoutine() {
 
   if (routine.length < 2) return null;
 
-  const totalPrice = routine.reduce((sum, r) => sum + Number(r.product.price || 0), 0);
-
   const Card = ({ product, i, label, timing }) => {
     const step = i + 1;
     return (
@@ -82,29 +82,16 @@ export function BuildYourRoutine() {
         <div className="p-3 flex flex-col gap-1">
           <p className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: LAVENDER }}>{label}</p>
           <p className="text-[13px] font-semibold text-gray-900 leading-snug line-clamp-2">{product.name}</p>
-          <p className="text-[13px] font-medium text-gray-500 mt-0.5">AED {Number(product.price).toFixed(0)}</p>
+          <p className="text-[13px] font-medium text-gray-500 mt-0.5">{formatAED(product.price)}</p>
         </div>
       </Link>
     );
   };
 
   return (
-    <section className="py-4 bg-white">
+    <section className="py-10 md:py-14" style={{ background: '#faf6ff' }}>
       <Container>
-        {/* Header */}
-        <div className="flex flex-row justify-between items-end mb-4 gap-4">
-          <div className="space-y-1">
-            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Personalised</p>
-            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Build Your Routine</h2>
-          </div>
-          <Link
-            href="/all-products"
-            className="shrink-0 text-sm font-medium transition-colors hover:opacity-70"
-            style={{ color: 'rgb(147,104,236)' }}
-          >
-            Shop all → AED {totalPrice.toFixed(0)}
-          </Link>
-        </div>
+        <SectionHeading eyebrow="Your daily ritual" title="Build Your Routine" href="/all-products" linkLabel="View all →" />
 
         {/* Mobile: carousel */}
         <div className="md:hidden">

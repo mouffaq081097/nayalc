@@ -59,8 +59,10 @@ const sans = poppins.style.fontFamily;
 // about the brand's country of origin.
 const BRAND_TINT = {
   'Zorah Biocosmetiques': '#1E7A5A',
+  'Zorah Biocosmétiques': '#1E7A5A',
   'GERnétic International': '#3B5BA9',
   'Naya Lumiere Perfumes': '#8A5E22',
+  'Naya Lumière Perfumes': '#8A5E22',
 };
 const DEFAULT_TINT = '#9333ea';
 
@@ -81,6 +83,10 @@ function categoryList(product) {
   return (product.categoryNames || '').split(',').map((s) => s.trim()).filter(Boolean);
 }
 
+// The category was once spelled "Fragrence"; match either spelling
+const FRAGRANCE_CATEGORY = /^fragr[ae]nce$/i;
+const isFragrance = (product) => categoryList(product).some((c) => FRAGRANCE_CATEGORY.test(c));
+
 function hasCategory(product, name) {
   return categoryList(product).includes(name);
 }
@@ -99,7 +105,7 @@ function pickTopSellers(products) {
 
 /** The "Fragrence" category (real, 3 products) — a natural fit for a signature-scent picker. */
 function pickSignature(products) {
-  return products.filter((p) => hasCategory(p, 'Fragrence'));
+  return products.filter((p) => isFragrance(p));
 }
 
 const ESSENTIALS_CATEGORY_ORDER = [
@@ -125,7 +131,7 @@ function pickEssentials(products, excludeIds) {
     }
   }
   if (picked.length < 4) {
-    for (const p of inStock.filter((p) => !used.has(p.id) && !hasCategory(p, 'Fragrence')).sort(byRating)) {
+    for (const p of inStock.filter((p) => !used.has(p.id) && !isFragrance(p)).sort(byRating)) {
       if (picked.length >= 4) break;
       picked.push(p);
       used.add(p.id);

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Container } from './ui/Container';
 import { getSlot } from '@/lib/homepageImageSlots';
+import { headingFont } from './home/SectionHeading';
 
 // The photo is admin-chosen from /admin/homepage — either uploaded there or
 // picked out of the Cloudinary library — and served through /api/homepage-images.
@@ -48,7 +49,7 @@ export function SignatureBanner() {
   const imageAlt = override?.altText || slot.alt;
 
   return (
-    <section className="py-4 bg-white">
+    <section className="py-8 md:py-12 bg-white">
       <Container>
         <div className="relative min-h-[360px] md:min-h-0 rounded-3xl md:rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-[1fr_1.15fr]">
 
@@ -60,7 +61,7 @@ export function SignatureBanner() {
                 Professional skincare
               </p>
             </div>
-            <h2 className="mt-2 md:mt-3 text-[24px] md:text-[32px] lg:text-[38px] font-bold leading-tight text-white md:text-gray-900">
+            <h2 className={`${headingFont} mt-2 md:mt-3 text-[30px] md:text-[40px] lg:text-[46px] font-medium leading-[1.05] text-white md:text-[#1f1235]`}>
               Salon Results, At Home
             </h2>
             <p className="mt-2 md:mt-3 max-w-md text-[13px] md:text-[15px] leading-[1.5] md:leading-relaxed text-white/75 md:text-gray-600">
@@ -69,7 +70,7 @@ export function SignatureBanner() {
             </p>
             <Link
               href="/SkinCare"
-              className="mt-5 md:mt-7 inline-flex w-full md:w-fit items-center justify-center rounded-full md:rounded-none px-6 md:px-9 py-3 md:py-3.5 text-[13px] font-medium text-white bg-[rgb(147,104,236)] transition-opacity duration-300 hover:opacity-90"
+              className="mt-5 md:mt-7 inline-flex w-full md:w-fit items-center justify-center rounded-full px-6 md:px-9 py-3 md:py-3.5 text-[13px] font-medium text-white bg-[rgb(147,104,236)] transition-opacity duration-300 hover:opacity-90"
             >
               Shop Skincare
             </Link>

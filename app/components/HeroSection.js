@@ -294,7 +294,7 @@ export function HeroSection({ dbSlides = [] }) {
   return (
     <section
       className="relative w-full overflow-hidden bg-transparent"
-      style={{ height: 'min(90vh, 760px)' }}
+      style={{ height: 'min(78vh, 680px)' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={onTouchStart}

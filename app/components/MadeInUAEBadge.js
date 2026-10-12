@@ -24,25 +24,35 @@ export function MadeInUAEBadge({ variant = 'light' }) {
         boxShadow: isDark ? 'none' : '0 1px 4px rgba(147,51,234,0.10)',
       }}
     >
-      <span
-        style={{
-          display: 'inline-flex',
-          width: '16px',
-          height: '11px',
-          borderRadius: '2px',
-          overflow: 'hidden',
-          flexShrink: 0,
-          boxShadow: '0 0 0 0.75px rgba(0,0,0,0.18)',
-        }}
-      >
-        <span style={{ width: '4px', flexShrink: 0, background: '#EF3340' }} />
-        <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <span style={{ flex: 1, background: '#00732F' }} />
-          <span style={{ flex: 1, background: '#FFFFFF' }} />
-          <span style={{ flex: 1, background: '#000000' }} />
-        </span>
-      </span>
+      <UAEFlag />
       Made in UAE
+    </span>
+  );
+}
+
+// The flag on its own — for tight spots like product cards, where the full pill is too much
+export function UAEFlag({ title }) {
+  return (
+    <span
+      role={title ? 'img' : undefined}
+      aria-label={title}
+      title={title}
+      style={{
+        display: 'inline-flex',
+        width: '16px',
+        height: '11px',
+        borderRadius: '2px',
+        overflow: 'hidden',
+        flexShrink: 0,
+        boxShadow: '0 0 0 0.75px rgba(0,0,0,0.18)',
+      }}
+    >
+      <span style={{ width: '4px', flexShrink: 0, background: '#EF3340' }} />
+      <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <span style={{ flex: 1, background: '#00732F' }} />
+        <span style={{ flex: 1, background: '#FFFFFF' }} />
+        <span style={{ flex: 1, background: '#000000' }} />
+      </span>
     </span>
   );
 }

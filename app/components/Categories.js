@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from './ui/carousel.tsx';
 import { Container } from './ui/Container';
+import { SectionHeading } from './home/SectionHeading';
 
 export function Categories() {
   const [categories, setCategories] = useState([]);
@@ -42,22 +43,9 @@ export function Categories() {
   if (error) return null;
 
   return (
-    <section className="py-4 relative overflow-hidden bg-white">
+    <section className="py-8 md:py-12 relative overflow-hidden bg-white">
       <Container className="relative z-10">
-        {/* Section Header */}
-        <div className="mb-4 flex flex-row justify-between items-end gap-4">
-          <div className="space-y-1">
-            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Browse</p>
-            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Shop by Category</h2>
-          </div>
-          <Link
-            href="/all-products"
-            className="shrink-0 text-sm font-medium transition-colors"
-            style={{ color: 'rgb(147,104,236)' }}
-          >
-            All categories →
-          </Link>
-        </div>
+        <SectionHeading eyebrow="Browse" title="Shop by Category" href="/all-products" linkLabel="All categories →" />
 
         {/* Categories Carousel */}
         <Carousel opts={{ align: 'start', loop: true }} className="w-full">
@@ -83,7 +71,7 @@ export function Categories() {
                     <div className="px-3 py-3 text-center">
                       <p className="text-[13px] font-semibold text-gray-900 leading-snug">{category.name}</p>
                       <p className="text-[11px] text-gray-400 mt-0.5">
-                        {category.productCount ? `${category.productCount} products` : 'Explore'}
+                        {category.productCount ? `${category.productCount} product${Number(category.productCount) === 1 ? '' : 's'}` : 'Explore'}
                       </p>
                     </div>
                   </div>

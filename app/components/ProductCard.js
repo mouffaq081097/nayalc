@@ -2,15 +2,19 @@ import React, { useState, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartContext } from '../context/CartContext';
-import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, Timer, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, BadgeCheck, Share2, Flame } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, BadgeCheck, Share2, Flame } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
 import { Badge } from './ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MadeInFranceBadge } from './MadeInFranceBadge';
-import { MadeInUAEBadge } from './MadeInUAEBadge';
-import { getDeliveryInfo } from '../../lib/shipping';
+import { MadeInFranceBadge, FranceFlag } from './MadeInFranceBadge';
+import { MadeInUAEBadge, UAEFlag } from './MadeInUAEBadge';
+import { getDeliveryInfo, FREE_SHIPPING_FROM } from '../../lib/shipping';
+import { formatAED } from '../lib/utils';
+
+// Cloud Luxe accent for card badges (rank, best seller, saving)
+const LAVENDER = 'rgb(147,104,236)';
 
 // Live, UAE-cutoff-accurate delivery estimate — the exact same calculation the
 // product detail page uses (lib/shipping.getDeliveryInfo), so the two never disagree.
@@ -71,6 +75,11 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const productUrl = `/product/${slug || id}`;
   const seoAlt = altText || `${name} - ${brandName || 'Luxury Beauty'} | nayalc.com`;
   const isLowStock = stock_quantity > 0 && stock_quantity < 5;
+  // Stars only for products customers have actually rated — five empty stars read as "rated zero"
+  const rating = Number(averageRating) || 0;
+  const hasReviews = Number(reviewCount) > 0 && rating > 0;
+  const isFrench = !!brandName && /gern[eé]t/i.test(brandName);
+  const isEmirati = !!brandName && /naya\s*lumi[eè]?re?\s*perfumes?/i.test(brandName);
   const displayImage = (isHovered && imageUrls.length > 1) ? imageUrls[1] : (image || (imageUrls.length > 0 ? imageUrls[0] : '/placeholder-image.jpg'));
   const secondImage = imageUrls.length > 1 ? imageUrls[1] : null;
 
@@ -189,25 +198,25 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             {rank ? (
               <span
                 className="flex items-center justify-center w-7 h-7 m-2 rounded-full text-[13px] font-bold text-white leading-none"
-                style={{ background: '#ea580c' }}
+                style={{ background: LAVENDER }}
               >
                 {rank}
               </span>
             ) : (
               isBestseller && (
                 <span
-                  className="text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
-                  style={{ background: '#ea580c' }}
+                  className="m-2 rounded-full text-[10.5px] font-semibold px-2.5 py-1 leading-none"
+                  style={{ background: 'rgba(147,104,236,0.12)', color: '#6d4fd6' }}
                 >
-                  Best Seller
+                  Best seller
                 </span>
               )
             )}
 
             {isNew && !isBestseller && !rank && (
               <span
-                className="text-[11px] font-bold text-white px-2.5 py-1.5 leading-none"
-                style={{ background: '#7c3aed' }}
+                className="m-2 rounded-full text-[10.5px] font-semibold text-white px-2.5 py-1 leading-none"
+                style={{ background: LAVENDER }}
               >
                 New
               </span>
@@ -288,22 +297,18 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
         {/* Info section */}
         <div className="flex flex-col px-3 pt-3 pb-4 gap-1.5">
-          {/* Brand */}
+          {/* Brand, with a small origin flag in place of the full "Made in" pill */}
           {brandName && (
-            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-gray-400">
-              {brandName}
+            <span className="flex items-center gap-1.5 min-w-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400">
+              <span className="truncate">{brandName}</span>
+              {isFrench && <FranceFlag title="Made in France" />}
+              {isEmirati && <UAEFlag title="Made in UAE" />}
             </span>
-          )}
-          {brandName && /gern[eé]t/i.test(brandName) && (
-            <MadeInFranceBadge variant="light" />
-          )}
-          {brandName && /naya\s*lumi[eè]?re?\s*perfumes?/i.test(brandName) && (
-            <MadeInUAEBadge variant="light" />
           )}
 
           {/* Name */}
           <Link href={productUrl} className="block hover:text-gray-600 transition-colors duration-150">
-            <span className="text-[12px] font-semibold uppercase tracking-[0.08em] leading-[1.4] text-gray-900 line-clamp-2 font-sans">
+            <span className="text-[13.5px] font-medium leading-[1.4] text-gray-900 line-clamp-2 font-sans">
               {name}
             </span>
           </Link>
@@ -334,86 +339,67 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             </span>
           )}
 
-          {/* Stars */}
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <div className="flex gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  size={10}
-                  className={i < Math.floor(averageRating || 4) ? 'fill-[#e0a800] text-[#e0a800]' : 'fill-gray-200 text-gray-200'}
-                />
-              ))}
-            </div>
-            {reviewCount > 0 && (
+          {/* Stars — only once the product has real reviews */}
+          {hasReviews && (
+            <div className="flex items-center gap-1.5">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={10}
+                    className={i < Math.round(rating) ? 'fill-[#e0a800] text-[#e0a800]' : 'fill-gray-200 text-gray-200'}
+                  />
+                ))}
+              </div>
               <span className="text-[10px] text-gray-400">({reviewCount})</span>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Real view count, styled as a prominent social-proof line under the rating */}
+          {/* Real view count — quiet social proof */}
           {viewCount > 0 && (
-            <p className="text-[13px] font-semibold text-green-700 mt-0.5">
+            <p className="text-[11.5px] font-medium text-emerald-700">
               {viewCountLabel(viewCount)} viewed this month
             </p>
           )}
 
           {/* Price row — wraps instead of squeezing/overflowing on narrow mobile cards */}
           <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 sm:gap-2 mt-0.5">
+            <span className="whitespace-nowrap text-[14px] font-semibold text-gray-900">
+              {formatAED(price)}
+            </span>
+            {showComparePrice && (
+              <span className="whitespace-nowrap text-[11.5px] text-gray-400 line-through font-normal">
+                {formatAED(originalPrice)}
+              </span>
+            )}
             {discount > 0 && (
               <span
-                className="flex-shrink-0 text-[10px] font-bold text-white px-1.5 py-0.5 rounded leading-none"
-                style={{ background: '#e63939' }}
+                className="flex-shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
+                style={{ background: 'rgba(147,104,236,0.12)', color: '#6d4fd6' }}
               >
-                -{discount}%
+                Save {discount}%
               </span>
             )}
-            {showComparePrice && (
-              <span className="whitespace-nowrap text-[11px] sm:text-[12px] text-gray-400 line-through font-normal">
-                AED {originalPrice}
-              </span>
-            )}
-            <span
-              className="whitespace-nowrap text-[13px] font-semibold"
-              style={{ color: showComparePrice ? '#7c3aed' : '#1a1a1a' }}
-            >
-              AED {price}
-            </span>
           </div>
 
           {/* Live delivery estimate — same UAE-cutoff calculation as the product page.
               Only shown for items that can actually ship right now; sold-out items
-              get an honest "Out of stock" label instead of a false delivery promise. */}
+              get an honest "Out of stock" label instead of a false delivery promise.
+              The range alone fills a card; the same-day countdown lives on the product page. */}
           {stock_quantity > 0 ? (
-            <>
-              {/* Desktop/tablet: full sentence */}
-              <p className="hidden md:flex items-center gap-1.5 text-[12.5px] text-gray-600 mt-1">
-                <Truck size={15} className="flex-shrink-0" style={{ color: '#9333ea' }} />
-                <span>
-                  {delivery.isNextDay ? 'Get it ' : 'Arrives '}
-                  <span className="font-bold text-gray-900">{delivery.relativeLabel}</span>
-                </span>
-                {delivery.isNextDay && delivery.minsLeft != null && (
-                  <span className="text-[11px] font-medium" style={{ color: '#9333ea' }}>
-                    · order in {Math.floor(delivery.minsLeft / 60) > 0 ? `${Math.floor(delivery.minsLeft / 60)}h ` : ''}{delivery.minsLeft % 60}m
-                  </span>
-                )}
-              </p>
-
-              {/* Mobile: compact cutoff chip, e.g. "Tod. 2:00 PM" */}
-              <div className="flex md:hidden items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 mt-1 w-fit">
-                <Timer size={12} className="flex-shrink-0 text-gray-500" />
-                <span className="text-[12px] font-bold text-gray-900 leading-none">
-                  {delivery.isNextDay ? 'Tod.' : 'Tom.'} {delivery.cutoffLabel}
-                </span>
-              </div>
-            </>
+            <p className="flex items-start md:items-center gap-1.5 text-[12px] md:text-[12.5px] text-gray-600 mt-1 min-w-0">
+              <Truck size={14} className="flex-shrink-0 mt-px md:mt-0" style={{ color: LAVENDER }} />
+              <span className="md:truncate">
+                Arrives <span className="font-semibold text-gray-900 whitespace-nowrap">{delivery.rangeLabel}</span>
+              </span>
+            </p>
           ) : (
             <p className="text-[12.5px] font-bold text-gray-500 mt-1">Out of stock</p>
           )}
 
           {/* Real, exact remaining stock — only when it's actually running low */}
           {isLowStock && (
-            <p className="text-[11px] font-semibold text-red-600 mt-0.5">
+            <p className="text-[11px] font-semibold text-amber-700">
               Only {stock_quantity} left
             </p>
           )}
@@ -570,7 +556,8 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 <span
                   className="text-3xl font-bold"
                   style={{ backgroundImage: 'var(--brand-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
-                >AED {price}</span>                {showComparePrice && <span className="text-lg line-through" style={{ color: 'var(--cl-text-muted)' }}>AED {originalPrice}</span>}
+                >{formatAED(price)}</span>
+                {showComparePrice && <span className="text-lg line-through" style={{ color: 'var(--cl-text-muted)' }}>{formatAED(originalPrice)}</span>}
                 {discount > 0 && (
                   <span className="text-[10px] font-bold text-white px-3 py-1 rounded-full" style={{ background: 'var(--brand-gradient)' }}>
                     -{discount}%
@@ -587,7 +574,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}>
                     <Truck size={14} style={{ color: 'var(--cl-purple)' }} />
                   </div>
-                  Complimentary Shipping
+                  Free shipping on {FREE_SHIPPING_FROM}+ items
                 </div>
                 <div className="flex items-center gap-2.5 text-[9px] font-semibold" style={{ color: 'var(--cl-text-muted)' }}>
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}>
@@ -614,7 +601,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   {addedToCart ? (
                     <span className="flex items-center justify-center gap-2"><Check size={16} /> Added</span>
                   ) : (
-                    `Add to Cart — AED ${(price * quantity).toFixed(0)}`
+                    `Add to Cart — ${formatAED(Math.round(price * quantity * 100) / 100)}`
                   )}
                 </button>
               </div>

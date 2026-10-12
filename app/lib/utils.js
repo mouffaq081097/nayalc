@@ -16,6 +16,16 @@ export const formatPrice = (price) => {
     }).format(price);
 };
 
+/**
+ * A price the way a card should show it: decimals only when they carry meaning,
+ * so 70 reads "AED 70" and 578.1 reads "AED 578.10", never "AED 578.1".
+ * Deterministic (no Intl locale data), so server and browser render the same text.
+ */
+export const formatAED = (amount) => {
+    const value = Number(amount) || 0;
+    return `AED ${Number.isInteger(value) ? value : value.toFixed(2)}`;
+};
+
 export const truncateText = (text, maxLength = 48) => {
     if (!text) return '';
     if (text.length <= maxLength) {
