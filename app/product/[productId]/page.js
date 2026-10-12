@@ -1,6 +1,18 @@
+import { notFound } from 'next/navigation';
 import db from '@/lib/db';
 import ProductClient from './ProductClient';
-import Script from 'next/script';
+import { calcShipping } from '@/lib/shipping';
+
+const SITE = 'https://nayalc.com';
+
+// "GERnétic International" → "GERnétic": the short brand is what people search, and titles get cut at ~60 characters
+const shortBrand = (brand) => (brand || '').replace(/\s+International$/i, '').trim();
+
+// Descriptions are stored with HTML in places; structured data wants plain text
+const plainText = (html) => (html || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+
+// JSON-LD goes straight into the HTML, so a "</script>" inside product text must not be able to end the tag
+const jsonLd = (data) => ({ __html: JSON.stringify(data).replace(/</g, '\\u003c') });
 
 async function getProductBySlugOrId(identifier) {
   // Try slug first, then fallback to ID if it's numeric
@@ -54,15 +66,19 @@ export async function generateMetadata({ params }) {
 
   if (!product) {
     return {
-      title: 'Product Not Found - nayalc.com',
+      title: 'Product not found',
+      robots: { index: false },
     };
   }
 
-  // Highly optimized title for UAE searches
+  // Brand first, then the product — the words people actually search. The root layout's
+  // title template appends "| Naya Lumière Cosmetics", so the store name isn't repeated here.
   const brandPart = product.brand ? `${product.brand} ` : '';
-  const title = product.name.toLowerCase().includes('zorah sublime') 
-    ? "Zorah Sublime Night Cream 50ml | Pure Argan Oil UAE | nayalc.com" 
-    : `${brandPart}${product.name} | Buy Online in UAE | nayalc.com`;
+  const brand = shortBrand(product.brand);
+  const nameHasBrand = brand && product.name.toLowerCase().includes(brand.toLowerCase());
+  const title = product.name.toLowerCase().includes('zorah sublime')
+    ? 'Zorah Sublime Night Cream 50ml, Pure Argan Oil | Buy in UAE'
+    : `${nameHasBrand || !brand ? '' : `${brand} `}${product.name} | Buy in UAE`;
   
   // Optimized description including brand and "UAE"
   let description = product.description || '';
@@ -95,16 +111,18 @@ export default async function ProductPage({ params }) {
   const { productId } = await params;
   const product = await getProductBySlugOrId(productId);
 
-  if (!product) return <ProductClient params={Promise.resolve({ productId })} />;
+  // A real 404 rather than a page that says "not found" with a 200, which Google files as a soft 404
+  if (!product) notFound();
 
-  const productUrl = `https://nayalc.com/product/${product.slug || product.id}`;
+  const productUrl = `${SITE}/product/${product.slug || product.id}`;
+  const nextYear = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
 
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     image: product.images,
-    description: product.long_description || product.description,
+    description: plainText(product.long_description || product.description).slice(0, 5000),
     brand: {
       '@type': 'Brand',
       name: product.brand || 'Naya Lumière Cosmetics',
@@ -117,10 +135,30 @@ export default async function ProductPage({ params }) {
       price: product.price,
       availability: product.stock_quantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       itemCondition: 'https://schema.org/NewCondition',
+      priceValidUntil: nextYear,
       seller: {
         '@type': 'Organization',
         name: 'Naya Lumière Cosmetics'
-      }
+      },
+      // What Google shows as delivery cost and time — the single-item rate and the OTO couriers' 1–3 working days
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: calcShipping(1), currency: 'AED' },
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'AE' },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 3, unitCode: 'DAY' },
+        },
+      },
+      // Matches the terms: unopened, sealed products within 14 days
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'AE',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 14,
+        returnMethod: 'https://schema.org/ReturnByMail',
+      },
     },
     ...(product.reviewCount > 0 ? {
       aggregateRating: {
@@ -134,21 +172,21 @@ export default async function ProductPage({ params }) {
   };
 
   const breadcrumbList = [];
-  breadcrumbList.push({ '@type': 'ListItem', position: 1, name: 'Home', item: 'https://nayalc.com' });
+  breadcrumbList.push({ '@type': 'ListItem', position: 1, name: 'Home', item: SITE });
   
   if (product.brand) {
     breadcrumbList.push({ 
         '@type': 'ListItem', 
         position: 2, 
         name: product.brand, 
-        item: `https://nayalc.com/brand/${product.brandSlug || product.brand_id}` 
+        item: `${SITE}/brand/${product.brandSlug || product.brand_id}` 
     });
   } else if (product.categoryName) {
      breadcrumbList.push({ 
         '@type': 'ListItem', 
         position: 2, 
         name: product.categoryName, 
-        item: `https://nayalc.com/collections/${product.categorySlug || product.category_id}` 
+        item: `${SITE}/collections/${product.categorySlug || product.category_id}` 
     });
   }
 
@@ -167,16 +205,10 @@ export default async function ProductPage({ params }) {
 
   return (
     <>
-      <Script
-        id="product-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
-      />
-      <Script
-        id="breadcrumb-jsonld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-      />
+      {/* Plain <script> tags, not next/script: next/script injects them in the browser after
+          load, so they never reached the HTML Google reads */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(productJsonLd)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(breadcrumbJsonLd)} />
       <ProductClient params={Promise.resolve({ productId })} initialProduct={product} />
     </>
   );
