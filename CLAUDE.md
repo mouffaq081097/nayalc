@@ -176,8 +176,42 @@ Active development phases include: chat UI modernization, admin portal improveme
 - Admin order page: "Discount code" card applies/removes a code on an open order (`POST /api/admin/orders/[orderId]/discount`, recalculates discount, total and VAT, adjusts usage counts), shows paid-on-Tabby vs order total, and resends the confirmation (`POST /api/admin/orders/[orderId]/send-confirmation`). Recover order also takes a discount code.
 - Resend logic lives in `lib/orderConfirmation.js`; `sendOrderConfirmationEmail` returns `{ success }` instead of throwing, so check it.
 
+### Homepage & product cards
+- Section headers use `<SectionHeading>` (`app/components/home/SectionHeading.js`): lavender eyebrow + Cormorant serif title. Banners reuse its `headingFont`. Sections are `py-8 md:py-12`; never hand-roll a header.
+- Prices on cards go through `formatAED()` (`app/lib/utils.js`) — "AED 70", "AED 578.10", never "AED 578.1". Deterministic, so no hydration mismatch.
+- Shipping facts come from `lib/shipping.js` only: `FREE_SHIPPING_FROM`, `TRANSIT_LABEL`, `getDeliveryInfo().rangeLabel` ("Tue 13 – Thu 15 Oct", 1–3 working days, no same-day cutoff at weekends). The courier is "our courier partners" — never name one.
+- `ProductCard`: stars only when a product has real reviews; origin shown as a small `FranceFlag`/`UAEFlag` next to the brand; badges lavender, not orange/red. Homepage product rows skip out-of-stock items.
+
+### OTO shipping — `lib/oto.js`
+- Admin order page → "Ship with OTO" (`POST /api/admin/orders/[orderId]/oto`) calls OTO `createOrder` with `createShipment: true` from `OTO_PICKUP_LOCATION_CODE`. COD orders (`payment_method = 'cashOnDelivery'`) go as `cod` with the total as `amount_due`.
+- OTO reports progress to `/api/oto/webhook` (public; HMAC-SHA256 of `orderId:status:timestamp` with `OTO_WEBHOOK_SECRET`, fails closed). It fills `tracking_number`/`courier_name`/`courier_website`/`oto_awb_url`, and `siteStatusFor()` moves the order to Shipped/Delivered. OTO cancel/return statuses are only recorded — cancelling refunds, so that stays manual.
+- Status changes go through `updateOrderStatus()` in `lib/orderStatus.js` — shared by the admin `PUT /api/orders/[orderId]` and the webhook. Never duplicate the archive/loyalty/refund logic.
+- Columns `orders.oto_id/oto_status/oto_awb_url/oto_updated_at` are added on first use (`ensureOtoColumns()`) and by migration `013`.
+- Register the webhook once: `node scripts/oto-register-webhook.mjs https://nayalc.com`.
+
+### Emails — `lib/email/theme.js` + `lib/mail.js`
+Every email (customer, admin, marketing) renders through one layout, `renderEmail()` in `lib/email/theme.js`: grey page, white 600px card, optional purple PromoBar strip, logo + nav header (an "Admin" pill for internal mail), body, trust row + help footer. The palette mirrors the storefront (`T` tokens: ink text, `#9368ec` violet pills, gray-100 hairlines).
+- Build emails from the components there: `intro`, `section`, `notice` (tones info/success/warning/danger/neutral), `infoTable`/`infoRow`, `lineItems`, `totals`, `tracker`, `button`/`buttonRow`, `panel`, `productGrid`, `recommendations`, `codeTicket`, `fallbackLink`, `signOff`. Never hand-roll a wrapper or `class="btn"`.
+- Each email is a pure `buildXEmail()` → `{ subject, html }` plus a `sendXEmail()` that calls `deliver()`. Keep that split so it stays previewable.
+- Preview all emails without DB/SMTP: `node scripts/preview-emails.mjs [dir]` → open `index.html`.
+- Escape every interpolated value with `escapeHtml`; hrefs go through `safeUrl`. Never put `align="left"` on a layout table (it floats).
+- `generateInvoiceHtml()` shares the tokens; COD invoices show "Due on delivery" until status is Delivered.
+
+### Phone Numbers — `lib/phone.js`
+Single source of truth for every phone number. UAE-only numbering plan, no dependencies, isomorphic (browser, API routes, emails, scripts).
+
+- **Canonical storage shape is E.164**: `+971501234567`. Never store anything else; format at render time with `formatPhone()`.
+- `parsePhone(input, { requireMobile = true })` → `{ ok, e164, national, display, whatsapp, tel, type, carrier, reason }`. `reason` is a customer-facing message.
+- Handles: leading trunk zero after the country code (`+9710501234567`), doubled country code (`+971971…`), `00971`, Arabic-Indic digits (`٠٥٠…`), spaces/dashes/brackets.
+- Rejects unassigned prefixes (051, 053, 057) — valid mobile prefixes are 50, 52, 54, 55, 56, 58.
+- Landlines are rejected for delivery contacts by default; pass `requireMobile: false` for display/`tel:` helpers.
+- `toNsn()` / `formatAsYouType()` are for input-box state — they hold the bare 9 national digits.
+- Validation runs **both** in the form and in the API route; the route is the last gate before the column.
+- Backfill existing rows: `node scripts/normalize-phones.mjs` (dry run) / `--apply`. Rows it cannot parse are listed rather than guessed at, and `<PhoneNeedsCheck>` flags them in the admin.
+
 ### Known Gotchas
 - `fetchWithAuth` must come from `useAppContext()` — do NOT import from `lib/api.js` (that file exports `createFetchWithAuth` factory, not a ready-to-use function).
 - `addToCart(product, quantity)` takes two separate args — NOT a single `{ product, quantity }` object.
 - APIs (`/api/products/suggestions`, buy-again) return `stockQuantity` (camelCase); CartContext reads `stock_quantity` (snake_case). Always normalize: `{ ...product, stock_quantity: product.stockQuantity || product.stock_quantity }` before calling `addToCart`.
+- Never hand-roll phone parsing. `internationalPhone()` in `app/admin/_components/phone.js` is now a re-export of `toWhatsApp()` and returns **null** for unusable numbers (it used to return a wrong-but-plausible number). Call sites already guard on falsy.
 - Email CSS must be email-safe: no `backdrop-filter`, no CSS variables, no Tailwind — use embedded `<style>` tags and inline styles only. Use `Georgia` for serif/italic fallback.
