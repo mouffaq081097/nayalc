@@ -10,7 +10,6 @@ import { useAppContext } from '@/app/context/AppContext';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { apiErrorMessage, fmtAed, productStatus, stockState } from './productAdmin';
-import { VAT_RATE, vatFromGross, netFromGross } from '@/lib/vat';
 import {
   AutoGrowTextarea, Card, ERROR_COLOR, Field, FieldMessage, WARNING_COLOR, invalidStyle, secondary, subdued, text,
 } from '../../_components/EditorFields';
@@ -58,29 +57,27 @@ const snapshot = (form, media) => JSON.stringify({ form, media: media.map(m => [
 // The card-processing allowance baked into prices in the Sept 2026 reprice.
 // Illustrative here — nothing is added at checkout, the price already covers it.
 const CARD_FEE_RATE = 0.03;
-// What a price is left worth after VAT comes out and Stripe takes its cut:
-// 1/1.05 - 0.03. Inverted, it turns a target margin back into a shelf price.
-const KEEP_FACTOR = 1 / (1 + VAT_RATE) - CARD_FEE_RATE;
+// What a price is left worth after Stripe takes its cut. Inverted, it turns a
+// target margin back into a shelf price.
+const KEEP_FACTOR = 1 - CARD_FEE_RATE;
 
 /**
- * Prices are VAT-inclusive, so the Price field IS what the customer is charged.
- * This unpacks that figure — VAT out, card fee out, what's left — because the
- * number worth deciding on is the last one, and it isn't the one being typed.
+ * The Price field IS what the customer is charged. This unpacks that figure —
+ * card fee out, what's left — because the number worth deciding on is the
+ * last one, and it isn't the one being typed.
  */
 function PriceBreakdown({ price }) {
   const gross = Number(price);
   if (!Number.isFinite(gross) || gross <= 0) {
     return (
       <p className="text-[12.5px]" style={subdued}>
-        Enter a price to see what it leaves you after VAT and card fees.
+        Enter a price to see what it leaves you after card fees.
       </p>
     );
   }
 
-  const vat  = vatFromGross(gross);
-  const net  = netFromGross(gross);
   const fee  = Math.round(gross * CARD_FEE_RATE * 100) / 100;
-  const keep = Math.round((net - fee) * 100) / 100;
+  const keep = Math.round((gross - fee) * 100) / 100;
 
   const line = (label, value, opts = {}) => (
     <div className="flex items-baseline justify-between gap-4 py-[3px]">
@@ -97,8 +94,6 @@ function PriceBreakdown({ price }) {
   return (
     <div>
       {line('Customer is charged', fmtAed(gross), { strong: true })}
-      {line(`Less VAT (${(VAT_RATE * 100).toFixed(0)}%, already inside the price)`, `− ${fmtAed(vat)}`)}
-      {line('Net of VAT', fmtAed(net))}
       {line(`Less card fee (about ${(CARD_FEE_RATE * 100).toFixed(0)}%)`, `− ${fmtAed(fee)}`)}
       <div className="mt-1.5 pt-1.5" style={{ borderTop: '1px solid var(--sp-border)' }}>
         {line('You keep', fmtAed(keep), { strong: true })}
