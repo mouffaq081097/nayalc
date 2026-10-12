@@ -31,7 +31,9 @@ export async function POST(request) {
             let sentCount = 0;
             for (const user of rows) {
                 const { rows: cartItems } = await db.query(`
-                    SELECT p.name, p.price, p.vendor as brand
+                    SELECT p.name, p.price, p.vendor as brand, uc.quantity,
+                           (SELECT pi.image_url FROM product_images pi
+                            WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as "imageUrl"
                     FROM user_carts uc
                     JOIN products p ON uc.product_id = p.id
                     WHERE uc.user_id = $1

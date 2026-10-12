@@ -14,7 +14,7 @@ export async function POST(request) {
     const client = await db.connect();
     try {
       const result = await client.query(
-        'SELECT id, email, password_hash FROM users WHERE LOWER(email) = LOWER($1) ORDER BY id DESC LIMIT 1',
+        'SELECT id, email, first_name, password_hash FROM users WHERE LOWER(email) = LOWER($1) ORDER BY id DESC LIMIT 1',
         [email]
       );
 
@@ -39,7 +39,15 @@ export async function POST(request) {
         .setExpirationTime('1h')
         .sign(secret);
 
-      await sendPasswordResetEmail(user.email, resetToken);
+      // The token goes in a link to the reset page, which posts it back to
+      // /api/auth/reset-password. Passing the bare token used to leave the
+      // email's button pointing at '#'.
+      const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://nayalc.com';
+      await sendPasswordResetEmail(
+        user.email,
+        user.first_name,
+        `${base}/auth/reset-password?token=${encodeURIComponent(resetToken)}`
+      );
 
       return NextResponse.json({ message: 'If an account exists, a reset link has been sent.' });
     } finally {
