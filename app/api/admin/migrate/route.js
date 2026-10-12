@@ -89,6 +89,16 @@ export async function POST(request) {
                 name: '012_product_specific_coupons',
                 sql: `ALTER TABLE coupons ADD COLUMN IF NOT EXISTS product_ids INTEGER[];`
             },
+            {
+                // Also added on first use by ensureOtoColumns() in lib/oto.js
+                name: '013_oto_shipping',
+                sql: `
+                    ALTER TABLE orders ADD COLUMN IF NOT EXISTS oto_id         TEXT;
+                    ALTER TABLE orders ADD COLUMN IF NOT EXISTS oto_status     TEXT;
+                    ALTER TABLE orders ADD COLUMN IF NOT EXISTS oto_awb_url    TEXT;
+                    ALTER TABLE orders ADD COLUMN IF NOT EXISTS oto_updated_at TIMESTAMPTZ;
+                `
+            },
         ];
 
         for (const migration of migrations) {

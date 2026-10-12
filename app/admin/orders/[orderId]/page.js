@@ -1,8 +1,10 @@
 'use client';
+import { formatPhone } from '@/lib/phone';
+import { PhoneNeedsCheck } from '../../_components/phone';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, XCircle, Info, Printer, Mail } from 'lucide-react';
+import { Loader2, ArrowLeft, XCircle, Info, Printer, Mail, Truck, ExternalLink } from 'lucide-react';
 import { toast } from 'react-toastify';
 import PageLoader from '@/app/components/PageLoader';
 import Link from 'next/link';
@@ -45,6 +47,7 @@ const OrderDetailsPage = () => {
   const [applyingDiscount, setApplyingDiscount] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [tabbyPayment, setTabbyPayment] = useState(null);
+  const [sendingToOto, setSendingToOto] = useState(false);
 
   const errorMessage = async (response, fallback) => {
     const data = await response.json().catch(() => ({}));
@@ -82,6 +85,21 @@ const OrderDetailsPage = () => {
       toast.error(err.message);
     } finally {
       setSendingEmail(false);
+    }
+  };
+
+  const shipWithOto = async () => {
+    if (!window.confirm('Send this order to OTO and book the courier?')) return;
+    setSendingToOto(true);
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/oto`, { method: 'POST' });
+      if (!response.ok) throw new Error(await errorMessage(response, 'The order could not be sent to OTO.'));
+      toast.success('Sent to OTO — tracking appears here once the courier is assigned');
+      await fetchOrderDetails();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSendingToOto(false);
     }
   };
 
@@ -336,7 +354,7 @@ const OrderDetailsPage = () => {
               <div>
                 <p className="text-[13px] font-semibold mb-1">Contact information</p>
                 <p className="text-[13px] sp-link break-all">{order.customerEmail}</p>
-                <p className="text-[13px] mt-0.5" style={{ color: 'var(--sp-text-secondary)' }}>{order.customerPhone || 'No phone number'}</p>
+                <p className="text-[13px] mt-0.5" style={{ color: 'var(--sp-text-secondary)' }}>{formatPhone(order.customerPhone, { fallback: 'No phone number' })}<PhoneNeedsCheck phone={order.customerPhone} /></p>
               </div>
               <div className="pt-3" style={{ borderTop: '1px solid var(--sp-border)' }}>
                 <p className="text-[13px] font-semibold mb-1">Shipping address</p>
@@ -349,6 +367,39 @@ const OrderDetailsPage = () => {
               </div>
             </div>
           </div>
+
+          {/* Shipping with OTO */}
+          {(order.oto_id || isOpenOrder) && (
+            <div className="sp-card sp-card-pad">
+              <p className={headingClass}>Shipping</p>
+              {order.oto_id ? (
+                <div className="space-y-2 text-[13px]">
+                  <div className="flex justify-between"><span style={{ color: 'var(--sp-text-secondary)' }}>OTO ID</span><span className="font-medium">{order.oto_id}</span></div>
+                  <div className="flex justify-between"><span style={{ color: 'var(--sp-text-secondary)' }}>OTO status</span><span className="font-medium">{order.oto_status || 'Sent'}</span></div>
+                  {order.courier_name && <div className="flex justify-between"><span style={{ color: 'var(--sp-text-secondary)' }}>Courier</span><span className="font-medium">{order.courier_name}</span></div>}
+                  {order.tracking_number && <div className="flex justify-between gap-3"><span style={{ color: 'var(--sp-text-secondary)' }}>Tracking</span><span className="font-medium break-all text-right">{order.tracking_number}</span></div>}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {order.oto_awb_url && (
+                      <a href={order.oto_awb_url} target="_blank" rel="noopener noreferrer" className="sp-btn sp-btn-secondary h-8 px-2.5 text-[12px]"><Printer size={13} />Shipping label</a>
+                    )}
+                    {order.courier_website && (
+                      <a href={order.courier_website} target="_blank" rel="noopener noreferrer" className="sp-btn sp-btn-secondary h-8 px-2.5 text-[12px]"><ExternalLink size={13} />Track</a>
+                    )}
+                  </div>
+                  {!order.tracking_number && <p className="text-[12px]" style={{ color: 'var(--sp-text-subdued)' }}>Tracking appears here once OTO assigns a courier.</p>}
+                </div>
+              ) : (
+                <>
+                  <button type="button" onClick={shipWithOto} disabled={sendingToOto} className="sp-btn sp-btn-primary w-full justify-center">
+                    {sendingToOto ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}Ship with OTO
+                  </button>
+                  <p className="text-[12px] mt-1.5" style={{ color: 'var(--sp-text-subdued)' }}>
+                    Books the courier from your pickup location.{order.payment_method === 'cashOnDelivery' ? ` The courier collects AED ${order.totalAmount.toFixed(2)} on delivery.` : ''} The order moves to Shipped and Delivered by itself as OTO reports it.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Discount code and confirmation email */}
           <div className="sp-card sp-card-pad space-y-4">
