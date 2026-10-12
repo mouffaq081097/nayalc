@@ -285,9 +285,9 @@ export default function ProductClient({ params, initialProduct }) {
         </nav>
 
         {/* ── Hero: gallery + buy box ── */}
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
 
-          <div className="lg:col-span-7 lg:sticky lg:top-28 self-start">
+          <div className="min-w-0 lg:col-span-7 lg:sticky lg:top-28 self-start">
             <ProductGallery
               images={allImages}
               name={product.name}
@@ -300,7 +300,7 @@ export default function ProductClient({ params, initialProduct }) {
             />
           </div>
 
-          <div className="lg:col-span-5 flex flex-col">
+          <div className="min-w-0 lg:col-span-5 flex flex-col">
 
             {/* Identity */}
             <div className="flex items-center gap-2.5 flex-wrap mb-3">
@@ -471,12 +471,12 @@ export default function ProductClient({ params, initialProduct }) {
         </div>
 
         {/* ── Details + bundle ── */}
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
-          <div className={btCompanions.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
+          <div className={`min-w-0 ${btCompanions.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
             <ProductDetails product={product} />
           </div>
           {btCompanions.length > 0 && (
-            <div className="lg:col-span-5 lg:pt-[84px]">
+            <div className="min-w-0 lg:col-span-5 lg:pt-[84px]">
               <BoughtTogether
                 product={product}
                 image={allImages[0]}
