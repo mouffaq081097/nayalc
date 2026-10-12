@@ -182,6 +182,11 @@ Active development phases include: chat UI modernization, admin portal improveme
 - Shipping facts come from `lib/shipping.js` only: `FREE_SHIPPING_FROM`, `TRANSIT_LABEL`, `getDeliveryInfo().rangeLabel` ("Tue 13 – Thu 15 Oct", 1–3 working days, no same-day cutoff at weekends). The courier is "our courier partners" — never name one.
 - `ProductCard`: stars only when a product has real reviews; origin shown as a small `FranceFlag`/`UAEFlag` next to the brand; badges lavender, not orange/red. Homepage product rows skip out-of-stock items.
 
+### SEO — `lib/seo.js`
+- Product JSON-LD is a plain `<script type="application/ld+json">` in the server render (`app/product/[productId]/page.js`). Never `next/script` for JSON-LD — it injects after load and Google doesn't see it.
+- Titles/brand/description text for search go through `productTitle()`, `shortBrand()`, `plainText()` so the page, JSON-LD and feed agree.
+- Google Merchant Center feed: `/feeds/google-merchant.xml` (active products with an image). No GTINs stored yet, so items carry `identifier_exists=no`.
+
 ### OTO shipping — `lib/oto.js`
 - Admin order page → "Ship with OTO" (`POST /api/admin/orders/[orderId]/oto`) calls OTO `createOrder` with `createShipment: true` from `OTO_PICKUP_LOCATION_CODE`. COD orders (`payment_method = 'cashOnDelivery'`) go as `cod` with the total as `amount_due`.
 - OTO reports progress to `/api/oto/webhook` (public; HMAC-SHA256 of `orderId:status:timestamp` with `OTO_WEBHOOK_SECRET`, fails closed). It fills `tracking_number`/`courier_name`/`courier_website`/`oto_awb_url`, and `siteStatusFor()` moves the order to Shipped/Delivered. OTO cancel/return statuses are only recorded — cancelling refunds, so that stays manual.

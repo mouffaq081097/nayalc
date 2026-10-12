@@ -2,14 +2,7 @@ import { notFound } from 'next/navigation';
 import db from '@/lib/db';
 import ProductClient from './ProductClient';
 import { calcShipping } from '@/lib/shipping';
-
-const SITE = 'https://nayalc.com';
-
-// "GERnétic International" → "GERnétic": the short brand is what people search, and titles get cut at ~60 characters
-const shortBrand = (brand) => (brand || '').replace(/\s+International$/i, '').trim();
-
-// Descriptions are stored with HTML in places; structured data wants plain text
-const plainText = (html) => (html || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+import { SITE, plainText, productTitle } from '@/lib/seo';
 
 // JSON-LD goes straight into the HTML, so a "</script>" inside product text must not be able to end the tag
 const jsonLd = (data) => ({ __html: JSON.stringify(data).replace(/</g, '\\u003c') });
@@ -74,11 +67,9 @@ export async function generateMetadata({ params }) {
   // Brand first, then the product — the words people actually search. The root layout's
   // title template appends "| Naya Lumière Cosmetics", so the store name isn't repeated here.
   const brandPart = product.brand ? `${product.brand} ` : '';
-  const brand = shortBrand(product.brand);
-  const nameHasBrand = brand && product.name.toLowerCase().includes(brand.toLowerCase());
   const title = product.name.toLowerCase().includes('zorah sublime')
     ? 'Zorah Sublime Night Cream 50ml, Pure Argan Oil | Buy in UAE'
-    : `${nameHasBrand || !brand ? '' : `${brand} `}${product.name} | Buy in UAE`;
+    : `${productTitle(product.name, product.brand)} | Buy in UAE`;
   
   // Optimized description including brand and "UAE"
   let description = product.description || '';
