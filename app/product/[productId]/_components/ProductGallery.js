@@ -81,18 +81,21 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
               <motion.div key={index}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="absolute inset-0 flex items-center justify-center p-8 md:p-12"
+                className="absolute inset-0 p-3 md:p-6"
                 drag={count > 1 ? 'x' : false} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.12}
                 onDragEnd={onSwipe}>
+                {/* Fill the frame and fit inside it. Sizing from the file's own dimensions left
+                    small uploads (often the lifestyle photos) as a little square mid-frame. */}
                 {images[index] && (
-                  <Image
-                    src={images[index]}
-                    alt={count > 1 ? `${name} — image ${index + 1} of ${count}` : name}
-                    width={800} height={800} priority={index === 0}
-                    sizes="(min-width: 1024px) 50vw, 100vw"
-                    className="max-w-full max-h-full object-contain group-hover:scale-[1.04] transition-transform duration-500 pointer-events-none select-none"
-                    style={{ width: 'auto', height: 'auto' }}
-                  />
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={images[index]}
+                      alt={count > 1 ? `${name} — image ${index + 1} of ${count}` : name}
+                      fill priority={index === 0}
+                      sizes="(min-width: 1024px) 50vw, 100vw"
+                      className="object-contain group-hover:scale-[1.04] transition-transform duration-500 pointer-events-none select-none"
+                    />
+                  </div>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -167,12 +170,12 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
                   <motion.div key={index}
                     initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.18 }}
-                    className="absolute inset-0 flex items-center justify-center p-6 md:p-10"
+                    className="absolute inset-0"
                     drag={count > 1 ? 'x' : false} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.12}
                     onDragEnd={onSwipe}>
                     {images[index] && (
                       <Image src={images[index]} alt={`${name} — image ${index + 1}`}
-                        fill sizes="860px" className="object-contain p-6 md:p-10 pointer-events-none select-none" />
+                        fill sizes="860px" className="object-contain p-2 md:p-6 pointer-events-none select-none" />
                     )}
                   </motion.div>
                 </AnimatePresence>
