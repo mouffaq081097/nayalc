@@ -69,7 +69,7 @@ export function SharePanel() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Share"
         aria-expanded={open}
-        className="flex items-center justify-center w-7 h-7 rounded-full text-white hover:bg-white/15 transition-colors cursor-pointer"
+        className="flex items-center justify-center w-7 h-7 rounded-full text-white bg-[rgb(147,104,236)] hover:bg-[#7e69e6] transition-colors cursor-pointer"
       >
         <Share2 size={15} />
       </button>
