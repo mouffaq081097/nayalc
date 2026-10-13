@@ -8,7 +8,8 @@ import {
   ArrowLeft, ArrowRight, ShoppingBag, Sparkles, X, Gift, Star, Trash2,
   ShieldCheck, ChevronDown, Tag, Truck, Minus, Plus, Check,
 } from 'lucide-react';
-import { calcShipping, nextShippingTier, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME, formatShipping } from '@/lib/shipping';
+import { calcShipping, nextShippingTier, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME, formatShipping, getPreorderInfo } from '@/lib/shipping';
+import { orderableQty, preorderUnits, leadDays } from '@/lib/backorderRules';
 import { vatFromGross } from '@/lib/vat';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useCart } from '../context/CartContext';
@@ -82,9 +83,12 @@ function SummaryRow({ label, value, positive = false }) {
 const stepBtn = `w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center rounded-full text-[#2a2a31] hover:bg-[#f3f3f5] disabled:opacity-30 disabled:hover:bg-transparent transition-colors ${focusRing}`;
 
 function CartItemRow({ item, onQuantity, onRemove }) {
-  const outOfStock = item.stock_quantity === 0;
-  const overStock = !outOfStock && item.quantity > item.stock_quantity;
-  const atStockLimit = item.quantity >= item.stock_quantity;
+  // Shelf stock plus what may still be pre-ordered (lib/backorderRules.js)
+  const maxQty = orderableQty(item);
+  const outOfStock = maxQty === 0;
+  const overStock = !outOfStock && item.quantity > maxQty;
+  const atStockLimit = item.quantity >= maxQty;
+  const preorderQty = outOfStock ? 0 : preorderUnits(item, Math.min(item.quantity, maxQty));
   const onSale = item.originalPrice > item.price;
   const productHref = `/product/${item.id}`;
 
@@ -136,15 +140,20 @@ function CartItemRow({ item, onQuantity, onRemove }) {
         )}
         {overStock && (
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
-            <span className="font-semibold text-amber-700">Only {item.stock_quantity} left</span>
+            <span className="font-semibold text-amber-700">Only {maxQty} left</span>
             <button
               type="button"
-              onClick={() => onQuantity(item.id, item.stock_quantity)}
+              onClick={() => onQuantity(item.id, maxQty)}
               className="font-semibold text-[#7c3aed] underline underline-offset-2"
             >
-              Update to {item.stock_quantity}
+              Update to {maxQty}
             </button>
           </div>
+        )}
+        {preorderQty > 0 && (
+          <p className="mt-2 self-start rounded-full bg-[#f3eefe] px-2.5 py-1 text-[11px] font-semibold text-[#7c3aed]">
+            {preorderQty === item.quantity ? 'Pre-order' : `${preorderQty} of ${item.quantity} on pre-order`} · ships by {getPreorderInfo(leadDays(item)).shipByLabel}
+          </p>
         )}
 
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
@@ -301,7 +310,7 @@ export default function CartPage() {
   const total = Math.max(0, subtotal - discountAmount + shipping);
   const vat = vatFromGross(total);
   const totalSavings = itemSavings + discountAmount;
-  const hasStockIssues = visibleItems.some(i => i.stock_quantity === 0 || i.quantity > i.stock_quantity);
+  const hasStockIssues = visibleItems.some(i => orderableQty(i) === 0 || i.quantity > orderableQty(i));
   const canCheckout = visibleItems.length > 0 && !hasStockIssues;
 
   const artisanPct = Math.min(100, Math.round((subtotal / ARTISAN_GIFT_THRESHOLD) * 100));

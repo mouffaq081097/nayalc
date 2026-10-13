@@ -433,6 +433,7 @@ body {
 .sp-badge-warning { background: #ffeec2; color: #5e4200; }
 .sp-badge-critical{ background: #ffd6d9; color: #8e0b21; }
 .sp-badge-neutral { background: #e3e3e3; color: #4a4a4a; }
+.sp-badge-attention { background: #ede4fd; color: #5b2bb5; }
 
 .sp-input {
   width: 100%; font-size: 14px; color: var(--sp-text);

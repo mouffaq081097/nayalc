@@ -18,7 +18,8 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import { createFetchWithAuth } from '../lib/api';
-import { calcShipping } from '@/lib/shipping';
+import { calcShipping, getPreorderInfo } from '@/lib/shipping';
+import { orderableQty, preorderUnits, leadDays } from '@/lib/backorderRules';
 import { POINTS_BLOCK, AED_PER_BLOCK } from '@/lib/loyalty';
 import { vatFromGross } from '@/lib/vat';
 import CheckoutForm from './CheckoutForm';
@@ -201,6 +202,11 @@ function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, coupon
             <div className="min-w-0 flex-1">
               <p className="line-clamp-2 text-[13px] font-medium leading-snug text-[#111114]">{item.name}</p>
               {item.brand && <p className="truncate text-[11.5px] text-[#8a8a93]">{item.brand}</p>}
+              {preorderUnits(item, item.quantity) > 0 && (
+                <p className="truncate text-[11.5px] font-semibold text-[#7c3aed]">
+                  {preorderUnits(item, item.quantity) === item.quantity ? 'Pre-order' : `${preorderUnits(item, item.quantity)} on pre-order`}
+                </p>
+              )}
             </div>
             <p className="shrink-0 text-[13px] font-semibold tabular-nums text-[#111114]">{fmt(item.price * item.quantity)}</p>
           </li>
@@ -314,6 +320,7 @@ export default function CheckoutPage() {
   const {
     cartItems, clearCart, subtotal, appliedCoupon, discountAmount, finalTotal,
     applyCoupon, removeCoupon, couponError, selectedShippingAddressId, setSelectedShippingAddressId, isCartReady,
+    hasPreorder,
   } = useCart();
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const { fetchLoyalty } = useAppContext();
@@ -346,7 +353,11 @@ export default function CheckoutPage() {
   const prevClientSecretRef = useRef('');
 
   const method = formData.paymentMethod;
-  const hasStockIssues = cartItems.some(item => item.stock_quantity === 0 || item.quantity > item.stock_quantity);
+  const hasStockIssues = cartItems.some(item => orderableQty(item) === 0 || item.quantity > orderableQty(item));
+  // A bag with pre-order units ships in one parcel once they arrive, and is paid up front
+  const preorderShipBy = hasPreorder
+    ? getPreorderInfo(Math.max(...cartItems.filter(i => preorderUnits(i, i.quantity) > 0).map(leadDays))).shipByLabel
+    : '';
   const selectedAddress = shippingAddresses.find(a => a.id === selectedAddressId) || null;
   const totalQty = cartItems.reduce((s, i) => s + i.quantity, 0);
   const shipping = calcShipping(totalQty);
@@ -394,6 +405,13 @@ export default function CheckoutPage() {
   }, [user, fetchShippingAddresses, fetchWithAuth]);
 
   useEffect(() => { setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)); }, []);
+
+  // Cash on delivery isn't offered for pre-orders, so move a COD selection to card
+  useEffect(() => {
+    if (hasPreorder && formData.paymentMethod === 'cashOnDelivery') {
+      setFormData(p => ({ ...p, paymentMethod: 'card' }));
+    }
+  }, [hasPreorder, formData.paymentMethod]);
 
   useEffect(() => {
     if (formData.paymentMethod !== 'card' || total <= 0 || !loyaltyLoaded || piCreatedRef.current) return;
@@ -940,6 +958,12 @@ export default function CheckoutPage() {
       <section aria-labelledby="payment-heading" className={`${cardClass} p-5 sm:p-6`}>
         <h2 id="payment-heading" className="text-[18px] font-semibold text-[#111114]">Payment</h2>
         <p className="mt-0.5 text-[13px] text-[#8a8a93]">All transactions are secure and encrypted.</p>
+        {hasPreorder && (
+          <div className="mt-4 rounded-xl border border-[#e4d8fb] bg-[#f8f4ff] px-4 py-3 text-[13px] leading-relaxed text-[#4c3a75]">
+            <p className="font-semibold text-[#7c3aed]">Your order includes pre-order items · ships by {preorderShipBy}</p>
+            <p className="mt-0.5">We&apos;ll send everything together in one parcel once they arrive, and email you when it&apos;s on its way. Cash on delivery isn&apos;t available for pre-orders.</p>
+          </div>
+        )}
 
         <div className="mt-4">
           <ExpressCheckoutButton
@@ -982,22 +1006,24 @@ export default function CheckoutPage() {
             </div>
           </PaymentOption>
 
-          <PaymentOption
-            value="cashOnDelivery"
-            checked={method === 'cashOnDelivery'}
-            onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'cashOnDelivery' }))}
-            icon={<Banknote size={20} strokeWidth={1.6} className="text-[#5a5a64]" />}
-            title="Cash on delivery"
-            description="Pay when your order arrives"
-          />
+          {!hasPreorder && (
+            <PaymentOption
+              value="cashOnDelivery"
+              checked={method === 'cashOnDelivery'}
+              onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'cashOnDelivery' }))}
+              icon={<Banknote size={20} strokeWidth={1.6} className="text-[#5a5a64]" />}
+              title="Cash on delivery"
+              description="Pay when your order arrives"
+            />
+          )}
 
           <PaymentOption
             value="tabby"
             checked={method === 'tabby'}
             onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'tabby' }))}
             icon={<Image src="/0x0.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover" />}
-            title="Pay in 4 with Tabby"
-            description={`4 × ${fmt(total / 4)} · No interest`}
+            title="Pay in instalments with Tabby"
+            description={`From 4 × ${fmt(total / 4)} · choose your plan at Tabby`}
           >
             <div className="border-t border-[#ece3fb] bg-white p-4 sm:p-5">
               <TabbyCard price={total} />

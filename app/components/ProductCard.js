@@ -10,7 +10,8 @@ import { Badge } from './ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MadeInFranceBadge, FranceFlag } from './MadeInFranceBadge';
 import { MadeInUAEBadge, UAEFlag } from './MadeInUAEBadge';
-import { getDeliveryInfo, FREE_SHIPPING_FROM } from '../../lib/shipping';
+import { getDeliveryInfo, getPreorderInfo, FREE_SHIPPING_FROM } from '../../lib/shipping';
+import { isPreorderOnly, leadDays } from '../../lib/backorderRules';
 import { formatAED } from '../lib/utils';
 
 // Cloud Luxe accent for card badges (rank, best seller, saving)
@@ -55,7 +56,7 @@ function viewCountLabel(n) {
   return String(n);
 }
 
-const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, viewCount, isNew, isBestseller, rank, category, brandName, stock_quantity, description, size, variant = 'light', concerns = [], initialWishlisted = false, onWishlistChange }) => {
+const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, viewCount, isNew, isBestseller, rank, category, brandName, stock_quantity, backorderable = 0, backorder_lead_days, description, size, variant = 'light', concerns = [], initialWishlisted = false, onWishlistChange }) => {
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(initialWishlisted);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -75,6 +76,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const productUrl = `/product/${slug || id}`;
   const seoAlt = altText || `${name} - ${brandName || 'Luxury Beauty'} | nayalc.com`;
   const isLowStock = stock_quantity > 0 && stock_quantity < 5;
+  // Sold out, but it takes pre-orders (lib/backorderRules.js)
+  const preorderOnly = isPreorderOnly({ stock_quantity, backorderable });
+  const canBuy = stock_quantity > 0 || preorderOnly;
+  const preorderShipBy = preorderOnly ? getPreorderInfo(leadDays({ backorder_lead_days })).shipByLabel : '';
   // Stars only for products customers have actually rated — five empty stars read as "rated zero"
   const rating = Number(averageRating) || 0;
   const hasReviews = Number(reviewCount) > 0 && rating > 0;
@@ -142,7 +147,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
   const handleAddToCart = (e) => {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    addToCart({ id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity, size }, quantity);
+    addToCart({ id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity, backorderable, backorder_lead_days, size }, quantity);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
@@ -264,7 +269,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               opacity: isHovered ? 1 : 0,
             }}
           >
-            {stock_quantity > 0 ? (
+            {canBuy ? (
               <button
                 onClick={handleAddToCart}
                 className="px-6 py-2.5 text-[10px] font-black text-white uppercase tracking-widest flex items-center justify-center gap-2 rounded-full shadow-lg transition-all duration-150 active:scale-95"
@@ -280,7 +285,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   </>
                 ) : (
                   <>
-                    Add to Cart
+                    {preorderOnly ? 'Pre-order' : 'Add to Cart'}
                   </>
                 )}
               </button>
@@ -391,6 +396,13 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <Truck size={14} className="flex-shrink-0 mt-px md:mt-0" style={{ color: LAVENDER }} />
               <span className="md:truncate">
                 Arrives <span className="font-semibold text-gray-900 whitespace-nowrap">{delivery.rangeLabel}</span>
+              </span>
+            </p>
+          ) : preorderOnly ? (
+            <p className="flex items-start md:items-center gap-1.5 text-[12px] md:text-[12.5px] text-gray-600 mt-1 min-w-0">
+              <Truck size={14} className="flex-shrink-0 mt-px md:mt-0" style={{ color: LAVENDER }} />
+              <span className="md:truncate">
+                <span className="font-semibold" style={{ color: LAVENDER }}>Pre-order</span> · ships by <span className="font-semibold text-gray-900 whitespace-nowrap">{preorderShipBy}</span>
               </span>
             </p>
           ) : (
@@ -595,13 +607,13 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 </div>
                 <button
                   onClick={handleAddToCart}
-                  disabled={!stock_quantity || stock_quantity <= 0}
+                  disabled={!canBuy}
                   className="cl-gradient-btn flex-1 h-14 text-[11px] font-semibold"
                 >
                   {addedToCart ? (
                     <span className="flex items-center justify-center gap-2"><Check size={16} /> Added</span>
                   ) : (
-                    `Add to Cart — ${formatAED(Math.round(price * quantity * 100) / 100)}`
+                    `${preorderOnly ? 'Pre-order' : 'Add to Cart'} — ${formatAED(Math.round(price * quantity * 100) / 100)}`
                   )}
                 </button>
               </div>

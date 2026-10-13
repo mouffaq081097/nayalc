@@ -1,18 +1,22 @@
 import { notFound } from 'next/navigation';
 import db from '@/lib/db';
 import ProductClient from './ProductClient';
-import { calcShipping } from '@/lib/shipping';
+import { calcShipping, getPreorderInfo } from '@/lib/shipping';
+import { ensureBackorderColumns, BACKORDER_SELECT } from '@/lib/backorders';
+import { shelfStock, isPreorderOnly, leadDays } from '@/lib/backorderRules';
 import { SITE, plainText, productTitle } from '@/lib/seo';
 
 // JSON-LD goes straight into the HTML, so a "</script>" inside product text must not be able to end the tag
 const jsonLd = (data) => ({ __html: JSON.stringify(data).replace(/</g, '\\u003c') });
 
 async function getProductBySlugOrId(identifier) {
+  await ensureBackorderColumns();
   // Try slug first, then fallback to ID if it's numeric
   let productSql = `
     SELECT
         p.id, p.name, p.slug, p.description, p.price, b.name as "brand", b.slug as "brandSlug", b.imageurl as "brandImageUrl", p.stock_quantity,
         p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, p.size, p.form,
+        ${BACKORDER_SELECT},
         COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
         COUNT(r.id) as "reviewCount",
         c.name as "categoryName", c.slug as "categorySlug"
@@ -124,7 +128,12 @@ export default async function ProductPage({ params }) {
       url: productUrl,
       priceCurrency: 'AED',
       price: product.price,
-      availability: product.stock_quantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability: shelfStock(product) > 0
+        ? 'https://schema.org/InStock'
+        : isPreorderOnly(product) ? 'https://schema.org/BackOrder' : 'https://schema.org/OutOfStock',
+      ...(shelfStock(product) === 0 && isPreorderOnly(product)
+        ? { availabilityStarts: getPreorderInfo(leadDays(product)).shipByISO }
+        : {}),
       itemCondition: 'https://schema.org/NewCondition',
       priceValidUntil: nextYear,
       seller: {

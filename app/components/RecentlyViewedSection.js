@@ -49,6 +49,8 @@ export function RecentlyViewedSection({ excludeId } = {}) {
                       image={product.imageUrl}
                       brandName={product.brandName}
                       stock_quantity={product.stock_quantity}
+                      backorderable={product.backorderable}
+                      backorder_lead_days={product.backorder_lead_days}
                       averageRating={product.averageRating}
                       reviewCount={product.reviewCount}
                     />
@@ -72,6 +74,8 @@ export function RecentlyViewedSection({ excludeId } = {}) {
               image={product.imageUrl}
               brandName={product.brandName}
               stock_quantity={product.stock_quantity}
+              backorderable={product.backorderable}
+              backorder_lead_days={product.backorder_lead_days}
               averageRating={product.averageRating}
               reviewCount={product.reviewCount}
             />

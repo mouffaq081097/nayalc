@@ -16,7 +16,7 @@ const subdued = { color: 'var(--sp-text-subdued)' };
 
 const METHODS = [
   { key: 'card', label: 'Card', provider: 'Paid through Stripe' },
-  { key: 'tabby', label: 'Tabby', provider: 'Pay in 4 through Tabby' },
+  { key: 'tabby', label: 'Tabby', provider: 'Instalments through Tabby' },
   { key: 'cashOnDelivery', label: 'Cash on delivery', provider: 'Collected by the courier' },
 ];
 const KNOWN_METHODS = new Set(METHODS.map(m => m.key));

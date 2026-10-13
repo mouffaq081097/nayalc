@@ -168,6 +168,7 @@ Active development phases include: chat UI modernization, admin portal improveme
 - Admin: "Applies to" card in `CouponEditor.jsx` with `ProductPicker.jsx`.
 
 ### Tabby orders
+- Tabby offers several plans (4, 6, 12 months…) — never write "Pay in 4". Emails and invoices read the customer's plan with `fetchTabbyPlan(tabby_payment_id)` (`lib/tabby.js`; `installments_count` excludes the first payment, so 11 = 12 payments).
 - Tabby's API reports statuses in capitals (`AUTHORIZED`, `CLOSED`), webhooks in lowercase. Always compare with `isTabbyPaid()` / `tabbyStatus()` from `lib/tabby.js`. (Comparing to lowercase strings rejected every Tabby payment, so no Tabby order was ever created automatically.)
 - Order creation lives in `lib/placeOrder.js` (`placeOrder(payload)` → `{ status, body }`); `POST /api/orders` is a thin wrapper.
 - `/api/tabby/checkout` saves the order details in `tabby_pending_orders` (keyed by Tabby payment ID) before the customer leaves. `completeTabbyOrder()` in `lib/tabbyOrders.js` creates the order from it, called by `/api/tabby/complete` (the `/tabby-return` page) and by the Tabby webhook. An advisory lock stops both creating it.
@@ -179,8 +180,8 @@ Active development phases include: chat UI modernization, admin portal improveme
 ### Homepage & product cards
 - Section headers use `<SectionHeading>` (`app/components/home/SectionHeading.js`): lavender eyebrow + Cormorant serif title. Banners reuse its `headingFont`. Sections are `py-8 md:py-12`; never hand-roll a header.
 - Prices on cards go through `formatAED()` (`app/lib/utils.js`) — "AED 70", "AED 578.10", never "AED 578.1". Deterministic, so no hydration mismatch.
-- Shipping facts come from `lib/shipping.js` only: `FREE_SHIPPING_FROM`, `TRANSIT_LABEL`, `getDeliveryInfo().rangeLabel` ("Tue 13 – Thu 15 Oct", 1–3 working days, no same-day cutoff at weekends). The courier is "our courier partners" — never name one.
-- `ProductCard`: stars only when a product has real reviews; origin shown as a small `FranceFlag`/`UAEFlag` next to the brand; badges lavender, not orange/red. Homepage product rows skip out-of-stock items.
+- Shipping facts come from `lib/shipping.js` only: `FREE_SHIPPING_FROM`, `TRANSIT_LABEL`, `getDeliveryInfo().rangeLabel` ("Tue 13 – Thu 15 Oct", 1–3 working days, no same-day cutoff at weekends). The courier is "our courier partners" — never name one in delivery promises. Once an order ships, the email and the account order pages do show the actual courier and a tracking link: always via `courierLabel()` / `trackingUrl()` in `lib/courier.js` (builds Aramex/DHL/FedEx/UPS links from the tracking number, else uses the saved link).
+- `ProductCard`: stars only when a product has real reviews; origin shown as a small `FranceFlag`/`UAEFlag` next to the brand; badges lavender, not orange/red. Homepage product rows skip items that can't be bought — out of stock with no pre-orders (`orderableQty()`); pre-order items show with a "Pre-order" button.
 
 ### SEO — `lib/seo.js`
 - Product JSON-LD is a plain `<script type="application/ld+json">` in the server render (`app/product/[productId]/page.js`). Never `next/script` for JSON-LD — it injects after load and Google doesn't see it.
@@ -191,8 +192,18 @@ Active development phases include: chat UI modernization, admin portal improveme
 - Admin order page → "Ship with OTO" (`POST /api/admin/orders/[orderId]/oto`) calls OTO `createOrder` with `createShipment: true` from `OTO_PICKUP_LOCATION_CODE`. COD orders (`payment_method = 'cashOnDelivery'`) go as `cod` with the total as `amount_due`.
 - OTO reports progress to `/api/oto/webhook` (public; HMAC-SHA256 of `orderId:status:timestamp` with `OTO_WEBHOOK_SECRET`, fails closed). It fills `tracking_number`/`courier_name`/`courier_website`/`oto_awb_url`, and `siteStatusFor()` moves the order to Shipped/Delivered. OTO cancel/return statuses are only recorded — cancelling refunds, so that stays manual.
 - Status changes go through `updateOrderStatus()` in `lib/orderStatus.js` — shared by the admin `PUT /api/orders/[orderId]` and the webhook. Never duplicate the archive/loyalty/refund logic.
+- It returns `emailSent` / `emailError` for the customer's status email; the admin order page shows a failed send and offers "Resend status email" (`POST /api/admin/orders/[orderId]/send-status-email`, open orders only).
 - Columns `orders.oto_id/oto_status/oto_awb_url/oto_updated_at` are added on first use (`ensureOtoColumns()`) and by migration `013`.
 - Register the webhook once: `node scripts/oto-register-webhook.mjs https://nayalc.com`.
+
+### Pre-orders (backorders) — `lib/backorders.js` + `lib/backorderRules.js`
+- Per product: `allow_backorder`, `backorder_lead_days` (working days), `backorder_limit` (max units owed at once), set in the product editor's Inventory card. Columns added by `ensureBackorderColumns()` / migration `014`.
+- `stock_quantity` is shelf stock and **never goes negative**. Units the shelf can't cover are stored as `order_items.backordered_qty`; the order gets `awaiting_stock = true` and `promised_ship_by` (from `getPreorderInfo()` in `lib/shipping.js`).
+- Storefront rules (isomorphic) are in `lib/backorderRules.js`: `orderableQty()`, `preorderUnits()`, `isPreorderOnly()`. Product APIs add `BACKORDER_SELECT` (`backorderable` = units that may still be pre-ordered). Never compare `stock_quantity` alone to decide whether something can be bought.
+- One parcel per order: OTO shipping and Shipped/Delivered are refused while `awaiting_stock`. Cash on delivery is refused for pre-orders (`placeOrder` and checkout).
+- Raising stock calls `allocateStock()` (product PUT, cancellations), which gives units to the oldest owed lines first and releases orders that owe nothing, emailing the customer and the team. Cancelling returns only `quantity - backordered_qty` to the shelf.
+- Daily Vercel cron `/api/cron/backorders` (needs `CRON_SECRET`) moves late orders' date forward by `BACKORDER_DELAY_DAYS` and emails an apology. Customers can cancel a waiting order from their account (`POST /api/orders/[orderId]/cancel`). Tabby refunds stay manual.
+- Admin → Orders → Backorders (`/admin/backorders`) is the logistics view: units owed per product (the purchase list) and the orders waiting.
 
 ### Emails — `lib/email/theme.js` + `lib/mail.js`
 Every email (customer, admin, marketing) renders through one layout, `renderEmail()` in `lib/email/theme.js`: grey page, white 600px card, optional purple PromoBar strip, logo + nav header (an "Admin" pill for internal mail), body, trust row + help footer. The palette mirrors the storefront (`T` tokens: ink text, `#9368ec` violet pills, gray-100 hairlines).

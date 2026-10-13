@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { Buffer } from 'buffer'; // Import Buffer for converting File to Buffer
 import { requireAdmin } from '@/lib/adminAuth';
+import { ensureBackorderColumns, readBackorderFields, allocateStock, BACKORDER_SELECT } from '@/lib/backorders';
 
 /**
  * @swagger
@@ -28,12 +29,14 @@ import { requireAdmin } from '@/lib/adminAuth';
 export async function GET(request, context) {
     const params = await context.params;
     const { id } = params;
+    await ensureBackorderColumns();
     const client = await db.connect();
     try {
         const productSql = `
             SELECT
                 p.id, p.name, p.description, p.price, b.name as "brand", b.name as "brandName", b.id as "brand_id", b.imageurl as "brandImageUrl", p.stock_quantity,
                 p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, p.size, p.form, p.status, p.is_active, p.signature_image_url as "signatureImageUrl",
+                p.backorder_limit, ${BACKORDER_SELECT},
                 pi.image_url as "imageUrl",
                 pi.alt_text as "altText",
                 COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
@@ -134,6 +137,7 @@ export async function PUT(request, context) {
         const description = formData.get('description');
         const price = parseFloat(formData.get('price')) || 0;
         const stock_quantity = parseInt(formData.get('stock_quantity'), 10) || 0;
+        const backorder = readBackorderFields(key => formData.get(key));
         const categoryIds = (formData.get('categoryIds') || '').split(',').map(Number).filter(id => !isNaN(id) && id > 0);
         const concernIds = (formData.get('concernIds') || '').split(',').map(Number).filter(id => !isNaN(id) && id > 0);
 
@@ -170,6 +174,14 @@ export async function PUT(request, context) {
         }
 
         // 1. Update products table
+        // Pre-order settings only when the form sends them, so other callers don't switch them off
+        await ensureBackorderColumns();
+        if (formData.has('allow_backorder')) {
+            await client.query(
+                'UPDATE products SET allow_backorder = $1, backorder_lead_days = $2, backorder_limit = $3 WHERE id = $4',
+                [backorder.allow_backorder, backorder.backorder_lead_days, backorder.backorder_limit, id]
+            );
+        }
         const updateProductSql = "UPDATE products SET name = $1, description = $2, price = $3, stock_quantity = $4, brand_id = $5, comparedprice = $6, ingredients = $7, long_description = $8, benefits = $9, how_to_use = $10, how_to_use_video = $11, status = $12, size = $13, vendor = $14, form = $15 WHERE id = $16 RETURNING id;";
         const updateProductValues = [
             name, description, price, stock_quantity, brand_id, comparedprice,
@@ -253,7 +265,15 @@ export async function PUT(request, context) {
         }
 
         await client.query('COMMIT');
-        return NextResponse.json({ message: 'Product updated successfully' }, { status: 200 });
+
+        // New stock goes to customers waiting on a pre-order first (lib/backorders.js)
+        let allocation = { allocated: 0, released: [] };
+        try {
+            allocation = await allocateStock([id]);
+        } catch (allocErr) {
+            console.error(`Stock allocation for product ${id} failed:`, allocErr);
+        }
+        return NextResponse.json({ message: 'Product updated successfully', ...allocation }, { status: 200 });
 
     } catch (error) {
         await client.query('ROLLBACK');

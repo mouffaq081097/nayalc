@@ -1,116 +1,208 @@
 'use client';
 
+import { useContext, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAppContext } from '../context/AppContext';
-import { Carousel, CarouselContent, CarouselItem } from './ui/carousel.tsx';
+import { CartContext } from '../context/CartContext';
 import { Container } from './ui/Container';
 import { SectionHeading } from './home/SectionHeading';
 import { formatAED } from '../lib/utils';
+import { orderableQty, isPreorderOnly } from '@/lib/backorderRules';
 
-// Real routine steps, matched against each product's actual category names
-// (product.categoryNames, a real ", "-joined string from the live catalog) —
-// never a positional guess. A step is only shown if a real, in-stock product
-// in that category actually exists, so the label always matches the product.
-const STEP_DEFS = [
-  { key: 'cleanse', label: 'Cleanse', timing: 'AM & PM', match: /cleans|makeup\s*remov|micellar/i },
-  { key: 'tone', label: 'Tone', timing: 'AM & PM', match: /toner|tonic|essence/i },
-  { key: 'treat', label: 'Treat', timing: 'AM & PM', match: /serum|treatment|anti[-\s]?aging|concern/i },
-  { key: 'moisturise', label: 'Moisturise', timing: 'PM', match: /moistur|cream|lotion|balm|lift|firm/i },
-  { key: 'protect', label: 'Protect', timing: 'AM', match: /spf|sun|protect/i },
-];
-
-const GRID_COLS = { 1: 'md:grid-cols-1', 2: 'md:grid-cols-2', 3: 'md:grid-cols-3', 4: 'md:grid-cols-4', 5: 'md:grid-cols-5' };
+// The catalog's categories are too coarse to pick steps on their own (no toner or
+// SPF category, and "Makeup Removal / Cleansing" also holds sponges and soap), so
+// each routine names its products. A product that is inactive or can't be bought
+// is skipped, and the step disappears with it.
+const ROUTINES = {
+  morning: [
+    { step: 'Cleanse', productId: 14, why: 'Lifts makeup, sunscreen and the day’s pollution.' },
+    { step: 'Tone', productId: 28, why: 'Rebalances skin and preps it for what follows.' },
+    { step: 'Treat', productId: 19, why: 'Draws moisture deep into the skin.' },
+    { step: 'Moisturise', productId: 20, why: 'Seals in the serum and firms the contour.' },
+    { step: 'Protect', productId: 11, why: 'High protection against UAE sun and dark spots.' },
+  ],
+  evening: [
+    { step: 'Cleanse', productId: 14, why: 'Removes makeup and sunscreen in one pass.' },
+    { step: 'Resurface', productId: 27, why: 'Gentle fruit acids smooth texture overnight.' },
+    { step: 'Treat', productId: 19, why: 'Plumps lines while skin repairs.' },
+    { step: 'Night cream', productId: 18, why: 'Rich overnight repair and comfort.' },
+  ],
+};
 
 const LAVENDER = 'rgb(147,104,236)';
+const HAIRLINE = '#e8e8e8';
 
-function categoryList(product) {
-  return (product.categoryNames || '').split(',').map((s) => s.trim()).filter(Boolean);
+function buildRoutine(defs, products) {
+  return defs
+    .map((def) => ({ ...def, product: products.find((p) => Number(p.id) === def.productId) }))
+    .filter((s) => s.product && orderableQty(s.product) > 0);
 }
 
-/** For each real step, the best real in-stock candidate in that category (by rating, then review volume) — skipping steps with no real match rather than mislabeling an unrelated product. Each product is used at most once. */
-function pickRoutine(products) {
-  const inStock = products.filter((p) => Number(p.stock_quantity) > 0);
-  const used = new Set();
-  const picked = [];
-  for (const step of STEP_DEFS) {
-    const candidate = inStock
-      .filter((p) => !used.has(p.id) && categoryList(p).some((c) => step.match.test(c)))
-      .sort((a, b) => Number(b.averageRating || 0) - Number(a.averageRating || 0) || Number(b.reviewCount || 0) - Number(a.reviewCount || 0))[0];
-    if (candidate) {
-      used.add(candidate.id);
-      picked.push({ ...step, product: candidate });
-    }
-  }
-  return picked;
+function TimeToggle({ value, onChange }) {
+  return (
+    <div className="inline-flex shrink-0 rounded-full bg-white p-[3px] gap-0.5" style={{ border: `1px solid ${HAIRLINE}` }} role="group" aria-label="Time of day">
+      {[['morning', 'Morning'], ['evening', 'Evening']].map(([key, label]) => {
+        const on = value === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(key)}
+            className={`rounded-full px-4 md:px-[18px] py-2 text-[12.5px] font-medium transition-colors ${on ? 'text-white' : 'text-gray-500 hover:text-gray-900'}`}
+            style={on ? { background: LAVENDER } : undefined}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProductPhoto({ product, sizes, className }) {
+  return product.imageUrl ? (
+    <Image src={product.imageUrl} alt={product.name} fill sizes={sizes} className={`object-contain mix-blend-multiply ${className || ''}`} />
+  ) : null;
 }
 
 export function BuildYourRoutine() {
   const { products } = useAppContext();
-  const routine = pickRoutine(products);
+  const { addToCart } = useContext(CartContext);
+  const [time, setTime] = useState('morning');
+  const [active, setActive] = useState(0);
+  const [added, setAdded] = useState(null); // 'routine' or a product id, for the brief "Added" state
 
-  if (routine.length < 2) return null;
+  const routines = {
+    morning: buildRoutine(ROUTINES.morning, products),
+    evening: buildRoutine(ROUTINES.evening, products),
+  };
+  // Fall back to whichever routine has enough steps to be worth showing
+  const shown = routines[time].length >= 2 ? time : time === 'morning' ? 'evening' : 'morning';
+  const steps = routines[shown];
+  if (steps.length < 2) return null;
 
-  const Card = ({ product, i, label, timing }) => {
-    const step = i + 1;
-    return (
-      <Link
-        href={`/product/${product.id}`}
-        className="group rounded-2xl border border-gray-100 overflow-hidden bg-white hover:border-gray-200 hover:shadow-sm transition-all duration-200 flex flex-col"
-      >
-        <div className="relative bg-gray-50 aspect-square">
-          <div className="absolute top-3 left-3 z-10 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: LAVENDER }}>
-            <span className="text-[11px] font-bold text-white">{step}</span>
-          </div>
-          <div className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded bg-white/80 border border-gray-100">
-            <span className="text-[10px] font-medium text-gray-500">{timing}</span>
-          </div>
-          {product.imageUrl ? (
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              fill
-              className="object-contain p-6 group-hover:scale-105 transition-transform duration-300"
-              sizes="(max-width: 768px) 80vw, 25vw"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-200">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="10" r="3"/></svg>
-            </div>
-          )}
-        </div>
-        <div className="p-3 flex flex-col gap-1">
-          <p className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: LAVENDER }}>{label}</p>
-          <p className="text-[13px] font-semibold text-gray-900 leading-snug line-clamp-2">{product.name}</p>
-          <p className="text-[13px] font-medium text-gray-500 mt-0.5">{formatAED(product.price)}</p>
-        </div>
-      </Link>
-    );
+  const current = steps[Math.min(active, steps.length - 1)];
+  const total = steps.reduce((sum, s) => sum + Number(s.product.price || 0), 0);
+  const bothAvailable = routines.morning.length >= 2 && routines.evening.length >= 2;
+
+  const flashAdded = (key) => {
+    setAdded(key);
+    setTimeout(() => setAdded((k) => (k === key ? null : k)), 2000);
+  };
+  // addToCart's return value comes from inside a state updater, so it isn't reliable;
+  // every step shown here is orderable, so treat the click as added
+  const addOne = (product) => {
+    addToCart(product, 1);
+    flashAdded(product.id);
+  };
+  const addAll = () => {
+    steps.forEach((s) => addToCart(s.product, 1));
+    flashAdded('routine');
+  };
+  const switchTime = (next) => {
+    setTime(next);
+    setActive(0);
   };
 
   return (
-    <section className="py-10 md:py-14" style={{ background: '#faf6ff' }}>
+    <section className="py-8 md:py-12 bg-white">
       <Container>
-        <SectionHeading eyebrow="Your daily ritual" title="Build Your Routine" href="/all-products" linkLabel="View all →" />
+        <SectionHeading
+          eyebrow="Your daily ritual"
+          title="Build Your Routine"
+          action={bothAvailable && <TimeToggle value={shown} onChange={switchTime} />}
+        />
 
-        {/* Mobile: carousel */}
-        <div className="md:hidden">
-          <Carousel opts={{ align: 'start', loop: false }} className="w-full">
-            <CarouselContent className="-ml-2">
-              {routine.map((r, i) => (
-                <CarouselItem key={r.product.id} className="pl-2 basis-1/2">
-                  <Card product={r.product} i={i} label={r.label} timing={r.timing} />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
-        </div>
+        <div className="grid gap-6 md:grid-cols-[5fr_7fr] md:gap-8 md:items-stretch">
+          {/* Large view of the selected step (desktop) */}
+          <div className="hidden md:block relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-50" style={{ border: `1px solid ${HAIRLINE}` }} aria-live="polite">
+            <span
+              className="absolute top-3.5 left-3.5 z-10 rounded-full px-3 py-1.5 text-[10.5px] font-semibold"
+              style={{ background: 'rgba(147,104,236,0.12)', color: '#6d4fd6' }}
+            >
+              Step {steps.indexOf(current) + 1} · {current.step}
+            </span>
+            <div className="absolute inset-x-[14%] top-[10%] bottom-[30%]">
+              <ProductPhoto key={current.product.id} product={current.product} sizes="(max-width: 1024px) 30vw, 380px" />
+            </div>
+            <Link
+              href={`/product/${current.product.id}`}
+              className="absolute inset-x-3.5 bottom-3.5 grid gap-1 rounded-xl bg-white px-4 py-3.5 transition-shadow hover:shadow-sm"
+              style={{ border: `1px solid ${HAIRLINE}` }}
+            >
+              <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em]" style={{ color: LAVENDER }}>{current.product.brand}</span>
+              <span className="text-[15px] font-semibold leading-snug text-gray-900">{current.product.name}</span>
+              <span className="text-[12.5px] leading-relaxed text-gray-500">{current.why}</span>
+            </Link>
+          </div>
 
-        {/* Desktop: grid, sized to however many real steps matched */}
-        <div className={`hidden md:grid ${GRID_COLS[routine.length] || 'md:grid-cols-4'} gap-2`}>
-          {routine.map((r, i) => (
-            <Card key={r.product.id} product={r.product} i={i} label={r.label} timing={r.timing} />
-          ))}
+          {/* Steps in order */}
+          <div className="flex flex-col rounded-2xl overflow-hidden" style={{ border: `1px solid ${HAIRLINE}` }}>
+            <ol className="flex flex-1 flex-col">
+              {steps.map((s, i) => {
+                const selected = s === current;
+                const { product } = s;
+                return (
+                  <li
+                    key={`${s.step}-${product.id}`}
+                    onMouseEnter={() => setActive(i)}
+                    onFocus={() => setActive(i)}
+                    className={`md:flex-1 grid grid-cols-[20px_52px_minmax(0,1fr)_32px] md:grid-cols-[28px_60px_minmax(0,1fr)_auto_34px] items-center gap-2.5 md:gap-3.5 px-3 md:px-4 py-2.5 md:py-3 border-l-2 transition-colors ${selected ? '' : 'border-l-transparent hover:bg-gray-50'}`}
+                    style={{
+                      ...(i > 0 && { borderTop: `1px solid ${HAIRLINE}` }),
+                      ...(selected && { background: 'rgba(147,104,236,0.08)', borderLeftColor: LAVENDER }),
+                    }}
+                  >
+                    <span className="text-center text-xs font-semibold tabular-nums" style={{ color: selected ? LAVENDER : '#c7c9d1' }}>{i + 1}</span>
+                    <Link href={`/product/${product.id}`} className="relative w-[52px] h-[52px] md:w-[60px] md:h-[60px] rounded-[10px] bg-gray-50 overflow-hidden" tabIndex={-1} aria-hidden="true">
+                      <ProductPhoto product={product} sizes="60px" className="p-1" />
+                    </Link>
+                    <div className="grid gap-0.5 min-w-0">
+                      <span className="text-[10.5px] font-semibold uppercase tracking-[0.1em]" style={{ color: LAVENDER }}>{s.step}</span>
+                      <Link href={`/product/${product.id}`} className="truncate text-[13.5px] font-semibold text-gray-900 hover:underline">
+                        {product.name}
+                      </Link>
+                      <span className="text-xs leading-normal text-gray-500 line-clamp-1 md:line-clamp-none">{s.why}</span>
+                      <span className="md:hidden text-[12.5px] font-medium text-gray-500 tabular-nums">
+                        {formatAED(product.price)}
+                        {isPreorderOnly(product) && <span className="ml-1.5 font-semibold" style={{ color: LAVENDER }}>Pre-order</span>}
+                      </span>
+                    </div>
+                    <span className="hidden md:grid justify-items-end text-[13px] font-medium text-gray-500 tabular-nums">
+                      {formatAED(product.price)}
+                      {isPreorderOnly(product) && <span className="text-[10.5px] font-semibold" style={{ color: LAVENDER }}>Pre-order</span>}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => addOne(product)}
+                      aria-label={`Add ${product.name} to bag`}
+                      className="grid place-items-center w-8 h-8 rounded-full bg-white text-[#555] transition-colors hover:bg-[#9333ea] hover:border-[#9333ea] hover:text-white"
+                      style={{ border: `1px solid ${HAIRLINE}` }}
+                    >
+                      {added === product.id ? '✓' : <span className="text-[17px] leading-none">+</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+
+            <div className="flex flex-wrap items-center justify-between gap-3.5 px-4 py-4 bg-gray-50" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
+              <div className="grid gap-0.5">
+                <span className="text-[11.5px] text-gray-500">Full {shown} routine · {steps.length} products</span>
+                <span className="text-xl font-semibold text-gray-900 tabular-nums">{formatAED(total)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={addAll}
+                className="rounded-full px-6 py-3 text-xs font-semibold text-white whitespace-nowrap transition-opacity hover:opacity-90"
+                style={{ background: added === 'routine' ? '#7c3aed' : '#9333ea' }}
+              >
+                {added === 'routine' ? 'Added to bag ✓' : 'Add routine to bag'}
+              </button>
+            </div>
+          </div>
         </div>
       </Container>
     </section>

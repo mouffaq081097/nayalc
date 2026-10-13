@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { currentSessionUser } from '@/lib/adminAuth';
 import { placeOrder } from '@/lib/placeOrder';
+import { ensureBackorderColumns } from '@/lib/backorders';
 
 // Helper function to fetch order items for a given order ID and item table name
 const fetchOrderItems = async (orderId, itemTableName, client) => {
@@ -10,6 +11,7 @@ const fetchOrderItems = async (orderId, itemTableName, client) => {
             oi.product_id as "productId",
             oi.quantity,
             oi.price,
+            ${itemTableName === 'order_items' ? 'oi.backordered_qty' : '0'} as "backorderedQty",
             p.name,
             b.name as "brandName",
             pi.image_url as "imageUrl"
@@ -53,6 +55,8 @@ const selectOrderFields = (tableName) => `
         o.tracking_number as "trackingNumber",
         o.courier_name as "courierName",
         o.courier_website as "courierWebsite",
+        ${tableName === 'orders' ? 'o.awaiting_stock' : 'false'} as "awaitingStock",
+        ${tableName === 'orders' ? 'o.promised_ship_by::text' : 'NULL::text'} as "promisedShipBy",
         (SELECT points FROM loyalty_transactions WHERE order_id = o.id AND type = 'earn' LIMIT 1) as "pointsEarned"
     FROM ${tableName} o
     LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
@@ -113,6 +117,7 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit') || '10', 10);
     const offset = (page - 1) * limit;
 
+    await ensureBackorderColumns();
     const client = await db.connect();
     try {
         let orderTableConfig = [];

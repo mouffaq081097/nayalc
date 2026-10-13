@@ -5,11 +5,12 @@ import { Container } from './ui/Container';
 import ProductCard from './ProductCard';
 import { useAppContext } from '../context/AppContext';
 import { SectionHeading } from './home/SectionHeading';
+import { orderableQty } from '@/lib/backorderRules';
 
 export function FeaturedProducts() {
   const { featuredProducts } = useAppContext();
-  // Out-of-stock picks stay off the homepage: a featured product should be one you can buy
-  const displayedProducts = featuredProducts.filter((p) => Number(p.stock_quantity) > 0);
+  // A featured product should be one you can buy now or pre-order
+  const displayedProducts = featuredProducts.filter((p) => orderableQty(p) > 0);
 
   return (
     <section className="py-8 md:py-12 relative overflow-hidden bg-white">
@@ -38,6 +39,8 @@ export function FeaturedProducts() {
                     category={product.categoryName || product.category}
                     brandName={product.brandName}
                     stock_quantity={product.stock_quantity}
+                    backorderable={product.backorderable}
+                    backorder_lead_days={product.backorder_lead_days}
                     isNew={product.isNew}
                     isBestseller={product.isBestseller}
                   />

@@ -17,10 +17,11 @@ const LAVENDER = 'rgb(147,104,236)';
 /**
  * The header every homepage section shares: a lavender eyebrow, a Cormorant
  * serif title (the Cloud Luxe heading face) and an optional link on the right.
+ * `action` replaces the link with any control (e.g. a toggle).
  */
-export function SectionHeading({ eyebrow, title, href, linkLabel, external = false }) {
+export function SectionHeading({ eyebrow, title, href, linkLabel, external = false, action }) {
   return (
-    <div className="mb-5 md:mb-6 flex flex-row justify-between items-end gap-4">
+    <div className="mb-5 md:mb-6 flex flex-row flex-wrap justify-between items-end gap-4">
       <div className="space-y-1.5 min-w-0">
         {eyebrow && (
           <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: LAVENDER }}>
@@ -31,7 +32,8 @@ export function SectionHeading({ eyebrow, title, href, linkLabel, external = fal
           {title}
         </h2>
       </div>
-      {href && linkLabel && (
+      {action}
+      {!action && href && linkLabel && (
         <Link
           href={href}
           {...(external && { target: '_blank', rel: 'noopener noreferrer' })}

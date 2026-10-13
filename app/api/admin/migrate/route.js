@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { BACKORDER_MIGRATION_SQL } from '@/lib/backorders';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -98,6 +99,11 @@ export async function POST(request) {
                     ALTER TABLE orders ADD COLUMN IF NOT EXISTS oto_awb_url    TEXT;
                     ALTER TABLE orders ADD COLUMN IF NOT EXISTS oto_updated_at TIMESTAMPTZ;
                 `
+            },
+            {
+                // Pre-orders — also added on first use by ensureBackorderColumns() in lib/backorders.js
+                name: '014_backorders',
+                sql: BACKORDER_MIGRATION_SQL,
             },
         ];
 

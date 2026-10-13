@@ -1,5 +1,7 @@
 import db from '@/lib/db';
-import { calcShipping } from '@/lib/shipping';
+import { calcShipping, getPreorderInfo } from '@/lib/shipping';
+import { ensureBackorderColumns, BACKORDER_SELECT } from '@/lib/backorders';
+import { shelfStock, isPreorderOnly, leadDays } from '@/lib/backorderRules';
 import { SITE, plainText, productTitle, shortBrand, productUrl } from '@/lib/seo';
 
 // Google Merchant Center product feed (free listings + Shopping), in Google's RSS 2.0 format:
@@ -21,6 +23,16 @@ const xml = (value) =>
 
 const aed = (amount) => `${Number(amount).toFixed(2)} AED`;
 
+// in_stock, backorder (with the date it ships — Google requires one) or out_of_stock
+function availabilityTags(p) {
+  if (shelfStock(p) > 0) return '      <g:availability>in_stock</g:availability>';
+  if (isPreorderOnly(p)) {
+    return `      <g:availability>backorder</g:availability>
+      <g:availability_date>${getPreorderInfo(leadDays(p)).shipByISO}T09:00+0400</g:availability_date>`;
+  }
+  return '      <g:availability>out_of_stock</g:availability>';
+}
+
 // Google's taxonomy, by the shop's own category names
 function googleCategory(categoryName) {
   if (/fragr[ae]nce|perfume|parfum/i.test(categoryName || '')) return 'Health & Beauty > Personal Care > Cosmetics > Perfume & Cologne';
@@ -29,8 +41,10 @@ function googleCategory(categoryName) {
 }
 
 export async function GET() {
+  await ensureBackorderColumns();
   const { rows } = await db.query(`
     SELECT p.id, p.slug, p.name, p.description, p.long_description, p.price, p.comparedprice, p.stock_quantity, p.size,
+           ${BACKORDER_SELECT},
            b.name AS brand, c.name AS category,
            COALESCE(
              ARRAY_AGG(pi.image_url ORDER BY pi.is_main DESC NULLS LAST, pi.display_order ASC, pi.id ASC)
@@ -61,7 +75,7 @@ export async function GET() {
       <g:link>${xml(productUrl(p))}</g:link>
       <g:image_link>${xml(image)}</g:image_link>
 ${more.slice(0, 10).map((url) => `      <g:additional_image_link>${xml(url)}</g:additional_image_link>`).join('\n')}
-      <g:availability>${Number(p.stock_quantity) > 0 ? 'in_stock' : 'out_of_stock'}</g:availability>
+${availabilityTags(p)}
       <g:price>${aed(onSale ? compared : price)}</g:price>
 ${onSale ? `      <g:sale_price>${aed(price)}</g:sale_price>` : ''}
       <g:brand>${xml(shortBrand(p.brand) || 'Naya Lumière Cosmetics')}</g:brand>

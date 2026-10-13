@@ -1,10 +1,11 @@
 'use client';
 import { formatPhone } from '@/lib/phone';
+import { trackingUrl } from '@/lib/courier';
 import { PhoneNeedsCheck } from '../../_components/phone';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, XCircle, Info, Printer, Mail, Truck, ExternalLink } from 'lucide-react';
+import { Loader2, ArrowLeft, XCircle, Info, Printer, Mail, Truck, ExternalLink, FileDown } from 'lucide-react';
 import { toast } from 'react-toastify';
 import PageLoader from '@/app/components/PageLoader';
 import Link from 'next/link';
@@ -15,6 +16,7 @@ import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
 import { useAppContext } from '@/app/context/AppContext';
+import { formatShipDate } from '@/lib/shipping';
 
 const STATUS_BADGE = {
   pending:    'sp-badge-warning',
@@ -37,6 +39,8 @@ const OrderDetailsPage = () => {
   const [courierName, setCourierName] = useState('');
   const [courierWebsite, setCourierWebsite] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // The link the customer will get in the email and on their order page (lib/courier.js)
+  const autoTrackUrl = trackingUrl({ courierName, trackingNumber, courierWebsite });
   const [updateError, setUpdateError] = useState(null);
 
   const { fetchWithAuth } = useAppContext();
@@ -46,6 +50,8 @@ const OrderDetailsPage = () => {
   const [discountCode, setDiscountCode] = useState('');
   const [applyingDiscount, setApplyingDiscount] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingStatusEmail, setSendingStatusEmail] = useState(false);
+  const [printingInvoice, setPrintingInvoice] = useState(false);
   const [tabbyPayment, setTabbyPayment] = useState(null);
   const [sendingToOto, setSendingToOto] = useState(false);
 
@@ -86,6 +92,46 @@ const OrderDetailsPage = () => {
     } finally {
       setSendingEmail(false);
     }
+  };
+
+  const resendStatus = async () => {
+    if (!window.confirm(`Send the "${order.status}" email to ${order.customerEmail} again?`)) return;
+    setSendingStatusEmail(true);
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/send-status-email`, { method: 'POST' });
+      if (!response.ok) throw new Error(await errorMessage(response, 'The email could not be sent.'));
+      toast.success(`"${order.status}" email sent to ${order.customerEmail}`);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSendingStatusEmail(false);
+    }
+  };
+
+  // Loads the invoice PDF into a hidden frame and opens the print dialog for it.
+  // If the browser won't print from the frame, the PDF opens in a new tab instead.
+  const printInvoice = () => {
+    const url = `/api/orders/${orderId}/invoice`;
+    setPrintingInvoice(true);
+    document.getElementById('invoice-print-frame')?.remove();
+    const frame = document.createElement('iframe');
+    frame.id = 'invoice-print-frame';
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+    frame.onload = () => {
+      setPrintingInvoice(false);
+      try {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+      } catch {
+        window.open(url, '_blank', 'noopener');
+      }
+    };
+    frame.onerror = () => {
+      setPrintingInvoice(false);
+      toast.error('The invoice could not be loaded.');
+    };
+    frame.src = url;
+    document.body.appendChild(frame);
   };
 
   const shipWithOto = async () => {
@@ -167,6 +213,12 @@ const OrderDetailsPage = () => {
         throw new Error(errorData.message || 'Failed to update order status');
       }
       const responseData = await response.json();
+      const recipient = responseData.customerEmail || 'the customer';
+      if (responseData.emailSent) {
+        toast.success(`Status saved. Email sent to ${recipient}.`);
+      } else {
+        toast.error(`Status saved, but the email to ${recipient} failed: ${responseData.emailError || 'unknown error'}. Use "Resend status email" to try again.`, { autoClose: 10000 });
+      }
       if (responseData.moved) router.push('/admin/orders');
       else await fetchOrderDetails();
     } catch (err) {
@@ -192,6 +244,7 @@ const OrderDetailsPage = () => {
   const isCancellationReasonVisible = newStatus === 'Cancelled';
   const isPaid = !!stripePaymentDetails || order.paymentMethod === 'card' || order.payment_confirmed === true;
   const isOpenOrder = !['delivered', 'cancelled'].includes(order.status?.toLowerCase());
+  const orderTrackUrl = trackingUrl({ courierName: order.courier_name, trackingNumber: order.tracking_number, courierWebsite: order.courier_website });
   const tabbyPaid = tabbyPayment ? tabbyPayment.amount - tabbyPayment.refunded : null;
   const tabbyDifference = tabbyPaid === null ? null : Math.round((tabbyPaid - order.totalAmount) * 100) / 100;
   // The stored subtotal is what the total was computed from; fall back to the
@@ -213,16 +266,23 @@ const OrderDetailsPage = () => {
               <h1 className="text-[20px] font-semibold" style={{ color: 'var(--sp-text)' }}>#{order.id}</h1>
               {isPaid && <span className="sp-badge sp-badge-neutral"><span className="dot" />Paid</span>}
               <span className={`sp-badge ${STATUS_BADGE[order.status?.toLowerCase()] || 'sp-badge-neutral'}`}><span className="dot" />{order.status}</span>
+              {order.awaitingStock && <span className="sp-badge sp-badge-attention"><span className="dot" />Awaiting stock</span>}
             </div>
             <p className="text-[12px] mt-0.5" style={{ color: 'var(--sp-text-subdued)' }}>
               {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} from Online Store
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button className="sp-btn sp-btn-secondary">Refund</button>
           <a href={`/admin/orders/${orderId}/packing-slip`} target="_blank" rel="noopener noreferrer" className="sp-btn sp-btn-secondary">
-            <Printer size={14} /> Print
+            <Printer size={14} /> Packing slip
+          </a>
+          <button type="button" onClick={printInvoice} disabled={printingInvoice} className="sp-btn sp-btn-secondary">
+            {printingInvoice ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />} Print invoice
+          </button>
+          <a href={`/api/orders/${orderId}/invoice`} download={`invoice-${orderId}.pdf`} className="sp-btn sp-btn-secondary" title="Download the invoice as a PDF">
+            <FileDown size={14} /> Invoice PDF
           </a>
           <button className="sp-btn sp-btn-secondary">More actions</button>
         </div>
@@ -231,6 +291,21 @@ const OrderDetailsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Main column */}
         <div className="lg:col-span-2 space-y-5">
+
+          {/* A pre-order is held until every unit is in (lib/backorders.js) */}
+          {order.awaitingStock && (
+            <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl text-[13px]" style={{ background: '#f4eefe', color: '#4c2a8a', border: '1px solid #e2d4fb' }}>
+              <Info size={16} className="shrink-0 mt-px" />
+              <div>
+                <p className="font-semibold">Awaiting stock · promised to ship by {formatShipDate(order.promisedShipBy) || '—'}</p>
+                <p className="mt-0.5">
+                  Still owed: {order.items.filter(i => i.backorderedQty > 0).map(i => `${i.backorderedQty} × ${i.product?.name || 'product'}`).join(', ')}.
+                  {' '}Add the stock in the product editor and this order is released automatically, oldest orders first. Shipping is blocked until then.
+                  {' '}<Link href="/admin/backorders" className="underline">See all backorders</Link>
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Fulfillment / items */}
           <div className="sp-card">
@@ -248,6 +323,9 @@ const OrderDetailsPage = () => {
                   <div className="flex-grow min-w-0">
                     <p className="text-[12px]" style={{ color: 'var(--sp-text-secondary)' }}>{item.product?.brandName || 'Naya Lumière'}</p>
                     <p className="text-[13px] font-medium truncate" style={{ color: 'var(--sp-text)' }}>{item.product?.name || 'Product'}</p>
+                    {item.backorderedQty > 0 && (
+                      <span className="sp-badge sp-badge-attention mt-1">{item.backorderedQty === item.quantity ? 'Pre-order' : `${item.backorderedQty} of ${item.quantity} on pre-order`}</span>
+                    )}
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-[13px]" style={{ color: 'var(--sp-text-secondary)' }}>AED {parseFloat(item.price).toFixed(2)} × {item.quantity}</p>
@@ -303,7 +381,7 @@ const OrderDetailsPage = () => {
                     <SelectTrigger id="status" className="w-full h-10 rounded-lg bg-white border-[#d1d1d1] text-[13px]">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
-                    <SelectContent className="rounded-lg">
+                    <SelectContent className="rounded-lg bg-white border border-[#d1d1d1] shadow-lg">
                       <SelectItem value="Pending">Pending</SelectItem>
                       <SelectItem value="Processing">Processing</SelectItem>
                       <SelectItem value="Shipped">Shipped</SelectItem>
@@ -334,9 +412,20 @@ const OrderDetailsPage = () => {
                     <Label htmlFor="courierWebsite" className="sp-label">Tracking link</Label>
                     <Input id="courierWebsite" value={courierWebsite} onChange={(e) => setCourierWebsite(e.target.value)} placeholder="https://track..." className="h-9 rounded-lg bg-white border-[#d1d1d1] text-[13px]" />
                   </div>
+                  <p className="md:col-span-3 text-[12px]" style={{ color: 'var(--sp-text-secondary)' }}>
+                    {autoTrackUrl
+                      ? <>The customer gets this tracking link: <a href={autoTrackUrl} target="_blank" rel="noopener noreferrer" className="sp-link break-all">{autoTrackUrl}</a></>
+                      : 'For Aramex, DHL, FedEx and UPS the tracking link is built from the tracking number. For other couriers, paste the link.'}
+                  </p>
                 </div>
               )}
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-2">
+                {/* Delivered and cancelled orders are archived, so only open orders can be resent */}
+                {!['Delivered', 'Cancelled'].includes(order.status) && (
+                  <button onClick={resendStatus} disabled={sendingStatusEmail || isSubmitting} className="sp-btn sp-btn-secondary">
+                    {sendingStatusEmail ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</> : 'Resend status email'}
+                  </button>
+                )}
                 <button onClick={handleUpdateStatus} disabled={isSubmitting} className="sp-btn sp-btn-primary">
                   {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : 'Save status'}
                 </button>
@@ -382,19 +471,19 @@ const OrderDetailsPage = () => {
                     {order.oto_awb_url && (
                       <a href={order.oto_awb_url} target="_blank" rel="noopener noreferrer" className="sp-btn sp-btn-secondary h-8 px-2.5 text-[12px]"><Printer size={13} />Shipping label</a>
                     )}
-                    {order.courier_website && (
-                      <a href={order.courier_website} target="_blank" rel="noopener noreferrer" className="sp-btn sp-btn-secondary h-8 px-2.5 text-[12px]"><ExternalLink size={13} />Track</a>
+                    {orderTrackUrl && (
+                      <a href={orderTrackUrl} target="_blank" rel="noopener noreferrer" className="sp-btn sp-btn-secondary h-8 px-2.5 text-[12px]"><ExternalLink size={13} />Track</a>
                     )}
                   </div>
                   {!order.tracking_number && <p className="text-[12px]" style={{ color: 'var(--sp-text-subdued)' }}>Tracking appears here once OTO assigns a courier.</p>}
                 </div>
               ) : (
                 <>
-                  <button type="button" onClick={shipWithOto} disabled={sendingToOto} className="sp-btn sp-btn-primary w-full justify-center">
+                  <button type="button" onClick={shipWithOto} disabled={sendingToOto || order.awaitingStock} className="sp-btn sp-btn-primary w-full justify-center">
                     {sendingToOto ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}Ship with OTO
                   </button>
                   <p className="text-[12px] mt-1.5" style={{ color: 'var(--sp-text-subdued)' }}>
-                    Books the courier from your pickup location.{order.payment_method === 'cashOnDelivery' ? ` The courier collects AED ${order.totalAmount.toFixed(2)} on delivery.` : ''} The order moves to Shipped and Delivered by itself as OTO reports it.
+                    {order.awaitingStock && 'Available once the pre-ordered stock is in. '}Books the courier from your pickup location.{order.payment_method === 'cashOnDelivery' ? ` The courier collects AED ${order.totalAmount.toFixed(2)} on delivery.` : ''} The order moves to Shipped and Delivered by itself as OTO reports it.
                   </p>
                 </>
               )}

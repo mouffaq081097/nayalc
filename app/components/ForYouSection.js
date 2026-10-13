@@ -43,6 +43,8 @@ export const ForYouSection = () => {
                       image={product.imageUrl}
                       brandName={product.brandName}
                       stock_quantity={product.stock_quantity}
+                      backorderable={product.backorderable}
+                      backorder_lead_days={product.backorder_lead_days}
                       averageRating={product.averageRating}
                       reviewCount={product.reviewCount}
                       viewCount={product.viewCount}
@@ -67,6 +69,8 @@ export const ForYouSection = () => {
               image={product.imageUrl}
               brandName={product.brandName}
               stock_quantity={product.stock_quantity}
+              backorderable={product.backorderable}
+              backorder_lead_days={product.backorder_lead_days}
               averageRating={product.averageRating}
               reviewCount={product.reviewCount}
               viewCount={product.viewCount}

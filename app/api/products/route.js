@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireAdmin } from '@/lib/adminAuth';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { ensureBackorderColumns, readBackorderFields, BACKORDER_SELECT } from '@/lib/backorders';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -25,6 +26,7 @@ export async function GET(request) {
         )
       `);
     } catch (e) { console.warn('Could not ensure product_views table exists'); }
+    await ensureBackorderColumns();
 
     let sql;
     const params = [];
@@ -42,7 +44,8 @@ export async function GET(request) {
       (
         COALESCE((SELECT SUM(oi.quantity) FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.product_id = p.id), 0) +
         COALESCE((SELECT SUM(oi2.quantity) FROM delivered_order_items oi2 JOIN delivered_orders o2 ON oi2.order_id = o2.id WHERE oi2.product_id = p.id), 0)
-      )::int as "totalSold"
+      )::int as "totalSold",
+      p.backorder_limit, ${BACKORDER_SELECT}
     `;
 
     if (isNew === 'true') {
@@ -220,7 +223,9 @@ export async function POST(request) {
     const price = parseFloat(priceRaw) || 0;
     const stock_quantity = parseInt(stock_quantityRaw, 10) || 0;
     const comparedprice = (comparedpriceRaw && comparedpriceRaw !== '') ? parseFloat(comparedpriceRaw) : null;
+    const backorder = readBackorderFields(key => data[key]);
 
+    await ensureBackorderColumns();
     await client.query('BEGIN');
 
     let vendorName = null;
@@ -242,10 +247,10 @@ export async function POST(request) {
     }
 
     const productSql = `
-      INSERT INTO products (name, slug, description, price, stock_quantity, status, vendor, long_description, benefits, how_to_use, how_to_use_video, comparedprice, ingredients, brand_id, size, form)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id;
+      INSERT INTO products (name, slug, description, price, stock_quantity, status, vendor, long_description, benefits, how_to_use, how_to_use_video, comparedprice, ingredients, brand_id, size, form, allow_backorder, backorder_lead_days, backorder_limit)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING id;
     `;
-    const productValues = [name, slug, description, price, stock_quantity, status, vendorName, long_description, benefits, how_to_use, how_to_use_video || null, comparedprice, ingredients, brand_id, size, form];
+    const productValues = [name, slug, description, price, stock_quantity, status, vendorName, long_description, benefits, how_to_use, how_to_use_video || null, comparedprice, ingredients, brand_id, size, form, backorder.allow_backorder, backorder.backorder_lead_days, backorder.backorder_limit];
     const { rows: productRows } = await client.query(productSql, productValues);
     const productId = productRows[0].id;
 

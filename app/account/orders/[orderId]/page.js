@@ -12,6 +12,8 @@ import { useAppContext } from '../../../context/AppContext';
 import { useCart } from '../../../context/CartContext';
 import PageLoader from '@/app/components/PageLoader';
 import { statusMeta } from '../../_components/orderStatus';
+import { formatShipDate } from '@/lib/shipping';
+import { courierLabel, trackingUrl } from '@/lib/courier';
 
 const TIMELINE_STEPS = [
   { key: 'pending',    label: 'Placed' },
@@ -63,17 +65,37 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [justAdded, setJustAdded] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const loadOrder = React.useCallback(() => fetchWithAuth(`/api/orders/${orderId}`)
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to load order');
+      return res.json();
+    })
+    .then(data => { setOrder(data); setLoading(false); })
+    .catch(err => { setError(err.message); setLoading(false); }), [orderId, fetchWithAuth]);
 
   useEffect(() => {
     if (!orderId) return;
-    fetchWithAuth(`/api/orders/${orderId}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to load order');
-        return res.json();
-      })
-      .then(data => { setOrder(data); setLoading(false); })
-      .catch(err => { setError(err.message); setLoading(false); });
-  }, [orderId, fetchWithAuth]);
+    loadOrder();
+  }, [orderId, loadOrder]);
+
+  // While a pre-order waits for stock the customer can cancel it for a full refund
+  const handleCancelPreorder = async () => {
+    if (!window.confirm('Cancel this order? Your payment will be refunded in full.')) return;
+    setCancelling(true);
+    try {
+      const res = await fetchWithAuth(`/api/orders/${orderId}/cancel`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'The order could not be cancelled.');
+      toast.success("Your order has been cancelled. We've emailed you the details.");
+      await loadOrder();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   if (loading) return <PageLoader />;
 
@@ -94,8 +116,10 @@ export default function OrderDetailPage() {
   const pointsDiscount = Math.floor((Number(order.redeemed_points) || 0) / 100) * 5;
   const hasShipping = order.shippingAddress || order.city;
   const hasPayment = order.payment_method || order.stripePaymentIntentId;
-  const { label, badge, Icon } = statusMeta(order.status);
+  const { label, badge, Icon } = statusMeta(order.status, order.awaitingStock);
   const isCancelled = String(order.status || '').toLowerCase() === 'cancelled';
+  const courier = courierLabel(order.courier_name);
+  const trackUrl = trackingUrl({ courierName: order.courier_name, trackingNumber: order.tracking_number, courierWebsite: order.courier_website });
   const currentStepIdx = TIMELINE_STEPS.findIndex(s => s.key === String(order.status || '').toLowerCase());
 
   const handleBuyAgain = () => {
@@ -163,9 +187,9 @@ export default function OrderDetailPage() {
               {justAdded ? 'Added' : 'Buy again'}
             </button>
 
-            {order.courier_website && (
+            {trackUrl && (
               <a
-                href={order.courier_website}
+                href={trackUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-medium border border-[#eaeaea] bg-white text-gray-600 hover:bg-gray-50 transition-colors"
@@ -206,6 +230,11 @@ export default function OrderDetailPage() {
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-semibold leading-snug line-clamp-1 text-gray-900">{item.product?.name || 'Product'}</p>
                         <p className="text-[11px] mt-0.5 text-gray-400">Qty: {item.quantity}</p>
+                        {order.awaitingStock && item.backorderedQty > 0 && (
+                          <p className="text-[11px] mt-0.5 font-semibold text-purple-600">
+                            {item.backorderedQty === item.quantity ? 'Pre-order' : `${item.backorderedQty} on pre-order`} · on its way to us
+                          </p>
+                        )}
                       </div>
                       <p className="text-[13px] font-bold flex-shrink-0 text-gray-900">
                         AED {Number(item.price || 0).toFixed(2)}
@@ -213,6 +242,57 @@ export default function OrderDetailPage() {
                     </div>
                   ))}
                 </div>
+              </Section>
+            )}
+
+            {(courier || order.tracking_number) && !isCancelled && (
+              <Section title="Delivery">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-50 text-purple-600">
+                      <Truck size={15} strokeWidth={1.75} />
+                    </div>
+                    <div className="space-y-1">
+                      {courier && <p className="text-[13px] font-semibold text-gray-900">Shipped with {courier}</p>}
+                      {order.tracking_number && (
+                        <p className="text-[12px] text-gray-500">
+                          Tracking number{' '}
+                          <span className="font-semibold text-gray-900 tabular-nums select-all">{order.tracking_number}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {trackUrl && (
+                    <a
+                      href={trackUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 px-4 h-9 rounded-full text-[12px] font-semibold text-white whitespace-nowrap transition-opacity hover:opacity-90"
+                      style={{ background: '#9333ea' }}
+                    >
+                      <Truck size={13} />
+                      {courier ? `Track with ${courier}` : 'Track parcel'}
+                    </a>
+                  )}
+                </div>
+              </Section>
+            )}
+
+            {order.awaitingStock && !isCancelled && (
+              <Section title="Pre-order">
+                <p className="text-[13px] font-semibold text-gray-900">
+                  Waiting for stock · ships by {formatShipDate(order.promisedShipBy) || 'soon'}
+                </p>
+                <p className="text-[12px] mt-1 text-gray-500 leading-relaxed">
+                  Part of your order is on pre-order. We&apos;ll send everything together in one parcel as soon as it reaches us, and email you when it&apos;s on its way. If you&apos;d rather not wait, you can cancel for a full refund.
+                </p>
+                <button
+                  onClick={handleCancelPreorder}
+                  disabled={cancelling}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-medium border border-purple-200 text-purple-600 hover:bg-purple-50 transition-colors disabled:opacity-50"
+                >
+                  {cancelling ? 'Cancelling…' : 'Cancel order'}
+                </button>
               </Section>
             )}
 

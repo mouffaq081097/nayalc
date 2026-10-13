@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { ensureBackorderColumns, BACKORDER_SELECT } from '@/lib/backorders';
+import { shelfStock, isPreorderOnly, leadDays } from '@/lib/backorderRules';
+import { getPreorderInfo } from '@/lib/shipping';
 
 export async function GET() {
   try {
+    await ensureBackorderColumns();
     const sql = `
-      SELECT
+      SELECT ${BACKORDER_SELECT},
         p.id, p.name, p.slug, p.description, p.price, b.name as "brand", p.stock_quantity,
         c.name as "category", pi.image_url
       FROM products p
@@ -44,7 +48,8 @@ export async function GET() {
       <g:link>${productUrl}</g:link>
       <g:image_link>${imageUrl}</g:image_link>
       <g:condition>new</g:condition>
-      <g:availability>${product.stock_quantity > 0 ? 'in_stock' : 'out_of_stock'}</g:availability>
+      <g:availability>${shelfStock(product) > 0 ? 'in_stock' : isPreorderOnly(product) ? 'backorder' : 'out_of_stock'}</g:availability>${shelfStock(product) === 0 && isPreorderOnly(product) ? `
+      <g:availability_date>${getPreorderInfo(leadDays(product)).shipByISO}T09:00+0400</g:availability_date>` : ''}
       <g:price>${product.price} AED</g:price>
       <g:brand>${brand}</g:brand>
       ${product.category ? `<g:product_type>${product.category.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</g:product_type>` : ''}

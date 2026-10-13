@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { ensureBackorderColumns, BACKORDER_SELECT } from '@/lib/backorders';
 
 async function assertOwnership(userId) {
     const session = await getServerSession(authOptions);
@@ -30,7 +31,8 @@ export async function GET(request, context) {
     if (forbidden) return forbidden;
 
     try {
-        const sql = "SELECT p.id as \"productId\", uc.quantity, p.name, p.price, p.description, p.vendor as \"brand\", p.stock_quantity as \"stock_quantity\", (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as \"imageUrl\" FROM user_carts uc JOIN products p ON uc.product_id = p.id WHERE uc.user_id = $1;";
+        await ensureBackorderColumns();
+        const sql = `SELECT ${BACKORDER_SELECT}, ` + "p.id as \"productId\", uc.quantity, p.name, p.price, p.description, p.vendor as \"brand\", p.stock_quantity as \"stock_quantity\", (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_main = TRUE LIMIT 1) as \"imageUrl\" FROM user_carts uc JOIN products p ON uc.product_id = p.id WHERE uc.user_id = $1;";
 
         const { rows } = await db.query(sql, [userId]);
         

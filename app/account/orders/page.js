@@ -10,6 +10,7 @@ import { useAccountData } from '../_components/useAccountData';
 import { useAppContext } from '../../context/AppContext';
 import { useCart } from '../../context/CartContext';
 import { statusMeta } from '../_components/orderStatus';
+import { trackingUrl } from '@/lib/courier';
 
 const TAB_ORDER = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -182,7 +183,7 @@ export default function AccountOrdersPage() {
               const date = formatDate(o.createdAt || o.created_at);
               const previews = items.slice(0, 3);
               const extra = items.length - previews.length;
-              const { label, badge, Icon } = statusMeta(o.status);
+              const { label, badge, Icon } = statusMeta(o.status, o.awaitingStock);
               const justAdded = buyingAgainId === o.id;
 
               return (
@@ -261,9 +262,9 @@ export default function AccountOrdersPage() {
                       {justAdded ? 'Added to cart' : 'Buy again'}
                     </button>
 
-                    {o.courierWebsite && (
+                    {trackingUrl(o) && (
                       <a
-                        href={o.courierWebsite}
+                        href={trackingUrl(o)}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}

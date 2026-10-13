@@ -5,6 +5,7 @@ import { Container } from './ui/Container';
 import ProductCard from './ProductCard';
 import { useAppContext } from '../context/AppContext';
 import { SectionHeading } from './home/SectionHeading';
+import { orderableQty } from '@/lib/backorderRules';
 
 /**
  * Real top 4 best sellers, ranked 1-4 by actual units sold (product.isBestseller /
@@ -15,7 +16,7 @@ import { SectionHeading } from './home/SectionHeading';
 export function BestSellers() {
   const { products } = useAppContext();
   const topSellers = [...products]
-    .filter((p) => p.isBestseller && Number(p.stock_quantity) > 0)
+    .filter((p) => p.isBestseller && orderableQty(p) > 0)
     .sort((a, b) => Number(b.totalSold || 0) - Number(a.totalSold || 0))
     .slice(0, 4);
 
@@ -33,6 +34,8 @@ export function BestSellers() {
     viewCount: product.viewCount,
     brandName: product.brandName,
     stock_quantity: product.stock_quantity,
+    backorderable: product.backorderable,
+    backorder_lead_days: product.backorder_lead_days,
   });
 
   return (

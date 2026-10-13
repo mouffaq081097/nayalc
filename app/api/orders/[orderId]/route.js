@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../lib/auth';
 import { updateOrderStatus } from '../../../../lib/orderStatus';
+import { ensureBackorderColumns } from '../../../../lib/backorders';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'mouffaq@nayalc.com';
@@ -13,6 +14,7 @@ export async function GET(request, context) {
     const session = await getServerSession(authOptions);
     const isAdmin = session?.user?.email === ADMIN_EMAIL;
 
+    await ensureBackorderColumns();
     const client = await db.connect();
     try {
         if (isAdmin) {
@@ -35,6 +37,8 @@ export async function GET(request, context) {
                 o.shipping_cost as "shippingCost",
                 o.gift_wrap_cost as "giftWrapCost",
                 o.stripe_payment_intent_id as "stripePaymentIntentId",
+                o.awaiting_stock as "awaitingStock",
+                o.promised_ship_by::text as "promisedShipBy",
                 COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as "customerName",
                 COALESCE(u.email, '') as "customerEmail",
                 ua.customer_phone as "customerPhone",
@@ -52,7 +56,7 @@ export async function GET(request, context) {
 
         if (orderResult.rows.length > 0) {
             const itemsResult = await client.query(`
-                SELECT oi.id, oi.quantity, oi.price, p.id as "productId", p.name, pi.image_url as "imageUrl"
+                SELECT oi.id, oi.quantity, oi.price, oi.backordered_qty as "backorderedQty", p.id as "productId", p.name, pi.image_url as "imageUrl"
                 FROM order_items oi
                 JOIN products p ON oi.product_id = p.id
                 LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = TRUE
@@ -193,6 +197,7 @@ export async function GET(request, context) {
             id: item.id,
             quantity: item.quantity,
             price: parseFloat(item.price),
+            backorderedQty: item.backorderedQty || 0,
             product: {
                 id: item.productId,
                 name: item.name,

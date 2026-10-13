@@ -12,6 +12,7 @@ const MAIN_NAV = [
   {
     to: '/admin/orders', text: 'Orders', icon: ShoppingBag, badge: 'orders',
     children: [
+      { to: '/admin/backorders', text: 'Backorders' },
       { to: '/admin/orders/abandoned', text: 'Abandoned checkouts' },
       { to: '/admin/recover-order', text: 'Recover order' },
     ],

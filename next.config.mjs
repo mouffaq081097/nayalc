@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // pdfkit reads its font files from its own folder at runtime, so it must not be bundled
+  serverExternalPackages: ['pdfkit'],
+  outputFileTracingIncludes: {
+    '/api/**/*': ['./node_modules/pdfkit/js/data/**'],
+  },
   async rewrites() {
     return [
       {

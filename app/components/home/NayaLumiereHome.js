@@ -28,6 +28,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image';
 import Link from 'next/link';
 import { Cormorant_Garamond, Poppins } from 'next/font/google';
+import { orderableQty, isPreorderOnly, leadDays } from '@/lib/backorderRules';
+import { getPreorderInfo } from '@/lib/shipping';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -73,6 +75,10 @@ function money(n) {
   return 'AED ' + Math.round(Number(n) || 0).toLocaleString('en-US');
 }
 
+// In stock, or out of stock but taking pre-orders (lib/backorderRules.js)
+const canBuy = (p) => orderableQty(p) > 0;
+const addLabel = (p, label) => (isPreorderOnly(p) ? 'Pre-order' : label);
+
 function num(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
@@ -95,10 +101,10 @@ function brandTint(brandName) {
   return BRAND_TINT[brandName] || DEFAULT_TINT;
 }
 
-/** Top sellers: real in-stock products, ranked by review volume then rating. */
+/** Top sellers: real products customers can buy now or pre-order, ranked by review volume then rating. */
 function pickTopSellers(products) {
   return [...products]
-    .filter((p) => num(p.stock_quantity) > 0)
+    .filter(canBuy)
     .sort((a, b) => num(b.reviewCount) - num(a.reviewCount) || num(b.averageRating) - num(a.averageRating) || b.id - a.id)
     .slice(0, 5);
 }
@@ -116,9 +122,9 @@ const ESSENTIALS_CATEGORY_ORDER = [
   'Duo Set',
 ];
 
-/** 4 real in-stock products with category variety, skipping ids already used elsewhere on the page. */
+/** 4 real buyable (in stock or pre-order) products with category variety, skipping ids already used elsewhere on the page. */
 function pickEssentials(products, excludeIds) {
-  const inStock = products.filter((p) => num(p.stock_quantity) > 0 && !excludeIds.has(p.id));
+  const inStock = products.filter((p) => canBuy(p) && !excludeIds.has(p.id));
   const byRating = (a, b) => num(b.averageRating) - num(a.averageRating) || b.id - a.id;
   const picked = [];
   const used = new Set();
@@ -575,14 +581,16 @@ function Provenance({ brands, products }) {
 }
 
 /* ============================================================================
- * #topsellers — real in-stock products, ranked by real reviews/rating.
+ * #topsellers — real buyable products (in stock or pre-order), ranked by real reviews/rating.
  * "Sold in the last 24h" comes from real order line items (see
  * /api/products/sales-velocity); per-product urgency comes from the real
  * stock_quantity. (The mockup's live-viewer counter had no real backing data
  * anywhere in this app and has been removed rather than re-faked.)
  * ==========================================================================*/
 
-function stockUrgency(stock) {
+function stockUrgency(product) {
+  const stock = num(product.stock_quantity);
+  if (isPreorderOnly(product)) return { note: `Pre-order · ships by ${getPreorderInfo(leadDays(product)).shipByLabel}`, ink: '#9333ea' };
   if (stock <= 0) return { note: 'Out of stock', ink: '#B4483C' };
   if (stock <= 5) return { note: `Only ${stock} left`, ink: '#B4483C' };
   if (stock <= 15) return { note: 'Selling fast', ink: '#8A5E22' };
@@ -644,11 +652,10 @@ function TopSellers({ items, onAdd }) {
 
       <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,232px),1fr))', gap: 'clamp(12px,1.4vw,18px)', '--hc-card': '232px' }}>
         {items.map((t, i) => {
-          const stock = num(t.stock_quantity);
-          const urgency = stockUrgency(stock);
+          const urgency = stockUrgency(t);
           const reviewCount = num(t.reviewCount);
           const rating = num(t.averageRating);
-          const outOfStock = stock <= 0;
+          const outOfStock = !canBuy(t);
           const sold = num(velocity[t.id]);
           const liveViewers = num(liveByProduct[t.id]);
           const views = num(totalViews[t.id]);
@@ -714,6 +721,7 @@ function TopSellers({ items, onAdd }) {
                 </span>
                 {!outOfStock && (
                   <AddButton
+                    label={addLabel(t, 'Add')}
                     className="cursor-pointer justify-self-start transition-colors duration-300 hover:bg-[#3b0764] hover:border-[#3b0764] hover:text-white"
                     style={{ marginTop: '4px', border: '1px solid rgba(216,180,254,0.4)', borderRadius: '999px', padding: '9px 17px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#3b0764' }}
                     onAdd={() => onAdd(t)}
@@ -923,9 +931,9 @@ function Signature({ items, onAdd }) {
 
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '18px' }}>
           <span style={{ fontFamily: serif, fontSize: '30px', lineHeight: 1, color: '#3b0764' }}>{money(sig.price)}</span>
-          {num(sig.stock_quantity) > 0 ? (
+          {canBuy(sig) ? (
             <AddButton
-              label="Add to bag"
+              label={addLabel(sig, 'Add to bag')}
               addedLabel="Added to bag"
               className="cursor-pointer transition-colors duration-300 hover:opacity-90"
               style={{ whiteSpace: 'nowrap', background: '#9333ea', color: '#FFFFFF', padding: '16px 32px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}
@@ -945,7 +953,7 @@ function Signature({ items, onAdd }) {
 }
 
 /* ============================================================================
- * #collections — "The house essentials": 4 real, in-stock, category-varied products.
+ * #collections — "The house essentials": 4 real, buyable, category-varied products.
  * ==========================================================================*/
 
 function Essentials({ items, onAdd }) {
@@ -988,6 +996,7 @@ function Essentials({ items, onAdd }) {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '5px' }}>
                 <span style={{ fontSize: '14px', fontWeight: 500, color: '#3b0764' }}>{money(p.price)}</span>
                 <AddButton
+                  label={addLabel(p, 'Add')}
                   className="cursor-pointer transition-colors duration-300 hover:bg-[#3b0764] hover:border-[#3b0764] hover:text-white"
                   style={{ border: '1px solid rgba(216,180,254,0.4)', borderRadius: '999px', padding: '9px 17px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#3b0764' }}
                   onAdd={() => onAdd(p)}
@@ -1246,7 +1255,6 @@ function ForYou({ fallbackProducts, onAdd }) {
       <div className="home-carousel" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 'clamp(16px,2vw,26px)', '--hc-card': '280px' }}>
         {list.map((p) => {
           const brand = p.brand || p.brandName || '';
-          const stock = num(p.stock_quantity);
           return (
             <article
               key={p.id}
@@ -1262,9 +1270,9 @@ function ForYou({ fallbackProducts, onAdd }) {
                   <span style={{ fontFamily: serif, fontSize: '21px', lineHeight: 1.15, color: '#3b0764' }}>{p.name}</span>
                 </Link>
                 <span style={{ fontSize: '12.5px', fontWeight: 300, color: '#6b21a8' }}>{money(p.price)}</span>
-                {stock > 0 ? (
+                {canBuy(p) ? (
                   <AddButton
-                    label="Add to bag"
+                    label={addLabel(p, 'Add to bag')}
                     className="justify-self-start cursor-pointer whitespace-nowrap"
                     style={{ marginTop: '3px', fontSize: '10.5px', fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase', borderBottom: '1px solid rgba(216,180,254,0.4)', paddingBottom: '3px', color: '#3b0764' }}
                     onAdd={() => onAdd(p)}
@@ -1611,7 +1619,7 @@ export default function NayaLumiereHome() {
     if (loading) return [];
     const exclude = new Set([...topSellers.map((p) => p.id), ...signatureItems.map((p) => p.id), ...essentials.map((p) => p.id)]);
     return [...products]
-      .filter((p) => num(p.stock_quantity) > 0 && !exclude.has(p.id))
+      .filter((p) => canBuy(p) && !exclude.has(p.id))
       .sort((a, b) => num(b.averageRating) - num(a.averageRating) || b.id - a.id);
   }, [products, loading, topSellers, signatureItems, essentials]);
 
@@ -1664,7 +1672,7 @@ export default function NayaLumiereHome() {
   const handleAddRoutine = useCallback(
     (routineProducts) => {
       routineProducts.forEach((p) => {
-        if (num(p.stock_quantity) > 0) addToCart(p, 1);
+        if (canBuy(p)) addToCart(p, 1);
       });
       clearTimeout(routineTimerRef.current);
       setRoutineAdded(true);
@@ -1675,7 +1683,7 @@ export default function NayaLumiereHome() {
 
   const handleAddProduct = useCallback(
     (p) => {
-      if (num(p.stock_quantity) > 0) addToCart(p, 1);
+      if (canBuy(p)) addToCart(p, 1);
     },
     [addToCart]
   );

@@ -18,6 +18,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { MadeInFranceBadge } from '../../components/MadeInFranceBadge';
 import { MadeInUAEBadge } from '../../components/MadeInUAEBadge';
 import { RecentlyViewedSection } from '../../components/RecentlyViewedSection';
+import { orderableQty, isPreorderOnly, preorderUnits, leadDays } from '@/lib/backorderRules';
+import { getPreorderInfo } from '@/lib/shipping';
 import { trackRecentlyViewed } from '../../hooks/useRecentlyViewed';
 
 import ProductGallery from './_components/ProductGallery';
@@ -146,8 +148,16 @@ export default function ProductClient({ params, initialProduct }) {
 
   const stock = product ? Number(product.stock_quantity ?? product.stockQuantity ?? NaN) : NaN;
   const hasStockInfo = Number.isFinite(stock);
-  const outOfStock = hasStockInfo && stock <= 0;
-  const maxQty = hasStockInfo ? Math.max(1, stock) : 99;
+  // Past the shelf stock, a product that takes pre-orders can still be bought (lib/backorderRules.js)
+  const maxOrder = product ? orderableQty(product) : 0;
+  const outOfStock = hasStockInfo && maxOrder <= 0;
+  const preorderOnly = hasStockInfo && !!product && isPreorderOnly(product);
+  const maxQty = hasStockInfo ? Math.max(1, maxOrder) : 99;
+  const preorderQty = hasStockInfo && product ? preorderUnits(product, quantity) : 0;
+  const preorderShipBy = useMemo(
+    () => (product && maxOrder > Math.max(0, stock) ? getPreorderInfo(leadDays(product)).shipByLabel : ''),
+    [product, maxOrder, stock]
+  );
 
   // Never let a stale quantity exceed what is actually left
   useEffect(() => { setQuantity(q => Math.min(q, maxQty)); }, [maxQty]);
@@ -252,7 +262,7 @@ export default function ProductClient({ params, initialProduct }) {
                 <span className="hidden md:block text-[18px] font-bold text-gray-900 tabular-nums">{aed(product.price)}</span>
                 <button onClick={handleAddToCart} disabled={outOfStock}
                   className={`h-11 px-5 rounded-full text-[13px] font-semibold text-white flex items-center gap-2 flex-shrink-0 active:scale-[0.98] transition-all disabled:opacity-50 ${BUTTON}`}>
-                  {outOfStock ? 'Out of stock' : isAdded ? <><Check size={15} /> Added</> : <><ShoppingBag size={15} /> Add to cart</>}
+                  {outOfStock ? 'Out of stock' : isAdded ? <><Check size={15} /> Added</> : <><ShoppingBag size={15} /> {preorderOnly ? 'Pre-order' : 'Add to cart'}</>}
                 </button>
               </div>
             </div>
@@ -390,6 +400,10 @@ export default function ProductClient({ params, initialProduct }) {
               <div className="mt-6 flex items-center gap-2">
                 {outOfStock ? (
                   <><span className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[13px] font-semibold text-red-600">Out of stock</span></>
+                ) : preorderOnly ? (
+                  <><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: LAVENDER }} /><span className="text-[13px] font-semibold" style={{ color: LAVENDER }}>Pre-order · ships by {preorderShipBy}</span></>
+                ) : preorderQty > 0 ? (
+                  <><span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" /><span className="text-[13px] font-semibold text-amber-700">Only {stock} in stock · the other {preorderQty} ship{preorderQty === 1 ? 's' : ''} by {preorderShipBy}, in one parcel with the rest</span></>
                 ) : lowStock ? (
                   <>
                     <span className="relative flex h-2.5 w-2.5">
@@ -426,7 +440,7 @@ export default function ProductClient({ params, initialProduct }) {
                   ? 'Out of stock'
                   : isAdded
                     ? <><Check size={16} /> Added to cart</>
-                    : <><ShoppingBag size={16} /> Add to cart · {aed(product.price * quantity)}</>}
+                    : <><ShoppingBag size={16} /> {preorderOnly ? 'Pre-order' : 'Add to cart'} · {aed(product.price * quantity)}</>}
               </button>
 
               <button onClick={handleWishlistToggle}

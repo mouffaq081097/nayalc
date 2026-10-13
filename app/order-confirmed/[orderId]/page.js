@@ -20,7 +20,7 @@ function estimatedDelivery(createdAt) {
 function paymentLabel(method) {
   if (method === 'card')           return 'Credit/Debit Card';
   if (method === 'cashOnDelivery') return 'Cash on Delivery';
-  if (method === 'tabby')          return 'Tabby – Pay in 4';
+  if (method === 'tabby')          return 'Tabby – pay in instalments';
   return method || 'Credit/Debit Card';
 }
 

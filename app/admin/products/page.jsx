@@ -165,7 +165,7 @@ const ManageProducts = () => {
               <tbody>
                 {visible.map(product => {
                   const status = productStatus(product);
-                  const stock = stockState(product.stock_quantity);
+                  const stock = stockState(product.stock_quantity, product.allow_backorder);
                   const details = [product.size, product.form].filter(Boolean).join(' · ');
                   const compareAt = Number(product.comparedprice);
                   return (

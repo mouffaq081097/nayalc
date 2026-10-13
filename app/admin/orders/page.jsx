@@ -118,7 +118,7 @@ const RecoverFromCart = () => {
               <div className="space-y-1.5">
                 <label className="sp-label">Payment method</label>
                 <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="sp-input">
-                  <option value="tabby">Tabby (Pay in 4)</option>
+                  <option value="tabby">Tabby</option>
                   <option value="cashOnDelivery">Cash on delivery</option>
                   <option value="card">Card</option>
                 </select>
@@ -173,6 +173,8 @@ const PAYMENT_METHOD = (o) => {
 const FULFILL_BADGE = (o) => {
   const s = (o.status || '').toLowerCase();
   if (s === 'cancelled') return { label: 'Not required', cls: 'sp-badge-neutral' };
+  // A pre-order waits for its stock before it can be packed (lib/backorders.js)
+  if (o.awaitingStock) return { label: 'Awaiting stock', cls: 'sp-badge-attention' };
   if (s === 'delivered' || s === 'shipped') return { label: 'Fulfilled', cls: 'sp-badge-success' };
   if (s === 'processing') return { label: 'In progress', cls: 'sp-badge-info' };
   return { label: 'Unfulfilled', cls: 'sp-badge-warning' };
@@ -237,7 +239,8 @@ const ManageOrders = () => {
 
   const filteredOrders = useMemo(() => {
     let list = allOrders.orders || [];
-    if (filterStatus !== 'All') list = list.filter(o => o.status.toLowerCase() === filterStatus.toLowerCase());
+    if (filterStatus === 'Awaiting stock') list = list.filter(o => o.awaitingStock);
+    else if (filterStatus !== 'All') list = list.filter(o => o.status.toLowerCase() === filterStatus.toLowerCase());
     if (searchTerm) list = list.filter(o =>
       o.id.toString().includes(searchTerm) || o.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -332,7 +335,7 @@ const ManageOrders = () => {
                 </div>
                 <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="sp-input w-auto">
                   <option value="All">All orders</option>
-                  {['Pending','Processing','Shipped','Delivered','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
+                  {['Pending','Processing','Awaiting stock','Shipped','Delivered','Cancelled'].map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             )}

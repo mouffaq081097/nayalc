@@ -13,8 +13,11 @@ export function productStatus(product) {
   return { id: 'active', label: 'Active', cls: 'sp-badge-success' };
 }
 
-export function stockState(quantity) {
+export function stockState(quantity, allowBackorder = false) {
   const units = Number(quantity) || 0;
+  if (units <= 0 && allowBackorder) {
+    return { id: 'out', label: 'Pre-order', color: '#8a6100', hint: 'Out of stock — customers can pre-order it.' };
+  }
   if (units <= 0) {
     return { id: 'out', label: 'Out of stock', color: '#b42318', hint: "Out of stock — customers can't buy it." };
   }

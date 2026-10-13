@@ -10,6 +10,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { apiErrorMessage, fmtAed, productStatus, stockState } from './productAdmin';
+import { DEFAULT_BACKORDER_LEAD_DAYS, DEFAULT_BACKORDER_LIMIT } from '@/lib/backorderRules';
 import {
   AutoGrowTextarea, Card, ERROR_COLOR, Field, FieldMessage, WARNING_COLOR, invalidStyle, secondary, subdued, text,
 } from '../../_components/EditorFields';
@@ -29,6 +30,9 @@ function initialForm(product) {
     price: asText(product?.price),
     comparedprice: asText(product?.comparedprice),
     stock_quantity: asText(product?.stock_quantity),
+    allow_backorder: !!product?.allow_backorder,
+    backorder_lead_days: asText(product?.backorder_lead_days ?? DEFAULT_BACKORDER_LEAD_DAYS),
+    backorder_limit: asText(product?.backorder_limit ?? DEFAULT_BACKORDER_LIMIT),
     brandId: asText(product?.brand_id),
     status: product?.status || 'active',
     size: product?.size || '',
@@ -192,6 +196,12 @@ export default function ProductEditor({ product, onSaved }) {
     if (form.price === '' || !Number.isFinite(price) || price < 0) found.price = 'Enter a price of 0 or more.';
     const stock = Number(form.stock_quantity);
     if (form.stock_quantity === '' || !Number.isInteger(stock) || stock < 0) found.stock_quantity = 'Enter a whole number of 0 or more.';
+    if (form.allow_backorder) {
+      const lead = Number(form.backorder_lead_days);
+      if (!Number.isInteger(lead) || lead < 1 || lead > 120) found.backorder_lead_days = 'Enter 1 to 120 working days.';
+      const limit = Number(form.backorder_limit);
+      if (form.backorder_limit === '' || !Number.isInteger(limit) || limit < 0) found.backorder_limit = 'Enter a whole number of 0 or more.';
+    }
     if (!form.brandId) found.brandId = 'Choose a brand.';
     if (form.categoryIds.length === 0) found.categoryIds = 'Choose at least one category.';
     if (form.how_to_use_video && !/^https?:\/\//.test(form.how_to_use_video)) found.how_to_use_video = 'Enter a full link starting with https://';
@@ -203,6 +213,9 @@ export default function ProductEditor({ product, onSaved }) {
     ['name', 'description', 'long_description', 'price', 'comparedprice', 'stock_quantity', 'status',
       'size', 'form', 'benefits', 'how_to_use', 'ingredients', 'how_to_use_video']
       .forEach(key => fd.append(key, form[key].trim()));
+    fd.append('allow_backorder', form.allow_backorder ? 'true' : 'false');
+    fd.append('backorder_lead_days', form.backorder_lead_days.trim());
+    fd.append('backorder_limit', form.backorder_limit.trim());
     fd.append('brand_id', form.brandId);
     fd.append('categoryIds', form.categoryIds.join(','));
     fd.append('concernIds', form.concernIds.join(','));
@@ -243,9 +256,12 @@ export default function ProductEditor({ product, onSaved }) {
         toast.success('Product created');
         router.replace(`/admin/products/${productId}`);
       } else {
-        await updateProduct(product.id, fd);
+        const response = await updateProduct(product.id, fd);
+        const result = await response?.json?.().catch(() => ({})) || {};
         baselineRef.current = snapshot(form, media);
-        toast.success('Product saved');
+        toast.success(result.allocated
+          ? `Product saved · ${result.allocated} unit${result.allocated === 1 ? '' : 's'} went to waiting pre-orders${result.released?.length ? `, ${result.released.length} order${result.released.length === 1 ? '' : 's'} ready to ship` : ''}`
+          : 'Product saved');
         onSaved?.();
       }
     } catch (error) {
@@ -313,7 +329,7 @@ export default function ProductEditor({ product, onSaved }) {
   if (loading) return <PageLoader />;
 
   const headerStatus = productStatus({ status: product?.status, is_active: isActive });
-  const stock = form.stock_quantity === '' ? null : stockState(form.stock_quantity);
+  const stock = form.stock_quantity === '' ? null : stockState(form.stock_quantity, form.allow_backorder);
   const price = Number(form.price);
   const compareAt = Number(form.comparedprice);
   const hasCompareAt = form.comparedprice !== '' && form.price !== '';
@@ -556,6 +572,33 @@ export default function ProductEditor({ product, onSaved }) {
                 <Field label="Size / volume" htmlFor="size" optional>
                   <input type="text" {...bind('size')} placeholder="e.g. 50 ml" className="sp-input" />
                 </Field>
+              </div>
+
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--sp-border)' }}>
+                <label className="flex items-start gap-2.5 cursor-pointer text-[13px]" style={text}>
+                  <input type="checkbox" className="sp-check mt-0.5" checked={form.allow_backorder} onChange={e => setField('allow_backorder', e.target.checked)} />
+                  <span>
+                    <span className="font-medium">Allow pre-orders when out of stock</span>
+                    <span className="block text-[12px] mt-0.5" style={subdued}>
+                      Customers can keep buying past the stock above. Their order waits under Awaiting stock and ships in one parcel once the stock arrives. Card and Tabby only.
+                    </span>
+                  </span>
+                </label>
+                {form.allow_backorder && (
+                  <div className="grid gap-4 sm:grid-cols-2 mt-4">
+                    <Field label="Lead time (working days)" htmlFor="backorder_lead_days" error={errors.backorder_lead_days} hint="How long the supplier takes. Customers see the ship-by date.">
+                      <input type="number" inputMode="numeric" min="1" max="120" step="1" {...bind('backorder_lead_days')} className="sp-input" style={invalidStyle(errors.backorder_lead_days)} aria-invalid={!!errors.backorder_lead_days} />
+                    </Field>
+                    <Field label="Pre-order limit (units)" htmlFor="backorder_limit" error={errors.backorder_limit} hint="The most units customers can be owed at once.">
+                      <input type="number" inputMode="numeric" min="0" step="1" {...bind('backorder_limit')} className="sp-input" style={invalidStyle(errors.backorder_limit)} aria-invalid={!!errors.backorder_limit} />
+                    </Field>
+                  </div>
+                )}
+                {Number(product?.backordered_units) > 0 && (
+                  <p className="mt-3 text-[12px] rounded-lg px-3 py-2" style={{ background: '#fff5e0', color: '#8a6100' }}>
+                    {product.backordered_units} unit{Number(product.backordered_units) === 1 ? ' is' : 's are'} owed to customers on pre-order. Stock you add here goes to them first, oldest order first. <Link href="/admin/backorders" className="underline">See backorders</Link>
+                  </p>
+                )}
               </div>
             </Card>
 

@@ -6,7 +6,8 @@ import db from '@/lib/db';
 import { sendOrderConfirmationEmail, sendAdminNotificationEmail } from '@/lib/mail';
 import { getTabbyPayment, isTabbyPaid, tabbyStatus } from '@/lib/tabby';
 import { ensureTabbyPendingTable, findOrderForTabbyPayment, findUnlinkedTabbyOrders, getPendingTabbyOrder } from '@/lib/tabbyOrders';
-import { calcShipping } from '@/lib/shipping';
+import { calcShipping, getPreorderInfo } from '@/lib/shipping';
+import { ensureBackorderColumns } from '@/lib/backorders';
 import { vatFromGross } from '@/lib/vat';
 import { calcCouponDiscount } from '@/lib/couponDiscount';
 import { ensureCouponProductsColumn } from '@/lib/couponRules';
@@ -212,6 +213,7 @@ export async function POST(request) {
     const taxAmount = vatFromGross(totalAmount);
     if (tabbyPaymentId) await ensureTabbyPendingTable();
 
+    await ensureBackorderColumns();
     const client = await db.connect();
     try {
         await client.query('BEGIN');
@@ -241,14 +243,29 @@ export async function POST(request) {
         );
         const orderId = rows[0].id;
 
+        // The customer has already paid, so units the shelf can't cover become a
+        // pre-order (lib/backorders.js) instead of pushing stock below zero
+        let leadDays = 0;
         for (const item of items) {
+            const { rows: [product] } = await client.query(
+                'SELECT stock_quantity, backorder_lead_days FROM products WHERE id = $1 FOR UPDATE', [item.productId]
+            );
+            const fromShelf = Math.min(item.quantity, Math.max(0, Number(product?.stock_quantity) || 0));
+            const short = item.quantity - fromShelf;
+            if (short > 0) leadDays = Math.max(leadDays, Number(product?.backorder_lead_days) || 1);
             await client.query(
-                'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
-                [orderId, item.productId, item.quantity, item.price]
+                'INSERT INTO order_items (order_id, product_id, quantity, price, backordered_qty) VALUES ($1, $2, $3, $4, $5)',
+                [orderId, item.productId, item.quantity, item.price, short]
             );
             await client.query(
                 'UPDATE products SET stock_quantity = stock_quantity - $1 WHERE id = $2',
-                [item.quantity, item.productId]
+                [fromShelf, item.productId]
+            );
+        }
+        if (leadDays > 0) {
+            await client.query(
+                'UPDATE orders SET awaiting_stock = true, promised_ship_by = $1 WHERE id = $2',
+                [getPreorderInfo(leadDays).shipByISO, orderId]
             );
         }
 
@@ -291,12 +308,12 @@ export async function POST(request) {
             });
 
             if (userEmail) {
-                await sendOrderConfirmationEmail(userEmail, firstName, orderId, totalAmount, taxAmount, discountAmount, subtotal, shippingCost, itemsWithDetails, shippingAddress, 0, coupon?.code ?? null, payment_method, new Date());
+                await sendOrderConfirmationEmail(userEmail, firstName, orderId, totalAmount, taxAmount, discountAmount, subtotal, shippingCost, itemsWithDetails, shippingAddress, 0, coupon?.code ?? null, payment_method, new Date(), null, tabbyPaymentId);
                 emailSent = true;
             }
             const adminEmail = process.env.ADMIN_EMAIL;
             if (adminEmail) {
-                await sendAdminNotificationEmail(adminEmail, orderId, userEmail || 'Unknown', totalAmount, shippingAddress);
+                await sendAdminNotificationEmail(adminEmail, orderId, userEmail || 'Unknown', totalAmount, shippingAddress, { paymentMethod: payment_method, tabbyPaymentId });
             }
         } catch (emailErr) {
             console.error('Recovery email failed (order still created):', emailErr);

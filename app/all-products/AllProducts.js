@@ -632,6 +632,8 @@ export default function AllProductsPage() {
                         isBestseller={product.isBestseller}
                         brandName={product.brand}
                         stock_quantity={product.stock_quantity}
+                        backorderable={product.backorderable}
+                        backorder_lead_days={product.backorder_lead_days}
                         imageUrls={product.additionalImagesData?.map(img => img.url) || []}
                       />
                     </motion.div>

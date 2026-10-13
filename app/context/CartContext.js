@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { createFetchWithAuth } from '../lib/api';
 import { toast } from 'react-toastify';
 import { calcCouponDiscount } from '@/lib/couponDiscount';
+import { orderableQty, preorderUnits } from '@/lib/backorderRules';
 
 export const CartContext = createContext();
 
@@ -48,6 +49,8 @@ export const CartProvider = ({ children }) => {
                     size: item.size || undefined, // Handle optional size
                     shade: item.shade || undefined, // Handle optional shade
                     stock_quantity: item.stock_quantity, // Add stock_quantity
+                    backorderable: item.backorderable || 0,
+                    backorder_lead_days: item.backorder_lead_days,
                 }));
                 cartLoadedRef.current = true;
                 setCart(parsedCart);
@@ -99,8 +102,9 @@ export const CartProvider = ({ children }) => {
 
 
     const addToCart = (product, quantity) => {
-        // Prevent adding if stock is 0 or invalid
-        if (!product.stock_quantity || product.stock_quantity <= 0) {
+        // Shelf stock plus what may still be pre-ordered (lib/backorderRules.js)
+        const maxQty = orderableQty(product);
+        if (maxQty <= 0) {
             toast.error(`"${product.name}" is out of stock.`);
             return false;
         }
@@ -114,27 +118,24 @@ export const CartProvider = ({ children }) => {
                 updatedItems = [...prevItems];
                 const currentItem = updatedItems[existingItemIndex];
 
+                // The product passed in is the freshest view of its stock
+                currentItem.stock_quantity = product.stock_quantity;
+                currentItem.backorderable = product.backorderable || 0;
+                currentItem.backorder_lead_days = product.backorder_lead_days;
+
                 // Prevent increasing quantity if already at stock limit
-                if (currentItem.quantity >= currentItem.stock_quantity) {
-                    toast.error(`Cannot add more of "${product.name}", stock limit reached (${currentItem.stock_quantity}).`);
+                if (currentItem.quantity >= maxQty) {
+                    toast.error(`Cannot add more of "${product.name}", stock limit reached (${maxQty}).`);
                     return prevItems; // Return original items without change
                 }
 
                 // Cap quantity at available stock
-                const newQuantity = Math.min(
-                    currentItem.quantity + quantity,
-                    currentItem.stock_quantity
-                );
-                if (newQuantity === currentItem.quantity) {
-                    // No change in quantity because it was already at stock limit
-                    toast.error(`Cannot add more of "${product.name}", stock limit reached (${currentItem.stock_quantity}).`);
-                    return prevItems;
-                }
+                const newQuantity = Math.min(currentItem.quantity + quantity, maxQty);
                 currentItem.quantity = newQuantity;
                 addedSuccessfully = true;
             } else {
                 // Cap initial quantity at available stock
-                const validatedQuantity = Math.min(quantity, product.stock_quantity);
+                const validatedQuantity = Math.min(quantity, maxQty);
                 if (validatedQuantity <= 0) {
                     toast.error(`Invalid quantity for "${product.name}".`);
                     return prevItems;
@@ -150,6 +151,8 @@ export const CartProvider = ({ children }) => {
                     size: product.size,
                     shade: product.shade,
                     stock_quantity: product.stock_quantity,
+                    backorderable: product.backorderable || 0,
+                    backorder_lead_days: product.backorder_lead_days,
                 }];
                 addedSuccessfully = true;
             }
@@ -189,9 +192,10 @@ export const CartProvider = ({ children }) => {
             } else {
                 updatedItems = prevItems.map(item => {
                     if (item.id === productId) {
-                        const validatedQuantity = Math.min(newQuantity, item.stock_quantity);
+                        const maxQty = orderableQty(item);
+                        const validatedQuantity = Math.min(newQuantity, maxQty);
                         if (validatedQuantity < newQuantity) {
-                            toast.info(`Only ${item.stock_quantity} available — quantity adjusted.`);
+                            toast.info(`Only ${maxQty} available — quantity adjusted.`);
                         }
                         return { ...item, quantity: validatedQuantity };
                     }
@@ -210,6 +214,9 @@ export const CartProvider = ({ children }) => {
     };
 
     const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+
+    // Any line partly or wholly on pre-order: checkout holds the order and hides cash on delivery
+    const hasPreorder = cart.some(item => preorderUnits(item, item.quantity) > 0);
 
     // Worked out from the cart on every change, the same way the order API does, so a
     // product-specific code follows its products in and out of the bag
@@ -253,6 +260,7 @@ export const CartProvider = ({ children }) => {
         <CartContext.Provider value={{
             cartItems: cart,
             isCartReady,
+            hasPreorder,
             addToCart,
             removeFromCart,
             updateQuantity,

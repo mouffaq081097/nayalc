@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '../../../../../lib/db';
-import { generateInvoiceHtml } from '../../../../../lib/mail';
+import { generateInvoiceHtml, generateInvoicePdfFor } from '../../../../../lib/mail';
+import { fetchTabbyPlan } from '../../../../../lib/tabby';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../../lib/auth';
 
@@ -31,12 +32,19 @@ export async function GET(request, context) {
                     o.id,
                     o.user_id as "userId",
                     o.total_amount::numeric as "totalAmount",
+                    o.subtotal, o.shipping_cost as "shippingCost", o.gift_wrap_cost as "giftWrapCost",
+                    o.tax_amount as "taxAmount", o.discount_amount as "discountAmount",
+                    o.order_status as status,
                     o.payment_method as "paymentMethod",
+                    o.tabby_payment_id as "tabbyPaymentId",
                     o.created_at as "createdAt",
                     COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as "customerName",
-                    COALESCE(u.email, '') as "customerEmail"
+                    COALESCE(u.email, '') as "customerEmail",
+                    COALESCE(NULLIF(ua.address_line1, ''), ua.shipping_address) as "addressLine1",
+                    ua.city, ua.zip_code as "postalCode", ua.country
                 FROM ${source.table} o
                 LEFT JOIN users u ON o.user_id = u.id
+                LEFT JOIN user_addresses ua ON o.user_address_id = ua.id
                 WHERE o.id = $1
             `, [orderId]);
 
@@ -61,17 +69,37 @@ export async function GET(request, context) {
             return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
         }
 
-        const invoiceHtml = generateInvoiceHtml({
+        const num = (v) => (v == null ? null : parseFloat(v) || 0);
+        const details = {
             ...order,
-            totalAmount: parseFloat(order.totalAmount) || 0,
+            tabbyPlan: order.paymentMethod === 'tabby' ? await fetchTabbyPlan(order.tabbyPaymentId) : null,
+            totalAmount: num(order.totalAmount) || 0,
+            subtotal: num(order.subtotal),
+            shippingCost: num(order.shippingCost),
+            giftWrapCost: num(order.giftWrapCost),
+            taxAmount: num(order.taxAmount),
+            discountAmount: num(order.discountAmount),
+            shippingAddress: { addressLine1: order.addressLine1, city: order.city, postalCode: order.postalCode, country: order.country },
             items: items.map(item => ({ ...item, price: parseFloat(item.price) })),
-        });
+        };
 
-        return new NextResponse(invoiceHtml, {
+        // PDF by default; ?format=html still gives the web page version
+        if (new URL(request.url).searchParams.get('format') === 'html') {
+            return new NextResponse(generateInvoiceHtml(details), {
+                status: 200,
+                headers: {
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'Content-Disposition': `inline; filename="invoice-${orderId}.html"`,
+                },
+            });
+        }
+
+        const pdf = await generateInvoicePdfFor(details);
+        return new NextResponse(pdf, {
             status: 200,
             headers: {
-                'Content-Type': 'text/html; charset=utf-8',
-                'Content-Disposition': `inline; filename="invoice-${orderId}.html"`,
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `inline; filename="invoice-${orderId}.pdf"`,
             },
         });
     } catch (error) {
