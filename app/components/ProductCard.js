@@ -12,7 +12,7 @@ import { MadeInFranceBadge, FranceFlag } from './MadeInFranceBadge';
 import { MadeInUAEBadge, UAEFlag } from './MadeInUAEBadge';
 import { getDeliveryInfo, getPreorderInfo, FREE_SHIPPING_FROM } from '../../lib/shipping';
 import { isPreorderOnly, leadDays } from '../../lib/backorderRules';
-import { formatAED } from '../lib/utils';
+import { formatAED, viewCountLabel } from '../lib/utils';
 
 // Cloud Luxe accent for card badges (rank, best seller, saving)
 const LAVENDER = 'rgb(147,104,236)';
@@ -44,17 +44,6 @@ const TypewriterText = ({ text, speed = 10 }) => {
 
   return <div className="whitespace-pre-wrap">{displayedText}</div>;
 };
-
-// Honest bucketing — only shows "N+" once the real count has actually reached
-// that threshold (never rounds a real number up past what it is).
-function viewCountLabel(n) {
-  if (n >= 500) return '500+';
-  if (n >= 100) return '100+';
-  if (n >= 50) return '50+';
-  if (n >= 25) return '25+';
-  if (n >= 10) return '10+';
-  return String(n);
-}
 
 const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, viewCount, isNew, isBestseller, rank, category, brandName, stock_quantity, backorderable = 0, backorder_lead_days, description, size, variant = 'light', concerns = [], initialWishlisted = false, onWishlistChange }) => {
   const { addToCart } = useContext(CartContext);

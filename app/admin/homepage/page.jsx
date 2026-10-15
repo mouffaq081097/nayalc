@@ -5,6 +5,7 @@ import { Image as ImageIcon, Images, Loader2, RotateCcw, UploadCloud } from 'luc
 import { useAppContext } from '../../context/AppContext';
 import CloudinaryPicker from '../_components/CloudinaryPicker';
 import PageLoader from '@/app/components/PageLoader';
+import CampaignsSection from './CampaignsSection';
 
 /** Shared upload/reset card shell — a preview, a "Custom"/"Default" badge, and
  * Replace/Reset buttons. Callers supply the actual network calls. Pass
@@ -315,6 +316,8 @@ export default function AdminHomepageImages() {
           hero banner and the Instagram feed — is managed from their own pages: Hero banner and Social.
         </p>
       </div>
+
+      <CampaignsSection />
 
       <HomepageSlotsSection />
 

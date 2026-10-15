@@ -19,7 +19,7 @@ export function TrustStrip() {
       <ul className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3.5 md:py-5 grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-x-1 md:gap-x-4 md:gap-y-4">
         {ITEMS.map(({ Icon, title, short, text }) => (
           <li key={title} className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 min-w-0 text-center md:text-left">
-            <span className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(147,104,236,0.10)' }}>
+            <span className="w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#f3f4f6' }}>
               <Icon className="w-4 h-4 md:w-[17px] md:h-[17px]" style={{ color: LAVENDER }} strokeWidth={1.75} />
             </span>
             {/* Phones: one short label under the icon */}

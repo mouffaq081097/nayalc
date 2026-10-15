@@ -6,13 +6,12 @@ import { Container } from './ui/Container';
 import { headingFont } from './home/SectionHeading';
 
 // The photo is a render of the real Silver membership card (the same card the
-// loyalty page renders in CSS) — so the copy panel is a deep Cloud Luxe violet
-// rather than white: the pale set in the photo and the dark panel read as one
-// surface instead of a picture pasted next to a box.
+// loyalty page renders in CSS) — the copy panel is charcoal, matching the card's
+// silver set, with lavender kept to the small "Naya Rewards" label.
 //
 // Below md the split would stack into two tall halves, so the photo goes
 // full-bleed behind the card and the copy rides a near-black scrim at the
-// bottom. Violet rather than black keeps it on the lavender palette. Colours are literal classes, not interpolated constants, because
+// bottom. Colours are literal classes, not interpolated constants, because
 // Tailwind extracts class names by scanning this file as plain text.
 
 export function RewardsSection() {
@@ -33,7 +32,7 @@ export function RewardsSection() {
           </div>
 
           {/* Copy — over the photo on mobile, right panel on desktop */}
-          <div className="relative z-10 flex flex-col justify-end md:justify-center px-5 pt-20 pb-6 md:px-10 lg:px-14 md:py-12 bg-[linear-gradient(to_top,rgba(46,16,101,0.96)_0%,rgba(46,16,101,0.82)_46%,rgba(46,16,101,0)_100%)] md:bg-[linear-gradient(135deg,#2e1065_0%,#4c1d95_100%)]">
+          <div className="relative z-10 flex flex-col justify-end md:justify-center px-5 pt-20 pb-6 md:px-10 lg:px-14 md:py-12 bg-[linear-gradient(to_top,rgba(24,24,27,0.96)_0%,rgba(24,24,27,0.82)_46%,rgba(24,24,27,0)_100%)] md:bg-[linear-gradient(135deg,#18181b_0%,#2a2a30_100%)]">
             <p className="text-[10px] md:text-[11px] font-medium tracking-[0.18em] uppercase text-[rgb(196,167,254)]">
               Naya Rewards
             </p>
@@ -46,7 +45,7 @@ export function RewardsSection() {
             </p>
             <Link
               href="/account/loyalty"
-              className="mt-5 md:mt-7 inline-flex w-full md:w-fit items-center justify-center rounded-full bg-white px-6 md:px-9 py-3 md:py-3.5 text-[13px] font-semibold text-[#4c1d95] transition-opacity duration-300 hover:opacity-90"
+              className="mt-5 md:mt-7 inline-flex w-full md:w-fit items-center justify-center rounded-full bg-white px-6 md:px-9 py-3 md:py-3.5 text-[13px] font-semibold text-gray-900 transition-opacity duration-300 hover:opacity-90"
             >
               Explore Rewards
             </Link>

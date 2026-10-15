@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { BACKORDER_MIGRATION_SQL } from '@/lib/backorders';
+import { CAMPAIGNS_MIGRATION_SQL } from '@/lib/campaigns';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -104,6 +105,11 @@ export async function POST(request) {
                 // Pre-orders — also added on first use by ensureBackorderColumns() in lib/backorders.js
                 name: '014_backorders',
                 sql: BACKORDER_MIGRATION_SQL,
+            },
+            {
+                // Homepage campaign banners — also created on first use by ensureCampaignsTable() in lib/campaigns.js
+                name: '016_homepage_campaigns',
+                sql: CAMPAIGNS_MIGRATION_SQL,
             },
         ];
 

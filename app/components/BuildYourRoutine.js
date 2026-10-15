@@ -51,7 +51,7 @@ function TimeToggle({ value, onChange }) {
             aria-pressed={on}
             onClick={() => onChange(key)}
             className={`rounded-full px-4 md:px-[18px] py-2 text-[12.5px] font-medium transition-colors ${on ? 'text-white' : 'text-gray-500 hover:text-gray-900'}`}
-            style={on ? { background: LAVENDER } : undefined}
+            style={on ? { background: '#111827' } : undefined}
           >
             {label}
           </button>
@@ -152,7 +152,7 @@ export function BuildYourRoutine() {
                     className={`md:flex-1 grid grid-cols-[20px_52px_minmax(0,1fr)_32px] md:grid-cols-[28px_60px_minmax(0,1fr)_auto_34px] items-center gap-2.5 md:gap-3.5 px-3 md:px-4 py-2.5 md:py-3 border-l-2 transition-colors ${selected ? '' : 'border-l-transparent hover:bg-gray-50'}`}
                     style={{
                       ...(i > 0 && { borderTop: `1px solid ${HAIRLINE}` }),
-                      ...(selected && { background: 'rgba(147,104,236,0.08)', borderLeftColor: LAVENDER }),
+                      ...(selected && { background: '#f7f7f8', borderLeftColor: LAVENDER }),
                     }}
                   >
                     <span className="text-center text-xs font-semibold tabular-nums" style={{ color: selected ? LAVENDER : '#c7c9d1' }}>{i + 1}</span>
@@ -178,7 +178,7 @@ export function BuildYourRoutine() {
                       type="button"
                       onClick={() => addOne(product)}
                       aria-label={`Add ${product.name} to bag`}
-                      className="grid place-items-center w-8 h-8 rounded-full bg-white text-[#555] transition-colors hover:bg-[#9333ea] hover:border-[#9333ea] hover:text-white"
+                      className="grid place-items-center w-8 h-8 rounded-full bg-white text-[#555] transition-colors hover:bg-gray-900 hover:border-gray-900 hover:text-white"
                       style={{ border: `1px solid ${HAIRLINE}` }}
                     >
                       {added === product.id ? '✓' : <span className="text-[17px] leading-none">+</span>}
@@ -197,7 +197,7 @@ export function BuildYourRoutine() {
                 type="button"
                 onClick={addAll}
                 className="rounded-full px-6 py-3 text-xs font-semibold text-white whitespace-nowrap transition-opacity hover:opacity-90"
-                style={{ background: added === 'routine' ? '#7c3aed' : '#9333ea' }}
+                style={{ background: added === 'routine' ? '#374151' : '#111827' }}
               >
                 {added === 'routine' ? 'Added to bag ✓' : 'Add routine to bag'}
               </button>

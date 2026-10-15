@@ -24,7 +24,7 @@ function TeaserCard({ article }) {
             className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: 'rgba(147,104,236,0.06)' }}>
+          <div className="w-full h-full flex items-center justify-center" style={{ background: '#f5f5f6' }}>
             <BookOpen size={26} style={{ color: LAVENDER }} strokeWidth={1.5} />
           </div>
         )}
@@ -40,10 +40,9 @@ function HubTile() {
   return (
     <Link href="/journal" className="group block">
       <div
-        className="aspect-square rounded-lg flex flex-col items-center justify-center text-center px-3 transition-opacity group-hover:opacity-90"
-        style={{ background: LAVENDER }}
+        className="aspect-square rounded-lg flex flex-col items-center justify-center text-center px-3 bg-gray-900 transition-colors group-hover:bg-gray-700"
       >
-        <span className="text-[11px] font-semibold text-white uppercase tracking-[0.1em]">Our</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'rgb(196,167,254)' }}>Our</span>
         <span className="text-[22px] font-extrabold text-white uppercase tracking-[0.02em] leading-none mt-1">Journal</span>
       </div>
     </Link>
@@ -92,8 +91,8 @@ export function JournalSection() {
                 style={{
                   background: 'rgba(255,255,255,0.88)',
                   backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(196,167,254,0.45)',
-                  boxShadow: '0 2px 12px rgba(147,104,236,0.12)',
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 2px 12px rgba(17,17,24,0.08)',
                 }}
               />
               <CarouselNext
@@ -101,8 +100,8 @@ export function JournalSection() {
                 style={{
                   background: 'rgba(255,255,255,0.88)',
                   backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(196,167,254,0.45)',
-                  boxShadow: '0 2px 12px rgba(147,104,236,0.12)',
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 2px 12px rgba(17,17,24,0.08)',
                 }}
               />
             </div>

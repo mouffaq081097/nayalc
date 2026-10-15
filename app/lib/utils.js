@@ -73,3 +73,14 @@ export const formatTimeAgo = (timestamp) => {
   const years = Math.floor(days / 365);
   return `${years}y ago`;
 };
+
+// Honest bucketing — only shows "N+" once the real count has actually reached
+// that threshold (never rounds a real number up past what it is).
+export function viewCountLabel(n) {
+  if (n >= 500) return '500+';
+  if (n >= 100) return '100+';
+  if (n >= 50) return '50+';
+  if (n >= 25) return '25+';
+  if (n >= 10) return '10+';
+  return String(n);
+}

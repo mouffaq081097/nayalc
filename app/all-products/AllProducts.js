@@ -218,7 +218,7 @@ const SidebarFilters = ({
 
 /* ─── Main Page ───────────────────────────────────────────────── */
 export default function AllProductsPage() {
-  const { products: allProducts, categories: appCategories, fetchProducts } = useAppContext();
+  const { products: allProducts, categories: appCategories, concerns, fetchProducts } = useAppContext();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
@@ -231,6 +231,7 @@ export default function AllProductsPage() {
   const [showInStock, setShowInStock] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(18);
+  const [selectedConcern, setSelectedConcern] = useState(null);
 
   useEffect(() => {
     const category = searchParams.get('category');
@@ -266,6 +267,14 @@ export default function AllProductsPage() {
     if (match) setSelectedBrands([match]);
   }, [searchParams, brands]);
 
+  // ?concern=<slug> (the homepage's Shop by Concern) filters to products tagged with it
+  useEffect(() => {
+    const concern = searchParams.get('concern');
+    if (!concern) return;
+    const match = concerns.find(c => c.slug === concern || String(c.id) === concern);
+    if (match) setSelectedConcern(match);
+  }, [searchParams, concerns]);
+
   const maxPrice = useMemo(() => {
     if (!allProducts.length) return 1000;
     return Math.ceil(Math.max(...allProducts.map(p => p.price)));
@@ -279,6 +288,7 @@ export default function AllProductsPage() {
     setSelectedBrands([]);
     setPriceRange([0, maxPrice]);
     setShowInStock(false);
+    setSelectedConcern(null);
   };
 
   const filteredAndSortedProducts = useMemo(() => {
@@ -292,6 +302,8 @@ export default function AllProductsPage() {
       f = f.filter(p => p.categoryNames && selectedCategories.some(cat => p.categoryNames.toLowerCase().includes(cat.toLowerCase())));
     if (selectedBrands.length)
       f = f.filter(p => selectedBrands.includes(p.brand));
+    if (selectedConcern)
+      f = f.filter(p => (p.concern_ids || []).map(Number).includes(Number(selectedConcern.id)));
     f = f.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
     if (showInStock) f = f.filter(p => p.stock_quantity > 0);
     switch (sortBy) {
@@ -302,7 +314,7 @@ export default function AllProductsPage() {
       default: f.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
     }
     return f;
-  }, [searchTerm, selectedCategories, selectedBrands, priceRange, showInStock, sortBy, allProducts, bestsellerOnly]);
+  }, [searchTerm, selectedCategories, selectedBrands, selectedConcern, priceRange, showInStock, sortBy, allProducts, bestsellerOnly]);
 
   const displayedProducts = filteredAndSortedProducts.slice(0, visibleCount);
 
@@ -316,6 +328,7 @@ export default function AllProductsPage() {
       label: b,
       remove: () => setSelectedBrands(prev => prev.filter(x => x !== b)),
     })),
+    ...(selectedConcern ? [{ label: selectedConcern.name, remove: () => setSelectedConcern(null) }] : []),
     ...(showInStock ? [{ label: 'In stock', remove: () => setShowInStock(false) }] : []),
   ];
 
