@@ -84,3 +84,8 @@ export function viewCountLabel(n) {
   if (n >= 10) return '10+';
   return String(n);
 }
+
+// The homepage's path as the router reports it. On Vercel the homepage is
+// prerendered (it has `revalidate`), and Next.js then reports it as "/index"
+// rather than "/" — compare with this, never with '/' alone.
+export const isHomePath = (pathname) => pathname === '/' || pathname === '/index';

@@ -254,6 +254,7 @@ Single source of truth for every phone number. UAE-only numbering plan, no depen
 - Backfill existing rows: `node scripts/normalize-phones.mjs` (dry run) / `--apply`. Rows it cannot parse are listed rather than guessed at, and `<PhoneNeedsCheck>` flags them in the admin.
 
 ### Known Gotchas
+- The homepage is prerendered on Vercel (`revalidate` in `app/page.js`), so `usePathname()` reports it as `/index`, not `/`. Check for the homepage with `isHomePath()` (`app/lib/utils.js`), never `pathname === '/'` — the dev server reports `/`, so the bug only shows on the live site.
 - `fetchWithAuth` must come from `useAppContext()` — do NOT import from `lib/api.js` (that file exports `createFetchWithAuth` factory, not a ready-to-use function).
 - `addToCart(product, quantity)` takes two separate args — NOT a single `{ product, quantity }` object.
 - APIs (`/api/products/suggestions`, buy-again) return `stockQuantity` (camelCase); CartContext reads `stock_quantity` (snake_case). Always normalize: `{ ...product, stock_quantity: product.stockQuantity || product.stock_quantity }` before calling `addToCart`.

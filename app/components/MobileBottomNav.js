@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import Image from 'next/image';
+import { isHomePath } from '../lib/utils';
 
 const NAV_ITEMS = [
   { id: 'home',     Icon: Home,          label: 'Home'    },
@@ -51,7 +52,7 @@ function MobileBottomNav() {
   };
 
   const activeId = isChatOpen ? 'chat'
-    : pathname === '/'              ? 'home'
+    : isHomePath(pathname)          ? 'home'
     : pathname.includes('wishlist') ? 'wishlist'
     : pathname.includes('search')   ? 'search'
     : pathname.includes('account')  ? 'account'

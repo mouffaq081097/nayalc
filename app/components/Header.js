@@ -10,6 +10,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import BrandLogo from './BrandLogo';
+import { isHomePath } from '../lib/utils';
 
 const CONCERN_META = {
   'anti-aging':    { icon: Clock,     desc: 'Restore your youthful glow' },
@@ -68,7 +69,7 @@ const Header = forwardRef((_, ref) => {
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
-  const isHome = pathname === '/';
+  const isHome = isHomePath(pathname);
   const overHero = isHome && !pastHero && !isMenuOpen;
 
   // On the homepage, the header turns solid once the hero (#home-hero) is behind it
