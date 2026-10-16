@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { createFetchWithAuth } from '../lib/api';
 import PageLoader from '@/app/components/PageLoader';
 import AdminSidebar from './_components/AdminSidebar';
+import { canOpenPage, staffPages } from '@/lib/erp/roles';
 
 const SIDEBAR_W = '232px';
 
@@ -29,12 +30,31 @@ const AdminLayout = ({ children }) => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = React.useRef(null);
 
+  const isStaff = user?.role === 'staff';
+  // Purchasing staff (role-limited) only get their purchasing pages: { access, pages }
+  const [staff, setStaff] = useState(null);
+
   useEffect(() => {
     if (!loading && !isAuthenticated) router.push('/auth');
-    else if (!loading && user?.role !== 'admin') router.push('/');
+    else if (!loading && user?.role !== 'admin' && user?.role !== 'staff') router.push('/');
   }, [user, loading, isAuthenticated, router]);
 
   useEffect(() => {
+    if (!isStaff) return;
+    fetch('/api/admin/purchasing/me', { cache: 'no-store' })
+      .then(res => (res.ok ? res.json() : Promise.reject()))
+      .then(({ access }) => setStaff({ access, pages: staffPages(access) }))
+      .catch(() => router.push('/'));
+  }, [isStaff, router]);
+
+  // Anything outside their pages sends them to their first page
+  useEffect(() => {
+    if (!staff) return;
+    if (!canOpenPage(staff.access, pathname)) router.replace(staff.pages[0]?.to || '/');
+  }, [staff, pathname, router]);
+
+  useEffect(() => {
+    if (isStaff) return undefined; // order and chat alerts are for admins
     const poll = async () => {
       if (!isAuthenticated) return;
       try {
@@ -45,7 +65,7 @@ const AdminLayout = ({ children }) => {
     if (isAuthenticated) poll();
     const id = setInterval(poll, 30000);
     return () => clearInterval(id);
-  }, [isAuthenticated, fetchWithAuth]);
+  }, [isAuthenticated, isStaff, fetchWithAuth]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -64,7 +84,7 @@ const AdminLayout = ({ children }) => {
   const handleLogout = () => { logout(); router.push('/'); };
   const initials = (user?.first_name?.[0] || 'A').toUpperCase();
 
-  if (loading) return <PageLoader />;
+  if (loading || (isStaff && (!staff || !canOpenPage(staff.access, pathname)))) return <PageLoader />;
 
   return (
     <div className="sp-admin flex flex-col h-screen">
@@ -84,16 +104,16 @@ const AdminLayout = ({ children }) => {
         </button>
 
         {/* Logo */}
-        <Link href="/admin" className="flex items-center gap-2 shrink-0 pr-2">
+        <Link href="/admin" className="flex items-center shrink-0 pr-2" aria-label="Naya Lumière Cosmetics admin home">
+          {/* Cream logo for the dark top bar: naya-lumiere-light-transparent.png cropped to the artwork (491 × 76) */}
           <Image
-            src="/Adobe Express - file (5).png"
-            alt="Naya Lumière"
-            width={26}
-            height={26}
-            className="w-[26px] h-[26px] object-contain"
+            src="/naya-lumiere-light-logo.png"
+            alt="Naya Lumière Cosmetics"
+            width={491}
+            height={76}
+            className="h-[28px] sm:h-[36px] w-auto object-contain"
             priority
           />
-          <span className="hidden sm:block text-[15px] font-semibold text-white tracking-tight">Naya Lumière</span>
         </Link>
 
         {/* Search */}
@@ -227,6 +247,7 @@ const AdminLayout = ({ children }) => {
             pathname={pathname}
             onNavigate={() => setIsSidebarOpen(false)}
             notifications={notifications}
+            staffPages={staff?.pages}
             onLogout={handleLogout}
           />
         </aside>

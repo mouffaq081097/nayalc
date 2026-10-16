@@ -4,7 +4,11 @@ import { withAuth } from 'next-auth/middleware';
 export default withAuth({
   callbacks: {
     authorized: ({ req, token }) => {
-      // Example: Only allow admin to access '/api/admin' routes
+      // Admin APIs are for admins; purchasing staff (role-limited) reach only the
+      // purchasing APIs, which check each role themselves (lib/erp/access.js)
+      if (req.nextUrl.pathname.startsWith('/api/admin/purchasing')) {
+        return token?.role === 'admin' || token?.role === 'staff';
+      }
       if (req.nextUrl.pathname.startsWith('/api/admin')) {
         return token?.role === 'admin';
       }

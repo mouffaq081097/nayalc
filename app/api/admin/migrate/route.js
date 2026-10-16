@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { BACKORDER_MIGRATION_SQL } from '@/lib/backorders';
+import { PURCHASING_MIGRATION_SQL } from '@/lib/erp/schema';
 import { CAMPAIGNS_MIGRATION_SQL } from '@/lib/campaigns';
 
 export async function POST(request) {
@@ -105,6 +106,11 @@ export async function POST(request) {
                 // Pre-orders — also added on first use by ensureBackorderColumns() in lib/backorders.js
                 name: '014_backorders',
                 sql: BACKORDER_MIGRATION_SQL,
+            },
+            {
+                // Purchasing (PR, PO, GRN, costing) — also created on first use by ensurePurchasingTables() in lib/erp/schema.js
+                name: '015_purchasing',
+                sql: PURCHASING_MIGRATION_SQL,
             },
             {
                 // Homepage campaign banners — also created on first use by ensureCampaignsTable() in lib/campaigns.js

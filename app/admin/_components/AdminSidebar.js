@@ -2,8 +2,8 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Banknote, BookOpen, Calculator, ExternalLink, Globe, Home, Image as ImageIcon, LayoutTemplate,
-  LogOut, MessageSquare, Percent, Send, Share2, ShoppingBag, Tag, Users,
+  Banknote, BarChart3, BookOpen, Calculator, ExternalLink, Globe, Home, Image as ImageIcon, LayoutTemplate,
+  LogOut, MessageSquare, Percent, Send, Share2, ShoppingBag, Tag, Truck, Users,
 } from 'lucide-react';
 
 // Store operations. A section's sub-pages show under it while you're inside that section, like Shopify.
@@ -24,7 +24,19 @@ const MAIN_NAV = [
       { to: '/admin/brands', text: 'Brands' },
     ],
   },
+  {
+    to: '/admin/purchasing', text: 'Purchasing', icon: Truck,
+    children: [
+      { to: '/admin/purchasing/requisitions', text: 'Requisitions' },
+      { to: '/admin/purchasing/orders', text: 'Purchase orders' },
+      { to: '/admin/purchasing/receipts', text: 'Goods received' },
+      { to: '/admin/purchasing/costing', text: 'Costing' },
+      { to: '/admin/purchasing/suppliers', text: 'Suppliers' },
+      { to: '/admin/purchasing/team', text: 'Team & roles' },
+    ],
+  },
   { to: '/admin/users', text: 'Customers', icon: Users },
+  { to: '/admin/reports', text: 'Reports', icon: BarChart3 },
   { to: '/admin/chat', text: 'Inbox', icon: MessageSquare, badge: 'chats' },
   { to: '/admin/marketing', text: 'Marketing', icon: Send },
   { to: '/admin/coupons', text: 'Discounts', icon: Percent },
@@ -81,12 +93,39 @@ const SubItem = ({ item, current, onNavigate }) => (
   </Link>
 );
 
-export default function AdminSidebar({ pathname, notifications, onNavigate, onLogout }) {
+export default function AdminSidebar({ pathname, notifications, staffPages, onNavigate, onLogout }) {
   const current = activeHref(pathname);
   const badges = {
     orders: notifications?.unreadOrdersCount || 0,
     chats: notifications?.unreadChatsCount || 0,
   };
+
+  // Purchasing staff see only the pages their roles open (lib/erp/roles.js)
+  if (staffPages) {
+    return (
+      <div className="flex flex-col h-full" style={{ background: 'var(--sp-bg)' }}>
+        <nav className="flex-1 px-3 py-3 overflow-y-auto no-scrollbar" aria-label="Purchasing">
+          <p className="text-[12px] font-semibold pl-2.5 pb-1.5" style={{ color: 'var(--sp-text-subdued)' }}>Purchasing</p>
+          <div className="space-y-0.5">
+            {staffPages.map(page => (
+              <NavItem
+                key={page.to}
+                item={{ ...page, icon: Truck }}
+                current={pathname === page.to || pathname.startsWith(`${page.to}/`)}
+                onNavigate={onNavigate}
+              />
+            ))}
+          </div>
+        </nav>
+        <div className="px-3 py-3" style={{ borderTop: '1px solid #e0e0e0' }}>
+          <button onClick={onLogout} className="sp-nav-link w-full text-[13px] font-medium cursor-pointer">
+            <LogOut size={18} strokeWidth={2} className="shrink-0" />
+            <span>Log out</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--sp-bg)' }}>
