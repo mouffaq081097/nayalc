@@ -274,7 +274,7 @@ export default function ProductClient({ params, initialProduct }) {
       <div className="lg:grid lg:grid-cols-[minmax(0,55%)_minmax(0,45%)]">
 
         {/* Photos. Phones and tablets: swipe gallery with thumbnails. Desktop: every photo stacked, full height. */}
-        <div className="lg:hidden">
+        <div className="lg:hidden min-w-0">
           <ProductGallery
             images={allImages}
             name={product.name}
@@ -458,12 +458,12 @@ export default function ProductClient({ params, initialProduct }) {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Details + bundle ── */}
-        <div id="details" className="scroll-mt-28 grid lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
-          <div className={btCompanions.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}>
+        <div id="details" className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
+          <div className={`min-w-0 ${btCompanions.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
             <ProductDetails product={product} />
           </div>
           {btCompanions.length > 0 && (
-            <div className="lg:col-span-5">
+            <div className="min-w-0 lg:col-span-5">
               <BoughtTogether product={product} image={allImages[0]} companions={btCompanions} onAddAll={handleBundleAdd} disabled={outOfStock} />
             </div>
           )}
