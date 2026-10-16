@@ -10,6 +10,7 @@ const inter = Inter({
   display: 'swap',
 });
 import Providers from './Providers';
+import { INSTAGRAM_URL } from '@/lib/seo';
 import LayoutContent from './LayoutContent';
 import VisitTracker from './components/VisitTracker';
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -93,7 +94,7 @@ export default function RootLayout({ children }) {
         availableLanguage: ['English', 'Arabic'],
       },
       sameAs: [
-        'https://www.instagram.com/nayalc',
+        INSTAGRAM_URL,
       ],
     },
   ];

@@ -142,6 +142,7 @@ export const CartProvider = ({ children }) => {
                 }
                 updatedItems = [...prevItems, {
                     id: product.id,
+                    slug: product.slug,
                     name: product.name,
                     brand: product.brand,
                     price: parseFloat(product.price),

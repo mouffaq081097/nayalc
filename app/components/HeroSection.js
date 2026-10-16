@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { headingFont } from './home/SectionHeading';
 
 // ─── Slide data Fallback ──────────────────────────────────────────────────────────────
 const fallbackSlides = [
@@ -65,17 +66,9 @@ const SCRIM_CLASS = {
 };
 
 const TEXT_POS_CLASS = {
-  left:   'absolute left-[6%] md:left-[8%] lg:left-[10%] top-1/2 -translate-y-1/2 max-w-xs md:max-w-2xl',
-  right:  'absolute right-[6%] md:right-[8%] lg:right-[10%] top-1/2 -translate-y-1/2 max-w-xs md:max-w-2xl text-right',
+  left:   'absolute left-[6%] md:left-[8%] lg:left-[9%] top-1/2 -translate-y-1/2 max-w-xs md:max-w-[480px]',
+  right:  'absolute right-[6%] md:right-[8%] lg:right-[9%] top-1/2 -translate-y-1/2 max-w-xs md:max-w-[480px] text-right',
   center: 'absolute inset-0 flex flex-col items-center justify-center text-center px-6',
-};
-
-const CTA_CLASS = {
-  'outlined':      'border border-white text-white hover:bg-white hover:text-black',
-  'solid-dark':    'bg-[#3b0764] text-white hover:bg-[#6b21a8]',
-  'outlined-dark': 'border border-gray-800 text-gray-800 hover:bg-gray-900 hover:text-white',
-  'solid-white':   'bg-white text-black hover:bg-gray-100',
-  'lavender-cloud': 'bg-[var(--cl-gradient)] text-white border border-[rgb(196,167,254)] hover:bg-white hover:text-[#7e69e6] hover:shadow-[0_12px_32px_-8px_rgba(167,139,250,0.5)] active:scale-[0.98] transition-all duration-500 rounded-full flex items-center justify-center gap-2 group',
 };
 
 // ─── Animation variants ───────────────────────────────────────────────────────
@@ -103,7 +96,17 @@ function getTextVariants(reduceMotion) {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function SlideBackground({ slide, reduceMotion }) {
+function SlideBackground({ slide, reduceMotion, playing }) {
+  const videos = useRef([]);
+  // The pause button freezes the video too, not just the slide changes
+  useEffect(() => {
+    videos.current.forEach((v) => {
+      if (!v) return;
+      if (playing) v.play().catch(() => {});
+      else v.pause();
+    });
+  }, [playing]);
+
   const isVideoDesktop = slide.is_video_desktop || (slide.imageSrcDesktop && (typeof slide.imageSrcDesktop === 'string' && (slide.imageSrcDesktop.endsWith('.mp4') || slide.imageSrcDesktop.endsWith('.mov'))));
   const isVideoMobile = slide.is_video_mobile || (slide.imageSrc && (typeof slide.imageSrc === 'string' && (slide.imageSrc.endsWith('.mp4') || slide.imageSrc.endsWith('.mov'))));
 
@@ -120,8 +123,9 @@ function SlideBackground({ slide, reduceMotion }) {
       <div className="md:hidden w-full h-full relative">
         {isVideoMobile ? (
           <video
+            ref={(el) => { videos.current[0] = el; }}
             src={slide.imageSrc}
-            autoPlay
+            autoPlay={playing}
             muted
             loop
             playsInline
@@ -145,8 +149,9 @@ function SlideBackground({ slide, reduceMotion }) {
       <div className="hidden md:block w-full h-full relative">
         {isVideoDesktop ? (
           <video
+            ref={(el) => { videos.current[1] = el; }}
             src={slide.imageSrcDesktop || slide.imageSrc}
-            autoPlay
+            autoPlay={playing}
             muted
             loop
             playsInline
@@ -170,8 +175,8 @@ function SlideBackground({ slide, reduceMotion }) {
       {SCRIM_CLASS[slide.scrimDirection] && (
         <div className={`hidden md:block ${SCRIM_CLASS[slide.scrimDirection]}`} />
       )}
-      {/* Mobile: always a bottom-up scrim (text is overlaid at bottom on mobile) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent pointer-events-none md:hidden" />
+      {/* Mobile: dark at the top (header + headline) and the bottom (button) */}
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,10,12,0.55)_0%,rgba(10,10,12,0.1)_38%,rgba(10,10,12,0)_60%,rgba(10,10,12,0.45)_100%)] pointer-events-none md:hidden" />
       {/* Subtle bottom fade on all slides — keeps nav dots legible */}
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/25 to-transparent pointer-events-none" />
     </motion.div>
@@ -179,64 +184,51 @@ function SlideBackground({ slide, reduceMotion }) {
 }
 
 function SlideText({ slide, variants, isMobile = false }) {
-  const isLight = slide.textTheme === 'light';
-  
-  const eyebrowCls  = isMobile ? 'text-white/80' : 'text-white/90';
-  const headlineCls = 'text-white';
-  const bodyCls     = isMobile ? 'text-white/80' : 'text-white/90';
-  const ctaCls      = slide.ctaStyle === 'lavender-cloud' ? CTA_CLASS['lavender-cloud'] : CTA_CLASS[slide.ctaStyle];
-
-  const headlineSize = isMobile
-    ? 'text-[2.2rem] md:text-[2.5rem] leading-[1.1]'
-    : 'text-4xl lg:text-5xl xl:text-6xl leading-[1.1]';
-
-  const textAlignment = slide.textPosition === 'right' ? 'text-right' : 'text-left';
+  const textAlignment = isMobile ? 'text-center' : slide.textPosition === 'right' ? 'text-right' : 'text-left';
+  const cta = slide.cta && slide.cta.text ? slide.cta : null;
+  const pillBase = 'inline-flex items-center justify-center h-10 px-6 rounded-full border-[1.5px] border-white text-[13px] font-semibold transition-colors';
+  const pill = `${pillBase} text-white hover:bg-white hover:text-[#111114]`;
 
   return (
     <motion.div
       key={`text-${slide.id}${isMobile ? '-m' : ''}`}
       className={
         isMobile
-          ? 'absolute bottom-0 left-0 right-0 p-10 pb-24 z-10 md:hidden'
-          : `${TEXT_POS_CLASS[slide.textPosition]} z-10 hidden md:block`
+          ? 'absolute inset-x-4 top-[calc(var(--header-h)+28px)] bottom-[60px] z-10 flex flex-col items-center justify-between md:hidden'
+          : `${TEXT_POS_CLASS[slide.textPosition] || TEXT_POS_CLASS.left} z-10 hidden md:block`
       }
       variants={variants.container}
       initial="hidden"
       animate="visible"
       exit="exit"
     >
-      <motion.div variants={variants.item} className={`space-y-2 md:space-y-3 ${textAlignment}`}>
-        {/* Eyebrow */}
+      <motion.div variants={variants.item} className={`grid gap-2.5 ${textAlignment}`}>
         {slide.eyebrow && (
-          <p className={`text-[11px] md:text-[13px] tracking-[0.25em] uppercase font-bold ${eyebrowCls}`}>
-            {slide.eyebrow}
+          <p className="text-[11px] md:text-[12px] font-semibold tracking-[0.14em] uppercase text-white/80">
+            {slide.eyebrow.trim()}
           </p>
         )}
-
-        {/* Headline */}
-        <h1 className={`font-sans font-black uppercase tracking-wide whitespace-pre-line ${headlineSize} ${headlineCls}`}>
+        <h1 className={`${headingFont} font-medium text-white whitespace-pre-line text-balance leading-[1.1] tracking-[-0.01em] text-[26px] md:text-[clamp(30px,3.4vw,46px)]`}>
           {slide.headline}
         </h1>
-
-        {/* Body */}
         {slide.body && (
-          <p className={`text-sm md:text-base font-medium leading-relaxed max-w-[300px] md:max-w-lg ${bodyCls} ${slide.textPosition === 'right' ? 'ml-auto' : ''}`}>
+          <p className={`text-[14px] md:text-[15px] leading-relaxed text-white/85 max-w-[340px] md:max-w-[440px] ${isMobile ? 'mx-auto' : slide.textPosition === 'right' ? 'ml-auto' : ''}`}>
             {slide.body}
           </p>
         )}
-
-        {/* CTA */}
-        {slide.cta && slide.cta.text && (
-          <div className="pt-1">
-            <Link
-              href={slide.cta.href || '/'}
-              className={`inline-flex items-center justify-center px-10 py-4 text-[12px] tracking-[0.2em] uppercase font-black transition-all duration-300 ${ctaCls}`}
-            >
-              <span>{slide.cta.text}</span>
-            </Link>
+        {/* Desktop: the button follows the copy */}
+        {cta && !isMobile && (
+          <div className="pt-3.5">
+            <Link href={cta.href || '/'} className={pill}>{cta.text}</Link>
           </div>
         )}
       </motion.div>
+      {/* Phones: the button sits at the bottom of the photo */}
+      {cta && isMobile && (
+        <motion.div variants={variants.item}>
+          <Link href={cta.href || '/'} className={`${pillBase} bg-white text-[#111114]`}>{cta.text}</Link>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
@@ -246,6 +238,9 @@ export function HeroSection({ dbSlides = [] }) {
   const reduceMotion = useReducedMotion();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
+  // Pressed pause (or asked the OS for reduced motion): no slide changes and no video until play is pressed
+  const [stopped, setStopped] = useState(false);
+  useEffect(() => { if (reduceMotion) setStopped(true); }, [reduceMotion]);
 
   // Map DB slides to the format expected by the component
   const mappedDbSlides = dbSlides.map(s => ({
@@ -269,10 +264,10 @@ export function HeroSection({ dbSlides = [] }) {
   const activeSlides = mappedDbSlides.length > 0 ? mappedDbSlides : fallbackSlides;
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || stopped) return;
     const t = setInterval(() => setCurrent(p => (p + 1) % activeSlides.length), 7000);
     return () => clearInterval(t);
-  }, [paused, activeSlides.length]);
+  }, [paused, stopped, activeSlides.length]);
 
   const slide = activeSlides[current];
   const variants = getTextVariants(reduceMotion);
@@ -291,10 +286,12 @@ export function HeroSection({ dbSlides = [] }) {
     touchStartX.current = null;
   };
 
+  // Phones: at least as tall as the 9:16 phone photo is at this width, so the whole
+  // photo shows (its empty top holds the headline) instead of being zoomed and cropped
   return (
     <section
-      className="relative w-full overflow-hidden bg-transparent"
-      style={{ height: 'min(78vh, 680px)' }}
+      id="home-hero"
+      className="relative w-full overflow-hidden bg-[#2a2622] h-[max(84svh,calc(100vw*16/9))] min-h-[520px] md:h-[min(92vh,860px)] md:min-h-[560px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={onTouchStart}
@@ -302,48 +299,13 @@ export function HeroSection({ dbSlides = [] }) {
     >
       {/* ── Full-bleed background ── */}
       <AnimatePresence>
-        <SlideBackground key={`bg-${slide.id}`} slide={slide} reduceMotion={reduceMotion} />
+        <SlideBackground key={`bg-${slide.id}`} slide={slide} reduceMotion={reduceMotion} playing={!stopped} />
       </AnimatePresence>
 
-      {/* ── Cinematic Glow Overlay ── */}
-      <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
-        {/* Base Black Overlay for Video Contrast - Bottom-up fade for Desktop */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-[0] hidden md:block" />
-        
-        {/* Lighter Base Overlay for Mobile */}
-        <div className="absolute inset-0 bg-black/25 z-[0] md:hidden" />
-
-        {/* Primary Glow Orb - Intensified */}
-        <motion.div
-          animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.2, 0.3, 0.2],
-            x: [0, 40, 0],
-            y: [0, -20, 0],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-[10%] -left-[5%] w-[70%] h-[70%] rounded-full blur-[100px]"
-          style={{ background: 'radial-gradient(circle, rgba(196,167,254,0.3) 0%, transparent 75%)' }}
-        />
-        
-        {/* Secondary Glow Orb - Intensified */}
-        <motion.div
-          animate={{
-            scale: [1.1, 1, 1.1],
-            opacity: [0.15, 0.25, 0.15],
-            x: [0, -30, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -bottom-[15%] -right-[5%] w-[60%] h-[60%] rounded-full blur-[80px]"
-          style={{ background: 'radial-gradient(circle, rgba(216,180,254,0.2) 0%, transparent 75%)' }}
-        />
-
-        {/* Global Atmosphere Tint - More Lavender focused */}
-        <div 
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(160deg, rgba(168,85,247,0.12) 0%, rgba(216,180,254,0.08) 50%, rgba(196,167,254,0.1) 100%)' }}
-        />
+      {/* ── Scrims: top keeps the white header legible; desktop adds a left wash for the copy ── */}
+      <div className="absolute inset-0 pointer-events-none z-[1]">
+        <div className="absolute inset-x-0 top-0 h-[28%] bg-gradient-to-b from-black/35 to-transparent" />
+        <div className="absolute inset-0 hidden md:block bg-[linear-gradient(90deg,rgba(10,10,12,0.5)_0%,rgba(10,10,12,0.15)_45%,rgba(10,10,12,0)_70%)]" />
       </div>
 
       {/* ── Desktop text overlay ── */}
@@ -359,46 +321,44 @@ export function HeroSection({ dbSlides = [] }) {
       {/* ── Desktop prev/next arrows ── */}
       <button
         onClick={prev}
-        className="absolute left-6 md:left-8 top-1/2 -translate-y-1/2 z-20 hidden md:flex w-14 h-14 items-center justify-center rounded-full text-white/40 hover:text-white border border-white/10 hover:border-white/30 bg-white/5 hover:bg-white/10 backdrop-blur-md transition-all duration-500 group"
+        className="absolute left-7 top-1/2 -translate-y-1/2 z-20 hidden md:flex w-[38px] h-[38px] items-center justify-center rounded-full text-white border border-white/40 hover:border-white transition-colors"
         aria-label="Previous slide"
       >
-        <ChevronLeft size={24} strokeWidth={1} className="group-hover:-translate-x-1 transition-transform" />
+        <ChevronLeft size={18} strokeWidth={1.5} />
       </button>
       <button
         onClick={next}
-        className="absolute right-6 md:right-8 top-1/2 -translate-y-1/2 z-20 hidden md:flex w-14 h-14 items-center justify-center rounded-full text-white/40 hover:text-white border border-white/10 hover:border-white/30 bg-white/5 hover:bg-white/10 backdrop-blur-md transition-all duration-500 group"
+        className="absolute right-7 top-1/2 -translate-y-1/2 z-20 hidden md:flex w-[38px] h-[38px] items-center justify-center rounded-full text-white border border-white/40 hover:border-white transition-colors"
         aria-label="Next slide"
       >
-        <ChevronRight size={24} strokeWidth={1} className="group-hover:translate-x-1 transition-transform" />
+        <ChevronRight size={18} strokeWidth={1.5} />
       </button>
 
       {/* ── Dot navigation ── */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5">
         {activeSlides.map((_, i) => (
           <button
             key={i}
             onClick={() => goTo(i)}
             aria-label={`Go to slide ${i + 1}`}
-            className="rounded-full transition-all duration-300"
+            aria-current={i === current ? 'true' : undefined}
+            className="rounded-full transition-colors duration-300"
             style={{
-              width:      i === current ? 24 : 7,
-              height:     7,
-              background: i === current ? 'rgb(216,180,254)' : 'rgba(255,255,255,0.40)',
+              width: i === current ? 7 : 6,
+              height: i === current ? 7 : 6,
+              background: i === current ? 'rgb(183,156,255)' : 'rgba(255,255,255,0.55)',
             }}
           />
         ))}
-      </div>
-
-      {/* ── Slide progress bar ── */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-white/10 z-20">
-        <motion.div
-          key={current}
-          className="h-full origin-left"
-          style={{ background: 'rgba(216,180,254,0.75)' }}
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: reduceMotion ? 0 : 7, ease: 'linear' }}
-        />
+        <button
+          type="button"
+          onClick={() => setStopped((v) => !v)}
+          aria-label={stopped ? 'Play slideshow' : 'Pause slideshow'}
+          aria-pressed={stopped}
+          className="ml-2 w-6 h-6 -my-2 flex items-center justify-center text-white/85 hover:text-white transition-colors"
+        >
+          {stopped ? <Play size={12} fill="currentColor" strokeWidth={0} /> : <Pause size={12} fill="currentColor" strokeWidth={0} />}
+        </button>
       </div>
     </section>
   );

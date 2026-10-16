@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  /* ── Header ─────────────────────────────────────────────────────── */
+  /* Height of the fixed storefront header (HEADER_H in app/components/Header.js) */
+  --header-h: 70px;
+
   /* ── Brand ─────────────────────────────────────────────────────── */
   --brand-purple-1: #c087fc;
   --brand-purple-2: #9869f7;
@@ -618,4 +622,9 @@ body {
   0%   { box-shadow: 0 0 0 0 rgba(139,92,246,0.45); }
   70%  { box-shadow: 0 0 0 8px rgba(139,92,246,0); }
   100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
+}
+
+/* Desktop header height — after every :root block so it wins */
+@media (min-width: 768px) {
+  :root { --header-h: 88px; }
 }

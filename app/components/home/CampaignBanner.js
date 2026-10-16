@@ -64,7 +64,7 @@ export function CampaignBanner({ campaign }) {
             <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: LAVENDER }}>
               {campaign.showCountdown ? 'Ends soon' : 'Limited time'}
             </p>
-            <h2 className={`${headingFont} text-[34px] md:text-[48px] font-medium leading-[1.02] text-[#1f1235] text-balance`}>
+            <h2 className={`${headingFont} text-[26px] md:text-[40px] font-medium uppercase leading-[1.1] text-[#111114] text-balance`}>
               {campaign.title}
             </h2>
             {campaign.subtitle && <p className="max-w-md text-[14.5px] md:text-[15.5px] leading-relaxed text-gray-600">{campaign.subtitle}</p>}

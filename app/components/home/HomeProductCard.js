@@ -3,28 +3,33 @@
 import { useContext, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Plus, Check, Star, Truck } from 'lucide-react';
+import { Check, Star, ShoppingBag } from 'lucide-react';
 import { CartContext } from '../../context/CartContext';
 import { FranceFlag } from '../MadeInFranceBadge';
 import { UAEFlag } from '../MadeInUAEBadge';
 import { formatAED, viewCountLabel } from '../../lib/utils';
 import { getDeliveryInfo, getPreorderInfo } from '@/lib/shipping';
 import { shortBrand } from '@/lib/seo';
-import { headingFont } from './SectionHeading';
 import { orderableQty, isPreorderOnly, shelfStock, leadDays } from '@/lib/backorderRules';
 
 const LAVENDER = 'rgb(147,104,236)';
 
+// Catalogue names repeat the brand the card already shows
+// ("GLYCO by Gernetic: Nourishing…" → "GLYCO Nourishing…"); the full name stays on the product page.
+export const cardName = (name = '') => name.replace(/\s+by\s+gern[eé]tic\s*:?/i, '').trim();
+
 /**
- * The homepage card: photo in a square, rounded frame, then a boutique-label stack
- * (lavender brand, serif name, price), then the same live facts as the full
- * ProductCard — real views this month, the delivery range (or pre-order ship
- * date) and stock when it's running low.
+ * The homepage product panel (after Pitaka): a portrait off-white panel with
+ * the name and brand top-left, the discount tag top-right, the photo centred,
+ * the bag button bottom-left and the price bottom-right. Under it, the same
+ * live facts as ProductCard: real views this month (from 5 up), the delivery
+ * range or pre-order date, and "Only N left".
+ * `tone="dark"` recolours those facts for the black best-sellers band.
  */
-// `onTint`: the card sits on a grey band, so its frame turns white to stay visible
-export function HomeProductCard({ product, onTint = false }) {
+export function HomeProductCard({ product, tone = 'light' }) {
   const { addToCart } = useContext(CartContext);
   const [added, setAdded] = useState(false);
+  const dark = tone === 'dark';
 
   const price = Number(product.price) || 0;
   const was = Number(product.originalPrice) || 0;
@@ -55,74 +60,73 @@ export function HomeProductCard({ product, onTint = false }) {
     setTimeout(() => setAdded(false), 1600);
   };
 
+  const tag = !canBuy ? 'Sold out' : preorder ? 'Pre-order' : onSale ? `−${saving}%` : null;
+
   return (
-    <Link href={href} className="group block h-full text-center">
-      <div
-        className={`relative aspect-square rounded-[20px] overflow-hidden ${onTint ? 'bg-white' : 'bg-[#f5f5f6]'} transition-shadow duration-300 group-hover:shadow-[0_14px_30px_-16px_rgba(17,17,24,0.30)]`}
-      >
-        <Image
-          src={product.imageUrl || '/placeholder-image.jpg'}
-          alt={product.altText || `${product.name} - ${shortBrand(brand)}`}
-          fill
-          sizes="(max-width: 768px) 46vw, (max-width: 1280px) 23vw, 240px"
-          className={`object-contain p-5 md:p-6 mix-blend-multiply transition-transform duration-500 group-hover:scale-[1.04] ${canBuy ? '' : 'opacity-60'}`}
-        />
-
-        {!canBuy ? (
-          <span className="absolute top-3 left-3 rounded-full px-2 py-[3px] text-[10.5px] font-semibold text-white bg-gray-500">
-            Sold out
-          </span>
-        ) : (onSale || preorder) && (
-          <span
-            className="absolute top-3 left-3 rounded-full px-2 py-[3px] text-[10.5px] font-semibold text-white"
-            style={{ background: LAVENDER }}
-          >
-            {preorder ? 'Pre-order' : `−${saving}%`}
-          </span>
-        )}
-
-        {canBuy && (
-          <button
-            type="button"
-            onClick={onAdd}
-            aria-label={preorder ? `Pre-order ${product.name}` : `Add ${product.name} to bag`}
-            className="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full flex items-center justify-center text-white bg-gray-900 shadow-[0_4px_12px_rgba(17,17,24,0.25)] transition-transform duration-200 hover:scale-105 active:scale-95"
-          >
-            {added ? <Check size={17} strokeWidth={2.25} /> : <Plus size={18} strokeWidth={2.25} />}
-          </button>
-        )}
-      </div>
-
-      <div className="pt-3.5 px-1 flex flex-col items-center">
-        <p className="flex items-center justify-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+    <Link href={href} className="group block h-full min-w-0">
+      <div className="relative aspect-[2/3] md:aspect-[3/4] bg-[#f6f5f2] flex flex-col p-3 md:p-[18px]">
+        <p className="pr-12 text-[13.5px] md:text-[15px] font-semibold leading-[1.25] text-[#111114] line-clamp-2">
+          {cardName(product.name)}
+        </p>
+        <p className="mt-[3px] flex items-center gap-1.5 text-[11.5px] md:text-[12px] text-[#6b6b73] min-w-0">
           <span className="truncate">{shortBrand(brand)}</span>
           {isFrench && <FranceFlag title="Made in France" />}
           {isEmirati && <UAEFlag title="Made in the UAE" />}
         </p>
-        <p className={`${headingFont} mt-1 text-[17px] md:text-[18px] font-medium leading-[1.2] text-[#1f1235] line-clamp-2`}>
-          {product.name}
-        </p>
-        <p className="mt-1.5 flex flex-wrap items-baseline justify-center gap-x-2">
-          <span className="text-[14px] font-semibold text-gray-900">{formatAED(price)}</span>
-          {onSale && <span className="text-[12px] text-gray-400 line-through">{formatAED(was)}</span>}
-        </p>
-        {hasReviews && (
-          <p className="mt-1 flex items-center gap-1 text-[11.5px] text-gray-500">
-            <Star size={12} className="fill-[#f5b301] text-[#f5b301]" />
-            {rating.toFixed(1)} <span className="text-gray-400">({product.reviewCount})</span>
-          </p>
+        {tag && (
+          <span
+            className={`absolute top-3 right-3 md:top-4 md:right-4 rounded-full px-2 py-[3px] text-[10.5px] font-semibold text-white ${!canBuy ? 'bg-gray-500' : ''}`}
+            style={canBuy ? { background: LAVENDER } : undefined}
+          >
+            {tag}
+          </span>
         )}
-        {views > 0 && (
-          <p className="mt-1.5 text-[11.5px] font-medium text-emerald-700">{viewCountLabel(views)} viewed this month</p>
+
+        <div className="relative flex-1 min-h-0 mx-[8%] mt-3.5 mb-3">
+          <Image
+            src={product.imageUrl || '/placeholder-image.jpg'}
+            alt={product.altText || `${product.name} - ${shortBrand(brand)}`}
+            fill
+            sizes="(max-width: 768px) 45vw, (max-width: 1280px) 22vw, 280px"
+            className={`object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-[1.04] ${canBuy ? '' : 'opacity-55'}`}
+          />
+        </div>
+
+        <div className="flex items-end justify-between gap-2">
+          {canBuy ? (
+            <button
+              type="button"
+              onClick={onAdd}
+              aria-label={preorder ? `Pre-order ${product.name}` : `Add ${product.name} to bag`}
+              className="w-8 h-8 shrink-0 rounded-full border-[1.2px] border-[#111114] text-[#111114] flex items-center justify-center transition-colors hover:bg-[#111114] hover:text-white group-hover:bg-[#111114] group-hover:text-white"
+            >
+              {added ? <Check size={15} strokeWidth={2} /> : <ShoppingBag size={14} strokeWidth={1.75} />}
+            </button>
+          ) : <span />}
+          <p className="text-right text-[14px] font-semibold text-[#111114] leading-tight">
+            {formatAED(price)}
+            {onSale && <span className="block text-[11.5px] font-normal text-[#9a9aa2] line-through">{formatAED(was)}</span>}
+          </p>
+        </div>
+      </div>
+
+      <div className={`pt-2.5 px-0.5 grid gap-0.5 text-[12px] ${dark ? 'text-[#a1a1aa]' : 'text-[#6b6b73]'}`}>
+        {hasReviews && (
+          <span className="flex items-center gap-1">
+            <Star size={12} className="fill-[#f5b301] text-[#f5b301]" />
+            {rating.toFixed(1)} <span className="opacity-70">({product.reviewCount})</span>
+          </span>
+        )}
+        {views >= 5 && (
+          <span className={`font-medium ${dark ? 'text-[#4ade80]' : 'text-[#15803d]'}`}>{viewCountLabel(views)} viewed this month</span>
         )}
         {(arrives || shipsBy) && (
-          <p className="mt-0.5 text-[11.5px] leading-snug text-gray-600">
-            <Truck size={13} className="inline-block align-[-2px] mr-1 text-gray-400" />
+          <span>
             {arrives ? 'Arrives ' : 'Ships by '}
-            <span className="font-semibold text-gray-900 whitespace-nowrap">{arrives || shipsBy}</span>
-          </p>
+            <b className={`font-semibold ${dark ? 'text-white' : 'text-[#111114]'}`}>{arrives || shipsBy}</b>
+          </span>
         )}
-        {lowStock && <p className="mt-0.5 text-[11px] font-semibold text-amber-700">Only {stock} left</p>}
+        {lowStock && <span className={`font-semibold ${dark ? 'text-[#fbbf24]' : 'text-[#b45309]'}`}>Only {stock} left</span>}
       </div>
     </Link>
   );

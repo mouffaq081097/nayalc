@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,7 +8,7 @@ import { User, Package, Heart, Star, MapPin, Settings, LogOut } from 'lucide-rea
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
 import { AccountMobileTopBar } from './AccountMobileTopBar';
-import { PROMO_BAR_H } from '../../components/PromoBar';
+import { HEADER_H } from '../../components/Header';
 
 const SIDEBAR_W = 200; // px
 
@@ -36,19 +36,8 @@ export default function AccountShell({ children, wishCount = 0, title }) {
   const { user, logout } = useAuth();
   const { loyaltyData } = useAppContext();
 
-  // Track navbar scroll state to match its height exactly
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  // Header now sits below the fixed PromoBar (top: PROMO_BAR_H, not top: 0).
-  // When scrolled the navbar is: PROMO_BAR_H + pt-3 (12px) + h-[60px] = +72px
-  // When not scrolled: PROMO_BAR_H + h-[60px] = +60px
-  const navbarH = PROMO_BAR_H + (scrolled ? 72 : 60);
+  // The sidebar starts under the fixed header, whose height doesn't change on scroll
+  const navbarH = HEADER_H.desktop;
 
   const tier      = loyaltyData?.stats?.tier || 'Member';
   const pageTitle = title || PAGE_TITLES[pathname] || 'My Account';

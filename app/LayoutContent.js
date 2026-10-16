@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useCart } from './context/CartContext';
 import Header from './components/Header';
-import { PromoBar } from './components/PromoBar';
 import Footer from './components/Footer';
 import MobileBottomNav from './components/MobileBottomNav';
 import SideCart from './components/SideCart';
@@ -77,7 +76,6 @@ export default function LayoutContent({ children }) {
       {showMobileChrome && <WelcomePopup isOpen={welcomeOpen} onClose={closeWelcome} />}
       {showMobileChrome && !welcomeOpen && <WelcomeCornerBadge onOpen={() => setWelcomeOpen(true)} />}
       {showMobileChrome && chatReady && <Suspense fallback={null}><ChatWidget /></Suspense>}
-      {showMobileChrome && <PromoBar />}
       <VerifyEmailBanner />
       {showMobileChrome && <Header />}
       <SideCart /> {/* Add SideCart component here */}

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import StoreHeader from '../components/StoreHeader';
+import { headingFont } from '@/app/components/home/SectionHeading';
 import StoreCategoryNav from '../components/StoreCategoryNav';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui/button';
@@ -42,7 +43,13 @@ export default function SalePage() {
         const response = await fetch('/api/products?onSale=true');
         if (!response.ok) throw new Error('Failed to fetch sale products');
         const data = await response.json();
-        setSaleProducts(data);
+        // The API doesn't filter on onSale, so keep only real reductions here,
+        // with the old price under the name ProductCard expects
+        setSaleProducts(
+          (Array.isArray(data) ? data : [])
+            .map((p) => ({ ...p, price: Number(p.price), originalPrice: p.comparedprice ? Number(p.comparedprice) : null }))
+            .filter((p) => p.originalPrice > p.price)
+        );
       } catch (error) {
         console.error(error);
       } finally {
@@ -63,7 +70,7 @@ export default function SalePage() {
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-blue/[0.03] rounded-full blur-[120px]"></div>
       </div>
 
-      <StoreHeader title="Sales." />
+      <StoreHeader title="Offers" subtitle="Every product with a reduced price right now." />
       <StoreCategoryNav />
 
       {/* Sale Highlights - Overlapping & Dense */}
@@ -98,7 +105,7 @@ export default function SalePage() {
                     <span className="w-8 h-[1.5px] bg-brand-pink"></span>
                     <span className="text-[10px] font-black tracking-[0.4em] text-brand-pink">Selection Inventory</span>
                 </div>
-                <h2 className="text-3xl font-serif italic text-gray-900 leading-none">Reductions Catalogue</h2>
+                <h2 className={`${headingFont} text-[24px] md:text-[34px] font-medium uppercase leading-[1.1] text-[#111114]`}>All offers</h2>
             </div>
             
             <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm overflow-x-auto no-scrollbar max-w-full">

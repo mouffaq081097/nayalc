@@ -23,6 +23,7 @@ import {
   Zap
 } from 'lucide-react';
 import StoreHeader from '../components/StoreHeader';
+import { headingFont } from '@/app/components/home/SectionHeading';
 import StoreCategoryNav from '../components/StoreCategoryNav';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useAppContext } from '../context/AppContext';
@@ -107,12 +108,12 @@ export default function FragranceClient() {
   }, [fetchProductsByCategory]);
 
   return (
-    <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+    <div className="bg-white min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       
             {/* Tactile Paper Grain */}
             <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
       
-                  <StoreHeader title="Fragrance." />
+                  <StoreHeader title="Fragrance" subtitle="Naya Lumière eaux de parfum, created in the Emirates." />
       
                   <StoreCategoryNav />
       
@@ -230,7 +231,7 @@ export default function FragranceClient() {
       
                             </div>
       
-                            <h2 className="text-4xl md:text-5xl font-serif italic text-gray-900">Signature Scents</h2>
+                            <h2 className={`${headingFont} text-[24px] md:text-[34px] font-medium uppercase leading-[1.1] text-[#111114]`}>All fragrances</h2>
       
                         </div>
             <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">

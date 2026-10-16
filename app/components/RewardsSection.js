@@ -36,7 +36,7 @@ export function RewardsSection() {
             <p className="text-[10px] md:text-[11px] font-medium tracking-[0.18em] uppercase text-[rgb(196,167,254)]">
               Naya Rewards
             </p>
-            <h2 className={`${headingFont} mt-2 md:mt-3 text-[30px] md:text-[40px] lg:text-[46px] font-medium leading-[1.05] text-white`}>
+            <h2 className={`${headingFont} mt-2 md:mt-3 text-[26px] md:text-[36px] lg:text-[40px] font-medium uppercase leading-[1.1] text-white`}>
               Every Order Earns You More
             </h2>
             <p className="mt-2 md:mt-3 max-w-md text-[13px] md:text-[15px] leading-[1.5] md:leading-relaxed text-white/70">

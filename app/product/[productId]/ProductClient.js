@@ -8,13 +8,12 @@ import { useUser } from '../../context/UserContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import { Heart, Star, Plus, Minus, Check, ChevronRight, Truck, RotateCcw, ShieldCheck, Sparkles, ShoppingBag } from 'lucide-react';
+import { Heart, Star, Plus, Minus, Check, ChevronRight, Truck, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
 import Reviews from '../../components/Reviews';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
 import ProductCard from '../../components/ProductCard';
 import TabbyPromo from '../../components/TabbyPromo';
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '../../components/ui/carousel';
 import { MadeInFranceBadge } from '../../components/MadeInFranceBadge';
 import { MadeInUAEBadge } from '../../components/MadeInUAEBadge';
 import { RecentlyViewedSection } from '../../components/RecentlyViewedSection';
@@ -26,7 +25,7 @@ import ProductGallery from './_components/ProductGallery';
 import DeliveryCard from './_components/DeliveryCard';
 import ProductDetails from './_components/ProductDetails';
 import BoughtTogether from './_components/BoughtTogether';
-import { LAVENDER, LAVENDER_LIGHT, LAVENDER_HOVER, BORDER, aed, BUTTON, EYEBROW, SECTION_TITLE, WELL } from './_components/theme';
+import { LAVENDER, LAVENDER_HOVER, aed, BUTTON, SECTION_TITLE, WELL } from './_components/theme';
 
 function parseSizes(sizeStr) {
   if (!sizeStr) return [];
@@ -238,31 +237,32 @@ export default function ProductClient({ params, initialProduct }) {
   const metaLine = [sizes.length === 1 && product.size, product.form].filter(Boolean).join(' · ');
   const hasLongCopy = Boolean(product.long_description || product.benefits || product.how_to_use || product.ingredients);
 
+  const brandIsFrench = !!product.brand && /gern[eé]t/i.test(product.brand);
+  const brandIsEmirati = !!product.brand && /naya\s*lumi[eè]?re?\s*perfumes?/i.test(product.brand);
+  const ctaLabel = outOfStock ? 'Out of stock' : preorderOnly ? 'Pre-order' : 'Add to cart';
+
   return (
     <div className="relative min-h-screen bg-white text-gray-900 overflow-x-clip">
-      {/* ── Sticky buy bar (desktop: bottom bar, mobile: floating pill above the nav) ── */}
+      {/* ── Sticky buy bar once the main button scrolls away (desktop: bottom bar, phone: above the nav) ── */}
       <AnimatePresence>
         {showStickyBar && (
           <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed left-3 right-3 md:left-0 md:right-0 z-[140] bottom-[calc(env(safe-area-inset-bottom,0px)+84px)] md:bottom-0">
-            <div className="mx-auto max-w-md md:max-w-none rounded-2xl md:rounded-none bg-white/95 backdrop-blur-md md:border-t shadow-[0_6px_24px_rgba(17,24,39,0.14)] md:shadow-[0_-4px_20px_rgba(17,24,39,0.06)]"
-              style={{ borderColor: BORDER }}>
-              <div className="max-w-7xl mx-auto px-3 md:px-6 h-16 flex items-center gap-3">
+            className="fixed left-0 right-0 z-[140] bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] md:bottom-0">
+            <div className="bg-white border-t border-[#ececec] shadow-[0_-4px_20px_rgba(17,24,39,0.06)]">
+              <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center gap-3">
                 {allImages[0] && (
-                  <span className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0" style={{ background: WELL }}>
-                    <Image src={allImages[0]} alt="" fill sizes="44px" className="object-contain p-1" />
+                  <span className="relative w-11 h-11 overflow-hidden flex-shrink-0" style={{ background: WELL }}>
+                    <Image src={allImages[0]} alt="" fill sizes="44px" className="object-contain p-1 mix-blend-multiply" />
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="hidden md:block text-[11px] font-medium" style={{ color: LAVENDER }}>{brandName}</p>
                   <p className="text-[13px] md:text-[14px] font-semibold text-gray-900 truncate">{product.name}</p>
-                  <p className="md:hidden text-[13px] font-bold text-gray-900 tabular-nums">{aed(product.price)}</p>
+                  <p className="text-[13px] text-gray-500 tabular-nums">{aed(product.price)}</p>
                 </div>
-                <span className="hidden md:block text-[18px] font-bold text-gray-900 tabular-nums">{aed(product.price)}</span>
                 <button onClick={handleAddToCart} disabled={outOfStock}
-                  className={`h-11 px-5 rounded-full text-[13px] font-semibold text-white flex items-center gap-2 flex-shrink-0 active:scale-[0.98] transition-all disabled:opacity-50 ${BUTTON}`}>
-                  {outOfStock ? 'Out of stock' : isAdded ? <><Check size={15} /> Added</> : <><ShoppingBag size={15} /> {preorderOnly ? 'Pre-order' : 'Add to cart'}</>}
+                  className={`h-11 px-6 text-[13px] font-semibold uppercase tracking-[0.04em] flex items-center gap-2 flex-shrink-0 transition-colors disabled:opacity-50 ${BUTTON}`}>
+                  {isAdded ? <><Check size={15} /> Added</> : ctaLabel}
                 </button>
               </div>
             </div>
@@ -270,124 +270,96 @@ export default function ProductClient({ params, initialProduct }) {
         )}
       </AnimatePresence>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ── Hero (after Pitaka): photos on the left, buying panel on the right ── */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,55%)_minmax(0,45%)]">
 
-        {/* ── Breadcrumb ── */}
-        <nav aria-label="Breadcrumb" className="py-4 md:py-5 flex items-center gap-1.5 text-[13px] text-gray-400 min-w-0">
-          <Link href="/" className="hover:text-gray-700 transition-colors flex-shrink-0">Home</Link>
-          {product.brand && product.brandSlug && (
-            <>
-              <ChevronRight size={13} className="text-gray-300 flex-shrink-0" />
-              <Link href={`/brand/${product.brandSlug}`} className="hover:text-gray-700 transition-colors flex-shrink-0">{product.brand}</Link>
-            </>
-          )}
-          {product.categoryName && (
-            <>
-              <ChevronRight size={13} className="text-gray-300 flex-shrink-0" />
-              <Link href={`/collections/${product.categorySlug || ''}`} className="hover:text-gray-700 transition-colors flex-shrink-0 hidden sm:inline">
-                {product.categoryName}
-              </Link>
-              <ChevronRight size={13} className="text-gray-300 flex-shrink-0 hidden sm:inline" />
-            </>
-          )}
-          {!product.categoryName && <ChevronRight size={13} className="text-gray-300 flex-shrink-0" />}
-          <span className="text-gray-700 font-medium truncate" aria-current="page">{product.name}</span>
-        </nav>
-
-        {/* ── Hero: gallery + buy box ── */}
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
-
-          <div className="lg:col-span-7 lg:sticky lg:top-28 self-start">
-            <ProductGallery
-              images={allImages}
-              name={product.name}
-              discountPct={discountPct}
-              badge={isHomemade && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white/90 shadow-sm" style={{ color: LAVENDER_HOVER, border: `1px solid ${BORDER}` }}>
-                  <Sparkles size={12} color="#9333ea" strokeWidth={2.5} /> Homemade
+        {/* Photos. Phones and tablets: swipe gallery with thumbnails. Desktop: every photo stacked, full height. */}
+        <div className="lg:hidden">
+          <ProductGallery
+            images={allImages}
+            name={product.name}
+            discountPct={discountPct}
+            badge={isHomemade && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-white/90" style={{ color: LAVENDER_HOVER }}>
+                <Sparkles size={12} strokeWidth={2.5} /> Homemade
+              </span>
+            )}
+          />
+        </div>
+        <div className="hidden lg:block">
+          {allImages.map((src, i) => (
+            <div key={src + i} className="relative aspect-square" style={{ background: WELL }}>
+              <Image
+                src={src}
+                alt={i === 0 ? product.name : `${product.name}, photo ${i + 1}`}
+                fill
+                priority={i === 0}
+                sizes="55vw"
+                className="object-contain p-[9%] mix-blend-multiply"
+              />
+              {i === 0 && allImages.length > 1 && (
+                <span className="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-3 py-1 text-[11px] font-medium text-white tabular-nums">
+                  1 / {allImages.length}
                 </span>
               )}
-            />
-          </div>
-
-          <div className="lg:col-span-5 flex flex-col">
-
-            {/* Identity */}
-            <div className="flex items-center gap-2.5 flex-wrap mb-3">
-              {product.brandSlug
-                ? <Link href={`/brand/${product.brandSlug}`} className="text-[13px] font-semibold hover:underline underline-offset-4" style={{ color: LAVENDER }}>{brandName}</Link>
-                : <span className="text-[13px] font-semibold" style={{ color: LAVENDER }}>{brandName}</span>}
-              {product.brand && /gern[eé]t/i.test(product.brand) && <MadeInFranceBadge variant="light" />}
-              {product.brand && /naya\s*lumi[eè]?re?\s*perfumes?/i.test(product.brand) && <MadeInUAEBadge variant="light" />}
-            </div>
-
-            <h1 className="text-[26px] sm:text-[30px] lg:text-[34px] font-bold leading-tight text-gray-900">
-              {product.name}
-            </h1>
-
-            {metaLine && <p className="mt-2 text-[14px] text-gray-500">{metaLine}</p>}
-
-            {/* Rating */}
-            <a href="#reviews" className="mt-3 inline-flex items-center gap-2 w-fit group">
-              <Stars rating={rating} />
-              {reviewCount > 0 ? (
-                <>
-                  <span className="text-[14px] font-semibold text-gray-900">{rating.toFixed(1)}</span>
-                  <span className="text-[13px] text-gray-500 group-hover:underline underline-offset-2">
-                    {reviewCount} review{reviewCount === 1 ? '' : 's'}
-                  </span>
-                </>
-              ) : (
-                <span className="text-[13px] text-gray-500 group-hover:underline underline-offset-2">No reviews yet — be the first</span>
+              {i === 0 && hasDiscount && (
+                <span className="absolute top-6 left-6 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white" style={{ background: LAVENDER }}>−{discountPct}%</span>
               )}
+            </div>
+          ))}
+        </div>
+
+        {/* Buying panel — stays in view while the photos scroll past */}
+        <div className="px-4 sm:px-6 lg:px-[clamp(32px,5vw,80px)] pt-6 lg:pt-10 pb-12">
+          <div className="lg:sticky lg:top-[calc(var(--header-h)+32px)] max-w-[520px]">
+
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[12px] text-gray-400 min-w-0">
+              <Link href="/" className="hover:text-gray-700 shrink-0">Home</Link>
+              {product.brand && product.brandSlug && (
+                <><ChevronRight size={12} className="shrink-0" /><Link href={`/brand/${product.brandSlug}`} className="hover:text-gray-700 shrink-0">{product.brand}</Link></>
+              )}
+              {product.categoryName && (
+                <><ChevronRight size={12} className="shrink-0 hidden sm:block" /><Link href={`/collections/${product.categorySlug || ''}`} className="hover:text-gray-700 truncate hidden sm:block">{product.categoryName}</Link></>
+              )}
+            </nav>
+
+            <h1 className="mt-4 text-[22px] md:text-[26px] font-semibold leading-tight text-[#111114]">{product.name}</h1>
+            <p className="mt-1.5 flex items-center gap-2 text-[13px] text-gray-500">
+              {product.brandSlug
+                ? <Link href={`/brand/${product.brandSlug}`} className="hover:text-gray-900 underline-offset-4 hover:underline">{brandName}</Link>
+                : <span>{brandName}</span>}
+              {brandIsFrench && <MadeInFranceBadge variant="light" />}
+              {brandIsEmirati && <MadeInUAEBadge variant="light" />}
+              {isHomemade && <span className="font-semibold uppercase tracking-[0.12em] text-[10.5px]" style={{ color: LAVENDER }}>Homemade</span>}
+            </p>
+
+            <a href="#reviews" className="mt-3 inline-flex items-center gap-2 w-fit group">
+              <Stars rating={rating} size={13} />
+              <span className="text-[12.5px] text-gray-500 group-hover:underline underline-offset-2">
+                {reviewCount > 0 ? `${rating.toFixed(1)} · ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : 'No reviews yet'}
+              </span>
             </a>
 
             {/* Price */}
-            <div className="mt-6 pb-6 border-b" style={{ borderColor: BORDER }}>
-              <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
-                <span className="text-[32px] font-bold text-gray-900 tabular-nums leading-none">{aed(product.price)}</span>
-                {hasDiscount && (
-                  <>
-                    <span className="text-[16px] text-gray-400 line-through tabular-nums">{aed(product.comparedprice)}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[12px] font-semibold" style={{ background: LAVENDER_LIGHT, color: LAVENDER_HOVER }}>
-                      Save {aed(product.comparedprice - product.price)}
-                    </span>
-                  </>
-                )}
-              </div>
-              <p className="mt-1.5 text-[12px] text-gray-400">VAT included</p>
-              {product.price > 0 && (
-                <div className="mt-4">
-                  <TabbyPromo price={product.price} source="product" lang="en" />
-                </div>
+            <div className="mt-5 flex items-baseline flex-wrap gap-x-3 gap-y-1">
+              <span className="text-[28px] md:text-[30px] font-semibold text-[#111114] tabular-nums leading-none">{aed(product.price)}</span>
+              {hasDiscount && (
+                <>
+                  <span className="text-[16px] text-gray-400 line-through tabular-nums">{aed(product.comparedprice)}</span>
+                  <span className="rounded-full px-2 py-0.5 text-[12px] font-semibold text-white" style={{ background: LAVENDER }}>−{discountPct}%</span>
+                </>
               )}
             </div>
+            <p className="mt-1.5 text-[12px] text-gray-400">VAT included{metaLine ? ` · ${metaLine}` : ''}</p>
 
-            {/* Short description */}
-            {product.description && (
-              <p className="mt-6 text-[15px] text-gray-600 leading-relaxed">
-                {product.description}
-                {hasLongCopy && (
-                  <a href="#details" className="ml-1.5 text-[13px] font-medium whitespace-nowrap hover:underline underline-offset-2" style={{ color: LAVENDER }}>
-                    Read more
-                  </a>
-                )}
-              </p>
-            )}
-
-            {/* Size selector — only when there is a real choice */}
+            {/* Size: rectangular option chips */}
             {sizes.length > 1 && (
               <div className="mt-6">
-                <p className="text-[13px] font-medium text-gray-700 mb-2.5">
-                  Size: <span className="font-semibold text-gray-900">{selectedSize}</span>
-                </p>
+                <p className="text-[13px] text-gray-600 mb-2.5">Size:</p>
                 <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Size">
                   {sizes.map(size => (
                     <button key={size} onClick={() => setSelectedSize(size)} role="radio" aria-checked={selectedSize === size}
-                      className="min-w-[64px] px-4 py-2.5 rounded-xl border text-[13px] font-medium transition-all duration-150"
-                      style={selectedSize === size
-                        ? { borderColor: LAVENDER, color: LAVENDER_HOVER, background: LAVENDER_LIGHT, boxShadow: `inset 0 0 0 1px ${LAVENDER}` }
-                        : { borderColor: '#e5e7eb', color: '#374151', background: 'white' }}>
+                      className={`min-w-[64px] px-4 py-2 border text-[13px] transition-colors ${selectedSize === size ? 'border-[#111114] text-[#111114] font-medium' : 'border-[#dcdcdc] text-gray-600 hover:border-gray-500'}`}>
                       {size}
                     </button>
                   ))}
@@ -395,151 +367,139 @@ export default function ProductClient({ params, initialProduct }) {
               </div>
             )}
 
-            {/* Stock */}
-            {hasStockInfo && (
-              <div className="mt-6 flex items-center gap-2">
-                {outOfStock ? (
-                  <><span className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[13px] font-semibold text-red-600">Out of stock</span></>
-                ) : preorderOnly ? (
-                  <><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: LAVENDER }} /><span className="text-[13px] font-semibold" style={{ color: LAVENDER }}>Pre-order · ships by {preorderShipBy}</span></>
-                ) : preorderQty > 0 ? (
-                  <><span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" /><span className="text-[13px] font-semibold text-amber-700">Only {stock} in stock · the other {preorderQty} ship{preorderQty === 1 ? 's' : ''} by {preorderShipBy}, in one parcel with the rest</span></>
-                ) : lowStock ? (
-                  <>
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
-                    </span>
-                    <span className="text-[13px] font-semibold text-amber-700">Only {stock} left — order soon</span>
-                  </>
-                ) : (
-                  <><span className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-[13px] font-medium text-emerald-700">In stock, ready to ship</span></>
-                )}
-              </div>
+            {/* Short description, folded like Pitaka's highlights */}
+            {product.description && (
+              <details open className="group mt-6 border-t border-[#ececec] pt-4">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-[13.5px] font-semibold text-[#111114]">
+                  Overview
+                  <Minus size={16} className="hidden group-open:block" /><Plus size={16} className="group-open:hidden" />
+                </summary>
+                <p className="mt-3 text-[14px] leading-relaxed text-gray-600">
+                  {product.description}
+                  {hasLongCopy && <a href="#details" className="ml-1.5 whitespace-nowrap text-[13px] font-medium text-[#111114] underline underline-offset-4">Read more</a>}
+                </p>
+              </details>
             )}
 
-            {/* Quantity + CTA + Wishlist */}
+            {/* Stock */}
+            {hasStockInfo && (
+              <p className="mt-6 flex items-center gap-2 text-[13px]">
+                {outOfStock ? (
+                  <><span className="w-2 h-2 rounded-full bg-red-500" /><span className="font-semibold text-red-600">Out of stock</span></>
+                ) : preorderOnly ? (
+                  <><span className="w-2 h-2 rounded-full" style={{ background: LAVENDER }} /><span className="font-semibold" style={{ color: LAVENDER }}>Pre-order · ships by {preorderShipBy}</span></>
+                ) : preorderQty > 0 ? (
+                  <><span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" /><span className="font-semibold text-amber-700">Only {stock} in stock · the other {preorderQty} ship{preorderQty === 1 ? 's' : ''} by {preorderShipBy}, in one parcel with the rest</span></>
+                ) : lowStock ? (
+                  <><span className="w-2 h-2 rounded-full bg-amber-500" /><span className="font-semibold text-amber-700">Only {stock} left</span></>
+                ) : (
+                  <><span className="w-2 h-2 rounded-full bg-emerald-500" /><span className="font-medium text-emerald-700">In stock, ready to ship</span></>
+                )}
+              </p>
+            )}
+
+            {/* Quantity + the big black button */}
             <div className="mt-3 flex items-stretch gap-2.5" ref={buyButtonRef}>
-              <div className="flex items-center rounded-full border border-gray-200 bg-white px-1">
+              <div className="flex items-center border border-[#dcdcdc]">
                 <button onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={quantity <= 1 || outOfStock}
-                  aria-label="Decrease quantity"
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors">
+                  aria-label="Decrease quantity" className="w-10 h-[52px] flex items-center justify-center text-gray-600 hover:text-gray-900 disabled:opacity-30">
                   <Minus size={14} />
                 </button>
-                <span className="w-7 text-center text-[15px] font-semibold text-gray-900 tabular-nums" aria-live="polite">{quantity}</span>
+                <span className="w-7 text-center text-[15px] font-medium tabular-nums" aria-live="polite">{quantity}</span>
                 <button onClick={() => setQuantity(q => Math.min(maxQty, q + 1))} disabled={quantity >= maxQty || outOfStock}
-                  aria-label="Increase quantity"
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-900 disabled:opacity-30 transition-colors">
+                  aria-label="Increase quantity" className="w-10 h-[52px] flex items-center justify-center text-gray-600 hover:text-gray-900 disabled:opacity-30">
                   <Plus size={14} />
                 </button>
               </div>
-
               <button onClick={handleAddToCart} disabled={outOfStock}
-                className={`flex-1 h-12 rounded-full text-[14px] font-semibold text-white flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(147,104,236,0.32)] hover:shadow-[0_10px_28px_rgba(147,104,236,0.42)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed ${BUTTON}`}>
-                {outOfStock
-                  ? 'Out of stock'
-                  : isAdded
-                    ? <><Check size={16} /> Added to cart</>
-                    : <><ShoppingBag size={16} /> {preorderOnly ? 'Pre-order' : 'Add to cart'} · {aed(product.price * quantity)}</>}
+                className={`flex-1 h-[52px] text-[14px] font-semibold uppercase tracking-[0.05em] flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${BUTTON}`}>
+                {isAdded ? <><Check size={16} /> Added to cart</> : outOfStock ? 'Out of stock' : <span>{ctaLabel}<span className="hidden sm:inline"> · {aed(product.price * quantity)}</span></span>}
               </button>
-
               <button onClick={handleWishlistToggle}
                 aria-label={isWishlisted ? 'Remove from wishlist' : 'Save to wishlist'} aria-pressed={isWishlisted}
-                className="w-12 h-12 rounded-full border flex items-center justify-center transition-all flex-shrink-0 hover:border-purple-300"
-                style={isWishlisted
-                  ? { borderColor: LAVENDER, color: LAVENDER, background: LAVENDER_LIGHT }
-                  : { borderColor: '#e5e7eb', color: '#9ca3af', background: 'white' }}>
+                className={`w-[52px] h-[52px] border flex items-center justify-center shrink-0 transition-colors ${isWishlisted ? 'border-[#111114] text-[#e63939]' : 'border-[#dcdcdc] text-gray-500 hover:border-gray-500'}`}>
                 <Heart size={18} className={isWishlisted ? 'fill-current' : ''} />
               </button>
             </div>
-            {outOfStock && (
-              <p className="mt-2 text-[12px] text-gray-500">Save it to your wishlist and we'll keep it handy for when it's back.</p>
+            {outOfStock && <p className="mt-2 text-[12px] text-gray-500">Save it to your wishlist and we&apos;ll keep it handy for when it&apos;s back.</p>}
+
+            {product.price > 0 && (
+              <div className="mt-4"><TabbyPromo price={product.price} source="product" lang="en" /></div>
             )}
 
-            {/* Delivery */}
-            <div className="mt-6">
-              <DeliveryCard
-                user={user}
-                shippingAddresses={shippingAddresses}
-                contactName={contactInfo?.name}
-                cartItems={cartItems}
-                quantity={quantity}
-              />
+            <div className="mt-5">
+              <DeliveryCard user={user} shippingAddresses={shippingAddresses} contactName={contactInfo?.name} cartItems={cartItems} quantity={quantity} />
             </div>
 
-            {/* Promises */}
-            <ul className="mt-4 grid grid-cols-3 gap-2">
+            <ul className="mt-5 grid grid-cols-3 gap-2 text-center">
               {[
                 { icon: Truck, title: 'Free shipping', sub: 'On 3+ items' },
                 { icon: RotateCcw, title: '14-day returns', sub: 'Hassle-free' },
                 { icon: ShieldCheck, title: '100% authentic', sub: `From ${brandName}` },
               ].map(({ icon: Icon, title, sub }) => (
-                <li key={title} className="flex flex-col items-center text-center gap-1 py-3 px-1.5 rounded-xl" style={{ background: WELL }}>
-                  <Icon size={16} strokeWidth={1.7} style={{ color: LAVENDER }} />
+                <li key={title} className="flex flex-col items-center gap-1 py-3 px-1.5" style={{ background: WELL }}>
+                  <Icon size={16} strokeWidth={1.6} className="text-[#111114]" />
                   <p className="text-[12px] font-semibold text-gray-800 leading-tight">{title}</p>
-                  <p className="text-[11px] text-gray-400 leading-tight line-clamp-1">{sub}</p>
+                  <p className="text-[11px] text-gray-500 leading-tight line-clamp-1">{sub}</p>
                 </li>
               ))}
             </ul>
           </div>
         </div>
+      </div>
 
+      {/* ── Section tabs, as on Pitaka ── */}
+      <nav aria-label="Product sections" className="border-t border-[#ececec] py-8 md:py-12 flex justify-center items-center gap-5 md:gap-8 text-[14px] md:text-[15px]">
+        {hasLongCopy && <a href="#details" className="text-[#111114] hover:opacity-70">Details</a>}
+        {hasLongCopy && <span aria-hidden="true" className="text-gray-300">|</span>}
+        <a href="#reviews" className="text-[#111114] hover:opacity-70">Reviews{reviewCount > 0 ? ` (${reviewCount})` : ''}</a>
+        {recommendations.length > 0 && <><span aria-hidden="true" className="text-gray-300">|</span><a href="#more" className="text-[#111114] hover:opacity-70">You may also like</a></>}
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Details + bundle ── */}
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
+        <div id="details" className="scroll-mt-28 grid lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
           <div className={btCompanions.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}>
             <ProductDetails product={product} />
           </div>
           {btCompanions.length > 0 && (
-            <div className="lg:col-span-5 lg:pt-[84px]">
-              <BoughtTogether
-                product={product}
-                image={allImages[0]}
-                companions={btCompanions}
-                onAddAll={handleBundleAdd}
-                disabled={outOfStock}
-              />
+            <div className="lg:col-span-5">
+              <BoughtTogether product={product} image={allImages[0]} companions={btCompanions} onAddAll={handleBundleAdd} disabled={outOfStock} />
             </div>
           )}
         </div>
       </div>
 
       {/* ── Reviews ── */}
-      <section id="reviews" className="scroll-mt-24 py-12 md:py-16 bg-white border-t border-gray-100">
+      <section id="reviews" className="scroll-mt-28 py-12 md:py-16 bg-white border-t border-[#ececec]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Reviews productId={product.id} />
         </div>
       </section>
 
-      {/* ── Recommendations ── */}
+      {/* ── You may also like: the same panels as the listing pages ── */}
       {recommendations.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 border-t border-gray-100">
-          <div className="flex items-end justify-between mb-6">
-            <div className="space-y-1">
-              <p className={EYEBROW}>Complete the routine</p>
-              <h2 className={SECTION_TITLE}>You might also like</h2>
+        <section id="more" className="scroll-mt-28 py-14 md:py-20 border-t border-[#ececec]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8 md:mb-12 text-center">
+              <h2 className={SECTION_TITLE}>You may also like</h2>
             </div>
-            <Link href={product.brandSlug ? `/brand/${product.brandSlug}` : '/all-products'}
-              className="shrink-0 text-sm font-medium transition-colors hover:opacity-70" style={{ color: LAVENDER }}>
-              {product.brandSlug ? `More from ${brandName}` : 'View all'} →
-            </Link>
-          </div>
-          <Carousel opts={{ align: 'start' }} className="w-full">
-            <CarouselContent className="-ml-4">
-              {recommendations.map(rec => (
-                <CarouselItem key={rec.id} className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
-                  <ProductCard {...rec} image={rec.imageUrl} />
-                </CarouselItem>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-2.5">
+              {recommendations.slice(0, 4).map(rec => (
+                <ProductCard key={rec.id} {...rec} image={rec.imageUrl} />
               ))}
-            </CarouselContent>
-            <div className="hidden md:block">
-              <CarouselPrevious className="-left-12" />
-              <CarouselNext className="-right-12" />
             </div>
-          </Carousel>
+            <div className="mt-9 flex justify-center">
+              <Link href={product.brandSlug ? `/brand/${product.brandSlug}` : '/all-products'}
+                className="inline-flex h-10 items-center rounded-full border-[1.5px] border-[#111114] px-6 text-[13px] font-semibold text-[#111114] hover:bg-[#111114] hover:text-white transition-colors">
+                {product.brandSlug ? `More from ${brandName}` : 'View all products'}
+              </Link>
+            </div>
+          </div>
         </section>
       )}
 
-      {/* ── Recently Viewed ── */}
+      {/* ── Recently viewed ── */}
       <div className="pb-24 md:pb-12">
         <RecentlyViewedSection excludeId={product.id} />
       </div>

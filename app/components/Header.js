@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, forwardRef } from 'react';
-import { ShoppingBag, ShoppingCart, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, ArrowRight, Droplets, Clock, Zap, Heart, Layers, Sun, Sparkles, Gift, LogOut, Package, MapPin, Settings } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, User, ChevronRight, Star, ShieldCheck, ArrowRight, Droplets, Clock, Zap, Heart, Layers, Sun, Sparkles, Gift, LogOut, Package, MapPin, Settings } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -9,7 +9,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PROMO_BAR_H } from './PromoBar';
 import BrandLogo from './BrandLogo';
 
 const CONCERN_META = {
@@ -51,11 +50,14 @@ const SHOP_LINKS = [
   { name: 'New Arrivals', href: '/new-arrivals' },
 ];
 
+// Fixed header height (also --header-h in globals.css, for layouts that offset around it)
+export const HEADER_H = { mobile: 70, desktop: 88 };
+
 const Header = forwardRef((_, ref) => {
   const [isMenuOpen,   setIsMenuOpen]   = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery,  setSearchQuery]  = useState('');
-  const [isScrolled,   setIsScrolled]   = useState(false);
+  const [pastHero,     setPastHero]     = useState(false);
   const [expandedMobileSection, setExpandedMobileSection] = useState(null);
 
   const { cartItems } = useCart();
@@ -66,11 +68,25 @@ const Header = forwardRef((_, ref) => {
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
+  const isHome = pathname === '/';
+  const overHero = isHome && !pastHero && !isMenuOpen;
+
+  // On the homepage, the header turns solid once the hero (#home-hero) is behind it
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 20);
+    if (!isHome) return;
+    const onScroll = () => {
+      const hero = document.getElementById('home-hero');
+      const headerH = window.innerWidth >= 768 ? HEADER_H.desktop : HEADER_H.mobile;
+      setPastHero(window.scrollY > (hero ? hero.offsetHeight : window.innerHeight * 0.8) - headerH);
+    };
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [isHome]);
 
   // Collapse any open accordion section whenever the mobile sidebar closes
   useEffect(() => {
@@ -85,172 +101,68 @@ const Header = forwardRef((_, ref) => {
     }
   };
 
-  /* ── icon button base classes ─────────────────────────────────── */
-  const iconBtn = 'relative w-[38px] h-[38px] rounded-full border border-[#e5e5ea] bg-white flex items-center justify-center text-[#2a2a31] cursor-pointer transition-colors duration-[120ms] hover:bg-[#f3f3f5]';
-
-  /* ── nav link classes ─────────────────────────────────────────── */
-  const navLink = (active) =>
-    `text-[13px] font-medium text-[#2a2a31] pb-[6px] border-b-2 transition-colors duration-[120ms] hover:text-[#111114] ${
-      active ? 'border-[#111114] text-[#111114]' : 'border-transparent'
-    }`;
+  /* ── header icons: plain, in the header's own colour ──────────────── */
+  const iconBtn = 'relative w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-opacity hover:opacity-70';
+  // The drawer and search overlay keep their light, bordered buttons
+  const panelBtn = 'relative w-[38px] h-[38px] rounded-full border border-[#e5e5ea] bg-white flex items-center justify-center text-[#2a2a31] cursor-pointer transition-colors duration-[120ms] hover:bg-[#f3f3f5]';
 
   return (
     <>
       {/* ── Main Header ─────────────────────────────────────────── */}
+      {/* Menu · centred logo · icons. On the homepage it floats see-through over the
+          hero and turns white once the hero has scrolled away; elsewhere it's white. */}
       <header
         ref={ref}
-        className={`fixed left-0 right-0 z-[150] transition-all duration-300 ${
-          isScrolled ? 'pt-3 px-4' : 'pt-0 px-0'
+        className={`fixed top-0 left-0 right-0 z-[150] transition-colors duration-300 ${
+          overHero ? 'bg-transparent text-white' : 'bg-white text-[#111114] border-b border-[#ececec]'
         }`}
-        style={{ top: PROMO_BAR_H }}
       >
-        <div
-          className={`mx-auto bg-white transition-all duration-300 ${
-            isScrolled ? 'max-w-5xl rounded-2xl' : 'max-w-full'
-          }`}
-          style={{
-            borderBottom: isScrolled ? 'none' : '1px solid #e5e5ea',
-            boxShadow: isScrolled ? '0 4px 14px rgba(17,17,20,.06)' : 'none',
-          }}
-        >
-          <div className="flex items-center gap-6 px-5 md:px-8 h-[56px] md:h-[60px]">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 md:px-10" style={{ height: 'var(--header-h)' }}>
+          {/* Menu */}
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="justify-self-start inline-flex items-center gap-3 h-10 -ml-1.5 px-1.5 text-[13px] font-semibold tracking-[0.08em] uppercase"
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          >
+            <Menu size={20} strokeWidth={1.6} />
+            <span className="hidden md:inline">Menu</span>
+          </button>
 
-            {/* Mobile hamburger */}
-            <button
-              type="button"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`${iconBtn} md:hidden shrink-0`}
-              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-            >
-              {isMenuOpen ? <X size={17} /> : <Menu size={17} />}
+          {/* Logo */}
+          <Link href="/" aria-label="Naya Lumière Cosmetics, home" className="rounded-md transition-opacity hover:opacity-80">
+            <Image
+              src="/naya-logo-white.png"
+              alt="Naya Lumière Cosmetics"
+              width={488}
+              height={72}
+              priority
+              className={`h-[29px] md:h-[34px] w-auto transition-[filter] duration-300 ${overHero ? '' : 'invert'}`}
+            />
+          </Link>
+
+          {/* Actions */}
+          <div className="justify-self-end flex items-center gap-1 md:gap-2">
+            <button type="button" onClick={() => setIsSearchOpen(true)} className={iconBtn} aria-label="Search">
+              <Search size={20} strokeWidth={1.6} />
             </button>
 
-            {/* Logo */}
-            <Link
-              href="/"
-              className="flex items-center shrink-0 rounded-md transition-opacity hover:opacity-75 active:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#9869f7] md:static absolute left-1/2 -translate-x-1/2 md:translate-x-0"
-            >
-              <BrandLogo priority />
-            </Link>
-
-            {/* Desktop nav — centered in the space between the logo and the action icons */}
-            <nav className="hidden md:flex flex-1 items-center justify-center gap-7">
-              {NAV_LINKS.map((item) => {
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-
-                if (item.hasDropdown === 'shop') {
-                  return (
-                    <div key={item.label} className="relative group/shop">
-                      <button
-                        onClick={() => router.push(item.href)}
-                        className={navLink(isActive) + ' flex items-center gap-1'}
-                      >
-                        {item.label}
-                        <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-200 group-hover/shop:rotate-[270deg]" />
-                      </button>
-
-                      {/* bridge */}
-                      <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]" />
-
-                      <div className="absolute top-[calc(100%+1rem)] left-0 w-[240px] bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_8px_32px_rgba(17,17,20,.10)] opacity-0 invisible group-hover/shop:opacity-100 group-hover/shop:visible transition-all duration-200 translate-y-2 group-hover/shop:translate-y-0 z-[200] p-2">
-                        {SHOP_LINKS.map((link) => (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className="flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] hover:text-[#111114] transition-colors"
-                          >
-                            {link.name}
-                            <ArrowRight size={12} className="text-[#8a8a93]" />
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item.hasDropdown === 'brands' && brands?.length > 0) {
-                  return (
-                    <div key={item.label} className="relative group/brands">
-                      <button className={navLink(isActive) + ' flex items-center gap-1'}>
-                        {item.label}
-                        <ChevronRight className="w-3 h-3 rotate-90 transition-transform duration-200 group-hover/brands:rotate-[270deg]" />
-                      </button>
-
-                      <div className="absolute top-full left-0 w-full h-4 bg-transparent z-[200]" />
-
-                      <div className="absolute top-[calc(100%+1rem)] left-0 w-[220px] bg-white border border-[#e5e5ea] rounded-2xl shadow-[0_8px_32px_rgba(17,17,20,.10)] opacity-0 invisible group-hover/brands:opacity-100 group-hover/brands:visible transition-all duration-200 translate-y-2 group-hover/brands:translate-y-0 z-[200] p-2">
-                        {brands.map((brand) => (
-                          <Link
-                            key={brand.id}
-                            href={`/brand/${brand.slug || brand.id}`}
-                            className="flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] hover:text-[#111114] transition-colors"
-                          >
-                            {brand.name}
-                            <ArrowRight size={12} className="text-[#8a8a93]" />
-                          </Link>
-                        ))}
-                        <div className="mt-1 pt-2 border-t border-[#e5e5ea] px-3">
-                          <Link href="/brands" className="text-[12px] font-medium text-[#9869f7] hover:text-[#7a4fe0] transition-colors">
-                            View all brands →
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item.highlight) {
-                  return (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="text-[13px] font-bold text-red-600 pb-[6px] border-b-2 border-transparent transition-colors duration-[120ms] hover:text-red-700"
-                    >
-                      {item.label}
-                    </Link>
-                  );
-                }
-
-                return (
-                  <Link key={item.label} href={item.href} className={navLink(isActive)}>
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
-              {/* Search */}
+            {/* Account */}
+            <div className="relative group/account hidden md:block">
               <button
                 type="button"
-                onClick={() => setIsSearchOpen(true)}
-                className={`${iconBtn} hidden md:flex`}
-                aria-label="Search"
+                onClick={() => { if (user) router.push('/account'); else router.push('/auth'); }}
+                className={iconBtn}
+                aria-label={user ? 'Account' : 'Sign in'}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <circle cx="11" cy="11" r="7"/>
-                  <path d="m20 20-3.5-3.5"/>
-                </svg>
+                {user?.profile_image ? (
+                  <span className="relative w-6 h-6 rounded-full overflow-hidden">
+                    <Image src={user.profile_image} alt={user.first_name || ''} fill className="object-cover" />
+                  </span>
+                ) : (
+                  <User size={20} strokeWidth={1.6} />
+                )}
               </button>
-
-              {/* Account */}
-              <div className="relative group/account hidden md:block">
-                <button
-                  type="button"
-                  onClick={() => { if (user) router.push('/account'); else router.push('/auth'); }}
-                  className={iconBtn}
-                  aria-label="Account"
-                >
-                  {user?.profile_image ? (
-                    <Image src={user.profile_image} alt={user.first_name} fill className="object-cover rounded-full" />
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                      <circle cx="12" cy="8" r="4"/>
-                      <path d="M4 21a8 8 0 0 1 16 0"/>
-                    </svg>
-                  )}
-                </button>
 
                 {/* bridge to keep hover alive */}
                 {user && <div className="absolute top-full right-0 w-full h-4 bg-transparent z-[200]" />}
@@ -313,7 +225,7 @@ const Header = forwardRef((_, ref) => {
                             {label}
                           </Link>
                         ))}
-                        {user?.role === 'admin' && (
+                        {(user?.role === 'admin' || user?.role === 'staff') && (
                           <Link href="/admin"
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-[#2a2a31] hover:bg-[#f3f3f5] transition-colors">
                             <ShieldCheck size={15} strokeWidth={1.8} className="text-[#8a8a93]" />
@@ -333,41 +245,22 @@ const Header = forwardRef((_, ref) => {
                     </div>
                   );
                 })()}
-              </div>
-
-              {/* Cart */}
-              <button
-                type="button"
-                onClick={() => router.push('/cart')}
-                className={iconBtn}
-                aria-label={`Cart${cartCount > 0 ? `, ${cartCount} items` : ''}`}
-              >
-                <ShoppingCart size={18} strokeWidth={1.8} />
-                {cartCount > 0 && (
-                  <span
-                    className="absolute -right-[3px] -top-[3px] w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-semibold text-white"
-                    style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
-                  >
-                    {cartCount > 9 ? '9+' : cartCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Sign In — desktop, only when logged out */}
-              {!user && (
-                <button
-                  type="button"
-                  onClick={() => router.push('/auth')}
-                  className="hidden md:inline-flex items-center gap-2 h-9 px-[18px] rounded-full text-[11px] font-semibold tracking-[0.14em] uppercase text-white cursor-pointer transition-all active:scale-[.98]"
-                  style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
-                >
-                  Sign In
-                  <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                    <path d="M5 12h14M13 5l7 7-7 7"/>
-                  </svg>
-                </button>
-              )}
             </div>
+
+            {/* Bag */}
+            <button
+              type="button"
+              onClick={() => router.push('/cart')}
+              className={iconBtn}
+              aria-label={`Bag${cartCount > 0 ? `, ${cartCount} items` : ''}`}
+            >
+              <ShoppingBag size={20} strokeWidth={1.6} />
+              {cartCount > 0 && (
+                <span className="absolute right-0 top-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-semibold text-white" style={{ background: 'rgb(147,104,236)' }}>
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -402,7 +295,7 @@ const Header = forwardRef((_, ref) => {
                     <button
                       type="button"
                       onClick={() => setIsSearchOpen(false)}
-                      className={iconBtn + ' shrink-0'}
+                      className={panelBtn + ' shrink-0'}
                       aria-label="Close"
                     >
                       <X size={18} />
@@ -441,14 +334,13 @@ const Header = forwardRef((_, ref) => {
         </AnimatePresence>
       </header>
 
-      {/* Spacer — matches header height plus the promo bar it's offset below */}
-      <div style={{ height: `calc(56px + ${PROMO_BAR_H}px)` }} className="w-full md:hidden" />
-      <div style={{ height: `calc(60px + ${PROMO_BAR_H}px)` }} className="w-full hidden md:block" />
+      {/* Spacer for the fixed header — except on the homepage, where the hero runs under it */}
+      {!isHome && <div aria-hidden="true" className="w-full" style={{ height: 'var(--header-h)' }} />}
 
-      {/* ── Mobile Sidebar ─────────────────────────────────────── */}
+      {/* ── Menu drawer (all screen sizes) ─────────────────────── */}
       <AnimatePresence>
         {isMenuOpen && (
-          <div className="md:hidden fixed inset-0 z-[300]">
+          <div className="fixed inset-0 z-[300]">
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40"
@@ -464,7 +356,7 @@ const Header = forwardRef((_, ref) => {
                 <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60">
                   <BrandLogo size="sm" />
                 </Link>
-                <button type="button" onClick={() => setIsMenuOpen(false)} className={iconBtn} aria-label="Close">
+                <button type="button" onClick={() => setIsMenuOpen(false)} className={panelBtn} aria-label="Close">
                   <X size={17} />
                 </button>
               </div>
@@ -612,7 +504,7 @@ const Header = forwardRef((_, ref) => {
                     >
                       My Account
                     </button>
-                    {user?.role === 'admin' && (
+                    {(user?.role === 'admin' || user?.role === 'staff') && (
                       <button
                         type="button"
                         onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}

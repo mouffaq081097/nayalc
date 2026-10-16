@@ -1,89 +1,108 @@
 'use client';
 
-import React from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Instagram, Twitter, Facebook, ArrowRight } from 'lucide-react';
-import BrandLogo from './BrandLogo';
+import { Instagram } from 'lucide-react';
+import { headingFont } from './home/SectionHeading';
+import { INSTAGRAM_URL } from '@/lib/seo';
+import { TRANSIT_LABEL } from '../../lib/shipping';
 
+const COLUMNS = [
+  { title: 'Boutique', links: [['All products', '/all-products'], ['Skincare', '/SkinCare'], ['Fragrance', '/fragrance'], ['New arrivals', '/new-arrivals'], ['Gift sets', '/gift-sets']] },
+  { title: 'House', links: [['Brands', '/brands'], ['Journal', '/journal'], ['Skin quiz', '/skin-quiz'], ['Naya Rewards', '/loyalty']] },
+  { title: 'Help', links: [['My account', '/account'], ['My orders', '/account/orders'], ['Privacy policy', '/privacy'], ['Terms of service', '/terms']] },
+];
+
+/** Email sign-up: the same /api/subscribe as the welcome popup, and the same real WELCOME10 code on success. */
+function SignUp() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle');
+  const [message, setMessage] = useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!email || status === 'loading') return;
+    setStatus('loading');
+    setMessage('');
+    try {
+      const res = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Something went wrong. Please try again.');
+      setStatus('done');
+    } catch (err) {
+      setStatus('error');
+      setMessage(err.message || 'Something went wrong. Please try again.');
+    }
+  };
+
+  if (status === 'done') {
+    return (
+      <p className="text-[13.5px] text-white/85 max-w-[320px]">
+        You&apos;re subscribed. Use code <b className="text-white tracking-wide">WELCOME10</b> for 10% off your first order.
+      </p>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="max-w-[320px]">
+      <div className="flex items-center gap-3 border-b border-white pb-2">
+        <label htmlFor="footer-email" className="sr-only">Email</label>
+        <input
+          id="footer-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          className="flex-1 min-w-0 bg-transparent text-[13.5px] text-white placeholder:text-[#8a8a92] outline-none"
+        />
+        <button type="submit" disabled={status === 'loading'} className="text-[13.5px] font-semibold text-white disabled:opacity-60">
+          {status === 'loading' ? 'Sending…' : 'Subscribe'}
+        </button>
+      </div>
+      <p className={`mt-2 text-[11.5px] ${status === 'error' ? 'text-[#fca5a5]' : 'text-[#a1a1aa]'}`}>
+        {status === 'error' ? message : 'Subscribe and get 10% off your first order.'}
+      </p>
+    </form>
+  );
+}
+
+/** Black footer on every storefront page, opened by the big closing line. */
 export default function Footer() {
   return (
-    <footer className="bg-white border-t border-gray-100 pt-20 pb-10">
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-8">
-        
-        {/* Top Section: Newsletter & Brand */}
-        <div className="flex flex-col lg:flex-row justify-between items-center lg:items-start gap-16 mb-20">
-          
-          {/* Brand & Newsletter */}
-          <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left">
-            <Link href="/" className="mb-6 rounded-md transition-opacity hover:opacity-75 active:opacity-60">
-                <BrandLogo />
-            </Link>
-            <p className="text-[13px] text-gray-500 max-w-md leading-relaxed mb-8 font-medium">
-              Join our exclusive journal for early access to seasonal previews, botanical insights, and private boutique events.
-            </p>
-            
-            <form className="w-full max-w-md relative flex items-center" onSubmit={(e) => e.preventDefault()}>
-              <input 
-                type="email" 
-                placeholder="Your email address" 
-                className="w-full bg-gray-50 border border-gray-200 text-black text-[13px] rounded-full px-6 py-4 outline-none focus:border-[var(--cl-purple)] transition-colors placeholder:text-gray-400"
-              />
-              <button 
-                type="submit" 
-                className="cl-gradient-btn absolute right-2 w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110 border-none shadow-none"
-              >
-                <ArrowRight size={16} />
-              </button>
-            </form>
-          </div>
+    <footer className="bg-black text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p className={`${headingFont} pt-24 pb-16 md:pt-36 md:pb-24 text-center text-[40px] md:text-[84px] font-normal uppercase leading-[1.05] tracking-[-0.01em]`}>
+          <span className="text-[#b79cff]">Glow</span> with<br />Naya Lumière
+        </p>
 
-          {/* Essential Links */}
-          <div className="flex gap-16 sm:gap-24 text-center lg:text-left">
-            <div className="flex flex-col gap-6">
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-black">Boutique</h3>
-              <div className="flex flex-col gap-4">
-                <Link href="/all-products" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">All Products</Link>
-                <Link href="/SkinCare" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Skincare</Link>
-                <Link href="/fragrance" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Fragrance</Link>
-                <Link href="/new-arrivals" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">New Arrivals</Link>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-6">
-              <h3 className="text-[11px] font-bold uppercase tracking-widest text-black">House</h3>
-              <div className="flex flex-col gap-4">
-                <Link href="#" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Our Story</Link>
-                <Link href="#" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Contact</Link>
-                <Link href="/account" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Account</Link>
-                <Link href="/orders" className="text-[13px] font-medium text-gray-500 hover:text-black transition-colors">Orders</Link>
-              </div>
-            </div>
+        <div className="grid grid-cols-2 md:grid-cols-[1.4fr_repeat(3,1fr)] gap-x-8 gap-y-10">
+          <div className="col-span-2 md:col-span-1 grid gap-6 content-start">
+            <SignUp />
+            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label="Naya Lumière on Instagram" className="w-fit text-white/90 hover:text-white">
+              <Instagram size={20} strokeWidth={1.6} />
+            </a>
           </div>
+          {COLUMNS.map((col) => (
+            <div key={col.title}>
+              <h3 className="mb-3.5 text-[13.5px] font-semibold">{col.title}</h3>
+              <ul className="grid gap-2.5 text-[13px] text-[#d4d4d8]">
+                {col.links.map(([label, href]) => (
+                  <li key={href}><Link href={href} className="hover:text-white transition-colors">{label}</Link></li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        {/* Bottom Section */}
-        <div className="flex flex-col-reverse md:flex-row justify-between items-center gap-6 pt-8 border-t border-gray-100">
-          <div className="flex flex-col items-center md:items-start gap-3">
-            <p className="text-[12px] text-gray-400 font-medium">© 2026 Naya Lumière Cosmetics Inc.</p>
-            <div className="flex items-center gap-6 text-[12px] text-gray-400 font-medium">
-              <Link href="/privacy" className="hover:text-black transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="hover:text-black transition-colors">Terms of Service</Link>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <a href="#" className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black hover:border-gray-300 hover:bg-white transition-all">
-              <Instagram size={16} />
-            </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black hover:border-gray-300 hover:bg-white transition-all">
-              <Twitter size={16} />
-            </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black hover:border-gray-300 hover:bg-white transition-all">
-              <Facebook size={16} />
-            </a>
-          </div>
+        <div className="mt-14 md:mt-20 py-5 border-t border-[#2a2a2e] flex flex-wrap justify-between gap-2.5 text-[12px] text-[#a1a1aa]">
+          <span>© {new Date().getFullYear()} Naya Lumière Cosmetics</span>
+          <span>Delivery across the UAE in {TRANSIT_LABEL}</span>
         </div>
-
       </div>
     </footer>
   );

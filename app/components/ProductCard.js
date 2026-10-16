@@ -2,17 +2,19 @@ import React, { useState, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartContext } from '../context/CartContext';
-import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, BadgeCheck, Share2, Flame } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, Share2, Flame } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
 import { Badge } from './ui/badge';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { MadeInFranceBadge, FranceFlag } from './MadeInFranceBadge';
 import { MadeInUAEBadge, UAEFlag } from './MadeInUAEBadge';
 import { getDeliveryInfo, getPreorderInfo, FREE_SHIPPING_FROM } from '../../lib/shipping';
 import { isPreorderOnly, leadDays } from '../../lib/backorderRules';
 import { formatAED, viewCountLabel } from '../lib/utils';
+import { shortBrand } from '@/lib/seo';
+import { cardName } from './home/HomeProductCard';
 
 // Cloud Luxe accent for card badges (rank, best seller, saving)
 const LAVENDER = 'rgb(147,104,236)';
@@ -77,6 +79,16 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const displayImage = (isHovered && imageUrls.length > 1) ? imageUrls[1] : (image || (imageUrls.length > 0 ? imageUrls[0] : '/placeholder-image.jpg'));
   const secondImage = imageUrls.length > 1 ? imageUrls[1] : null;
 
+  // One tag, top-right: sold out › pre-order › discount › rank › best seller › new
+  const tag = !canBuy ? { label: 'Sold out', muted: true }
+    : preorderOnly ? { label: 'Pre-order' }
+    : discount > 0 ? { label: `−${discount}%` }
+    : rank ? { label: `No. ${rank}` }
+    : isBestseller ? { label: 'Best seller', soft: true }
+    : isNew ? { label: 'New' }
+    : null;
+  const roundBtn = 'w-8 h-8 shrink-0 rounded-full border-[1.2px] border-[#111114] bg-[#f6f5f2] text-[#111114] flex items-center justify-center transition-colors hover:bg-[#111114] hover:text-white';
+
   const handleShare = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -136,7 +148,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
   const handleAddToCart = (e) => {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    addToCart({ id, name, price, imageUrl: image, categoryName: category, brand: brandName, stock_quantity, backorderable, backorder_lead_days, size }, quantity);
+    addToCart({ id, slug, name, price, originalPrice, imageUrl: image, categoryName: category, brand: brandName, stock_quantity, backorderable, backorder_lead_days, size }, quantity);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
@@ -149,261 +161,112 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
   return (
     <>
-      {/* ── Editorial Product Card ── */}
+      {/* ── Product panel (same design as the homepage's HomeProductCard) ── */}
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="group relative flex flex-col h-full w-full bg-white"
-        style={{ border: '1px solid #e8e8e8' }}
+        className="group relative flex flex-col h-full w-full min-w-0"
       >
-        {/* Image area */}
-        <div className="relative aspect-square overflow-hidden bg-white">
-          <Link href={productUrl} className="block w-full h-full relative z-0">
-            <AnimatePresence mode="wait">
-              <motion.div
+        <div className="relative aspect-[2/3] md:aspect-[3/4] bg-[#f6f5f2] flex flex-col p-3 md:p-[18px]">
+          {/* The whole panel opens the product; the buttons sit above this link */}
+          <Link href={productUrl} aria-label={name} className="absolute inset-0 z-0" />
+
+          <p className="relative pr-14 text-[13.5px] md:text-[15px] font-semibold leading-[1.25] text-[#111114] line-clamp-2 pointer-events-none">
+            {cardName(name)}
+          </p>
+          {brandName && (
+            <p className="relative mt-[3px] flex items-center gap-1.5 text-[11.5px] md:text-[12px] text-[#6b6b73] min-w-0 pointer-events-none">
+              <span className="truncate">{shortBrand(brandName)}</span>
+              {isFrench && <FranceFlag title="Made in France" />}
+              {isEmirati && <UAEFlag title="Made in the UAE" />}
+            </p>
+          )}
+          {/* The Crystal Bar is made by hand */}
+          {name && /crystal\s*bar/i.test(name) && (
+            <p className="relative mt-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] pointer-events-none" style={{ color: LAVENDER }}>
+              Homemade
+            </p>
+          )}
+          {tag && (
+            <span
+              className={`absolute z-10 top-3 right-3 md:top-4 md:right-4 rounded-full px-2 py-[3px] text-[10.5px] font-semibold ${tag.muted ? 'bg-gray-500 text-white' : tag.soft ? 'text-[#5b3fc4]' : 'text-white'}`}
+              style={tag.muted ? undefined : { background: tag.soft ? 'rgba(147,104,236,0.14)' : LAVENDER }}
+            >
+              {tag.label}
+            </span>
+          )}
+
+          <div className="relative flex-1 min-h-0 mx-[8%] mt-3.5 mb-3 pointer-events-none">
+            {imgError ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <Sparkles size={30} className="text-gray-300" strokeWidth={1} />
+              </div>
+            ) : (
+              <Image
                 key={displayImage}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                className="relative w-full h-full"
-              >
-                {imgError ? (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                    <Sparkles size={32} style={{ color: 'rgba(147,51,234,0.2)' }} strokeWidth={1} />
-                  </div>
-                ) : (
-                  <Image
-                    src={displayImage}
-                    alt={seoAlt}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
-                    className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
-                    onError={() => setImgError(true)}
-                  />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </Link>
-
-          {/* Top-left badge stack. Discount is no longer shown here — it now sits
-              inline before the price instead. */}
-          <div className="absolute top-0 left-0 z-10 flex flex-col items-start">
-            {rank ? (
-              <span
-                className="flex items-center justify-center w-7 h-7 m-2 rounded-full text-[13px] font-bold text-white leading-none"
-                style={{ background: LAVENDER }}
-              >
-                {rank}
-              </span>
-            ) : (
-              isBestseller && (
-                <span
-                  className="m-2 rounded-full text-[10.5px] font-semibold px-2.5 py-1 leading-none"
-                  style={{ background: 'rgba(147,104,236,0.12)', color: '#6d4fd6' }}
-                >
-                  Best seller
-                </span>
-              )
-            )}
-
-            {isNew && !isBestseller && !rank && (
-              <span
-                className="m-2 rounded-full text-[10.5px] font-semibold text-white px-2.5 py-1 leading-none"
-                style={{ background: LAVENDER }}
-              >
-                New
-              </span>
-            )}
-          </div>
-
-          {/* Top-right: quick action icons — visible on hover */}
-          <div className="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button
-              onClick={handleWishlistToggle}
-              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95"
-              style={{ border: '1px solid #e8e8e8' }}
-              aria-label="Add to wishlist"
-            >
-              <Heart
-                size={13}
-                strokeWidth={isWishlisted ? 0 : 1.75}
-                style={{ color: isWishlisted ? '#e63939' : '#555' }}
-                className={isWishlisted ? 'fill-[#e63939]' : ''}
+                src={displayImage}
+                alt={seoAlt}
+                fill
+                sizes="(max-width: 768px) 45vw, (max-width: 1280px) 25vw, 300px"
+                className={`object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-[1.04] ${canBuy ? '' : 'opacity-55'}`}
+                onError={() => setImgError(true)}
               />
-            </button>
-            <button
-              onClick={toggleQuickView}
-              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95"
-              style={{ border: '1px solid #e8e8e8' }}
-              aria-label="Quick view"
-            >
-              <Eye size={13} strokeWidth={1.75} style={{ color: '#555' }} />
-            </button>
-            <button
-              onClick={handleAIGenerate}
-              className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-150 hover:scale-110 active:scale-95"
-              style={{ border: '1px solid #e8e8e8' }}
-              aria-label="AI Insights"
-            >
-              <Wand2 size={13} strokeWidth={1.75} style={{ color: '#555' }} />
-            </button>
+            )}
           </div>
 
-          {/* ADD TO CART — slides up from bottom of image on hover */}
-          <div
-            className="absolute bottom-0 left-0 right-0 z-10 flex justify-center pb-3 transition-all duration-300 ease-out"
-            style={{
-              transform: isHovered ? 'translateY(0)' : 'translateY(110%)',
-              opacity: isHovered ? 1 : 0,
-            }}
-          >
-            {canBuy ? (
+          <div className="relative z-10 flex items-end justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              {canBuy && (
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  aria-label={preorderOnly ? `Pre-order ${name}` : `Add ${name} to bag`}
+                  className={`${roundBtn} group-hover:bg-[#111114] group-hover:text-white`}
+                >
+                  {addedToCart ? <Check size={15} strokeWidth={2} /> : <ShoppingBag size={14} strokeWidth={1.75} />}
+                </button>
+              )}
               <button
-                onClick={handleAddToCart}
-                className="px-6 py-2.5 text-[10px] font-black text-white uppercase tracking-widest flex items-center justify-center gap-2 rounded-full shadow-lg transition-all duration-150 active:scale-95"
-                style={{
-                  background: addedToCart ? '#7c3aed' : '#9333ea',
-                  minWidth: '160px',
-                }}
+                type="button"
+                onClick={handleWishlistToggle}
+                aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                aria-pressed={isWishlisted}
+                className={roundBtn}
               >
-                {addedToCart ? (
-                  <>
-                    <BadgeCheck size={13} className="fill-white text-white" />
-                    Added
-                  </>
-                ) : (
-                  <>
-                    {preorderOnly ? 'Pre-order' : 'Add to Cart'}
-                  </>
-                )}
+                <Heart size={14} strokeWidth={isWishlisted ? 0 : 1.75} className={isWishlisted ? 'fill-[#e63939]' : ''} />
               </button>
-            ) : (
-              <button
-                className="px-6 py-2.5 text-[10px] font-black text-white uppercase tracking-widest rounded-full"
-                style={{ background: '#aaa', minWidth: '160px' }}
-              >
-                Notify Me
+              {/* Desktop extras on hover */}
+              <button type="button" onClick={toggleQuickView} aria-label="Quick view" className={`${roundBtn} hidden md:flex opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
+                <Eye size={14} strokeWidth={1.75} />
               </button>
-            )}
+              <button type="button" onClick={handleAIGenerate} aria-label="AI insights" className={`${roundBtn} hidden md:flex opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
+                <Wand2 size={14} strokeWidth={1.75} />
+              </button>
+            </div>
+            <p className="text-right text-[14px] font-semibold text-[#111114] leading-tight pointer-events-none">
+              {formatAED(price)}
+              {showComparePrice && <span className="block text-[11.5px] font-normal text-[#9a9aa2] line-through">{formatAED(originalPrice)}</span>}
+            </p>
           </div>
         </div>
 
-        {/* Info section */}
-        <div className="flex flex-col px-3 pt-3 pb-4 gap-1.5">
-          {/* Brand, with a small origin flag in place of the full "Made in" pill */}
-          {brandName && (
-            <span className="flex items-center gap-1.5 min-w-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400">
-              <span className="truncate">{brandName}</span>
-              {isFrench && <FranceFlag title="Made in France" />}
-              {isEmirati && <UAEFlag title="Made in UAE" />}
-            </span>
-          )}
-
-          {/* Name */}
-          <Link href={productUrl} className="block hover:text-gray-600 transition-colors duration-150">
-            <span className="text-[13.5px] font-medium leading-[1.4] text-gray-900 line-clamp-2 font-sans">
-              {name}
-            </span>
-          </Link>
-
-          {/* Homemade tag — Crystal Bar only */}
-          {name && /crystal\s*bar/i.test(name) && (
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '3px 9px',
-                borderRadius: '100px',
-                background: 'linear-gradient(135deg, rgba(248,240,255,0.97), rgba(255,240,250,0.97))',
-                border: '1px solid rgba(216,180,254,0.55)',
-                boxShadow: '0 1px 8px rgba(147,51,234,0.12), inset 0 1px 0 rgba(255,255,255,0.8)',
-                fontSize: '8.5px',
-                fontWeight: 700,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: '#6b21a8',
-                width: 'fit-content',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              <Sparkles size={9} color="#9333ea" strokeWidth={2.5} style={{ flexShrink: 0 }} />
-              Homemade
-            </span>
-          )}
-
-          {/* Stars — only once the product has real reviews */}
+        {/* Live facts, the same as the homepage cards */}
+        <div className="pt-2.5 px-0.5 grid gap-0.5 text-[12px] text-[#6b6b73]">
           {hasReviews && (
-            <div className="flex items-center gap-1.5">
-              <div className="flex gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={10}
-                    className={i < Math.round(rating) ? 'fill-[#e0a800] text-[#e0a800]' : 'fill-gray-200 text-gray-200'}
-                  />
-                ))}
-              </div>
-              <span className="text-[10px] text-gray-400">({reviewCount})</span>
-            </div>
-          )}
-
-          {/* Real view count — quiet social proof */}
-          {viewCount > 0 && (
-            <p className="text-[11.5px] font-medium text-emerald-700">
-              {viewCountLabel(viewCount)} viewed this month
-            </p>
-          )}
-
-          {/* Price row — wraps instead of squeezing/overflowing on narrow mobile cards */}
-          <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 sm:gap-2 mt-0.5">
-            <span className="whitespace-nowrap text-[14px] font-semibold text-gray-900">
-              {formatAED(price)}
+            <span className="flex items-center gap-1">
+              <Star size={12} className="fill-[#f5b301] text-[#f5b301]" />
+              {rating.toFixed(1)} <span className="opacity-70">({reviewCount})</span>
             </span>
-            {showComparePrice && (
-              <span className="whitespace-nowrap text-[11.5px] text-gray-400 line-through font-normal">
-                {formatAED(originalPrice)}
-              </span>
-            )}
-            {discount > 0 && (
-              <span
-                className="flex-shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
-                style={{ background: 'rgba(147,104,236,0.12)', color: '#6d4fd6' }}
-              >
-                Save {discount}%
-              </span>
-            )}
-          </div>
-
-          {/* Live delivery estimate — same UAE-cutoff calculation as the product page.
-              Only shown for items that can actually ship right now; sold-out items
-              get an honest "Out of stock" label instead of a false delivery promise.
-              The range alone fills a card; the same-day countdown lives on the product page. */}
+          )}
+          {viewCount >= 5 && <span className="font-medium text-[#15803d]">{viewCountLabel(viewCount)} viewed this month</span>}
           {stock_quantity > 0 ? (
-            <p className="flex items-start md:items-center gap-1.5 text-[12px] md:text-[12.5px] text-gray-600 mt-1 min-w-0">
-              <Truck size={14} className="flex-shrink-0 mt-px md:mt-0" style={{ color: LAVENDER }} />
-              <span className="md:truncate">
-                Arrives <span className="font-semibold text-gray-900 whitespace-nowrap">{delivery.rangeLabel}</span>
-              </span>
-            </p>
+            <span>Arrives <b className="font-semibold text-[#111114]">{delivery.rangeLabel}</b></span>
           ) : preorderOnly ? (
-            <p className="flex items-start md:items-center gap-1.5 text-[12px] md:text-[12.5px] text-gray-600 mt-1 min-w-0">
-              <Truck size={14} className="flex-shrink-0 mt-px md:mt-0" style={{ color: LAVENDER }} />
-              <span className="md:truncate">
-                <span className="font-semibold" style={{ color: LAVENDER }}>Pre-order</span> · ships by <span className="font-semibold text-gray-900 whitespace-nowrap">{preorderShipBy}</span>
-              </span>
-            </p>
+            <span>Ships by <b className="font-semibold text-[#111114]">{preorderShipBy}</b></span>
           ) : (
-            <p className="text-[12.5px] font-bold text-gray-500 mt-1">Out of stock</p>
+            <span className="font-semibold text-gray-500">Out of stock</span>
           )}
-
-          {/* Real, exact remaining stock — only when it's actually running low */}
-          {isLowStock && (
-            <p className="text-[11px] font-semibold text-amber-700">
-              Only {stock_quantity} left
-            </p>
-          )}
+          {isLowStock && <span className="font-semibold text-[#b45309]">Only {stock_quantity} left</span>}
         </div>
       </div>
 

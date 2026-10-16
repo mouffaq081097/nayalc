@@ -56,7 +56,7 @@ export default function NewArrivalsClient() {
   }, [allProducts, searchTerm, sortBy]);
 
   return (
-    <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+    <div className="bg-white min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       {/* Background Aura */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-pink/[0.03] rounded-full blur-[120px]"></div>
@@ -66,7 +66,7 @@ export default function NewArrivalsClient() {
       {/* Tactile Paper Grain Overlay */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
 
-      <StoreHeader title="Latest." />
+      <StoreHeader title="New arrivals" subtitle="The latest additions to the store." />
       <StoreCategoryNav />
 
       <div className="container mx-auto px-4 md:px-10 relative z-30 pt-16">

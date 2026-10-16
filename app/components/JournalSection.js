@@ -2,111 +2,44 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from './ui/carousel.tsx';
-import { Container } from './ui/Container';
 import { BookOpen } from 'lucide-react';
+import { Container } from './ui/Container';
 import { useJournalArticles } from '../hooks/useJournalArticles';
-import { SectionHeading } from './home/SectionHeading';
+import { SectionHeading, Pill, headingFont } from './home/SectionHeading';
 
-const LAVENDER = 'rgb(147,104,236)';
-
-function TeaserCard({ article }) {
-  const cover = article.coverImageUrl;
-  return (
-    <Link href={`/journal/${article.slug}`} className="group block">
-      <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-        {cover ? (
-          <Image
-            src={cover}
-            alt={article.title}
-            fill
-            sizes="(max-width: 768px) 45vw, 200px"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: '#f5f5f6' }}>
-            <BookOpen size={26} style={{ color: LAVENDER }} strokeWidth={1.5} />
-          </div>
-        )}
-      </div>
-      <p className="mt-2.5 text-[13px] font-medium text-gray-800 leading-snug line-clamp-2 group-hover:opacity-70 transition-opacity">
-        {article.title}
-      </p>
-    </Link>
-  );
-}
-
-function HubTile() {
-  return (
-    <Link href="/journal" className="group block">
-      <div
-        className="aspect-square rounded-lg flex flex-col items-center justify-center text-center px-3 bg-gray-900 transition-colors group-hover:bg-gray-700"
-      >
-        <span className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: 'rgb(196,167,254)' }}>Our</span>
-        <span className="text-[22px] font-extrabold text-white uppercase tracking-[0.02em] leading-none mt-1">Journal</span>
-      </div>
-    </Link>
-  );
-}
-
+/**
+ * The three latest journal articles: cover, title, a two-line summary and a
+ * "Read the article" link, then a pill to the journal. Phones swipe the cards.
+ */
 export function JournalSection() {
   const { articles, loading } = useJournalArticles();
   if (!loading && articles.length === 0) return null;
 
-  const firstHalf = articles.slice(0, Math.ceil(articles.length / 2));
-  const secondHalf = articles.slice(Math.ceil(articles.length / 2));
-
   return (
-    <section className="py-8 md:py-12 relative overflow-hidden bg-white">
-      <Container className="relative z-10">
-        <SectionHeading eyebrow="The Journal" title="Stories from the house" href="/journal" linkLabel="View all →" />
-
-        {loading ? (
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="aspect-square rounded-lg bg-gray-100 animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <Carousel opts={{ align: 'start', loop: true }} className="w-full">
-            <CarouselContent className="-ml-3">
-              {firstHalf.map((article) => (
-                <CarouselItem key={article.slug} className="pl-3 basis-[42%] sm:basis-[26%] lg:basis-[16%]">
-                  <TeaserCard article={article} />
-                </CarouselItem>
+    <section className="pt-14 md:pt-24 bg-white">
+      <Container>
+        <SectionHeading title="From the journal" />
+        <div className="grid grid-flow-col auto-cols-[82%] md:grid-flow-row md:grid-cols-3 md:auto-cols-auto gap-3.5 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-px-4 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="aspect-[4/3] bg-[#f6f5f2] animate-pulse" />)
+            : articles.slice(0, 3).map((article) => (
+                <Link key={article.slug} href={`/journal/${article.slug}`} className="group grid gap-3.5 content-start snap-start min-w-0">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-[#f6f5f2]">
+                    {article.coverImageUrl ? (
+                      <Image src={article.coverImageUrl} alt="" fill sizes="(max-width: 768px) 82vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><BookOpen size={28} strokeWidth={1.5} className="text-gray-400" /></div>
+                    )}
+                  </div>
+                  <h3 className={`${headingFont} text-[18px] md:text-[19px] font-medium leading-[1.25] text-[#111114] text-balance`}>{article.title}</h3>
+                  {article.excerpt && <p className="text-[14px] leading-relaxed text-[#6b6b73] line-clamp-2">{article.excerpt}</p>}
+                  <span className="text-[13px] font-semibold text-[#111114] underline underline-offset-4 decoration-gray-300 group-hover:decoration-gray-900">Read the article</span>
+                </Link>
               ))}
-              <CarouselItem className="pl-3 basis-[42%] sm:basis-[26%] lg:basis-[16%]">
-                <HubTile />
-              </CarouselItem>
-              {secondHalf.map((article) => (
-                <CarouselItem key={article.slug} className="pl-3 basis-[42%] sm:basis-[26%] lg:basis-[16%]">
-                  <TeaserCard article={article} />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-
-            <div className="hidden md:block">
-              <CarouselPrevious
-                className="left-[-18px] h-10 w-10 rounded-full transition-all duration-300 hover:scale-105"
-                style={{
-                  background: 'rgba(255,255,255,0.88)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid #e5e7eb',
-                  boxShadow: '0 2px 12px rgba(17,17,24,0.08)',
-                }}
-              />
-              <CarouselNext
-                className="right-[-18px] h-10 w-10 rounded-full transition-all duration-300 hover:scale-105"
-                style={{
-                  background: 'rgba(255,255,255,0.88)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid #e5e7eb',
-                  boxShadow: '0 2px 12px rgba(17,17,24,0.08)',
-                }}
-              />
-            </div>
-          </Carousel>
-        )}
+        </div>
+        <div className="mt-9 md:mt-11 flex justify-center">
+          <Pill href="/journal">Visit the journal</Pill>
+        </div>
       </Container>
     </section>
   );

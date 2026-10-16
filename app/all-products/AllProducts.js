@@ -1,10 +1,9 @@
 "use client";
 
-import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../components/ProductCard';
-import Link from 'next/link';
+import { ListingHeader } from '@/app/components/ListingHeader';
 import { Search, X, Filter, Check, ArrowRight, Minus, Plus as PlusIcon, Grid2X2, List } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
@@ -337,106 +336,16 @@ export default function AllProductsPage() {
   return (
     <div className="bg-white min-h-screen text-gray-900 overflow-x-hidden">
 
-      {/* ── Hero Banner ── */}
-      <div
-        className="relative w-full overflow-hidden"
-        style={{ height: '240px', background: 'linear-gradient(100deg, #fdf8f3 0%, #f7ede2 45%, #f0e2d5 100%)' }}
-      >
-        {/* Warm decorative lines — left half only */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <linearGradient id="wlAlpha" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="white" stopOpacity="1"/>
-              <stop offset="48%" stopColor="white" stopOpacity="1"/>
-              <stop offset="100%" stopColor="white" stopOpacity="0"/>
-            </linearGradient>
-            <mask id="wlMask"><rect width="100%" height="100%" fill="url(#wlAlpha)"/></mask>
-          </defs>
-          <g mask="url(#wlMask)" opacity="0.22">
-            <path d="M-40 55 Q90 55 90 27 Q90 0 180 0 Q270 0 270 27 Q270 55 360 55" fill="none" stroke="#b07850" strokeWidth="1.1"/>
-            <path d="M-40 95 Q90 95 90 67 Q90 40 180 40 Q270 40 270 67 Q270 95 360 95" fill="none" stroke="#b07850" strokeWidth="0.9"/>
-            <path d="M-40 135 Q90 135 90 107 Q90 80 180 80 Q270 80 270 107 Q270 135 360 135" fill="none" stroke="#b07850" strokeWidth="0.9"/>
-            <path d="M-40 175 Q90 175 90 147 Q90 120 180 120 Q270 120 270 147 Q270 175 360 175" fill="none" stroke="#b07850" strokeWidth="0.7"/>
-            <path d="M-40 215 Q90 215 90 187 Q90 160 180 160 Q270 160 270 187 Q270 215 360 215" fill="none" stroke="#b07850" strokeWidth="0.7"/>
-          </g>
-        </svg>
-
-        {/* ── Mobile: full-bleed bg, text stays readable ── */}
-        <div className="md:hidden absolute inset-0 pointer-events-none overflow-hidden">
-          <Image
-            src="/Untitled design.png"
-            alt="All Products"
-            fill
-            className="object-cover"
-            style={{
-              objectPosition: '65% center',
-              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 20%, rgba(0,0,0,0.55) 50%, black 70%)',
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 20%, rgba(0,0,0,0.55) 50%, black 70%)',
-            }}
-            priority
-          />
-          {/* Warm tint so text on left is crisp */}
-          <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to right, rgba(253,248,243,0.97) 0%, rgba(253,248,243,0.7) 35%, transparent 65%)',
-          }} />
-        </div>
-
-        {/* ── Desktop: image masked at every edge, no overlays needed ── */}
-        <div
-          className="hidden md:block absolute top-0 bottom-0 right-0 pointer-events-none overflow-hidden"
-          style={{ width: '68%' }}
-        >
-          <Image
-            src="/Untitled design.png"
-            alt="All Products"
-            fill
-            className="object-cover"
-            style={{
-              objectPosition: '40% center',
-              /* mask fades: left edge heavy, top/bottom light, right clip */
-              maskImage: [
-                'linear-gradient(to right,  transparent 0%, rgba(0,0,0,0.25) 10%, rgba(0,0,0,0.7) 22%, black 38%, black 88%, rgba(0,0,0,0.4) 100%)',
-                'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
-              ].join(', '),
-              WebkitMaskImage: [
-                'linear-gradient(to right,  transparent 0%, rgba(0,0,0,0.25) 10%, rgba(0,0,0,0.7) 22%, black 38%, black 88%, rgba(0,0,0,0.4) 100%)',
-                'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
-              ].join(', '),
-              maskComposite: 'intersect',
-              WebkitMaskComposite: 'destination-in',
-            }}
-            priority
-          />
-        </div>
-
-        {/* Foreground left anchor — pulls the bg colour across the seam zone */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: 'linear-gradient(to right, #fdf8f3 0%, rgba(253,248,243,0.92) 16%, rgba(253,248,243,0.38) 30%, transparent 44%)',
-        }} />
-
-        {/* Copy */}
-        <div className="relative z-10 h-full flex flex-col justify-center px-8 md:px-14" style={{ maxWidth: '56%' }}>
-          <nav className="text-[11px] font-medium mb-4 flex items-center gap-1.5" style={{ color: 'rgba(140,90,50,0.6)' }}>
-            <Link href="/" className="hover:opacity-100 transition-opacity">Home</Link>
-            <span style={{ color: 'rgba(140,90,50,0.3)' }}>›</span>
-            <span style={{ color: 'rgba(140,90,50,0.85)' }}>Shop Catalog</span>
-          </nav>
-          <h1
-            className="font-bold leading-none tracking-tight"
-            style={{ fontSize: 'clamp(32px, 4vw, 52px)', color: '#2a1408' }}
-          >
-            {bestsellerOnly ? 'Best Sellers' : 'All Products'}
-          </h1>
-          <p className="mt-2.5 text-[13px] leading-relaxed" style={{ color: 'rgba(100,60,20,0.55)' }}>
-            {bestsellerOnly
-              ? 'Our real top sellers, ranked by actual units sold'
-              : allProducts.length > 0 ? `${allProducts.length} products curated for you` : 'Curated luxury beauty'}
-          </p>
-        </div>
-      </div>
+      <ListingHeader
+        crumbs={[{ label: 'Home', href: '/' }, { label: bestsellerOnly ? 'Best sellers' : 'All products' }]}
+        title={bestsellerOnly ? 'Best sellers' : 'All products'}
+        subtitle={bestsellerOnly
+          ? 'Our real top sellers, ranked by units sold.'
+          : allProducts.length > 0 ? `${allProducts.length} products from GERnétic, Zorah and Naya Lumière.` : null}
+      />
 
       {/* ── Category pills bar ── */}
-      <div className="border-b border-gray-100 bg-white sticky top-0 z-20">
+      <div className="border-b border-gray-100 bg-white sticky top-[var(--header-h)] z-20">
         <div className="max-w-[1320px] mx-auto px-5 md:px-8 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           {/* Search pill */}
           <div className="relative flex-shrink-0">
@@ -485,7 +394,7 @@ export default function AllProductsPage() {
       <div className="max-w-[1320px] mx-auto px-5 md:px-8 py-6 md:py-8 flex gap-10 md:gap-12 items-start">
 
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:block w-[230px] flex-shrink-0 sticky top-[105px]">
+        <aside className="hidden lg:block w-[230px] flex-shrink-0 sticky top-[calc(var(--header-h)+72px)]">
           <SidebarFilters
             categories={categories}
             brands={brands}

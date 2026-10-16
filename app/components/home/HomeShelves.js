@@ -5,14 +5,32 @@ import { Container } from '../ui/Container';
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useRecentlyViewed } from '../../hooks/useRecentlyViewed';
-import { SectionHeading } from './SectionHeading';
+import { SectionHeading, Pill } from './SectionHeading';
 import { ProductRow } from './ProductRow';
+import { HomeProductCard } from './HomeProductCard';
+import { slugify } from '@/lib/slugify';
 import { orderableQty } from '@/lib/backorderRules';
+
+const byBest = (a, b) =>
+  (Number(!!b.isBestseller) - Number(!!a.isBestseller)) || (Number(b.totalSold || 0) - Number(a.totalSold || 0));
+
+// Four across on desktop, two on phones; a short range (e.g. three perfumes) stays centred
+function Grid({ products, tone }) {
+  return (
+    <div className="flex flex-wrap justify-center gap-2 md:gap-2.5">
+      {products.map((p) => (
+        <div key={p.id} className="w-[calc(50%-4px)] md:w-[calc((100%-30px)/4)]">
+          <HomeProductCard product={p} tone={tone} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function Shelf({ eyebrow, title, href, linkLabel, products, min = 3 }) {
   if (products.length < min) return null;
   return (
-    <section className="py-8 md:py-12 bg-white">
+    <section className="py-14 md:py-20 bg-white">
       <Container>
         <SectionHeading eyebrow={eyebrow} title={title} href={href} linkLabel={linkLabel} />
         <ProductRow products={products} />
@@ -21,25 +39,57 @@ function Shelf({ eyebrow, title, href, linkLabel, products, min = 3 }) {
   );
 }
 
-/** Best sellers first (real sales, then the pinned picks), topped up with the rest of the catalogue by units sold. */
-export function BestSellersShelf() {
-  const { products } = useAppContext();
-  const items = products
-    .filter((p) => orderableQty(p) > 0)
-    .sort((a, b) => (Number(!!b.isBestseller) - Number(!!a.isBestseller)) || (Number(b.totalSold || 0) - Number(a.totalSold || 0)))
-    .slice(0, 10);
-  return <Shelf eyebrow="Most loved" title="Best Sellers" href="/all-products" linkLabel="View all →" products={items} />;
+const band = (tone) => (tone === 'dark' ? 'bg-black' : 'bg-white');
+
+/**
+ * One brand's products under its banner: up to eight in the grid, buyable ones
+ * first and sold-out ones last (their cards say so), then a "View all" pill.
+ * `brand` is the start of the brand's slug ("gernetic" → gernetic-international).
+ * `tone="dark"` puts it on a black band (the perfumes, under their dark banner).
+ * Hidden under three products.
+ */
+export function BrandProducts({ brand: slugStart, title, tone = 'light' }) {
+  const { brands, products } = useAppContext();
+  const brand = brands.find((b) => (b.slug || slugify(b.name)).startsWith(slugStart));
+  if (!brand) return null;
+
+  const range = products
+    .filter((p) => Number(p.brand_id) === Number(brand.id))
+    .sort((a, b) => (Number(orderableQty(b) > 0) - Number(orderableQty(a) > 0)) || byBest(a, b));
+  if (range.length < 3) return null;
+  const href = `/brand/${brand.slug || slugify(brand.name)}`;
+  const dark = tone === 'dark';
+
+  return (
+    <section className={`py-14 md:py-20 ${band(tone)}`}>
+      <Container>
+        {title && <SectionHeading title={title} tone={tone} />}
+        <Grid products={range.slice(0, 8)} tone={tone} />
+        <div className="mt-9 md:mt-11 flex justify-center">
+          <Pill href={href} variant={dark ? 'light' : 'dark'}>View all {range.length} products</Pill>
+        </div>
+      </Container>
+    </section>
+  );
 }
 
-/** Everything with a compare-at price, biggest saving first. */
-export function OffersShelf() {
+/** The four best sellers across every brand (real sales first, then the pinned picks). */
+export function BestSellers() {
   const { products } = useAppContext();
-  const saving = (p) => (Number(p.originalPrice) - Number(p.price)) / Number(p.originalPrice);
-  const items = products
-    .filter((p) => orderableQty(p) > 0 && Number(p.originalPrice) > Number(p.price))
-    .sort((a, b) => saving(b) - saving(a))
-    .slice(0, 10);
-  return <Shelf eyebrow="Offers" title="Special Prices" href="/sales" linkLabel="All offers →" products={items} />;
+  const items = products.filter((p) => orderableQty(p) > 0).sort(byBest).slice(0, 4);
+  if (items.length < 4) return null;
+
+  return (
+    <section className="py-14 md:py-24 bg-white">
+      <Container>
+        <SectionHeading eyebrow="Most loved" title="Best sellers" />
+        <Grid products={items} />
+        <div className="mt-9 md:mt-11 flex justify-center">
+          <Pill href="/all-products?bestseller=true">Shop all best sellers</Pill>
+        </div>
+      </Container>
+    </section>
+  );
 }
 
 // Past purchases and recent views are stored as snapshots; show the live
@@ -65,7 +115,7 @@ export function BuyAgainShelf() {
   }, [isAuthenticated, user?.id]);
 
   const items = liveCopies(ids, products).filter((p) => orderableQty(p) > 0).slice(0, 10);
-  return <Shelf eyebrow="Your favourites" title="Buy Again" href="/account/orders" linkLabel="Your orders →" products={items} min={1} />;
+  return <Shelf eyebrow="Your favourites" title="Buy again" href="/account/orders" linkLabel="Your orders" products={items} min={1} />;
 }
 
 /** What this visitor looked at recently (stored in their browser), newest first. */
@@ -73,5 +123,5 @@ export function RecentlyViewedShelf() {
   const { products } = useAppContext();
   const { items: viewed } = useRecentlyViewed();
   const items = liveCopies(viewed.map((v) => v.id), products).slice(0, 10);
-  return <Shelf eyebrow="Pick up where you left off" title="Recently Viewed" products={items} min={2} />;
+  return <Shelf eyebrow="Pick up where you left off" title="Recently viewed" products={items} min={2} />;
 }

@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import StoreHeader from '../components/StoreHeader';
+import { headingFont } from '@/app/components/home/SectionHeading';
 import StoreCategoryNav from '../components/StoreCategoryNav';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
@@ -218,10 +219,10 @@ export default function SkincareClient() {
   };
 
   return (
-    <div className="bg-[#FAF9F6] min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
+    <div className="bg-white min-h-screen font-sans text-gray-900 pb-40 overflow-x-hidden relative">
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[9999] bg-[url('/textures/natural-paper.png')] mix-blend-multiply"></div>
 
-      <StoreHeader title="Skincare." />
+      <StoreHeader title="Skincare" subtitle="Professional GERnétic and Zorah skincare, delivered across the UAE." />
       <StoreCategoryNav />
 
       <section className="py-24 px-6 relative z-20 -mt-16">
@@ -245,7 +246,7 @@ export default function SkincareClient() {
           <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-12 border-b border-gray-100 pb-10">
             <div className="space-y-3">
                 <div className="flex items-center gap-3"><span className="w-10 h-px bg-brand-pink"></span><span className="text-[10px] font-black tracking-[0.4em] text-brand-pink">The Collection</span></div>
-                <h2 className="text-4xl font-serif italic text-gray-900">Skincare Inventory</h2>
+                <h2 className={`${headingFont} text-[24px] md:text-[34px] font-medium uppercase leading-[1.1] text-[#111114]`}>All skincare</h2>
             </div>
             
             <div className="flex items-center gap-4">

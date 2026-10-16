@@ -22,10 +22,10 @@ function Arrow({ dir, disabled, onClick }) {
 
 /**
  * One horizontal shelf of HomeProductCards. Phones swipe (two and a bit cards
- * visible, so the row reads as scrollable); desktop shows four or five with
- * arrows outside the row.
+ * visible, so the row reads as scrollable); desktop shows four with arrows
+ * outside the row.
  */
-export function ProductRow({ products, onTint = false }) {
+export function ProductRow({ products, tone = 'light' }) {
   const scroller = useRef(null);
   const [edges, setEdges] = useState({ start: true, end: false });
 
@@ -48,18 +48,18 @@ export function ProductRow({ products, onTint = false }) {
 
   if (!products.length) return null;
 
-  const basis = 'basis-[44%] sm:basis-[31%] md:basis-[calc((100%-36px)/4)] xl:basis-[calc((100%-48px)/5)]';
+  const basis = 'basis-[47%] sm:basis-[31%] md:basis-[calc((100%-30px)/4)]';
 
   return (
     <div className="relative">
       <div
         ref={scroller}
         onScroll={update}
-        className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-2 md:gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-px-4 sm:scroll-px-0 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {products.map((p) => (
           <div key={p.id} className={`${basis} shrink-0 snap-start`}>
-            <HomeProductCard product={p} onTint={onTint} />
+            <HomeProductCard product={p} tone={tone} />
           </div>
         ))}
       </div>

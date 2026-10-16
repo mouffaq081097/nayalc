@@ -7,7 +7,7 @@ const LAVENDER = 'rgb(147,104,236)';
 const STORAGE_KEY = 'naya_corner_badge_dismissed';
 
 /**
- * Persistent reminder of the same real WELCOME10 offer as PromoBar/WelcomePopup,
+ * Persistent reminder of the same real WELCOME10 offer as WelcomePopup,
  * shown as a vertical tab docked to the right edge (clear of the mobile bottom
  * nav). Opens the same WelcomePopup on click (via onOpen, lifted to
  * LayoutContent.js) rather than duplicating the email-capture form — useful

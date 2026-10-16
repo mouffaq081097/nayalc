@@ -1,13 +1,11 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { ListingHeader } from '@/app/components/ListingHeader';
 import { useParams } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../../components/ProductCard';
 import StoreCategoryNav from '../../components/StoreCategoryNav';
-import { MadeInFranceBadge } from '../../components/MadeInFranceBadge';
-import { MadeInUAEBadge } from '../../components/MadeInUAEBadge';
 import { Filter, Search, X, Check, ArrowRight, Grid2X2, List } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import ProductCardSkeleton from '../../components/ProductCardSkeleton';
@@ -174,93 +172,14 @@ const SidebarFilters = ({
 /* ─── Hero Banner ─────────────────────────────────────────────── */
 const BrandHero = ({ brand, meta }) => {
   if (!brand) return null;
-  const isFrance = meta.origin === 'France';
-  const isNayaPerfumes = /naya\s*lumi[eè]?re?\s*perfumes?/i.test(brand.name);
-
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: '220px', background: 'linear-gradient(90deg, #faf6ff 0%, #f1e8ff 55%, #e9dcff 100%)' }}>
-      {/* Decorative SVG lines — same motif as the collections hero */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180' fill='none' stroke='%239869f7' stroke-width='1.2' opacity='0.15'><path d='M0 90 Q45 90 45 45 Q45 0 90 0 Q135 0 135 45 Q135 90 180 90'/><path d='M0 130 Q45 130 45 85 Q45 40 90 40 Q135 40 135 85 Q135 130 180 130'/><path d='M0 50 Q45 50 45 5 Q45 -40 90 -40 Q135 -40 135 5 Q135 50 180 50'/></svg>")`,
-        backgroundRepeat: 'repeat',
-        maskImage: 'linear-gradient(90deg, #000 0%, #000 60%, transparent 80%)',
-        WebkitMaskImage: 'linear-gradient(90deg, #000 0%, #000 60%, transparent 80%)',
-      }} />
-
-      {brand.imageurl && (
-        <>
-          {/* Mobile: full-bleed bg, text stays readable — same technique as /all-products */}
-          <div className="md:hidden absolute inset-0 pointer-events-none overflow-hidden">
-            <Image
-              src={brand.imageurl}
-              alt={brand.name}
-              fill
-              className="object-cover"
-              style={{
-                maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 20%, rgba(0,0,0,0.55) 50%, black 70%)',
-                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.15) 20%, rgba(0,0,0,0.55) 50%, black 70%)',
-              }}
-            />
-            <div className="absolute inset-0" style={{
-              background: 'linear-gradient(to right, rgba(250,246,255,0.97) 0%, rgba(250,246,255,0.7) 35%, transparent 65%)',
-            }} />
-          </div>
-
-          {/* Desktop: image masked at every edge so it melts into the gradient, no hard-edged card */}
-          <div className="hidden md:block absolute top-0 bottom-0 right-0 pointer-events-none overflow-hidden" style={{ width: '62%' }}>
-            <Image
-              src={brand.imageurl}
-              alt={brand.name}
-              fill
-              className="object-cover"
-              style={{
-                maskImage: [
-                  'linear-gradient(to right,  transparent 0%, rgba(0,0,0,0.25) 10%, rgba(0,0,0,0.7) 22%, black 38%, black 88%, rgba(0,0,0,0.4) 100%)',
-                  'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
-                ].join(', '),
-                WebkitMaskImage: [
-                  'linear-gradient(to right,  transparent 0%, rgba(0,0,0,0.25) 10%, rgba(0,0,0,0.7) 22%, black 38%, black 88%, rgba(0,0,0,0.4) 100%)',
-                  'linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)',
-                ].join(', '),
-                maskComposite: 'intersect',
-                WebkitMaskComposite: 'destination-in',
-              }}
-            />
-          </div>
-
-          {/* Foreground left anchor — pulls the hero's own background colour across the seam */}
-          <div className="absolute inset-0 pointer-events-none" style={{
-            background: 'linear-gradient(to right, #faf6ff 0%, rgba(250,246,255,0.92) 16%, rgba(250,246,255,0.38) 30%, transparent 44%)',
-          }} />
-        </>
-      )}
-
-      {/* Copy */}
-      <div className="relative z-10 h-full flex flex-col justify-center px-8 md:px-12 max-w-[60%]">
-        <nav className="text-[12px] text-gray-500 font-medium mb-3 flex items-center gap-1.5">
-          <Link href="/" className="hover:text-gray-900 transition-colors">Home</Link>
-          <span className="text-gray-300">›</span>
-          <Link href="/brands" className="hover:text-gray-900 transition-colors">Brands</Link>
-          <span className="text-gray-300">›</span>
-          <span className="text-gray-900">{brand.name}</span>
-        </nav>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 leading-none mb-2">
-          {brand.name}
-        </h1>
-        <p className="text-[13px] text-gray-500 mt-2 leading-relaxed">
-          {[meta.origin, meta.year && `Est. ${meta.year}`, meta.category].filter(Boolean).join(' · ')}
-        </p>
-        <div className="flex items-center gap-1.5 flex-wrap mt-3">
-          {meta.tags.map(tag => (
-            <span key={tag} className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 border border-gray-200 bg-white/70 rounded-md px-2 py-0.5">
-              {tag}
-            </span>
-          ))}
-          {isFrance && <MadeInFranceBadge variant="light" />}
-          {isNayaPerfumes && <MadeInUAEBadge variant="light" />}
-        </div>
-      </div>
-    </div>
+    <ListingHeader
+      crumbs={[{ label: 'Home', href: '/' }, { label: 'Brands', href: '/brands' }, { label: brand.name }]}
+      title={brand.name}
+      subtitle={[meta.origin, meta.year && `Est. ${meta.year}`, meta.category].filter(Boolean).join(' · ')}
+      image={brand.imageurl}
+      imageAlt={brand.name}
+    />
   );
 };
 
@@ -373,7 +292,7 @@ export default function BrandClient({ brand: serverBrand }) {
       <BrandHero brand={currentBrand} meta={meta} />
 
       {/* Category pills */}
-      <div className="border-b border-gray-100 bg-white sticky top-0 z-20">
+      <div className="border-b border-gray-100 bg-white sticky top-[var(--header-h)] z-20">
         <div className="max-w-[1320px] mx-auto px-5 md:px-8 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <button
             onClick={clearFilters}
@@ -407,7 +326,7 @@ export default function BrandClient({ brand: serverBrand }) {
       <div className="max-w-[1320px] mx-auto px-5 md:px-8 py-6 md:py-8 flex gap-10 md:gap-12 items-start">
 
         {/* ── Desktop Sidebar ── */}
-        <aside className="hidden lg:block w-[230px] flex-shrink-0 sticky top-[105px]">
+        <aside className="hidden lg:block w-[230px] flex-shrink-0 sticky top-[calc(var(--header-h)+72px)]">
           <SidebarFilters
             categories={categories}
             selectedCategories={selectedCategories}

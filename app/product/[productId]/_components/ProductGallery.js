@@ -63,7 +63,7 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
 
         <div className="flex-1 min-w-0">
           <div
-            className="relative aspect-square rounded-2xl overflow-hidden cursor-zoom-in group"
+            className="relative aspect-square lg:rounded-2xl overflow-hidden cursor-zoom-in group"
             style={{ background: WELL }}
             onClick={() => setZoomed(true)}>
 
@@ -126,10 +126,10 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
 
           {/* Mobile thumbnail strip */}
           {count > 1 && (
-            <div className="md:hidden flex gap-2 mt-3 overflow-x-auto pb-1 -mx-1 px-1">
+            <div className="md:hidden flex gap-2 mt-2 overflow-x-auto pb-1 px-4">
               {images.map((img, i) => (
                 <button key={i} onClick={() => go(i)} aria-label={`Show image ${i + 1}`}
-                  className="relative w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all"
+                  className="relative w-16 h-16 overflow-hidden border-2 flex-shrink-0 transition-all"
                   style={{ borderColor: index === i ? LAVENDER : 'transparent', background: WELL }}>
                   <Image src={img} alt="" fill sizes="64px" className="object-contain p-1" />
                 </button>
