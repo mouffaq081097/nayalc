@@ -237,6 +237,7 @@ Every email (customer, admin, marketing) renders through one layout, `renderEmai
 - Build emails from the components there: `intro`, `section`, `notice` (tones info/success/warning/danger/neutral), `infoTable`/`infoRow`, `lineItems`, `totals`, `tracker`, `button`/`buttonRow`, `panel`, `productGrid`, `recommendations`, `codeTicket`, `fallbackLink`, `signOff`. Never hand-roll a wrapper or `class="btn"`.
 - Each email is a pure `buildXEmail()` → `{ subject, html }` plus a `sendXEmail()` that calls `deliver()`. Keep that split so it stays previewable.
 - Preview all emails without DB/SMTP: `node scripts/preview-emails.mjs [dir]` → open `index.html`.
+- The email header and the HTML invoice use `brandLockup()` (theme.js): the lotus + "NAYA LUMIÈRE" in spaced sans capitals + "COSMETICS", as text so it shows even with images blocked — the same lockup as the site's `BrandLogo`. The invoice and PO PDFs draw it with `drawBrand()` (`lib/invoicePdf.js`).
 - Escape every interpolated value with `escapeHtml`; hrefs go through `safeUrl`. Never put `align="left"` on a layout table (it floats).
 - `generateInvoiceHtml()` shares the tokens; COD invoices show "Due on delivery" until status is Delivered.
 
