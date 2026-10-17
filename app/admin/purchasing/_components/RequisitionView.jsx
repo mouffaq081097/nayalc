@@ -81,6 +81,7 @@ export default function RequisitionView({ id }) {
       if (isNew) {
         const { requisition } = await api('/api/admin/purchasing/requisitions', { method: 'POST', body: { ...body, submit } });
         toast.success(submit ? `${requisition.number} sent for approval` : `${requisition.number} saved`);
+        if (submit && requisition.approval_email_error) toast.error(requisition.approval_email_error);
         router.replace(`/admin/purchasing/requisitions/${requisition.id}`);
         return;
       }
@@ -107,7 +108,13 @@ export default function RequisitionView({ id }) {
         return;
       }
       load({ access, requisition: result.requisition });
-      toast.success(ACTION_DONE[action]);
+      if (result.emailError) {
+        // The action itself worked; only the approvers' email didn't go
+        if (action !== 'resend_email') toast.success(ACTION_DONE[action]);
+        toast.error(result.emailError);
+      } else {
+        toast.success(ACTION_DONE[action]);
+      }
     } catch (e) {
       toast.error(e.message);
     }
@@ -133,6 +140,9 @@ export default function RequisitionView({ id }) {
     if (!isNew) actions.unshift(<button key="delete" type="button" onClick={remove} className="sp-btn sp-btn-plain text-red-600">Delete</button>);
   }
   if (status === 'submitted') {
+    if (pr.approval_email_sent_at && (isOwner || hasRole(access, 'approver'))) {
+      actions.push(<ActionButton key="resend" variant="plain" onClick={() => act('resend_email')} busyText="Sending…">Resend email</ActionButton>);
+    }
     if (isOwner) actions.push(<ActionButton key="withdraw" onClick={() => act('withdraw')}>Withdraw</ActionButton>);
     if (hasRole(access, 'approver') && !ownApproval) {
       actions.push(<button key="reject" type="button" onClick={() => setDialog('reject')} className="sp-btn sp-btn-secondary">Reject</button>);
@@ -165,6 +175,20 @@ export default function RequisitionView({ id }) {
       {isNew && !editable && <Notice tone="warning">You need the Requester role to raise requisitions.</Notice>}
       {status === 'submitted' && ownApproval && hasRole(access, 'approver') && (
         <Notice tone="info">You raised this requisition, so another approver has to approve it.</Notice>
+      )}
+      {status === 'submitted' && (isOwner || hasRole(access, 'approver')) && !pr.approval_email_sent_at && (
+        <Notice tone="warning">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>
+              <strong>The approvers haven&apos;t been emailed.</strong>{' '}
+              {pr.approval_email_error || 'No approval email was sent for this requisition.'}
+            </span>
+            <ActionButton onClick={() => act('resend_email')} busyText="Sending…">Send approval email</ActionButton>
+          </div>
+        </Notice>
+      )}
+      {status === 'submitted' && pr.approval_email_sent_at && pr.approval_email_error && (isOwner || hasRole(access, 'approver')) && (
+        <Notice tone="warning">The last resend failed: {pr.approval_email_error}</Notice>
       )}
       {status === 'rejected' && pr.decision_note && (
         <Notice tone="warning"><strong>Rejected by {pr.decided_by_name}:</strong> {pr.decision_note}</Notice>
@@ -305,13 +329,15 @@ export default function RequisitionView({ id }) {
 
 const ACTION_DONE = {
   submit: 'Sent for approval', withdraw: 'Withdrawn — it is a draft again', approve: 'Approved', reject: 'Rejected',
-  reopen: 'Reopened as a draft', cancel: 'Requisition cancelled',
+  reopen: 'Reopened as a draft', cancel: 'Requisition cancelled', resend_email: 'Approval email sent',
 };
 
 /** What happened to a requisition so far, oldest first */
 function history(pr) {
   const events = [{ key: 'created', label: 'Created', meta: `${pr.requested_by_name || '—'} · ${fmtDate(pr.created_at)}`, color: '#d4d4d4' }];
   if (pr.submitted_at) events.push({ key: 'submitted', label: 'Sent for approval', meta: fmtDate(pr.submitted_at), color: '#9368ec' });
+  if (pr.approval_email_sent_at) events.push({ key: 'emailed', label: 'Approvers emailed', meta: fmtDate(pr.approval_email_sent_at), color: '#9368ec' });
+  else if (pr.status === 'submitted') events.push({ key: 'not-emailed', label: 'Approvers not emailed', meta: "The email didn't go out", color: '#e22c38' });
   if (pr.decided_at) {
     const rejected = pr.status === 'rejected';
     events.push({
