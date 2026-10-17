@@ -631,7 +631,7 @@ export default function CartPage() {
             </aside>
 
             {/* ── Advice & cross-sell (under the items on desktop, after the summary on phones) ── */}
-            <div className="mx-auto min-w-0 max-w-[600px] space-y-10 px-4 py-8 sm:px-6 lg:col-start-1 lg:row-start-2 lg:mx-0 lg:ml-auto lg:w-full lg:px-[38px] lg:pt-4 lg:pb-[38px]">
+            <div className="mx-auto min-w-0 max-w-[600px] space-y-4 px-4 py-8 sm:px-6 lg:col-start-1 lg:row-start-2 lg:mx-0 lg:ml-auto lg:w-full lg:px-[38px] lg:pt-4 lg:pb-[38px]">
               <AnimatePresence mode="wait" initial={false}>
                 {aiAdvice ? (
                   <motion.div

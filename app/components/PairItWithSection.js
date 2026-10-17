@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { HomeProductCard } from './home/HomeProductCard';
-import { headingFont } from './home/SectionHeading';
+import CartSuggestionCarousel from './CartSuggestionCarousel';
 import { orderableQty } from '@/lib/backorderRules';
 
-const SHOW = 4;
+const SHOW = 8;
 
 /**
  * The live product (price, stock, views, photos) for an id from a smaller API
@@ -25,21 +24,11 @@ export function toCardProduct(p, products) {
   };
 }
 
-// Two across on phones (2 × 2), three across from md up — the bag column is narrower than the homepage
-export const cardGrid = 'grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-4';
-
-function GridSkeleton() {
-  return (
-    <div aria-hidden="true" className="motion-safe:animate-pulse">
-      <div className="mb-5 h-6 w-48 bg-[#f6f5f2]" />
-      <div className={cardGrid}>
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="aspect-[3/4] bg-[#f6f5f2]" />)}
-      </div>
-    </div>
-  );
+function PanelSkeleton() {
+  return <div aria-hidden="true" className="h-[176px] rounded-xl bg-[#f5f5f5] motion-safe:animate-pulse" />;
 }
 
-/** "You may also like" under the bag: homepage product cards for a few products not already in it. */
+/** "You may also like" under the bag: one suggestion at a time, for products not already in it. */
 export default function PairItWithSection({ currentCartItems }) {
   const { products: catalogue } = useAppContext();
   const [products, setProducts] = useState(null); // null while loading
@@ -63,24 +52,10 @@ export default function PairItWithSection({ currentCartItems }) {
     [products, initialCartIds, catalogue]
   );
 
-  if (products === null) return <GridSkeleton />;
+  if (products === null) return <PanelSkeleton />;
   if (visible.length === 0) return null;
 
-  return (
-    <section aria-labelledby="also-like-heading">
-      {/* The suggestions API returns random active products, so this is labelled as
-          discovery rather than "frequently bought together". */}
-      <h2 id="also-like-heading" className={`${headingFont} mb-5 text-[20px] md:text-[24px] font-medium uppercase text-[#111114]`}>
-        You may also like
-      </h2>
-      <div className={cardGrid}>
-        {visible.map((product, i) => (
-          // Four on phones (2 × 2), three from md up
-          <div key={product.id} className={i === 3 ? 'md:hidden' : undefined}>
-            <HomeProductCard product={product} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
+  // The suggestions API returns random active products, so this is labelled as
+  // discovery rather than "frequently bought together".
+  return <CartSuggestionCarousel id="also-like" title="You may also like" products={visible} />;
 }
