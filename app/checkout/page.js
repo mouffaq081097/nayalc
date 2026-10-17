@@ -7,8 +7,8 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import {
-  ArrowRight, MapPin, Lock, Check, Gift, Loader2,
-  Pencil, Trash2, Plus, ChevronDown, Star, AlertTriangle, ShoppingBag,
+  ArrowRight, Lock, Check, Gift, Loader2,
+  Pencil, Trash2, Plus, ChevronDown, MoreVertical, Star, AlertTriangle, ShoppingBag,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { loadStripe } from '@stripe/stripe-js';
@@ -22,6 +22,7 @@ import { calcShipping, getPreorderInfo, getDeliveryInfo } from '@/lib/shipping';
 import { orderableQty, preorderUnits, leadDays } from '@/lib/backorderRules';
 import { POINTS_BLOCK, AED_PER_BLOCK } from '@/lib/loyalty';
 import { vatFromGross } from '@/lib/vat';
+import { formatPhone } from '@/lib/phone';
 import CheckoutForm from './CheckoutForm';
 import ExpressCheckoutButton from './ExpressCheckoutButton';
 import TabbyCard from '../components/TabbyCard';
@@ -103,12 +104,6 @@ function RadioDot({ checked }) {
     >
       {checked && <span className="h-2 w-2 rounded-full bg-white" />}
     </span>
-  );
-}
-
-function DefaultBadge() {
-  return (
-    <span className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold text-white" style={{ background: ACCENT }}>Default</span>
   );
 }
 
@@ -215,44 +210,60 @@ function PaymentOption({ value, checked, onSelect, title, hint, children }) {
   );
 }
 
-function AddAddressTile({ onClick, label }) {
+/** Shopify's "+ Use a different address" row */
+function AddAddressRow({ onClick, label }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-[120px] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c8c8cf] text-[#5a5a64] transition-colors hover:border-[#111114] hover:bg-[#f6f5f2] hover:text-[#111114] ${focusRing}`}
+      className={`flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-[15px] text-[#111114] transition-colors hover:bg-[#fafafa] ${focusRing}`}
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-full border border-current">
-        <Plus size={16} />
-      </span>
-      <span className="text-[13px] font-medium">{label}</span>
+      <Plus size={20} strokeWidth={1.75} className="shrink-0" />
+      {label}
     </button>
   );
 }
 
-function AddressActions({ name, onEdit, onRemove, canRemove }) {
+/** ⋮ menu on an address: Edit, and Remove when no past order uses it */
+function AddressMenu({ name, onEdit, onRemove, canRemove }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const esc = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc); };
+  }, [open]);
+
+  const item = `flex w-full items-center gap-2 px-4 py-2.5 text-left text-[14px] transition-colors hover:bg-[#f5f5f5] ${focusRing}`;
   return (
-    <>
+    <div ref={ref} className="relative shrink-0">
       <button
         type="button"
-        onClick={onEdit}
-        aria-label={`Edit ${name}`}
-        className={`flex h-10 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-medium text-[#5a5a64] transition-colors hover:bg-white hover:text-[#111114] ${focusRing}`}
+        onClick={() => setOpen(o => !o)}
+        aria-label={`Options for ${name}`}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={`-mr-2 -mt-1 flex h-9 w-9 items-center justify-center rounded-full text-[#5a5a64] transition-colors hover:bg-black/5 hover:text-[#111114] ${focusRing}`}
       >
-        <Pencil size={13} /> Edit
+        <MoreVertical size={18} />
       </button>
-      {/* Addresses used by past orders can't be deleted server-side */}
-      {canRemove && (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Remove ${name}`}
-          className={`flex h-10 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-medium text-red-500 transition-colors hover:bg-white hover:text-red-700 ${focusRing}`}
-        >
-          <Trash2 size={13} /> Remove
-        </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-9 z-20 min-w-[150px] overflow-hidden rounded-xl border border-[#dedede] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); onEdit(); }} className={`${item} text-[#111114]`}>
+            <Pencil size={14} /> Edit
+          </button>
+          {/* Addresses used by past orders can't be deleted server-side */}
+          {canRemove && (
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); onRemove(); }} className={`${item} text-red-600`}>
+              <Trash2 size={14} /> Remove
+            </button>
+          )}
+        </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -746,56 +757,54 @@ export default function CheckoutPage() {
           </span>
         </button>
         {(showAddressPicker || !selectedAddress) && (
-          <div className="px-5 pb-5 sm:px-6">
-            {shippingAddresses.length === 0 ? (
-              <AddAddressTile onClick={() => openAddressModal(null)} label="Add a delivery address" />
-            ) : (
-          <div role="radiogroup" aria-label="Delivery address" className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {shippingAddresses.map(addr => {
-              const checked = selectedAddressId === addr.id;
-              const name = addressName(addr, user?.name);
-              return (
-                <div
-                  key={addr.id}
-                  className={`rounded-xl border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111114]/30 ${
-                    checked ? 'border-[#111114] bg-white' : 'border-[#e4e4e7] bg-white hover:border-[#a1a1aa]'
-                  }`}
-                >
-                  <label className="flex cursor-pointer items-start gap-3 p-4">
-                    <input
-                      type="radio"
-                      name="delivery-address"
-                      className="sr-only"
-                      checked={checked}
-                      onChange={() => { setSelectedAddressId(addr.id); setShowAddressPicker(false); }}
-                    />
-                    <RadioDot checked={checked} />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-[14px] font-semibold text-[#111114]">{name}</span>
-                        {isDefaultAddress(addr) && <DefaultBadge />}
-                      </span>
-                      <span className="mt-1 block text-[13px] text-[#5a5a64]">{addressLine(addr)}</span>
-                      <span className="mt-0.5 flex items-center gap-1 text-[12px] text-[#8a8a93]">
-                        <MapPin size={11} className="shrink-0" />
-                        {[addr.city, addr.country].filter(Boolean).join(', ')}
-                      </span>
-                    </span>
-                  </label>
-                  <div className="flex items-center gap-1 border-t border-[#eeeef1] px-2 py-1">
-                    <AddressActions
-                      name={name}
-                      onEdit={() => openAddressModal(addr)}
-                      onRemove={() => handleDeleteAddress(addr.id)}
-                      canRemove={addr.isDeletable !== false}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            <AddAddressTile onClick={() => openAddressModal(null)} label="Add new address" />
-          </div>
+          // Shopify's address list: the chosen one on a grey panel, two lines each
+          // (name and street in bold; area, emirate, country and phone), ⋮ for edit/remove
+          <div className="px-3 pb-3 sm:px-4">
+            {shippingAddresses.length > 0 && (
+              <div role="radiogroup" aria-label="Delivery address" className="space-y-1">
+                {shippingAddresses.map(addr => {
+                  const checked = selectedAddressId === addr.id;
+                  const name = addressName(addr, user?.name);
+                  const phone = addr.customerPhone || addr.customer_phone;
+                  const country = /united arab emirates|^uae$/i.test(String(addr.country || '').trim()) ? 'AE' : addr.country;
+                  return (
+                    <div
+                      key={addr.id}
+                      className={`flex items-start gap-3 rounded-xl px-4 py-3.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111114]/30 ${checked ? 'bg-[#f5f5f5]' : 'hover:bg-[#fafafa]'}`}
+                    >
+                      <label className="min-w-0 flex-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="delivery-address"
+                          className="sr-only"
+                          checked={checked}
+                          onChange={() => { setSelectedAddressId(addr.id); setShowAddressPicker(false); }}
+                        />
+                        <span className="block text-[15px] font-semibold leading-snug text-[#111114]">
+                          {[addr.customerName || addr.customer_name || name, addressLine(addr)].filter(Boolean).join(', ')}
+                        </span>
+                        <span className="mt-0.5 block text-[15px] leading-snug text-[#111114]">
+                          {[addr.state, addr.city, country, phone && formatPhone(phone)].filter(Boolean).join(', ')}
+                        </span>
+                        {isDefaultAddress(addr) && (
+                          <span className="mt-2 inline-block rounded-lg bg-[#6b6b6b] px-2 py-0.5 text-[13px] font-semibold text-white">Default</span>
+                        )}
+                      </label>
+                      <AddressMenu
+                        name={name}
+                        onEdit={() => openAddressModal(addr)}
+                        onRemove={() => handleDeleteAddress(addr.id)}
+                        canRemove={addr.isDeletable !== false}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             )}
+            <AddAddressRow
+              onClick={() => openAddressModal(null)}
+              label={shippingAddresses.length ? 'Use a different address' : 'Add a delivery address'}
+            />
           </div>
         )}
       </div>
