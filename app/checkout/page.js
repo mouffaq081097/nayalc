@@ -2,14 +2,13 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import BrandLogo from '../components/BrandLogo';
-import { headingFont } from '../components/home/SectionHeading';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, MapPin, Lock, Check, Gift, ShieldCheck, Loader2,
-  Pencil, Trash2, Plus, RotateCcw, ChevronDown, Star, AlertTriangle, ShoppingBag,
+  ArrowRight, MapPin, Lock, Check, Gift, Loader2,
+  Pencil, Trash2, Plus, ChevronDown, Star, AlertTriangle, ShoppingBag,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { loadStripe } from '@stripe/stripe-js';
@@ -57,32 +56,26 @@ const isDefaultAddress = (a) => Boolean(a.isDefault ?? a.is_default);
 
 /* ── Shell ─────────────────────────────────────────────────────── */
 
-function FlowHeader({ onBack }) {
+// Shopify's checkout header: the logo lines up with the left column, the bag
+// icon (back to the bag) with the right one
+function FlowHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#ececec] bg-white">
-      <div className="relative mx-auto flex h-[60px] max-w-[1240px] items-center justify-between px-4 sm:px-6 md:h-[72px] lg:px-8">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Back to bag"
-          className={`group flex h-[38px] shrink-0 items-center gap-2 text-[13px] font-medium text-[#111114] transition-opacity hover:opacity-70 ${focusRing}`}
-        >
-          <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
-          <span className="hidden sm:inline">Back to bag</span>
-        </button>
-
-        <Link
-          href="/"
-          className="absolute left-1/2 flex -translate-x-1/2 items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60"
-        >
-          <BrandLogo priority />
-        </Link>
-
-        <div className="hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-[#8a8a93] sm:flex">
-          <ShieldCheck size={14} className="text-[#111114]" />
-          Secure checkout
+    <header className="border-b border-[#dedede] bg-white">
+      <div className="flex h-[64px] items-center justify-between px-4 sm:px-6 md:h-[84px] lg:grid lg:grid-cols-2 lg:px-0">
+        <div className="lg:ml-auto lg:w-full lg:max-w-[600px] lg:px-[38px]">
+          <Link href="/" className="inline-flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60">
+            <BrandLogo priority />
+          </Link>
         </div>
-        <div className="w-[38px] sm:hidden" aria-hidden="true" />
+        <div className="lg:w-full lg:max-w-[500px] lg:px-[38px] lg:text-right">
+          <Link
+            href="/cart"
+            aria-label="Back to bag"
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-md text-[#111114] transition-opacity hover:opacity-70 ${focusRing}`}
+          >
+            <ShoppingBag size={22} strokeWidth={1.5} />
+          </Link>
+        </div>
       </div>
     </header>
   );
@@ -90,13 +83,10 @@ function FlowHeader({ onBack }) {
 
 function CheckoutSkeleton() {
   return (
-    <div role="status" className="mt-5 grid grid-cols-1 gap-6 motion-safe:animate-pulse sm:mt-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-14">
+    <div role="status" className="mx-auto max-w-[600px] space-y-4 px-4 py-8 motion-safe:animate-pulse sm:px-6 lg:mx-0 lg:ml-auto lg:w-1/2 lg:px-[38px] lg:py-[38px]">
       <span className="sr-only">Loading checkout</span>
-      <div className="space-y-4">
-        <div className="h-52 rounded-xl bg-[#f6f5f2]" />
-        <div className="h-[52px] rounded-xl bg-[#f6f5f2]" />
-      </div>
-      <div className="hidden h-96 rounded-xl bg-[#f6f5f2] lg:block" />
+      <div className="h-52 rounded-xl bg-[#f5f5f5]" />
+      <div className="h-[52px] rounded-xl bg-[#f5f5f5]" />
     </div>
   );
 }
@@ -125,54 +115,68 @@ function DefaultBadge() {
 function SummaryRow({ label, value, positive = false }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <dt className="text-[#5a5a64]">{label}</dt>
-      <dd className={`font-semibold tabular-nums ${positive ? 'text-emerald-600' : 'text-[#111114]'}`}>{value}</dd>
+      <dt className="text-[#111114]">{label}</dt>
+      <dd className={`tabular-nums ${positive ? 'text-emerald-600' : 'text-[#111114]'}`}>{value}</dd>
     </div>
   );
 }
 
-function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, couponCode, pointsDiscount, shipping, giftWrapFee, tax, total, promo = null, scrollItems = false }) {
+const amount = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Shopify's order summary: photo tiles with a quantity badge, discount field, totals with "AED" before the total */
+function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, couponCode, pointsDiscount, shipping, giftWrapFee, tax, total, promo = null }) {
   return (
     <>
-      <ul className={`space-y-3 ${scrollItems ? 'max-h-[280px] overflow-y-auto pr-1 pt-1.5' : 'pt-1.5'}`}>
-        {items.map(item => (
-          <li key={item.id} className="flex items-center gap-3">
-            <div className="h-16 w-14 shrink-0 bg-white p-1.5">
-              <ImageWithFallback src={item.image} alt={item.name} className="h-full w-full object-contain mix-blend-multiply" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-[13px] font-medium leading-snug text-[#111114]">{item.name}</p>
-              <p className="truncate text-[11.5px] text-[#8a8a93]">
-                {item.brand ? `${item.brand} · ` : ''}<span className="tabular-nums text-[#111114]">× {item.quantity}</span>
-              </p>
-              {preorderUnits(item, item.quantity) > 0 && (
-                <p className="truncate text-[11.5px] font-semibold" style={{ color: ACCENT }}>
-                  {preorderUnits(item, item.quantity) === item.quantity ? 'Pre-order' : `${preorderUnits(item, item.quantity)} on pre-order`}
-                </p>
-              )}
-            </div>
-            <p className="shrink-0 text-[13px] font-semibold tabular-nums text-[#111114]">{fmt(item.price * item.quantity)}</p>
-          </li>
-        ))}
+      <ul className="space-y-4">
+        {items.map(item => {
+          const preorder = preorderUnits(item, item.quantity);
+          return (
+            <li key={item.id} className="flex items-center gap-4">
+              <div className="relative shrink-0">
+                <div className="h-16 w-16 overflow-hidden rounded-lg border border-[#dedede] bg-white p-1">
+                  <ImageWithFallback src={item.image} alt={item.name} className="h-full w-full object-contain" />
+                </div>
+                <span className="absolute -right-2 -top-2 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-[#111114] px-1.5 text-[12px] font-medium tabular-nums text-white">
+                  {item.quantity}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-[14px] leading-snug text-[#111114]">{item.name}</p>
+                {item.brand && <p className="truncate text-[12.5px] text-[#707070]">{item.brand}</p>}
+                {preorder > 0 && (
+                  <p className="truncate text-[12.5px] font-medium" style={{ color: ACCENT }}>
+                    {preorder === item.quantity ? 'Pre-order' : `${preorder} on pre-order`}
+                  </p>
+                )}
+              </div>
+              <p className="shrink-0 text-[14px] tabular-nums text-[#111114]">{fmt(item.price * item.quantity)}</p>
+            </li>
+          );
+        })}
       </ul>
 
-      {promo && <div className="mt-5">{promo}</div>}
+      {promo && <div className="mt-6">{promo}</div>}
 
-      <dl className="mt-5 space-y-2.5 border-t border-[#e2e0db] pt-4 text-[13.5px]">
-        <SummaryRow label={`Subtotal (${totalQty} ${totalQty === 1 ? 'item' : 'items'})`} value={fmt(subtotal)} />
+      <dl className="mt-6 space-y-2 text-[14px]">
+        <SummaryRow label={`Subtotal · ${totalQty} ${totalQty === 1 ? 'item' : 'items'}`} value={fmt(subtotal)} />
         {discountAmount > 0 && (
-          <SummaryRow label={`Promo${couponCode ? ` (${couponCode})` : ''}`} value={`−${fmt(discountAmount)}`} positive />
+          <SummaryRow label={`Discount${couponCode ? ` (${couponCode})` : ''}`} value={`−${fmt(discountAmount)}`} />
         )}
-        {pointsDiscount > 0 && <SummaryRow label="Loyalty points" value={`−${fmt(pointsDiscount)}`} positive />}
-        <SummaryRow label="Shipping" value={shipping === 0 ? 'Free' : fmt(shipping)} positive={shipping === 0} />
+        {pointsDiscount > 0 && <SummaryRow label="Loyalty points" value={`−${fmt(pointsDiscount)}`} />}
+        <SummaryRow label="Shipping" value={shipping === 0 ? 'FREE' : fmt(shipping)} />
         {giftWrapFee > 0 && <SummaryRow label="Gift wrap" value={fmt(giftWrapFee)} />}
       </dl>
 
-      <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-[#111114] pt-4">
-        <span className="text-[15px] font-semibold text-[#111114]">Total</span>
-        <span className="text-[22px] font-bold tabular-nums text-[#111114]">{fmt(total)}</span>
+      <div className="mt-4 flex items-baseline justify-between gap-4">
+        <div>
+          <span className="text-[19px] font-semibold text-[#111114]">Total</span>
+          <p className="text-[12.5px] text-[#707070]">Including {fmt(tax)} in VAT</p>
+        </div>
+        <span className="flex items-baseline gap-2">
+          <span className="text-[12px] text-[#707070]">AED</span>
+          <span className="text-[22px] font-semibold tabular-nums text-[#111114]">{amount(total)}</span>
+        </span>
       </div>
-      <p className="mt-1 text-right text-[11.5px] text-[#8a8a93]">Includes VAT of {fmt(tax)}</p>
     </>
   );
 }
@@ -677,13 +681,12 @@ export default function CheckoutPage() {
           spellCheck={false}
           enterKeyHint="done"
           aria-invalid={!!couponError}
-          className="h-11 min-w-0 flex-1 rounded-xl border border-[#d9d9de] bg-white px-4 text-[16px] text-[#111114] placeholder:text-[#9a9aa2] focus:border-[#111114] focus:outline-none focus:ring-2 focus:ring-[#111114]/10 lg:text-[14px]"
+          className="h-[52px] min-w-0 flex-1 rounded-xl border border-[#dedede] bg-white px-4 text-[16px] text-[#111114] placeholder:text-[#707070] focus:border-[#111114] focus:outline-none focus:ring-1 focus:ring-[#111114] lg:text-[14px]"
         />
         <button
           type="submit"
           disabled={!couponCode.trim() || isApplyingCoupon}
-          className="inline-flex h-11 min-w-[84px] items-center justify-center rounded-xl px-5 text-[13px] font-semibold text-white transition-opacity disabled:opacity-35"
-          style={{ background: ACTION }}
+          className="inline-flex h-[52px] min-w-[84px] items-center justify-center rounded-xl border border-[#dedede] bg-[#111114] px-5 text-[14px] font-semibold text-white transition-colors disabled:bg-[#ebebeb] disabled:text-[#707070]"
         >
           {isApplyingCoupon
             ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-label="Applying" />
@@ -928,21 +931,19 @@ export default function CheckoutPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`min-h-screen bg-white lg:pb-16 ${showMobileBar ? 'pb-32' : 'pb-16'}`}>
-        <FlowHeader onBack={() => router.push('/cart')} />
+      <div className={`min-h-screen bg-white lg:pb-0 ${showMobileBar ? 'pb-32' : 'pb-16'}`}>
+        <FlowHeader />
 
-        <main className="mx-auto max-w-[1240px] px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
-          <h1 className={`${headingFont} mt-5 text-[28px] font-medium uppercase leading-tight text-[#111114] sm:text-[40px]`}>Checkout</h1>
-
+        <main>
           {!pageReady ? (
             <CheckoutSkeleton />
           ) : bagEmpty ? (
-            <div className="flex flex-col items-center gap-5 py-16 text-center">
+            <div className="flex flex-col items-center gap-5 px-4 py-16 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#f6f5f2]">
                 <ShoppingBag size={30} strokeWidth={1.3} className="text-[#111114]" />
               </div>
               <div>
-                <h2 className="text-[20px] font-semibold text-[#111114]">Your bag is empty</h2>
+                <h1 className="text-[20px] font-semibold text-[#111114]">Your bag is empty</h1>
                 <p className="mt-1.5 text-[14px] text-[#5a5a64]">Add something to your bag before checking out.</p>
               </div>
               <Link
@@ -955,20 +956,22 @@ export default function CheckoutPage() {
               </Link>
             </div>
           ) : (
-            <div className="mt-5 grid grid-cols-1 items-start gap-6 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-14">
-              <div className="min-w-0 space-y-4">
-                {/* Mobile: collapsible summary with the total always visible */}
-                <div className="-mx-4 bg-[#f6f5f2] sm:mx-0 sm:rounded-xl lg:hidden">
+            // Shopify's split: the form on white, right-aligned in the left half; the
+            // summary on grey filling the right half, with a hairline between them
+            <div className="lg:grid lg:min-h-[calc(100vh-85px)] lg:grid-cols-2">
+              <h1 className="sr-only">Checkout</h1>
+              <div className="mx-auto min-w-0 max-w-[600px] space-y-4 px-4 pb-8 sm:px-6 lg:mx-0 lg:ml-auto lg:w-full lg:px-[38px] lg:py-[38px]">
+                {/* Mobile: Shopify's grey "Order summary" bar with the total always visible */}
+                <div className="-mx-4 border-b border-[#dedede] bg-[#f5f5f5] sm:-mx-6 lg:hidden">
                   <button
                     type="button"
                     onClick={() => setSummaryOpen(o => !o)}
                     aria-expanded={summaryOpen}
                     aria-controls="mobile-order-summary"
-                    className={`flex w-full items-center justify-between gap-3 px-4 py-3.5 ${focusRing}`}
+                    className={`flex w-full items-center justify-between gap-3 px-4 py-4 sm:px-6 ${focusRing}`}
                   >
-                    <span className="flex items-center gap-2 text-[14px] font-medium text-[#111114]">
-                      <ShoppingBag size={16} />
-                      {summaryOpen ? 'Hide' : 'Show'} order summary
+                    <span className="flex items-center gap-1.5 text-[14px] text-[#111114]">
+                      Order summary
                       <ChevronDown size={15} className={`transition-transform ${summaryOpen ? 'rotate-180' : ''}`} />
                     </span>
                     <span className="text-[16px] font-bold tabular-nums text-[#111114]">{fmt(total)}</span>
@@ -983,7 +986,7 @@ export default function CheckoutPage() {
                         transition={{ duration: 0.22 }}
                         className="overflow-hidden"
                       >
-                        <div className="border-t border-[#e2e0db] px-4 pb-4 pt-3">
+                        <div className="px-4 pb-5 pt-2 sm:px-6">
                           <OrderSummaryContent {...summaryProps} promo={promoBlock('promo-code-mobile')} />
                         </div>
                       </motion.div>
@@ -1050,22 +1053,11 @@ export default function CheckoutPage() {
                 </p>
               </div>
 
-              <aside className="hidden lg:sticky lg:top-[84px] lg:block">
-                <section aria-labelledby="summary-heading" className="rounded-xl bg-[#f6f5f2] p-6 sm:p-7">
-                  <h2 id="summary-heading" className={`${headingFont} mb-4 text-[17px] font-medium uppercase tracking-wide text-[#111114]`}>Order summary</h2>
-                  <OrderSummaryContent {...summaryProps} promo={promoBlock('promo-code')} scrollItems />
-                  <ul className="mt-5 space-y-2.5 border-t border-[#e2e0db] pt-4">
-                    {[
-                      { Icon: Lock, text: 'Secured transaction', color: 'text-[#111114]' },
-                      { Icon: ShieldCheck, text: 'Authentic products', color: 'text-[#111114]' },
-                      { Icon: RotateCcw, text: '14-day returns', color: 'text-[#111114]' },
-                    ].map(({ Icon, text, color }) => (
-                      <li key={text} className="flex items-center gap-2.5 text-[12px] text-[#5a5a64]">
-                        <Icon size={13} className={color} /> {text}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+              <aside aria-labelledby="summary-heading" className="hidden border-l border-[#dedede] bg-[#f5f5f5] lg:block">
+                <div className="sticky top-0 max-w-[500px] px-[38px] py-[38px]">
+                  <h2 id="summary-heading" className="sr-only">Order summary</h2>
+                  <OrderSummaryContent {...summaryProps} promo={promoBlock('promo-code')} />
+                </div>
               </aside>
             </div>
           )}
