@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { LoaderSpinner } from '../components/GlobalLoader';
+import { useSignIn } from '@/app/context/SignInContext';
 
 const SectionTitle = ({ title, subtitle }) => (
     <div className="mb-8">
@@ -63,6 +64,7 @@ const EarnCard = ({ icon: Icon, title, description, points }) => (
 );
 
 const LoyaltyContent = () => {
+  const { openSignIn } = useSignIn();
     const { user, isAuthenticated } = useAuth();
     const { fetchWithAuth } = useAppContext();
     const router = useRouter();
@@ -252,7 +254,7 @@ const LoyaltyContent = () => {
                     <section className="text-center py-20">
                         <h2 className="text-[32px] font-bold mb-8">Begin your journey.</h2>
                         <button 
-                            onClick={() => router.push('/auth?mode=signup')}
+                            onClick={() => openSignIn()}
                             className="px-12 py-5 text-white rounded-2xl text-[12px] font-bold shadow-2xl transition-all active:scale-95 duration-300"
                             style={{ background: 'var(--brand-gradient)' }}
                         >

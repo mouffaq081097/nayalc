@@ -6,6 +6,7 @@ import { AppProvider } from './context/AppContext';
 import { CartProvider } from './context/CartContext';
 import { UserProvider } from './context/UserContext';
 import { HeaderProvider } from './context/HeaderContext';
+import { SignInProvider } from './context/SignInContext';
 
 export default function Providers({ children }) {
   return (
@@ -15,7 +16,9 @@ export default function Providers({ children }) {
           <AppProvider>
             <CartProvider>
               <HeaderProvider>
-                {children}
+                <SignInProvider>
+                  {children}
+                </SignInProvider>
               </HeaderProvider>
             </CartProvider>
           </AppProvider>

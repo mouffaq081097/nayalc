@@ -13,6 +13,7 @@ import { isHomePath, formatAED } from '../lib/utils';
 import { orderableQty } from '@/lib/backorderRules';
 import { shortBrand } from '@/lib/seo';
 import { cardName } from './home/HomeProductCard';
+import { useSignIn } from '@/app/context/SignInContext';
 
 const NAV_LINKS = [
   { label: 'Shop',        href: '/all-products', hasDropdown: 'shop' },
@@ -63,6 +64,7 @@ function SearchList({ items, onPick }) {
 export const HEADER_H = { mobile: 70, desktop: 88 };
 
 const Header = forwardRef((_, ref) => {
+  const { openSignIn } = useSignIn();
   const [isMenuOpen,   setIsMenuOpen]   = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -198,7 +200,7 @@ const Header = forwardRef((_, ref) => {
             <div ref={accountRef} className="relative">
               <button
                 type="button"
-                onClick={() => { if (user) setIsAccountOpen(o => !o); else router.push('/auth'); }}
+                onClick={() => { if (user) setIsAccountOpen(o => !o); else openSignIn(); }}
                 aria-expanded={user ? isAccountOpen : undefined}
                 aria-haspopup={user ? 'menu' : undefined}
                 className={`${iconBtn} md:w-auto md:gap-1 md:px-1`}
@@ -481,7 +483,7 @@ const Header = forwardRef((_, ref) => {
                     </ul>
                   </>
                 ) : (
-                  <button type="button" onClick={() => { router.push('/auth'); setIsMenuOpen(false); }} className="w-full py-2.5 text-left text-[16px] text-[#111114] hover:opacity-60">
+                  <button type="button" onClick={() => { setIsMenuOpen(false); openSignIn(); }} className="w-full py-2.5 text-left text-[16px] text-[#111114] hover:opacity-60">
                     Sign In
                   </button>
                 )}

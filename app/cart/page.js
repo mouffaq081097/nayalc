@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import PairItWithSection from '../components/PairItWithSection';
 import BuyAgainSection from '../components/BuyAgainSection';
 import TabbyPromo from '../components/TabbyPromo';
+import { useSignIn } from '@/app/context/SignInContext';
 
 // Storefront palette: ink actions, warm off-white panels, lavender only for small accents
 const INK = '#111114';
@@ -225,6 +226,7 @@ function RemovedRow({ item, onUndo }) {
 }
 
 export default function CartPage() {
+  const { openSignIn } = useSignIn();
   const {
     cartItems, removeFromCart, updateQuantity,
     appliedCoupon, discountAmount, applyCoupon, removeCoupon, couponError,
@@ -327,7 +329,8 @@ export default function CartPage() {
   const handleCheckout = () => {
     if (!canCheckout) return;
     flushPendingRemovals();
-    router.push(isAuthenticated ? '/checkout' : '/auth?callbackUrl=/checkout');
+    if (isAuthenticated) router.push('/checkout');
+    else openSignIn('/checkout');
   };
 
   const handleApplyCoupon = async () => {
@@ -617,7 +620,7 @@ export default function CartPage() {
                         </>
                       ) : (
                         <p>
-                          <Link href="/auth?callbackUrl=/cart" className="font-semibold text-[#111114] underline underline-offset-2">
+                          <Link href="/auth?callbackUrl=/cart" onClick={(e) => { e.preventDefault(); openSignIn(); }} className="font-semibold text-[#111114] underline underline-offset-2">
                             Sign in
                           </Link>{' '}
                           to earn {pointsEarned.toLocaleString()} points on this order

@@ -7,6 +7,7 @@ import Modal from '../../../components/Modal';
 import { calcShipping, getDeliveryInfo, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME, formatShipping } from '../../../../lib/shipping';
 import { isDefaultAddress, addressParts } from '../../../account/_components/addressDisplay';
 import { LAVENDER, LAVENDER_HOVER, BORDER, WELL, DIVIDER } from './theme';
+import { useSignIn } from '@/app/context/SignInContext';
 
 /**
  * Everything about getting the product to the customer, in one panel:
@@ -14,6 +15,7 @@ import { LAVENDER, LAVENDER_HOVER, BORDER, WELL, DIVIDER } from './theme';
  * and who sells / delivers it.
  */
 export default function DeliveryCard({ user, shippingAddresses = [], contactName, cartItems = [], quantity = 1 }) {
+  const { openSignIn } = useSignIn();
   const [info, setInfo] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -73,7 +75,7 @@ export default function DeliveryCard({ user, shippingAddresses = [], contactName
         <Divider />
 
         {/* Destination */}
-        <Link href={!user ? '/auth' : '/account/addresses'}
+        <Link href={!user ? '/auth' : '/account/addresses'} onClick={(e) => { if (!user) { e.preventDefault(); openSignIn(); } }}
           className="flex items-center gap-3 px-4 py-3 group transition-colors hover:bg-purple-50/40">
           <IconDot><MapPin size={15} style={{ color: LAVENDER }} /></IconDot>
           <p className="flex-1 min-w-0 text-[13px] text-gray-600 truncate">

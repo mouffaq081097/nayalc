@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Share2, X, Copy, Check, Mail, Facebook, Twitter, QrCode } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSignIn } from '@/app/context/SignInContext';
 
 const LAVENDER = 'rgb(147,104,236)';
 
@@ -24,6 +25,7 @@ function WhatsAppIcon(props) {
  * Naya Rewards flow instead).
  */
 export function SharePanel() {
+  const { openSignIn } = useSignIn();
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -92,7 +94,7 @@ export function SharePanel() {
                 <p className="text-[12px] text-gray-500 mb-2.5">Sign in to track your Naya Rewards points.</p>
                 <Link
                   href="/auth"
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => { e.preventDefault(); setOpen(false); openSignIn(); }}
                   className="block text-center w-full py-2.5 rounded-full text-white text-[12px] font-bold cursor-pointer"
                   style={{ background: LAVENDER }}
                 >

@@ -26,6 +26,7 @@ import DeliveryCard from './_components/DeliveryCard';
 import ProductDetails from './_components/ProductDetails';
 import BoughtTogether from './_components/BoughtTogether';
 import { LAVENDER, LAVENDER_HOVER, aed, BUTTON, SECTION_TITLE, WELL } from './_components/theme';
+import { useSignIn } from '@/app/context/SignInContext';
 
 function parseSizes(sizeStr) {
   if (!sizeStr) return [];
@@ -48,6 +49,7 @@ function Stars({ rating, size = 14 }) {
 }
 
 export default function ProductClient({ params, initialProduct }) {
+  const { openSignIn } = useSignIn();
   const resolvedParams = use(params);
   const { productId } = resolvedParams;
   const { addToCart, cartItems } = useCart();
@@ -159,7 +161,7 @@ export default function ProductClient({ params, initialProduct }) {
   };
 
   const handleWishlistToggle = async () => {
-    if (!user) { router.push('/auth'); return; }
+    if (!user) { openSignIn(); return; }
     try {
       const method = isWishlisted ? 'DELETE' : 'POST';
       const response = await fetch(

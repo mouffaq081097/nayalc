@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Star, Trash2, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { headingFont } from './home/SectionHeading';
+import { useSignIn } from '@/app/context/SignInContext';
 
 const INK = '#111114';
 
@@ -64,6 +65,7 @@ function Select({ id, label, value, onChange, options }) {
 }
 
 function WriteReview({ productId, onDone }) {
+  const { openSignIn } = useSignIn();
   const { user } = useAuth();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -74,7 +76,7 @@ function WriteReview({ productId, onDone }) {
   if (!user?.id) {
     return (
       <p className="py-6 text-[14px] text-[#6b6b73]">
-        Please <Link href={`/auth?callbackUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '/')}`} className="text-[#111114] underline underline-offset-4">sign in</Link> to write a review.
+        Please <Link href="/auth" onClick={(e) => { e.preventDefault(); openSignIn(); }} className="text-[#111114] underline underline-offset-4">sign in</Link> to write a review.
       </p>
     );
   }

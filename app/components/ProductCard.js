@@ -15,6 +15,7 @@ import { isPreorderOnly, leadDays } from '../../lib/backorderRules';
 import { formatAED, viewCountLabel } from '../lib/utils';
 import { shortBrand } from '@/lib/seo';
 import { cardName } from './home/HomeProductCard';
+import { useSignIn } from '@/app/context/SignInContext';
 
 // Cloud Luxe accent for card badges (rank, best seller, saving)
 const LAVENDER = 'rgb(147,104,236)';
@@ -48,6 +49,7 @@ const TypewriterText = ({ text, speed = 10 }) => {
 };
 
 const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, viewCount, isNew, isBestseller, rank, category, brandName, stock_quantity, backorderable = 0, backorder_lead_days, description, size, variant = 'light', concerns = [], initialWishlisted = false, onWishlistChange }) => {
+  const { openSignIn } = useSignIn();
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(initialWishlisted);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -127,7 +129,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const handleWishlistToggle = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) { router.push('/auth'); return; }
+    if (!isAuthenticated) { openSignIn(); return; }
     try {
       const method = isWishlisted ? 'DELETE' : 'POST';
       const response = await fetch('/api/wishlist', {
