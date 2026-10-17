@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import PageLoader from '@/app/components/PageLoader';
 import { canOpenPage, hasRole } from '@/lib/erp/roles';
-import { CURRENCIES, PO_STATUS, PR_STATUS, poNumber, prNumber } from '@/lib/erp/documents';
+import { CURRENCIES, PO_STATUS, PR_STATUS, fmtMoney, poNumber, prNumber } from '@/lib/erp/documents';
 import LinesEditor, { linesPayload } from './LinesEditor';
 import {
   ActionButton, Dialog, ErrorBanner, FieldLabel, MetaRow, Notice, PageHeader, SectionCard, StatusBadge, SupplierSelect,
-  api, fmtDate, subdued, text, toDateInput, usePurchasingProducts, useSuppliers,
+  api, fmtDate, secondary, subdued, text, toDateInput, usePurchasingProducts, useSuppliers,
 } from './purchasingUi';
 
 const toLines = (items) => items.map(i => ({
@@ -124,6 +124,7 @@ export default function RequisitionView({ id }) {
     }
   };
 
+  const estimatedTotal = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0), 0);
   const ownApproval = pr && pr.requested_by === access.userId && !access.full;
   const actions = [];
   if (editable) {
@@ -216,12 +217,34 @@ export default function RequisitionView({ id }) {
               <div>
                 <MetaRow label="Preferred supplier">{pr?.supplier_name || '—'}</MetaRow>
                 <MetaRow label="Needed by">{fmtDate(pr?.needed_by)}</MetaRow>
-                <MetaRow label="Submitted">{fmtDate(pr?.submitted_at)}</MetaRow>
-                {pr?.decided_at && <MetaRow label={status === 'rejected' ? 'Rejected' : 'Approved'}>{`${fmtDate(pr.decided_at)} · ${pr.decided_by_name}`}</MetaRow>}
-                {pr?.notes && <p className="text-[13px] mt-3 whitespace-pre-line" style={text}>{pr.notes}</p>}
+                <MetaRow label="Prices in">{pr?.currency || 'AED'}</MetaRow>
+                <MetaRow label="Estimated total"><span className="font-semibold tabular-nums">{fmtMoney(estimatedTotal, pr?.currency || 'AED')}</span></MetaRow>
+                {pr?.notes && (
+                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--sp-border)' }}>
+                    <p className="text-[12px] mb-1" style={subdued}>Notes from {pr.requested_by_name || 'the requester'}</p>
+                    <p className="text-[13px] whitespace-pre-line" style={text}>{pr.notes}</p>
+                  </div>
+                )}
               </div>
             )}
           </SectionCard>
+
+          {pr && (
+            <SectionCard title="History" padded>
+              <ol className="space-y-3">
+                {history(pr).map(e => (
+                  <li key={e.key} className="flex gap-3">
+                    <span className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: e.color }} />
+                    <div className="min-w-0 text-[13px]">
+                      <p style={text}>{e.label}</p>
+                      {e.meta && <p className="text-[12px]" style={subdued}>{e.meta}</p>}
+                      {e.note && <p className="text-[12px] mt-1 whitespace-pre-line" style={secondary}>{e.note}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </SectionCard>
+          )}
 
           {pr?.purchase_orders?.length > 0 && (
             <SectionCard title="Purchase orders" padded>
@@ -284,3 +307,24 @@ const ACTION_DONE = {
   submit: 'Sent for approval', withdraw: 'Withdrawn — it is a draft again', approve: 'Approved', reject: 'Rejected',
   reopen: 'Reopened as a draft', cancel: 'Requisition cancelled',
 };
+
+/** What happened to a requisition so far, oldest first */
+function history(pr) {
+  const events = [{ key: 'created', label: 'Created', meta: `${pr.requested_by_name || '—'} · ${fmtDate(pr.created_at)}`, color: '#d4d4d4' }];
+  if (pr.submitted_at) events.push({ key: 'submitted', label: 'Sent for approval', meta: fmtDate(pr.submitted_at), color: '#9368ec' });
+  if (pr.decided_at) {
+    const rejected = pr.status === 'rejected';
+    events.push({
+      key: 'decided',
+      label: rejected ? 'Rejected' : 'Approved',
+      meta: `${pr.decided_by_name || '—'} · ${fmtDate(pr.decided_at)}`,
+      note: pr.decision_note,
+      color: rejected ? '#e22c38' : '#29845a',
+    });
+  } else if (pr.status === 'submitted') {
+    events.push({ key: 'waiting', label: 'Waiting for an approver', meta: 'No decision yet', color: '#ffd79d' });
+  }
+  if (pr.status === 'converted') events.push({ key: 'converted', label: 'Purchase order created', color: '#29845a' });
+  if (pr.status === 'cancelled') events.push({ key: 'cancelled', label: 'Cancelled', color: '#8a8a8a' });
+  return events;
+}

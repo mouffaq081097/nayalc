@@ -241,8 +241,8 @@ export function Dialog({ open, title, children, onClose, footer }) {
   );
 }
 
-export const ProductThumb = ({ image }) => (
-  <span className="w-9 h-9 rounded-md shrink-0 flex items-center justify-center overflow-hidden" style={{ background: 'var(--sp-surface-sub)', border: '1px solid #ebebeb' }}>
+export const ProductThumb = ({ image, size = 'md' }) => (
+  <span className={`${size === 'lg' ? 'w-12 h-12' : 'w-9 h-9'} rounded-md shrink-0 flex items-center justify-center overflow-hidden`} style={{ background: 'var(--sp-surface-sub)', border: '1px solid #ebebeb' }}>
     {image
       // eslint-disable-next-line @next/next/no-img-element
       ? <img src={image} alt="" className="w-full h-full object-contain" />

@@ -35,7 +35,43 @@ export default function LinesEditor({ lines, onChange, products, withPrice = fal
       )}
 
       {lines.length === 0 ? (
-        <p className="px-5 py-8 text-center text-[13px]" style={subdued}>No products yet. Search above to add one.</p>
+        <p className="px-5 py-8 text-center text-[13px]" style={subdued}>{readOnly ? 'No products.' : 'No products yet. Search above to add one.'}</p>
+      ) : readOnly ? (
+        // Read-only: a list, not a table, so long product names wrap instead of pushing the figures off the card
+        <ul>
+          {lines.map(line => {
+            const product = byId.get(line.product_id);
+            const priced = withPrice && line.unit_price !== '' && line.unit_price != null;
+            return (
+              <li key={line.product_id} className="px-5 py-3.5 flex gap-3" style={{ borderBottom: '1px solid #f1f1f1' }}>
+                <ProductThumb image={product?.image} size="lg" />
+                <div className="min-w-0 flex-1 sm:flex sm:items-start sm:gap-6">
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/admin/products/${line.product_id}`} className="text-[13px] font-medium leading-snug hover:underline line-clamp-2 break-words" style={text} title={line.product_name}>
+                      {line.product_name}
+                    </Link>
+                    <span className="block text-[12px] mt-0.5" style={subdued}>{product ? stockLine(product) : 'No longer in the catalogue'}</span>
+                    {withNote && line.note && <p className="text-[12px] mt-1.5 pl-2 whitespace-pre-line" style={{ ...secondary, borderLeft: '2px solid var(--sp-border)' }}>{line.note}</p>}
+                  </div>
+                  <div className="mt-2 sm:mt-0 shrink-0 flex items-baseline justify-between gap-4 sm:flex-col sm:items-end sm:gap-0.5 tabular-nums">
+                    <span className="text-[12px] sm:order-2" style={secondary}>
+                      {line.quantity} {Number(line.quantity) === 1 ? 'unit' : 'units'}
+                      {withPrice && <> × {priced ? fmtMoney(line.unit_price, currency, { maxDigits: 4 }) : '—'}</>}
+                    </span>
+                    {withPrice && (
+                      <span className="text-[14px] font-semibold sm:order-1" style={text}>
+                        {priced ? fmtMoney((Number(line.quantity) || 0) * (Number(line.unit_price) || 0), currency) : 'No price'}
+                      </span>
+                    )}
+                    {withPrice && product?.last_cost != null && (
+                      <span className="hidden sm:block sm:order-3 text-[11px] mt-0.5" style={subdued}>Last landed cost AED {product.last_cost.toFixed(2)}</span>
+                    )}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       ) : (
         <div className="overflow-x-auto mt-2">
           <table className="sp-table">
@@ -54,11 +90,11 @@ export default function LinesEditor({ lines, onChange, products, withPrice = fal
                 const product = byId.get(line.product_id);
                 return (
                   <tr key={line.product_id}>
-                    <td className="min-w-[240px]">
+                    <td className="min-w-[220px]">
                       <div className="flex items-center gap-3">
                         <ProductThumb image={product?.image} />
                         <div className="min-w-0">
-                          <Link href={`/admin/products/${line.product_id}`} className="block text-[13px] font-medium hover:underline truncate" style={text}>{line.product_name}</Link>
+                          <Link href={`/admin/products/${line.product_id}`} className="text-[13px] font-medium leading-snug hover:underline line-clamp-2 break-words" style={text} title={line.product_name}>{line.product_name}</Link>
                           <span className="block text-[12px]" style={subdued}>{product ? stockLine(product) : 'No longer in the catalogue'}</span>
                         </div>
                       </div>
