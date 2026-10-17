@@ -30,6 +30,7 @@ const PAGE_TITLES = {
   '/account/settings':  'Settings',
 };
 
+// Pages using this shell are listed in SIDEBAR_PAGES (app/LayoutContent.js) so the footer clears the sidebar
 export default function AccountShell({ children, wishCount = 0, title }) {
   const pathname = usePathname();
   const router   = useRouter();
