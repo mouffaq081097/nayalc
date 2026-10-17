@@ -5,10 +5,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ShoppingBag, MessageSquare, Search, Bell, Menu, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import Image from 'next/image';
 import { createFetchWithAuth } from '../lib/api';
 import PageLoader from '@/app/components/PageLoader';
 import AdminSidebar from './_components/AdminSidebar';
+import BrandLogo from '../components/BrandLogo';
 import { canOpenPage, staffPages } from '@/lib/erp/roles';
 
 const SIDEBAR_W = '232px';
@@ -105,15 +105,8 @@ const AdminLayout = ({ children }) => {
 
         {/* Logo */}
         <Link href="/admin" className="flex items-center shrink-0 pr-2" aria-label="Naya Lumière Cosmetics admin home">
-          {/* Cream logo for the dark top bar: naya-lumiere-light-transparent.png cropped to the artwork (491 × 76) */}
-          <Image
-            src="/naya-lumiere-light-logo.png"
-            alt="Naya Lumière Cosmetics"
-            width={491}
-            height={76}
-            className="h-[22px] sm:h-[36px] w-auto object-contain"
-            priority
-          />
+          {/* The site's logo lockup, light for the dark top bar (it steps down on phones) */}
+          <BrandLogo tone="light" priority />
         </Link>
 
         {/* Search — hidden on phones, where the top bar has no room for it */}
