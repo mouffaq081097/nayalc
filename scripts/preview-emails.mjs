@@ -35,6 +35,7 @@ const emails = {
   'welcome':                 mail.buildWelcomeEmail('Layla', products.slice(0, 3)),
   'login-confirmation':      mail.buildLoginConfirmationEmail('Layla'),
   'password-reset':          mail.buildPasswordResetEmail('Layla', 'https://nayalc.com/auth/reset-password?token=sample'),
+  'login-code':              mail.buildLoginCodeEmail('482913'),
   'email-verification':      mail.buildEmailVerificationEmail('Layla', 'https://nayalc.com/api/auth/verify-email?token=sample'),
   'subscription':            mail.buildSubscriptionConfirmationEmail(products.slice(0, 3)),
   'order-confirmation-card': mail.buildOrderConfirmationEmail('Layla', 10482, 891, 42.43, 99, 990, 0, items, address, 0, 'WELCOME10', 'card', placedAt, products.slice(0, 3)),

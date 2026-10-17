@@ -1,17 +1,22 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Button } from '../components/ui/button';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight, Sparkles, ShieldCheck, Star, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence, MotionConfig, useScroll, useTransform, useReducedMotion } from 'framer-motion';
-import Image from 'next/image';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
 import BrandLogo from '../components/BrandLogo';
+
+/**
+ * Sign in or create account (after Shopify): one card, email first. We email a
+ * 6-digit code (POST /api/auth/email-code) and the code signs the customer in
+ * through the 'email-code' provider, creating the account the first time — no
+ * password, no separate register form. Google / Apple sit above when configured;
+ * "Sign in with password" stays for customers who prefer it.
+ */
 
 // Mirrors the server-side provider gating in lib/auth.js — a provider without
 // credentials configured must not render a button that goes nowhere.
@@ -20,744 +25,370 @@ const SOCIAL_PROVIDERS = {
   apple: process.env.NEXT_PUBLIC_APPLE_AUTH_ENABLED === 'true',
 };
 
+const RESEND_AFTER_S = 30;
+const CODE_ERRORS = {
+  CODE_WRONG: "That code isn't right. Check the email and try again.",
+  CODE_EXPIRED: 'That code has expired. Send a new one.',
+  CODE_LOCKED: 'Too many wrong tries. Send a new code.',
+  ACCOUNT_SUSPENDED: 'This account is suspended. Please contact us.',
+};
+
 function getSafeCallbackUrl() {
   if (typeof window === 'undefined') return '/';
   const callbackUrl = new URLSearchParams(window.location.search).get('callbackUrl');
   return callbackUrl?.startsWith('/') && !callbackUrl.startsWith('//') ? callbackUrl : '/';
 }
 
-// Focus the first field on desktop only — on a phone this would throw the
-// keyboard up over the sheet while it is still animating in.
-function useDesktopAutoFocus() {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (window.matchMedia('(min-width: 1024px)').matches) ref.current?.focus();
-  }, []);
-  return ref;
+const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111114]/30';
+const field = 'h-[52px] w-full rounded-xl border border-[#dedede] bg-white px-4 text-[16px] text-[#111114] placeholder:text-[#707070] focus:border-[#111114] focus:outline-none focus:ring-1 focus:ring-[#111114] disabled:opacity-60 lg:text-[15px]';
+const primary = `flex h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#5b35ec] text-[15px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 ${focusRing}`;
+const textLink = `text-[14px] text-[#111114] underline underline-offset-4 hover:opacity-70 ${focusRing}`;
+
+const Alert = ({ children, tone = 'error' }) => (children ? (
+  <p role={tone === 'error' ? 'alert' : 'status'} className={`rounded-xl px-4 py-3 text-[13.5px] ${tone === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+    {children}
+  </p>
+) : null);
+
+function SocialButtons() {
+  const { loginWithProvider } = useAuth();
+  const [pending, setPending] = useState(null);
+  const providers = [
+    { id: 'google', label: 'Continue with Google', icon: <FcGoogle size={19} />, enabled: SOCIAL_PROVIDERS.google },
+    { id: 'apple', label: 'Continue with Apple', icon: <FaApple size={19} color="#111114" />, enabled: SOCIAL_PROVIDERS.apple },
+  ].filter(p => p.enabled);
+  if (providers.length === 0) return null;
+
+  return (
+    <>
+      <div className="space-y-2.5">
+        {providers.map(p => (
+          <button
+            key={p.id}
+            type="button"
+            disabled={pending !== null}
+            onClick={() => { setPending(p.id); loginWithProvider(p.id, getSafeCallbackUrl()); }}
+            className={`flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-[#dedede] bg-white text-[15px] font-medium text-[#111114] transition-colors hover:bg-[#fafafa] disabled:opacity-60 ${focusRing}`}
+          >
+            {pending === p.id ? <Loader2 size={17} className="animate-spin" /> : p.icon}
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div className="my-6 flex items-center gap-4">
+        <div className="h-px flex-1 bg-[#dedede]" />
+        <span className="text-[13px] text-[#707070]">OR</span>
+        <div className="h-px flex-1 bg-[#dedede]" />
+      </div>
+    </>
+  );
 }
 
+/** Step 1: email (+ news opt-in) → a code is sent */
+function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPassword }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const ref = useRef(null);
+  useEffect(() => { if (window.matchMedia('(min-width: 1024px)').matches) ref.current?.focus(); }, []);
 
-
-function ForgotPassword({ onBack }) {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState(null);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const emailRef = useDesktopAutoFocus();
-
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setMessage(null);
-    setIsLoading(true);
+    setError('');
+    setBusy(true);
     try {
-      const response = await fetch('/api/auth/forgot-password', {
+      const res = await fetch('/api/auth/email-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, marketing }),
       });
-      const data = await response.json();
-      if (response.ok) {
-        setMessage(data.message);
-      } else {
-        setError(data.error);
-      }
-    } catch {
-      setError('An error occurred. Please try again.');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "We couldn't send the code. Please try again.");
+      onSent();
+    } catch (err) {
+      setError(err.message);
     } finally {
-      setIsLoading(false);
+      setBusy(false);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -12 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      <div>
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 text-[11px] font-semibold text-[#999] hover:text-[#9368ee] transition-colors mb-4"
-        >
-          <ArrowLeft size={12} /> Back to Sign In
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Email Address</label>
-          <div className="relative group">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
-            <input
-              ref={emailRef}
-              type="email"
-              inputMode="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              disabled={isLoading}
-              className="w-full h-[56px] md:h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
-            />
-          </div>
+    <>
+      <SocialButtons />
+      <form onSubmit={submit} className="space-y-4">
+        <label htmlFor="auth-email" className="sr-only">Email</label>
+        <div className="relative">
+          <input
+            ref={ref}
+            id="auth-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            required
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            disabled={busy}
+            className={`${field} pr-14`}
+          />
+          <button
+            type="submit"
+            disabled={busy || !email.trim()}
+            aria-label="Continue"
+            className={`absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#111114] transition-colors hover:bg-black/5 disabled:opacity-40 ${focusRing}`}
+          >
+            {busy ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={20} />}
+          </button>
         </div>
 
-        {message && (
-          <p role="status" className="text-emerald-700 text-[12px] font-semibold text-center bg-emerald-50 py-3 rounded-xl border border-emerald-100">
-            {message}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="text-amber-700 text-[12px] font-semibold text-center bg-amber-50 py-3 rounded-xl border border-amber-100">
-            {error}
-          </p>
-        )}
+        <label className="flex cursor-pointer items-center gap-3 text-[15px] text-[#111114]">
+          <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)} className="h-5 w-5 rounded accent-[#111114]" />
+          Email me with news and offers
+        </label>
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-[56px] md:h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 mt-1 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
-        >
-          {isLoading ? (
-            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <>Send Reset Link <ArrowRight size={14} /></>
-          )}
-        </Button>
+        <Alert>{error}</Alert>
       </form>
-    </motion.div>
+
+      <div className="mt-5 text-center">
+        <button type="button" onClick={onPassword} className={textLink}>Sign in with password instead</button>
+      </div>
+    </>
   );
 }
 
-function Login({ onForgotClick }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const emailRef = useDesktopAutoFocus();
-  const { login } = useAuth();
+/** Step 2: the 6-digit code; auto-submits on the sixth digit */
+function CodeStep({ email, marketing, onChangeEmail }) {
+  const router = useRouter();
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [wait, setWait] = useState(RESEND_AFTER_S);
+  const ref = useRef(null);
 
-  const handleSubmit = async (e) => {
+  useEffect(() => { ref.current?.focus(); }, []);
+  useEffect(() => {
+    if (wait <= 0) return undefined;
+    const t = setTimeout(() => setWait(w => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+
+  const verify = async (value) => {
+    if (busy || value.length !== 6) return;
+    setError('');
+    setNotice('');
+    setBusy(true);
+    const result = await signIn('email-code', { redirect: false, email, code: value });
+    if (result?.ok && !result.error) {
+      router.push(getSafeCallbackUrl());
+      return;
+    }
+    setBusy(false);
+    setCode('');
+    setError(CODE_ERRORS[result?.error] || "We couldn't sign you in. Please try again.");
+    ref.current?.focus();
+  };
+
+  const resend = async () => {
+    setError('');
+    setNotice('');
+    setWait(RESEND_AFTER_S);
+    try {
+      const res = await fetch('/api/auth/email-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, marketing }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "We couldn't send the code.");
+      setNotice('A new code is on its way.');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <form onSubmit={e => { e.preventDefault(); verify(code); }} className="space-y-4">
+      <p className="text-[15px] leading-relaxed text-[#5a5a64]">
+        Sent to <span className="font-medium text-[#111114]">{email}</span>{' '}
+        <button type="button" onClick={onChangeEmail} className={textLink}>Change</button>
+      </p>
+
+      <label htmlFor="auth-code" className="sr-only">6-digit code</label>
+      <input
+        ref={ref}
+        id="auth-code"
+        type="text"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        pattern="[0-9]*"
+        maxLength={6}
+        placeholder="6-digit code"
+        value={code}
+        disabled={busy}
+        onChange={e => {
+          const next = e.target.value.replace(/\D/g, '').slice(0, 6);
+          setCode(next);
+          if (next.length === 6) verify(next);
+        }}
+        className={`${field} text-center text-[22px] tracking-[0.5em] placeholder:text-[15px] placeholder:tracking-normal lg:text-[22px]`}
+      />
+
+      <Alert>{error}</Alert>
+      <Alert tone="success">{notice}</Alert>
+
+      <button type="submit" disabled={busy || code.length !== 6} className={primary}>
+        {busy ? <Loader2 size={18} className="animate-spin" /> : 'Sign in'}
+      </button>
+
+      <p className="text-center text-[14px] text-[#5a5a64]">
+        Didn&apos;t get it? Check your spam folder or{' '}
+        {wait > 0
+          ? <span className="tabular-nums">resend in {wait}s</span>
+          : <button type="button" onClick={resend} className={textLink}>send a new code</button>}
+      </p>
+    </form>
+  );
+}
+
+/** Fallback: email + password, for customers who prefer it */
+function PasswordStep({ email, setEmail, onBack, onForgot }) {
+  const { login } = useAuth();
+  const [password, setPassword] = useState('');
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+    setError('');
+    setBusy(true);
     try {
       await login(email, password, getSafeCallbackUrl());
     } catch (err) {
       setError(err.message);
     } finally {
-      setIsLoading(false);
+      setBusy(false);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -12 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-5"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="signin-email" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Email Address</label>
-          <div className="relative group">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
-            <input
-              ref={emailRef}
-              id="signin-email"
-              type="email"
-              inputMode="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              disabled={isLoading}
-              className="w-full h-[56px] md:h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label htmlFor="signin-password" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Password</label>
-            <button
-              type="button"
-              onClick={onForgotClick}
-              className="text-[11px] font-semibold text-[#9368ee] hover:text-[#7c3aed] transition-colors"
-            >
-              Forgot password?
-            </button>
-          </div>
-          <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
-            <input
-              id="signin-password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              disabled={isLoading}
-              className="w-full h-[56px] md:h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-full text-[rgba(196,167,254,0.7)] hover:text-[#9333ea] active:bg-[rgba(196,167,254,0.12)] transition-colors"
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-        </div>
-
-        {error && (
-          <motion.p
-            role="alert"
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-amber-700 text-[12px] font-semibold text-center bg-amber-50 py-3 rounded-xl border border-amber-100"
-          >
-            {error}
-          </motion.p>
-        )}
-
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-[56px] md:h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
-        >
-          {isLoading ? (
-            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <>Sign In <ArrowRight size={14} /></>
-          )}
-        </Button>
-      </form>
-    </motion.div>
-  );
-}
-
-// One tap, no password, no verification email — the provider already vouched
-// for the address. Rendered above the tabs so it serves sign-in and register
-// alike. Hidden entirely when neither provider is configured.
-function SocialAuthButtons({ disabled }) {
-  const { loginWithProvider } = useAuth();
-  const [pending, setPending] = useState(null);
-
-  const providers = [
-    { id: 'google', label: 'Continue with Google', icon: <FcGoogle size={18} />, enabled: SOCIAL_PROVIDERS.google },
-    { id: 'apple', label: 'Continue with Apple', icon: <FaApple size={18} color="#111114" />, enabled: SOCIAL_PROVIDERS.apple },
-  ].filter((p) => p.enabled);
-
-  if (providers.length === 0) return null;
-
-  const start = (id) => {
-    setPending(id);
-    loginWithProvider(id, getSafeCallbackUrl());
-  };
-
-  return (
-    <div className="space-y-2.5 mb-5">
-      {providers.map((p) => (
-        <button
-          key={p.id}
-          type="button"
-          onClick={() => start(p.id)}
-          disabled={disabled || pending !== null}
-          className="w-full h-[52px] rounded-full border border-[#e5e0ec] bg-white flex items-center justify-center gap-3 text-[14px] font-semibold text-[#111114] transition-colors hover:bg-[#faf8fd] active:scale-[0.99] disabled:opacity-60"
-        >
-          {pending === p.id ? <Loader2 size={16} className="animate-spin" /> : p.icon}
-          {p.label}
+    <form onSubmit={submit} className="space-y-4">
+      <label htmlFor="pw-email" className="sr-only">Email</label>
+      <input id="pw-email" type="email" inputMode="email" autoComplete="email" required placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} disabled={busy} className={field} />
+      <label htmlFor="pw-password" className="sr-only">Password</label>
+      <div className="relative">
+        <input id="pw-password" type={show ? 'text' : 'password'} autoComplete="current-password" required placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} disabled={busy} className={`${field} pr-12`} />
+        <button type="button" onClick={() => setShow(s => !s)} aria-label={show ? 'Hide password' : 'Show password'} className={`absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#707070] hover:text-[#111114] ${focusRing}`}>
+          {show ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
-      ))}
-
-      <div className="flex items-center gap-3 pt-1.5">
-        <div className="h-px flex-1 bg-[#eceaf1]" />
-        <span className="text-[11px] font-medium text-[#aaa]">or</span>
-        <div className="h-px flex-1 bg-[#eceaf1]" />
       </div>
-    </div>
+      <Alert>{error}</Alert>
+      <button type="submit" disabled={busy} className={primary}>
+        {busy ? <Loader2 size={18} className="animate-spin" /> : 'Sign in'}
+      </button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button type="button" onClick={onBack} className={textLink}>Sign in with a code instead</button>
+        <button type="button" onClick={onForgot} className={textLink}>Forgot password?</button>
+      </div>
+    </form>
   );
 }
 
-function getPasswordStrength(password) {
-  if (!password) return { score: 0, label: '', segments: [false, false, false, false] };
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^a-zA-Z0-9]/.test(password)) score++;
-  if (password.length >= 12) score++;
-  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-  const segments = [score >= 1, score >= 2, score >= 3, score >= 4];
-  return { score, label: labels[score], segments };
-}
+function ForgotStep({ email, setEmail, onBack }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
-function Register() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [emailOptIn, setEmailOptIn] = useState(true);
-  const fullNameRef = useDesktopAutoFocus();
-  const { register } = useAuth();
-
-  const strength = getPasswordStrength(password);
-  const segmentColors = ['#ef4444', '#f97316', '#a78bfa', '#7c68ee'];
-
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+    setError('');
+    setMessage('');
+    setBusy(true);
     try {
-      // Signs in and redirects on success — no "check your email" wall.
-      await register(fullName.trim(), email.trim(), password, getSafeCallbackUrl());
-    } catch (err) {
-      setError(err.message);
-      setIsLoading(false);
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) setMessage(data.message || 'Check your email for a reset link.');
+      else setError(data.error || 'Something went wrong. Please try again.');
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -12 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-5"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="register-fullname" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Full Name</label>
-          <input
-            ref={fullNameRef}
-            id="register-fullname"
-            type="text"
-            placeholder="Layla Ahmed"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-            autoComplete="name"
-            disabled={isLoading}
-            className="w-full h-[56px] md:h-[52px] px-4 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="register-email" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Email</label>
-          <div className="relative group">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
-            <input
-              id="register-email"
-              type="email"
-              inputMode="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              disabled={isLoading}
-              className="w-full h-[56px] md:h-[52px] pl-12 pr-5 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="register-password" className="text-[11px] font-semibold text-[#555] uppercase tracking-wide">Password</label>
-          <div className="relative group">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(196,167,254,0.7)] group-focus-within:text-[#9333ea] transition-colors" />
-            <input
-              id="register-password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="At least 8 characters"
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              disabled={isLoading}
-              className="w-full h-[56px] md:h-[52px] pl-12 pr-12 rounded-2xl border border-[rgba(216,180,254,0.4)] bg-white focus:border-[rgba(147,51,234,0.4)] focus:ring-4 focus:ring-[rgba(196,167,254,0.12)] transition-all duration-200 outline-none text-[16px] md:text-[14px] font-medium text-[#111114] placeholder:text-[#bbb] disabled:opacity-60"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-full text-[rgba(196,167,254,0.7)] hover:text-[#9333ea] active:bg-[rgba(196,167,254,0.12)] transition-colors"
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-          {/* Password strength bar */}
-          <div className="flex gap-1.5 pt-0.5">
-            {strength.segments.map((active, i) => (
-              <div
-                key={i}
-                className="h-[3px] flex-1 rounded-full transition-all duration-300"
-                style={{
-                  backgroundColor: active ? segmentColors[strength.score - 1] : 'rgba(216,180,254,0.25)',
-                }}
-              />
-            ))}
-          </div>
-          {password && (
-            <p className="text-[11px]" style={{ color: segmentColors[strength.score - 1] }}>
-              {strength.label} — at least 8 characters.{' '}
-              <span className="text-[rgba(107,33,168,0.6)]">A number and a symbol make it stronger.</span>
-            </p>
-          )}
-          {!password && (
-            <p className="text-[11px] text-[#999]">
-              At least 8 characters. <span className="text-[#9368ee]">A number and a symbol make it stronger.</span>
-            </p>
-          )}
-        </div>
-
-        {/* Marketing opt-in */}
-        <div className="flex items-start gap-2.5 pt-1">
-          <div className="relative mt-0.5 flex-shrink-0">
-            <input
-              type="checkbox"
-              id="email-optin"
-              checked={emailOptIn}
-              onChange={(e) => setEmailOptIn(e.target.checked)}
-              className="sr-only"
-            />
-            <button
-              type="button"
-              onClick={() => setEmailOptIn(!emailOptIn)}
-              className="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center transition-all duration-200 border-2"
-              style={{
-                background: emailOptIn ? 'linear-gradient(135deg, #d8b4fe, #9368ee)' : 'white',
-                borderColor: emailOptIn ? '#9368ee' : 'rgba(216,180,254,0.5)',
-              }}
-            >
-              {emailOptIn && (
-                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </button>
-          </div>
-          <label
-            htmlFor="email-optin"
-            onClick={() => setEmailOptIn(!emailOptIn)}
-            className="text-[13px] font-medium text-[#333] leading-snug cursor-pointer"
-          >
-            Email me launches, restocks and{' '}
-            <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #d8b4fe, #9368ee)' }}>
-              rituals.
-            </span>
-          </label>
-        </div>
-
-        {error && (
-          <p role="alert" className="text-amber-700 text-[12px] font-semibold text-center bg-amber-50 py-3 rounded-xl border border-amber-100">
-            {error}
-          </p>
-        )}
-
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-[56px] md:h-[52px] rounded-full text-[13px] font-black uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 mt-1 border-none shadow-none transition-all duration-300 bg-gradient-to-br from-[#d8b4fe] to-[#9368ee] text-white"
-        >
-          {isLoading ? (
-            <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <>Create Account <ArrowRight size={14} /></>
-          )}
-        </Button>
-
-        <p className="text-center text-[11px] text-[#aaa]">
-          By creating an account you agree to our{' '}
-          <Link href="/terms" className="text-[#9333ea] hover:underline">Terms</Link>
-          {' '}and{' '}
-          <Link href="/privacy" className="text-[#9333ea] hover:underline">Privacy Policy</Link>.
-        </p>
-      </form>
-    </motion.div>
+    <form onSubmit={submit} className="space-y-4">
+      <label htmlFor="forgot-email" className="sr-only">Email</label>
+      <input id="forgot-email" type="email" inputMode="email" autoComplete="email" required placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} disabled={busy} className={field} />
+      <Alert>{error}</Alert>
+      <Alert tone="success">{message}</Alert>
+      <button type="submit" disabled={busy} className={primary}>
+        {busy ? <Loader2 size={18} className="animate-spin" /> : 'Send reset link'}
+      </button>
+      <div className="text-center">
+        <button type="button" onClick={onBack} className={textLink}>Back to sign in</button>
+      </div>
+    </form>
   );
 }
 
-
+const TITLES = {
+  email: ['Sign in or create account', "Enter your email and we'll send you a code."],
+  code: ['Enter code', null],
+  password: ['Sign in with password', null],
+  forgot: ['Reset your password', "We'll email you a link to choose a new one."],
+};
 
 export default function AuthPage() {
   const router = useRouter();
-  const [authMode, setAuthMode] = useState('login');
-  const prefersReducedMotion = useReducedMotion();
-
-  // Two different scrollers: on mobile the document scrolls, on desktop only
-  // the right-hand form column does (it's the lg:overflow-y-auto pane).
-  const formPaneRef = useRef(null);
-  const { scrollY } = useScroll();
-  const { scrollYProgress: paneProgress } = useScroll({ container: formPaneRef });
-
-  // Mobile: photo lags behind the page (~0.8x) while the headline dissolves
-  // under the rising sheet.
-  const heroY = useTransform(scrollY, [0, 400], [0, 80]);
-  const heroTextY = useTransform(scrollY, [0, 240], [0, -36]);
-  const heroTextOpacity = useTransform(scrollY, [0, 170], [1, 0]);
-
-  // Desktop: the sticky photo drifts and swells slightly as the form scrolls.
-  const paneY = useTransform(paneProgress, [0, 1], [0, -24]);
-  const paneScale = useTransform(paneProgress, [0, 1], [1, 1.1]);
-
-  const heroMotion = prefersReducedMotion ? undefined : { y: heroY };
-  const heroTextMotion = prefersReducedMotion ? undefined : { y: heroTextY, opacity: heroTextOpacity };
-  const paneMotion = prefersReducedMotion ? undefined : { y: paneY, scale: paneScale };
+  const [step, setStep] = useState('email');
+  const [email, setEmail] = useState('');
+  const [marketing, setMarketing] = useState(true);
+  const [title, subtitle] = TITLES[step];
 
   return (
-    <MotionConfig reducedMotion="user">
-    <div className="min-h-screen font-sans bg-[#f8f7fb]">
-      <header className="sticky top-0 z-40 border-b border-[#e5e5ea] bg-white">
-        <div className="mx-auto relative flex h-[56px] md:h-[60px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Back to store — icon-only on mobile so it never crowds the logo */}
-          <button
-            onClick={() => router.push('/')}
-            aria-label="Back to store"
-            className="group shrink-0 flex items-center gap-2 h-[38px] px-3 sm:px-4 rounded-full border border-[#e5e5ea] bg-white text-[12px] font-semibold text-[#2a2a31] hover:bg-[#f3f3f5] hover:border-[#c8c8cf] transition-colors"
-          >
-            <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
-            <span className="hidden sm:inline">Back to store</span>
-          </button>
-
-          {/* Brand lockup — same proportions as the main site header */}
-          <Link
-            href="/"
-            className="absolute left-1/2 -translate-x-1/2 flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60"
-          >
+    <div className="flex min-h-screen flex-col bg-[#f5f5f5] font-sans text-[#111114]">
+      <header className="border-b border-[#dedede] bg-white">
+        <div className="mx-auto flex h-[64px] max-w-[1200px] items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="inline-flex items-center rounded-md transition-opacity hover:opacity-75">
             <BrandLogo priority />
           </Link>
-
-          {/* Trust cue — balances the row and reassures on a password screen */}
-          <div className="shrink-0 hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-[#8a8a93]">
-            <ShieldCheck size={13} className="text-emerald-500" />
-            Secure sign-in
-          </div>
-          <div className="sm:hidden w-[38px]" aria-hidden="true" />
+          <button type="button" onClick={() => router.push('/')} className={`inline-flex h-10 items-center gap-1.5 text-[14px] text-[#111114] hover:underline underline-offset-4 ${focusRing}`}>
+            <ArrowLeft size={15} /> <span className="hidden sm:inline">Back to store</span><span className="sm:hidden">Store</span>
+          </button>
         </div>
       </header>
 
-      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-60px)]">
-        <div className="hidden lg:flex lg:w-1/2 xl:w-[52%] h-[calc(100vh-60px)] sticky top-[60px] flex-col relative overflow-hidden">
-          <motion.div className="absolute inset-0 will-change-transform" style={paneMotion}>
-            <Image
-              src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
-              alt="Naya Lumière Cosmetics"
-              fill
-              className="object-cover object-center"
-              priority
-            />
-          </motion.div>
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(160deg, rgba(26,8,56,0.55) 0%, rgba(59,7,100,0.72) 45%, rgba(26,8,56,0.90) 100%)',
-            }}
-          />
-          <div
-            className="absolute bottom-0 right-0 w-96 h-96 rounded-full pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(216,180,254,0.18) 0%, transparent 70%)', transform: 'translate(30%, 30%)' }}
-          />
-          <div className="relative z-10 mt-auto p-8 xl:p-10 pb-12 space-y-8">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[rgba(216,180,254,0.7)] mb-4 font-sans">
-                Your Beauty Sanctuary
-              </p>
-              <h1
-                className="text-5xl xl:text-[56px] leading-[1.1] text-white"
-                style={{ fontFamily: 'var(--font-cormorant), serif', fontStyle: 'italic', fontWeight: 600 }}
-              >
-                Discover your <br />
-                <em
-                  className="not-italic font-black"
-                  style={{
-                    fontFamily: 'var(--font-cormorant), serif',
-                    backgroundImage: 'linear-gradient(135deg, rgb(245,235,255), rgb(216,180,254))',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  radiance
-                </em>
-              </h1>
-              <p className="mt-4 text-[13px] text-white/55 font-normal leading-relaxed font-sans max-w-[320px]">
-                Clinical precision meets botanical luxury. Exclusive access to bespoke formulations crafted for the UAE.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3.5">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
-                >
-                  <Sparkles size={14} className="text-[rgb(216,180,254)]" />
-                </div>
-                <span className="text-[12px] font-semibold text-white/75 font-sans">AI-powered skin consultations</span>
-              </div>
-              <div className="flex items-center gap-3.5">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
-                >
-                  <ShieldCheck size={14} className="text-[rgb(216,180,254)]" />
-                </div>
-                <span className="text-[12px] font-semibold text-white/75 font-sans">Clinically proven formulas</span>
-              </div>
-              <div className="flex items-center gap-3.5">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(216,180,254,0.15)', border: '1px solid rgba(216,180,254,0.3)' }}
-                >
-                  <Star size={14} className="text-[rgb(216,180,254)]" />
-                </div>
-                <span className="text-[12px] font-semibold text-white/75 font-sans">Exclusive member rewards</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      <main className="flex flex-1 items-start justify-center px-4 py-8 sm:items-center sm:py-12">
+        <section aria-labelledby="auth-title" className="w-full max-w-[460px] rounded-2xl bg-white p-6 sm:p-10 sm:shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+          <h1 id="auth-title" className="text-[22px] font-semibold leading-tight">{title}</h1>
+          {subtitle && <p className="mt-1.5 text-[15px] text-[#5a5a64]">{subtitle}</p>}
 
-        <div className="lg:hidden relative h-[30vh] min-h-[190px] max-h-[260px] overflow-hidden flex-shrink-0">
-          {/* Bleeds 90px past the top and bottom so the parallax shift never
-              exposes an edge. */}
-          <motion.div
-            className="absolute inset-x-0 -top-[90px] h-[calc(100%+180px)] will-change-transform"
-            style={heroMotion}
-          >
-            <Image
-              src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
-              alt="Naya Lumière Cosmetics"
-              fill
-              className="object-cover object-center"
-              priority
-            />
-          </motion.div>
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(180deg, rgba(26,8,56,0.45) 0%, rgba(59,7,100,0.80) 100%)' }}
-          />
-          <motion.div
-            className="absolute inset-0 flex flex-col items-center justify-center text-center z-10 px-6 pb-8 will-change-transform"
-            style={heroTextMotion}
-          >
-            <h1
-              className="text-[30px] md:text-[36px] leading-[1.1] text-white"
-              style={{ fontFamily: 'var(--font-cormorant), serif', fontStyle: 'italic', fontWeight: 600 }}
-            >
-              Discover your <br />
-              <em
-                className="not-italic font-black"
-                style={{
-                  fontFamily: 'var(--font-cormorant), serif',
-                  backgroundImage: 'linear-gradient(135deg, rgb(245,235,255), rgb(216,180,254))',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                radiance
-              </em>
-            </h1>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[rgba(216,180,254,0.85)] mt-2 font-sans">
-              Your Beauty Sanctuary
-            </p>
-          </motion.div>
-        </div>
-
-        <div
-          ref={formPaneRef}
-          className="relative z-10 -mt-7 rounded-t-[28px] shadow-[0_-8px_30px_rgba(26,8,56,0.16)] lg:mt-0 lg:rounded-none lg:shadow-none flex-1 lg:w-1/2 xl:w-[48%] lg:min-h-0 lg:h-[calc(100vh-60px)] lg:overflow-y-auto bg-[#ffffff] flex flex-col"
-        >
-          {/* Sheet grabber — native-app cue, mobile only */}
-          <div className="lg:hidden flex justify-center pt-2.5 pb-1" aria-hidden="true">
-            <div className="h-1 w-10 rounded-full bg-[#e5e0ec]" />
+          <div className="mt-6">
+            {step === 'email' && (
+              <EmailStep
+                email={email} setEmail={setEmail}
+                marketing={marketing} setMarketing={setMarketing}
+                onSent={() => setStep('code')}
+                onPassword={() => setStep('password')}
+              />
+            )}
+            {step === 'code' && <CodeStep email={email.trim().toLowerCase()} marketing={marketing} onChangeEmail={() => setStep('email')} />}
+            {step === 'password' && <PasswordStep email={email} setEmail={setEmail} onBack={() => setStep('email')} onForgot={() => setStep('forgot')} />}
+            {step === 'forgot' && <ForgotStep email={email} setEmail={setEmail} onBack={() => setStep('password')} />}
           </div>
 
-          <div className="flex-1 flex items-start lg:items-center justify-center px-5 sm:px-6 pt-4 pb-6 lg:py-6">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-[420px]"
-            >
-              <div className="text-center mb-5">
-                <h2 className="text-[26px] md:text-[32px] font-black text-[#111114] leading-tight tracking-tight">
-                  {authMode === 'register'
-                    ? 'Create your account.'
-                    : authMode === 'forgot-password'
-                    ? 'Reset your password.'
-                    : 'Welcome back.'}
-                </h2>
-                <p className="text-[13px] text-[#888] mt-1.5 font-normal">
-                  {authMode === 'register'
-                    ? 'It takes about fifteen seconds.'
-                    : authMode === 'forgot-password'
-                    ? "We'll send a secure reset link."
-                    : 'Sign in to continue your beauty journey.'}
-                </p>
-              </div>
-
-              {authMode !== 'forgot-password' && <SocialAuthButtons />}
-
-              <Tabs
-                value={authMode === 'forgot-password' ? 'login' : authMode}
-                onValueChange={setAuthMode}
-                className="w-full"
-              >
-                {/* iOS-style segmented control — 44px tall so it's a comfortable tap target */}
-                <TabsList className="grid grid-cols-2 w-full h-11 p-1 mb-5 rounded-full border-0 bg-[#f3f0f9] gap-1">
-                  <TabsTrigger
-                    value="login"
-                    className="h-full rounded-full bg-transparent border-0 text-[13px] font-semibold text-[#8a8a93] shadow-none transition-colors duration-200 data-[state=active]:bg-white data-[state=active]:text-[#111114] data-[state=active]:shadow-[0_1px_4px_rgba(26,8,56,0.12)]"
-                  >
-                    Sign in
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="register"
-                    className="h-full rounded-full bg-transparent border-0 text-[13px] font-semibold text-[#8a8a93] shadow-none transition-colors duration-200 data-[state=active]:bg-white data-[state=active]:text-[#111114] data-[state=active]:shadow-[0_1px_4px_rgba(26,8,56,0.12)]"
-                  >
-                    Register
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="login" className="mt-0 outline-none">
-                  <AnimatePresence mode="wait">
-                    {authMode === 'forgot-password' ? (
-                      <ForgotPassword key="forgot" onBack={() => setAuthMode('login')} />
-                    ) : (
-                      <Login key="login" onForgotClick={() => setAuthMode('forgot-password')} />
-                    )}
-                  </AnimatePresence>
-                </TabsContent>
-                <TabsContent value="register" className="mt-0 outline-none">
-                  <Register />
-                </TabsContent>
-              </Tabs>
-            </motion.div>
-          </div>
-
-          <div
-            className="px-6 pt-2 pb-4 lg:py-6 text-center"
-            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
-          >
-            <p className="text-[10px] font-medium text-[#bbb]">
-              © 2026 Naya Lumière Cosmetics · UAE
-            </p>
-          </div>
-        </div>
-      </div>
+          <p className="mt-8 text-[13px] leading-relaxed text-[#707070]">
+            By continuing, you agree to our{' '}
+            <Link href="/terms" className="underline underline-offset-2 hover:text-[#111114]">Terms of service</Link> and{' '}
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-[#111114]">Privacy policy</Link>.
+          </p>
+        </section>
+      </main>
     </div>
-    </MotionConfig>
   );
 }
