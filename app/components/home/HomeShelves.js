@@ -14,12 +14,12 @@ import { orderableQty } from '@/lib/backorderRules';
 const byBest = (a, b) =>
   (Number(!!b.isBestseller) - Number(!!a.isBestseller)) || (Number(b.totalSold || 0) - Number(a.totalSold || 0));
 
-// Four across on desktop, two on phones; a short range (e.g. three perfumes) stays centred
+// Three across on desktop, two on phones; a short last row stays centred
 function Grid({ products, tone, variant }) {
   return (
     <div className="flex flex-wrap justify-center gap-2 md:gap-4">
       {products.map((p) => (
-        <div key={p.id} className="w-[calc(50%-4px)] md:w-[calc((100%-48px)/4)]">
+        <div key={p.id} className="w-[calc(50%-4px)] md:w-[calc((100%-32px)/3)]">
           <HomeProductCard product={p} tone={tone} variant={variant} />
         </div>
       ))}
@@ -127,11 +127,11 @@ export function BrandProducts({ brand: slugStart, title, tone = 'light', cardVar
         {title && <SectionHeading title={title} tone={tone} />}
         {cardVariant === 'gallery' ? (
           <>
-            <GalleryCarousel products={range.slice(0, 8)} />
-            <div className="hidden md:block"><Grid products={range.slice(0, 8)} tone={tone} variant="gallery" /></div>
+            <GalleryCarousel products={range.slice(0, 9)} />
+            <div className="hidden md:block"><Grid products={range.slice(0, 9)} tone={tone} variant="gallery" /></div>
           </>
         ) : (
-          <Grid products={range.slice(0, 8)} tone={tone} />
+          <Grid products={range.slice(0, 9)} tone={tone} />
         )}
         <div className="mt-6 md:mt-8 flex justify-center">
           <Pill href={href} variant={dark ? 'light' : 'dark'}>View all {range.length} products</Pill>
@@ -144,7 +144,7 @@ export function BrandProducts({ brand: slugStart, title, tone = 'light', cardVar
 /** The four best sellers across every brand (real sales first, then the pinned picks). */
 export function BestSellers() {
   const { products } = useAppContext();
-  const items = products.filter((p) => orderableQty(p) > 0).sort(byBest).slice(0, 4);
+  const items = products.filter((p) => orderableQty(p) > 0).sort(byBest).slice(0, 3);
   if (items.length < 4) return null;
 
   return (

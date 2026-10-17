@@ -48,7 +48,7 @@ export function ProductRow({ products, tone = 'light' }) {
 
   if (!products.length) return null;
 
-  const basis = 'basis-[47%] sm:basis-[31%] md:basis-[calc((100%-48px)/4)]';
+  const basis = 'basis-[47%] sm:basis-[31%] md:basis-[calc((100%-32px)/3)]';
 
   return (
     <div className="relative">
