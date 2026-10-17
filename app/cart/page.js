@@ -2,12 +2,11 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import BrandLogo from '../components/BrandLogo';
-import { headingFont } from '../components/home/SectionHeading';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, ShoppingBag, Sparkles, X, Gift, Star, Trash2,
-  ShieldCheck, ChevronDown, Tag, Truck, Minus, Plus, Check,
+  Truck, Minus, Plus, Check,
 } from 'lucide-react';
 import { calcShipping, nextShippingTier, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME, formatShipping, getPreorderInfo } from '@/lib/shipping';
 import { orderableQty, preorderUnits, leadDays } from '@/lib/backorderRules';
@@ -22,7 +21,6 @@ import TabbyPromo from '../components/TabbyPromo';
 // Storefront palette: ink actions, warm off-white panels, lavender only for small accents
 const INK = '#111114';
 const ACCENT = 'rgb(147,104,236)';
-const PANEL = 'bg-[#f6f5f2]';
 // Checkout action buttons: solid violet, 12px corners (one shape for every action in the flow)
 const ACTION = '#5b35ec';
 
@@ -39,32 +37,28 @@ const fmt = (n) =>
 
 const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111114]/30';
 
+// Same header as checkout (Shopify's): logo over the left column, "Continue
+// shopping" over the right
 function CartHeader({ onBack }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#ececec] bg-white">
-      <div className="mx-auto relative flex h-[60px] md:h-[72px] max-w-[1240px] items-center justify-between px-4 sm:px-6">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Continue shopping"
-          className={`group shrink-0 flex items-center gap-2 h-[38px] text-[13px] font-medium text-[#111114] hover:opacity-70 transition-opacity ${focusRing}`}
-        >
-          <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
-          <span className="hidden sm:inline">Continue shopping</span>
-        </button>
-
-        <Link
-          href="/"
-          className="absolute left-1/2 -translate-x-1/2 flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60"
-        >
-          <BrandLogo priority />
-        </Link>
-
-        <div className="shrink-0 hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-[#8a8a93]">
-          <ShieldCheck size={14} className="text-[#111114]" />
-          Secure checkout
+    <header className="border-b border-[#dedede] bg-white">
+      <div className="flex h-[64px] items-center justify-between px-4 sm:px-6 md:h-[84px] lg:grid lg:grid-cols-2 lg:px-0">
+        <div className="lg:ml-auto lg:w-full lg:max-w-[600px] lg:px-[38px]">
+          <Link href="/" className="inline-flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60">
+            <BrandLogo priority />
+          </Link>
         </div>
-        <div className="sm:hidden w-[38px]" aria-hidden="true" />
+        <div className="lg:w-full lg:max-w-[500px] lg:px-[38px] lg:text-right">
+          <button
+            type="button"
+            onClick={onBack}
+            className={`inline-flex h-10 items-center gap-1.5 rounded-md text-[14px] text-[#111114] underline-offset-4 hover:underline ${focusRing}`}
+          >
+            <ArrowLeft size={15} />
+            <span className="hidden sm:inline">Continue shopping</span>
+            <span className="sm:hidden">Shop</span>
+          </button>
+        </div>
       </div>
     </header>
   );
@@ -72,7 +66,7 @@ function CartHeader({ onBack }) {
 
 function IconBadge({ children }) {
   return (
-    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-white text-[#111114]">
+    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-[#f5f5f5] text-[#111114]">
       {children}
     </span>
   );
@@ -81,8 +75,8 @@ function IconBadge({ children }) {
 function SummaryRow({ label, value, positive = false }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <dt className="text-[#5a5a64]">{label}</dt>
-      <dd className={`font-semibold tabular-nums ${positive ? 'text-emerald-600' : 'text-[#111114]'}`}>{value}</dd>
+      <dt className="text-[#111114]">{label}</dt>
+      <dd className={`tabular-nums ${positive ? 'text-emerald-600' : 'text-[#111114]'}`}>{value}</dd>
     </div>
   );
 }
@@ -241,7 +235,6 @@ export default function CartPage() {
 
   const [couponCode, setCouponCode] = useState('');
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
-  const [promoOpen, setPromoOpen] = useState(false);
   const [buyAgainRaw, setBuyAgainRaw] = useState([]);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -372,7 +365,7 @@ export default function CartPage() {
             <ShoppingBag size={30} strokeWidth={1.3} className="text-[#111114]" />
           </div>
           <div>
-            <h1 className={`${headingFont} text-[24px] md:text-[30px] font-medium uppercase text-[#111114]`}>Your bag is empty</h1>
+            <h1 className="text-[22px] md:text-[26px] font-semibold text-[#111114]">Your bag is empty</h1>
             <p className="mt-1.5 max-w-xs text-[14px] text-[#5a5a64]">
               Find something you love — shipping is free from 3 items.
             </p>
@@ -392,22 +385,19 @@ export default function CartPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen bg-white pb-32 lg:pb-16">
+      <div className="min-h-screen bg-white pb-32 lg:pb-0">
         <CartHeader onBack={handleBack} />
 
-        <main className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-12">
-          <h1 className={`${headingFont} mb-5 sm:mb-8 text-[28px] sm:text-[40px] font-medium uppercase leading-tight text-[#111114]`}>
-            Your bag
-            <span className="ml-3 align-middle text-[14px] sm:text-[16px] font-normal normal-case tracking-normal text-[#8a8a93]">
-              ({totalQty} {totalQty === 1 ? 'item' : 'items'})
-            </span>
-          </h1>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-8 lg:gap-14 items-start">
+        {/* Checkout's split (Shopify's): items on white, right-aligned in the left half; the
+            summary on grey filling the right half. On phones: items, summary, then suggestions. */}
+        <main className="lg:grid lg:min-h-[calc(100vh-85px)] lg:grid-cols-2 lg:grid-rows-[auto_1fr]">
 
             {/* ── Items ── */}
-            <section aria-label="Items in your bag" className="min-w-0">
-              <ul className="border-y border-[#111114] divide-y divide-[#ececec]">
+            <section aria-labelledby="bag-heading" className="mx-auto min-w-0 max-w-[600px] px-4 pt-6 pb-8 sm:px-6 lg:col-start-1 lg:row-start-1 lg:mx-0 lg:ml-auto lg:w-full lg:px-[38px] lg:pt-[38px] lg:pb-6">
+              <h1 id="bag-heading" className="mb-4 text-[22px] sm:text-[24px] font-semibold text-[#111114]">
+                Your bag <span className="text-[15px] font-normal text-[#707070]">· {totalQty} {totalQty === 1 ? 'item' : 'items'}</span>
+              </h1>
+              <ul className="border-y border-[#dedede] divide-y divide-[#ececec]">
                 <AnimatePresence initial={false}>
                   {cartItems.map(item => (
                     <motion.li
@@ -426,12 +416,13 @@ export default function CartPage() {
               </ul>
             </section>
 
-            {/* ── Summary (sticky on desktop; directly after the items on mobile) ── */}
-            <aside className="lg:row-span-2 lg:sticky lg:top-[84px] space-y-4 min-w-0">
-              <section aria-labelledby="summary-heading" className={`${PANEL} rounded-xl p-5 sm:p-7`}>
-                <h2 id="summary-heading" className={`${headingFont} text-[17px] font-medium uppercase tracking-wide text-[#111114]`}>Order summary</h2>
+            {/* ── Summary: the grey right half, as on checkout ── */}
+            <aside className="min-w-0 border-y border-[#dedede] bg-[#f5f5f5] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:border-y-0 lg:border-l">
+              <div className="mx-auto max-w-[600px] space-y-6 px-4 py-8 sm:px-6 lg:sticky lg:top-0 lg:mx-0 lg:max-w-[500px] lg:px-[38px] lg:py-[38px]">
+              <section aria-labelledby="summary-heading">
+                <h2 id="summary-heading" className="text-[17px] font-semibold text-[#111114]">Order summary</h2>
 
-                <dl className="mt-4 space-y-2.5 text-[14px]">
+                <dl className="mt-4 space-y-2 text-[14px]">
                   <SummaryRow label={`Subtotal (${totalQty} ${totalQty === 1 ? 'item' : 'items'})`} value={fmt(subtotal)} />
                   {discountAmount > 0 && (
                     <SummaryRow
@@ -443,10 +434,10 @@ export default function CartPage() {
                   <SummaryRow label="Shipping" value={shipping === 0 ? 'Free' : fmt(shipping)} positive={shipping === 0} />
                 </dl>
 
-                {/* Promo code */}
-                <div className="mt-4 pt-4 border-t border-[#e2e0db]">
+                {/* Discount code: always open, as on checkout */}
+                <div className="mt-5">
                   {appliedCoupon ? (
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2">
+                    <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-2">
                       <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-emerald-700">
                         <Check size={14} className="shrink-0" />
                         <span className="truncate">{appliedCoupon.code} applied</span>
@@ -454,74 +445,59 @@ export default function CartPage() {
                       <button
                         type="button"
                         onClick={removeCoupon}
-                        className={`shrink-0 h-9 px-2 rounded-full text-[12px] font-semibold text-emerald-700 hover:underline ${focusRing}`}
+                        className={`shrink-0 h-9 px-2 rounded-full text-[12px] font-semibold text-[#111114] underline underline-offset-4 ${focusRing}`}
                       >
                         Remove
                       </button>
                     </div>
                   ) : (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => setPromoOpen(o => !o)}
-                        aria-expanded={promoOpen}
-                        aria-controls="promo-panel"
-                        className={`w-full h-11 -my-1 flex items-center justify-between rounded-lg text-[14px] font-medium text-[#2a2a31] ${focusRing}`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <Tag size={15} className="text-[#111114]" />
-                          Add a promo code
-                        </span>
-                        <ChevronDown size={16} className={`text-[#8a8a93] transition-transform ${promoOpen ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {promoOpen && (
-                        <div id="promo-panel" className="mt-3">
-                          <form
-                            onSubmit={e => { e.preventDefault(); handleApplyCoupon(); }}
-                            className="flex gap-2"
-                          >
-                            <label htmlFor="promo-code" className="sr-only">Promo code</label>
-                            <input
-                              id="promo-code"
-                              value={couponCode}
-                              onChange={e => { setCouponCode(e.target.value); if (couponError) removeCoupon(); }}
-                              placeholder="Enter code"
-                              autoComplete="off"
-                              autoCapitalize="characters"
-                              spellCheck={false}
-                              enterKeyHint="done"
-                              aria-invalid={!!couponError}
-                              aria-describedby={couponError ? 'promo-error' : undefined}
-                              className="flex-1 min-w-0 h-11 px-4 rounded-xl border border-[#d9d9de] bg-white text-[16px] lg:text-[14px] text-[#111114] placeholder:text-[#b4b4bb] focus:outline-none focus:border-[#111114] focus:ring-2 focus:ring-[#111114]/10"
-                            />
-                            <button
-                              type="submit"
-                              disabled={!couponCode.trim() || isApplyingCoupon}
-                              className="min-w-[84px] h-11 px-5 rounded-xl inline-flex items-center justify-center text-[13px] font-semibold text-white disabled:opacity-40 transition-opacity"
-                              style={{ background: ACTION }}
-                            >
-                              {isApplyingCoupon
-                                ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-label="Applying" />
-                                : 'Apply'}
-                            </button>
-                          </form>
-                          {couponError && (
-                            <p id="promo-error" role="alert" className="mt-2 text-[12px] font-medium text-red-600">{couponError}</p>
-                          )}
-                        </div>
+                      <form onSubmit={e => { e.preventDefault(); handleApplyCoupon(); }} className="flex gap-2">
+                        <label htmlFor="promo-code" className="sr-only">Discount code</label>
+                        <input
+                          id="promo-code"
+                          value={couponCode}
+                          onChange={e => { setCouponCode(e.target.value); if (couponError) removeCoupon(); }}
+                          placeholder="Discount code"
+                          autoComplete="off"
+                          autoCapitalize="characters"
+                          spellCheck={false}
+                          enterKeyHint="done"
+                          aria-invalid={!!couponError}
+                          aria-describedby={couponError ? 'promo-error' : undefined}
+                          className="h-[52px] min-w-0 flex-1 rounded-xl border border-[#dedede] bg-white px-4 text-[16px] text-[#111114] placeholder:text-[#707070] focus:border-[#111114] focus:outline-none focus:ring-1 focus:ring-[#111114] lg:text-[14px]"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!couponCode.trim() || isApplyingCoupon}
+                          className="inline-flex h-[52px] min-w-[84px] items-center justify-center rounded-xl border border-[#dedede] bg-[#111114] px-5 text-[14px] font-semibold text-white transition-colors disabled:bg-[#ebebeb] disabled:text-[#707070]"
+                        >
+                          {isApplyingCoupon
+                            ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-label="Applying" />
+                            : 'Apply'}
+                        </button>
+                      </form>
+                      {couponError && (
+                        <p id="promo-error" role="alert" className="mt-2 text-[12px] font-medium text-red-600">{couponError}</p>
                       )}
                     </>
                   )}
                 </div>
 
                 {/* Total */}
-                <div className="mt-4 pt-4 border-t border-[#111114]">
+                <div className="mt-5">
                   <div className="flex items-baseline justify-between gap-4">
-                    <span className="text-[16px] font-semibold text-[#111114]">Total</span>
-                    <span className="text-[22px] font-bold text-[#111114] tabular-nums">{fmt(total)}</span>
+                    <div>
+                      <span className="text-[19px] font-semibold text-[#111114]">Total</span>
+                      <p className="text-[12.5px] text-[#707070]">Including {fmt(vat)} in VAT</p>
+                    </div>
+                    <span className="flex items-baseline gap-2">
+                      <span className="text-[12px] text-[#707070]">AED</span>
+                      <span className="text-[22px] font-semibold tabular-nums text-[#111114]">
+                        {Number(total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </span>
                   </div>
-                  <p className="mt-0.5 text-right text-[11.5px] text-[#8a8a93]">Includes VAT of {fmt(vat)}</p>
                   {totalSavings > 0 && (
                     <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-[12.5px] font-semibold text-emerald-700">
                       You&apos;re saving {fmt(totalSavings)} on this order
@@ -550,20 +526,10 @@ export default function CartPage() {
                   <TabbyPromo price={total} source="cart" />
                 </div>
 
-                <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11.5px] text-[#8a8a93]">
-                  <li className="flex items-center gap-1">
-                    <ShieldCheck size={12} className="text-emerald-500" />
-                    Secure checkout
-                  </li>
-                  <li aria-hidden="true">·</li>
-                  <li>14-day returns</li>
-                  <li aria-hidden="true">·</li>
-                  <li>Free samples included</li>
-                </ul>
               </section>
 
               {totalQty > 0 && (
-                <section aria-label="Delivery and rewards" className={`${PANEL} rounded-xl p-5 sm:p-7 space-y-5`}>
+                <section aria-label="Delivery and rewards" className="rounded-xl border border-[#dedede] bg-white p-5 space-y-5">
                   {/* Shipping tiers */}
                   <div>
                     <div className="flex items-start gap-3">
@@ -661,10 +627,11 @@ export default function CartPage() {
                   </div>
                 </section>
               )}
+              </div>
             </aside>
 
-            {/* ── Advice & cross-sell (below the items on desktop, last on mobile) ── */}
-            <div className="min-w-0 space-y-10">
+            {/* ── Advice & cross-sell (under the items on desktop, after the summary on phones) ── */}
+            <div className="mx-auto min-w-0 max-w-[600px] space-y-10 px-4 py-8 sm:px-6 lg:col-start-1 lg:row-start-2 lg:mx-0 lg:ml-auto lg:w-full lg:px-[38px] lg:pt-4 lg:pb-[38px]">
               <AnimatePresence mode="wait" initial={false}>
                 {aiAdvice ? (
                   <motion.div
@@ -710,7 +677,6 @@ export default function CartPage() {
               <PairItWithSection currentCartItems={cartItems} />
               <BuyAgainSection products={buyAgainRaw} cartItems={cartItems} />
             </div>
-          </div>
         </main>
 
         {/* ── Mobile checkout bar ── */}
