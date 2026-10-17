@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-toastify';
-import { Package, Heart, MapPin, UserRound, Settings, Headset, Camera, ShoppingBag, Gift, TrendingUp, Check, ChevronRight } from 'lucide-react';
+import { Package, Heart, MapPin, UserRound, Headset, Camera, ShoppingBag, Gift, TrendingUp, Check, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import { useAccountData } from './_components/useAccountData';
@@ -55,8 +55,6 @@ export default function AccountPage() {
     { label: 'Orders', href: '/account/orders', Icon: Package },
     { label: 'Wishlist', href: '/account/wishlist', Icon: Heart, count: wishCount },
     { label: 'Addresses', href: '/account/addresses', Icon: MapPin },
-    { label: 'Profile', href: '/account/profile', Icon: UserRound },
-    { label: 'Settings', href: '/account/settings', Icon: Settings },
     { label: 'Support', onClick: () => setIsChatOpen?.(true), Icon: Headset },
   ];
 
@@ -139,7 +137,7 @@ export default function AccountPage() {
             </section>
 
             {/* Account pages */}
-            <nav aria-label="My account" className="border-t border-[#111114] grid grid-cols-3 md:grid-cols-6 gap-y-8 py-10 md:py-14">
+            <nav aria-label="My account" className="border-t border-[#111114] grid grid-cols-4 gap-y-8 py-10 md:py-14">
               {links.map(({ label, href, onClick, Icon, count }) => {
                 const inner = (
                   <>
