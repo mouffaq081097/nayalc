@@ -14,6 +14,7 @@ import { orderableQty } from '@/lib/backorderRules';
 import { shortBrand } from '@/lib/seo';
 import { cardName } from './home/HomeProductCard';
 import { useSignIn } from '@/app/context/SignInContext';
+import BrandLogo from './BrandLogo';
 
 const NAV_LINKS = [
   { label: 'Shop',        href: '/all-products', hasDropdown: 'shop' },
@@ -178,14 +179,7 @@ const Header = forwardRef((_, ref) => {
 
           {/* Logo */}
           <Link href="/" aria-label="Naya Lumière Cosmetics, home" className="mr-auto md:mr-0 rounded-md transition-opacity hover:opacity-80">
-            <Image
-              src="/naya-logo-white.png"
-              alt="Naya Lumière Cosmetics"
-              width={488}
-              height={72}
-              priority
-              className={`h-[24px] md:h-[34px] w-auto transition-[filter] duration-300 ${overHero ? '' : 'invert'}`}
-            />
+            <BrandLogo priority tone={overHero ? 'light' : 'dark'} />
           </Link>
 
           {/* Actions */}
