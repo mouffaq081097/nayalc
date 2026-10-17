@@ -334,7 +334,7 @@ export default function CartPage() {
   const handleCheckout = () => {
     if (!canCheckout) return;
     flushPendingRemovals();
-    router.push(isAuthenticated ? '/need-anything-else' : '/auth?callbackUrl=/checkout');
+    router.push(isAuthenticated ? '/checkout' : '/auth?callbackUrl=/checkout');
   };
 
   const handleApplyCoupon = async () => {

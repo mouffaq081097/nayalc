@@ -60,11 +60,10 @@ export default function LayoutContent({ children }) {
     || /^\/account\/addresses\/[^/]+/.test(pathname);
   const isCartPage = pathname === '/cart';
   const isCheckoutPage = pathname === '/checkout';
-  const isNeedAnythingElsePage  = pathname === '/need-anything-else';
   const isOrderConfirmedPage    = pathname.startsWith('/order-confirmed');
 
   const showMobileChrome =
-    !isAuthPage && !isAdminPage && !isCartPage && !isCheckoutPage && !isNeedAnythingElsePage && !isOrderConfirmedPage;
+    !isAuthPage && !isAdminPage && !isCartPage && !isCheckoutPage && !isOrderConfirmedPage;
 
   return (
     <>
