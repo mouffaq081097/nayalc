@@ -2,7 +2,8 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Plus, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Plus, AlertTriangle } from 'lucide-react';
+import AccountPage, { OUTLINE_PILL, Spinner, TEXT_LINK } from '../_components/AccountPage';
 import { toast } from 'react-toastify';
 import { useUser } from '../../context/UserContext';
 import Modal from '../../components/Modal';
@@ -30,7 +31,7 @@ function PhoneWarning() {
   );
 }
 
-const LINK = 'text-[13px] text-[#6b6b72] underline underline-offset-2 hover:text-[#111114] disabled:opacity-40 transition-colors';
+const LINK = TEXT_LINK;
 
 function AddressCard({ address, busy, confirming, onEdit, onRemove, onUseThis }) {
   const isDefault = isDefaultAddress(address);
@@ -154,28 +155,12 @@ export default function AccountAddressesPage() {
   });
 
   return (
-    <div className="bg-white text-[#111114]">
-      <div className="max-w-[1320px] mx-auto px-5 md:px-10 pt-8 md:pt-14 pb-20" onMouseLeave={() => setConfirmingId(null)}>
-        <Link href="/account" className="inline-flex items-center gap-1.5 text-[14px] text-[#6b6b72] hover:text-[#111114] transition-colors">
-          <ArrowLeft size={14} strokeWidth={1.75} /> Back to account
-        </Link>
-
-        <div className="mt-6 md:mt-8 flex items-center justify-between gap-4">
-          <h1 className="text-[28px] md:text-[36px] leading-tight tracking-tight">Your addresses</h1>
-          <button
-            type="button"
-            onClick={openAdd}
-            className="shrink-0 inline-flex items-center gap-1 h-10 md:h-11 px-4 md:px-6 rounded-full border border-[#111114] text-[14px] md:text-[15px] hover:bg-[#111114] hover:text-white transition-colors"
-          >
-            <Plus size={15} strokeWidth={1.75} /> Add address
-          </button>
-        </div>
-
-        {addressesLoading ? (
-          <div className="py-16 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-[#e6e4df] border-t-[#111114] rounded-full animate-spin" />
-          </div>
-        ) : addresses.length === 0 ? (
+    <AccountPage
+      title="Your addresses"
+      action={<button type="button" onClick={openAdd} className={OUTLINE_PILL}><Plus size={15} strokeWidth={1.75} /> Add address</button>}
+    >
+      <div onMouseLeave={() => setConfirmingId(null)}>
+        {addressesLoading ? <Spinner /> : addresses.length === 0 ? (
           <div className="mt-8 rounded-md bg-[#f6f5f2] py-14 px-6 text-center">
             <p className="text-[16px]">You haven&apos;t saved an address yet.</p>
             <p className="mt-1 text-[14px] text-[#6b6b72] max-w-sm mx-auto leading-relaxed">
@@ -196,6 +181,6 @@ export default function AccountAddressesPage() {
           onCancel={() => setIsModalOpen(false)}
         />
       </Modal>
-    </div>
+    </AccountPage>
   );
 }

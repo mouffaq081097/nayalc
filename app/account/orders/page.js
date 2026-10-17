@@ -4,13 +4,14 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
-import { Package, Search, X, Truck, CheckCircle, RefreshCw, FileText, ChevronDown } from 'lucide-react';
-import AccountShell from '../_components/AccountShell';
+import { Package, Search, X, ChevronDown, ChevronRight } from 'lucide-react';
+import AccountPage, { SOLID_PILL, Spinner, TEXT_LINK } from '../_components/AccountPage';
 import { useAccountData } from '../_components/useAccountData';
 import { useAppContext } from '../../context/AppContext';
 import { useCart } from '../../context/CartContext';
 import { statusMeta } from '../_components/orderStatus';
 import { trackingUrl } from '@/lib/courier';
+import { formatAED } from '../../lib/utils';
 
 const TAB_ORDER = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
@@ -23,7 +24,7 @@ const SORT_OPTIONS = [
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function orderTotal(o) {
@@ -31,10 +32,9 @@ function orderTotal(o) {
 }
 
 export default function AccountOrdersPage() {
-  const { orders, wishlistItems, isLoading } = useAccountData();
+  const { orders, isLoading } = useAccountData();
   const { products } = useAppContext();
   const { addToCart } = useCart();
-  const wishCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
 
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -112,186 +112,120 @@ export default function AccountOrdersPage() {
   };
 
   return (
-    <AccountShell wishCount={wishCount}>
-      <div className="w-full">
+    <AccountPage title="Your orders" subtitle={orders.length > 0 ? `${orders.length} order${orders.length === 1 ? '' : 's'}` : undefined}>
+      {orders.length > 0 && (
+        <div className="mt-8 flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+          {/* Status tabs, as the tier tabs on Naya Rewards */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 md:mx-0 md:px-0 md:flex-1" role="tablist" aria-label="Order status">
+            {visibleTabs.map(key => {
+              const active = activeTab === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setActiveTab(key)}
+                  className={`shrink-0 h-10 px-4 rounded-md text-[14px] whitespace-nowrap transition-colors ${active ? 'bg-[#111114] text-white' : 'bg-[#f3f2ef] text-[#6b6b72] hover:text-[#111114]'}`}
+                >
+                  {key === 'all' ? 'All' : statusMeta(key).label} <span className={active ? 'text-white/60' : 'text-[#9a9aa2]'}>{tabCounts[key] || 0}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Search bar */}
-        <div className="relative mb-4">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search by order ID, product or status…"
-            className="w-full pl-9 pr-9 h-9 text-[13px] rounded-md border border-[#eaeaea] bg-white text-gray-900 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
-          />
-          {query && (
-            <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <X size={13} />
-            </button>
-          )}
-        </div>
-
-        {/* Status tabs + sort */}
-        {orders.length > 0 && (
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-              {visibleTabs.map(key => {
-                const meta = key === 'all' ? { label: 'All' } : statusMeta(key);
-                const active = activeTab === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setActiveTab(key)}
-                    className={`shrink-0 px-3 h-8 rounded-full text-[12px] font-medium transition-colors whitespace-nowrap ${
-                      active ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
-                  >
-                    {meta.label} <span className={active ? 'text-purple-100' : 'text-gray-400'}>{tabCounts[key] || 0}</span>
-                  </button>
-                );
-              })}
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 md:w-64">
+              <Search size={15} className="absolute left-0 top-1/2 -translate-y-1/2 text-[#6b6b72]" />
+              <input
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search orders"
+                className="w-full h-10 pl-6 pr-6 bg-transparent border-b border-[#111114] text-[14px] placeholder:text-[#9a9aa2] focus:outline-none"
+              />
+              {query && (
+                <button type="button" onClick={() => setQuery('')} aria-label="Clear search" className="absolute right-0 top-1/2 -translate-y-1/2 text-[#6b6b72] hover:text-[#111114]">
+                  <X size={14} />
+                </button>
+              )}
             </div>
-
             <div className="relative shrink-0">
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
-                className="appearance-none pl-3 pr-7 h-8 text-[12px] font-medium rounded-md border border-[#eaeaea] bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                aria-label="Sort orders"
+                className="appearance-none h-10 pl-0 pr-6 bg-transparent text-[14px] focus:outline-none cursor-pointer"
               >
                 {SORT_OPTIONS.map(opt => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
               </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
-        )}
-
-        {/* Order list */}
-        <div className="space-y-3 w-full">
-          {isLoading ? (
-            <div className="py-16 flex items-center justify-center">
-              <div className="w-6 h-6 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-gray-400 text-sm">
-              {query || activeTab !== 'all' ? 'No orders match your filters.' : 'No orders yet.'}
-            </div>
-          ) : (
-            filtered.map((o) => {
-              const items = o.items || [];
-              const total = orderTotal(o);
-              const date = formatDate(o.createdAt || o.created_at);
-              const previews = items.slice(0, 3);
-              const extra = items.length - previews.length;
-              const { label, badge, Icon } = statusMeta(o.status, o.awaitingStock);
-              const justAdded = buyingAgainId === o.id;
-
-              return (
-                <div key={o.id} className="bg-white rounded-lg border border-[#eaeaea] hover:border-gray-300 transition-colors">
-                  <Link href={`/account/orders/${o.id}`} className="flex items-center gap-4 p-4 group">
-                    {/* Product image stack */}
-                    <div className="flex -space-x-3 shrink-0">
-                      {previews.length > 0 ? (
-                        previews.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="w-14 h-14 rounded-xl border-2 border-white bg-white overflow-hidden relative shadow-sm"
-                            style={{ zIndex: previews.length - idx }}
-                          >
-                            {item.imageUrl ? (
-                              <Image
-                                src={item.imageUrl}
-                                alt={item.name || ''}
-                                fill
-                                className="object-contain p-1"
-                                sizes="56px"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                                <Package size={16} className="text-gray-300" />
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="w-14 h-14 rounded-xl border-2 border-white bg-gray-100 flex items-center justify-center shadow-sm">
-                          <Package size={18} className="text-gray-300" />
-                        </div>
-                      )}
-                      {extra > 0 && (
-                        <div className="w-14 h-14 rounded-xl border-2 border-white bg-purple-50 flex items-center justify-center text-[11px] font-bold text-purple-600 shadow-sm" style={{ zIndex: 0 }}>
-                          +{extra}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Order info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[13px] font-semibold text-gray-900">Order #{o.id}</span>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${badge}`}>
-                          <Icon size={10} strokeWidth={2.5} />
-                          {label}
-                        </span>
-                      </div>
-                      <p className="text-[12px] text-gray-500 mt-0.5">
-                        {date}{items.length > 0 ? ` · ${items.length} item${items.length > 1 ? 's' : ''}` : ''}
-                      </p>
-                      {items[0]?.name && (
-                        <p className="text-[11px] text-gray-400 mt-0.5 truncate">{items[0].name}{items.length > 1 ? ` & ${items.length - 1} more` : ''}</p>
-                      )}
-                    </div>
-
-                    {/* Amount + CTA */}
-                    <div className="text-right shrink-0">
-                      <div className="text-[15px] font-bold text-gray-900">AED {total.toFixed(0)}</div>
-                      <div className="text-[10px] text-gray-400 leading-none mb-1">VAT included</div>
-                      <span className="text-[11px] text-purple-600 font-medium group-hover:underline">View details →</span>
-                    </div>
-                  </Link>
-
-                  {/* Quick actions */}
-                  <div className="flex items-center gap-2 px-4 pb-3">
-                    <button
-                      onClick={(e) => handleBuyAgain(e, o)}
-                      className={`flex items-center gap-1.5 px-2.5 h-7 rounded-full text-[11px] font-medium border transition-colors ${
-                        justAdded ? 'border-green-200 bg-green-50 text-green-700' : 'border-[#eaeaea] text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {justAdded ? <CheckCircle size={11} /> : <RefreshCw size={11} />}
-                      {justAdded ? 'Added to cart' : 'Buy again'}
-                    </button>
-
-                    {trackingUrl(o) && (
-                      <a
-                        href={trackingUrl(o)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 px-2.5 h-7 rounded-full text-[11px] font-medium border border-[#eaeaea] text-gray-600 hover:bg-gray-50 transition-colors"
-                      >
-                        <Truck size={11} />
-                        Track order
-                      </a>
-                    )}
-
-                    <a
-                      href={`/api/orders/${o.id}/invoice`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1.5 px-2.5 h-7 rounded-full text-[11px] font-medium border border-[#eaeaea] text-gray-600 hover:bg-gray-50 transition-colors"
-                    >
-                      <FileText size={11} />
-                      Invoice
-                    </a>
-                  </div>
-                </div>
-              );
-            })
-          )}
         </div>
-      </div>
-    </AccountShell>
+      )}
+
+      {isLoading ? <Spinner /> : orders.length === 0 ? (
+        <div className="mt-8 rounded-md bg-[#f6f5f2] py-14 px-6 text-center">
+          <p className="text-[16px]">You haven&apos;t placed any orders yet.</p>
+          <Link href="/all-products" className={`${SOLID_PILL} mt-6`}>Start shopping</Link>
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="mt-8 py-10 text-center text-[15px] text-[#6b6b72]">No orders match your search.</p>
+      ) : (
+        <ul className="mt-6 border-t border-[#111114] divide-y divide-[#ececec]">
+          {filtered.map((o) => {
+            const items = o.items || [];
+            const previews = items.slice(0, 3);
+            const extra = items.length - previews.length;
+            const meta = statusMeta(o.status, o.awaitingStock);
+            const justAdded = buyingAgainId === o.id;
+            const track = trackingUrl(o);
+
+            return (
+              <li key={o.id} className="py-5 md:py-6">
+                <Link href={`/account/orders/${o.id}`} className="flex items-center gap-4 group">
+                  <div className="flex -space-x-3 shrink-0">
+                    {previews.map((item, idx) => (
+                      <span key={idx} className="relative w-14 h-14 md:w-[72px] md:h-[72px] bg-[#f6f5f2] border-2 border-white" style={{ zIndex: previews.length - idx }}>
+                        {item.imageUrl
+                          ? <Image src={item.imageUrl} alt="" fill sizes="72px" className="object-contain p-1 mix-blend-multiply" />
+                          : <Package size={18} strokeWidth={1.25} className="absolute inset-0 m-auto text-gray-400" />}
+                      </span>
+                    ))}
+                    {previews.length === 0 && (
+                      <span className="w-14 h-14 md:w-[72px] md:h-[72px] bg-[#f6f5f2] flex items-center justify-center"><Package size={20} strokeWidth={1.25} className="text-gray-400" /></span>
+                    )}
+                    {extra > 0 && (
+                      <span className="w-14 h-14 md:w-[72px] md:h-[72px] bg-[#f6f5f2] border-2 border-white flex items-center justify-center text-[13px] text-[#6b6b72]">+{extra}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] md:text-[16px] font-medium">Order #{o.id}</p>
+                    <p className="text-[13px] text-[#6b6b72]">
+                      {formatDate(o.createdAt || o.created_at)} · {items.length} {items.length === 1 ? 'item' : 'items'}
+                    </p>
+                    {items[0]?.name && (
+                      <p className="hidden md:block text-[13px] text-[#9a9aa2] truncate">{items[0].name}{items.length > 1 ? ` & ${items.length - 1} more` : ''}</p>
+                    )}
+                    <span className={`sm:hidden inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium ${meta.badge}`}>{meta.label}</span>
+                  </div>
+                  <span className={`hidden sm:inline-block shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium ${meta.badge}`}>{meta.label}</span>
+                  <span className="shrink-0 text-[15px] md:text-[16px] tabular-nums">{formatAED(orderTotal(o))}</span>
+                  <ChevronRight size={18} className="shrink-0 text-gray-400 group-hover:text-[#111114]" />
+                </Link>
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 pl-[calc(56px+16px)] md:pl-[calc(72px+16px)]">
+                  <button type="button" onClick={(e) => handleBuyAgain(e, o)} className={justAdded ? 'text-[13px] text-[#22a35a]' : TEXT_LINK}>
+                    {justAdded ? 'Added to bag' : 'Buy again'}
+                  </button>
+                  {track && <a href={track} target="_blank" rel="noopener noreferrer" className={TEXT_LINK}>Track order</a>}
+                  <a href={`/api/orders/${o.id}/invoice`} target="_blank" rel="noopener noreferrer" className={TEXT_LINK}>Invoice</a>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </AccountPage>
   );
 }

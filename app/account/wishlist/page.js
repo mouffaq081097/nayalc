@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Heart, ArrowRight } from 'lucide-react';
-import AccountShell from '../_components/AccountShell';
+import AccountPage, { SOLID_PILL, Spinner } from '../_components/AccountPage';
 import { useAccountData } from '../_components/useAccountData';
 import ProductCard from '../../components/ProductCard';
 
+/** Wishlist (after Pitaka): the account page frame over a grid of ProductCards */
 export default function AccountWishlistPage() {
   const { wishlistItems, isLoading } = useAccountData();
   const [items, setItems] = useState([]);
@@ -15,8 +15,6 @@ export default function AccountWishlistPage() {
     setItems(wishlistItems || []);
   }, [wishlistItems]);
 
-  const wishCount = items.length;
-
   const handleWishlistChange = (productId, stillWishlisted) => {
     if (!stillWishlisted) {
       setItems(prev => prev.filter(i => i.productId !== productId));
@@ -24,26 +22,18 @@ export default function AccountWishlistPage() {
   };
 
   return (
-    <AccountShell wishCount={wishCount}>
-      {isLoading ? (
-        <div className="py-16 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-        </div>
-      ) : items.length === 0 ? (
-        <div className="py-16 text-center">
-          <div className="w-12 h-12 rounded-full bg-gray-100 mx-auto flex items-center justify-center text-gray-300 mb-4">
-            <Heart size={20} />
-          </div>
-          <p className="text-gray-400 text-sm mb-4">Your wishlist is empty.</p>
-          <Link
-            href="/all-products"
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-purple-600 hover:underline"
-          >
-            Explore products <ArrowRight size={13} />
-          </Link>
+    <AccountPage
+      title="Your wishlist"
+      subtitle={items.length > 0 ? `${items.length} saved product${items.length === 1 ? '' : 's'}` : undefined}
+    >
+      {isLoading ? <Spinner /> : items.length === 0 ? (
+        <div className="mt-8 rounded-md bg-[#f6f5f2] py-14 px-6 text-center">
+          <p className="text-[16px]">Your wishlist is empty.</p>
+          <p className="mt-1 text-[14px] text-[#6b6b72]">Tap the heart on any product to save it here.</p>
+          <Link href="/all-products" className={`${SOLID_PILL} mt-6`}>Explore products</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
           {items.map((w) => (
             <ProductCard
               key={w.productId}
@@ -60,6 +50,6 @@ export default function AccountWishlistPage() {
           ))}
         </div>
       )}
-    </AccountShell>
+    </AccountPage>
   );
 }

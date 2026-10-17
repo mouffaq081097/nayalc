@@ -2,15 +2,14 @@
 import { formatPhone } from '@/lib/phone';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { toast } from 'react-toastify';
-import AccountShell from '../../_components/AccountShell';
-import { useAccountData, markAccountDataStale } from '../../_components/useAccountData';
-import { ArrowLeft, Package, MapPin, CreditCard, CheckCircle, Truck, RefreshCw, FileText } from 'lucide-react';
+import AccountPage, { Spinner } from '../../_components/AccountPage';
+import { markAccountDataStale } from '../../_components/useAccountData';
+import { Package, MapPin, CreditCard, CheckCircle, Truck, RefreshCw, FileText } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '../../../context/AppContext';
 import { useCart } from '../../../context/CartContext';
-import PageLoader from '@/app/components/PageLoader';
 import { statusMeta } from '../../_components/orderStatus';
 import { formatShipDate } from '@/lib/shipping';
 import { courierLabel, trackingUrl } from '@/lib/courier';
@@ -32,7 +31,7 @@ function paymentLabel(method) {
 
 function Section({ title, note, children, className = '' }) {
   return (
-    <div className={`bg-white rounded-lg border border-[#eaeaea] overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-xl border border-[#e5e5e5] overflow-hidden ${className}`}>
       <div className="px-5 py-3 border-b border-[#f3f3f5] flex items-baseline justify-between gap-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{title}</p>
         {note && <p className="text-[10.5px] text-gray-400 shrink-0">{note}</p>}
@@ -55,11 +54,8 @@ function SummaryRow({ label, value, bold, muted, negative }) {
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
-  const router = useRouter();
   const { fetchWithAuth, products } = useAppContext();
   const { addToCart } = useCart();
-  const { wishlistItems } = useAccountData();
-  const wishCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,16 +94,15 @@ export default function OrderDetailPage() {
     }
   };
 
-  if (loading) return <PageLoader />;
+  if (loading) return <Spinner />;
 
   if (error || !order) {
     return (
-      <AccountShell wishCount={wishCount} title="Order">
-        <div className="py-16 text-center">
-          <p className="text-sm mb-4 text-gray-400">{error || 'Order not found.'}</p>
-          <button onClick={() => router.back()} className="text-sm font-bold text-purple-600">Go back</button>
+      <AccountPage title="Order" back={{ href: '/account/orders', label: 'Back to orders' }}>
+        <div className="mt-8 rounded-md bg-[#f6f5f2] py-14 px-6 text-center">
+          <p className="text-[15px] text-[#6b6b72]">{error || 'Order not found.'}</p>
         </div>
-      </AccountShell>
+      </AccountPage>
     );
   }
 
@@ -144,22 +139,13 @@ export default function OrderDetailPage() {
   };
 
   return (
-    <AccountShell wishCount={wishCount} title={`Order #${order.id || orderId}`}>
-      <div className="w-full space-y-4">
-
-        {/* Back */}
-        <button
-          onClick={() => router.back()}
-          className="hidden md:inline-flex items-center gap-2 text-[12px] font-bold text-purple-600"
-        >
-          <ArrowLeft size={14} />
-          Back to orders
-        </button>
+    <AccountPage title={`Order #${order.id || orderId}`} back={{ href: '/account/orders', label: 'Back to orders' }}>
+      <div className="mt-8 w-full space-y-5">
 
         {/* Identity bar: order #, date, status, quick actions */}
-        <div className="bg-white rounded-lg border border-[#eaeaea] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="bg-white rounded-xl border border-[#e5e5e5] p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-50 text-purple-600">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#f6f5f2] text-[#111114]">
               <Package size={19} strokeWidth={1.75} />
             </div>
             <div>
@@ -250,7 +236,7 @@ export default function OrderDetailPage() {
               <Section title="Delivery">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-50 text-purple-600">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#f6f5f2] text-[#111114]">
                       <Truck size={15} strokeWidth={1.75} />
                     </div>
                     <div className="space-y-1">
@@ -290,7 +276,7 @@ export default function OrderDetailPage() {
                 <button
                   onClick={handleCancelPreorder}
                   disabled={cancelling}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-medium border border-purple-200 text-purple-600 hover:bg-purple-50 transition-colors disabled:opacity-50"
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-medium border border-[#111114] text-[#111114] hover:bg-[#111114] hover:text-white transition-colors disabled:opacity-50"
                 >
                   {cancelling ? 'Cancelling…' : 'Cancel order'}
                 </button>
@@ -321,13 +307,13 @@ export default function OrderDetailPage() {
                     return (
                       <React.Fragment key={step.key}>
                         <div className="flex flex-col items-center gap-1.5 flex-shrink-0" style={{ width: 64 }}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${done ? 'bg-purple-600' : 'bg-purple-50'} ${active ? 'ring-2 ring-purple-300 ring-offset-2' : ''}`}>
-                            <CheckCircle size={14} strokeWidth={2.5} className={done ? 'text-white' : 'text-purple-200'} />
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${done ? 'bg-[#111114]' : 'bg-[#f3f2ef]'} ${active ? 'ring-2 ring-[#9368ec] ring-offset-2' : ''}`}>
+                            <CheckCircle size={14} strokeWidth={2.5} className={done ? 'text-white' : 'text-[#c9c6c0]'} />
                           </div>
                           <p className={`text-[10px] font-semibold text-center ${done ? 'text-gray-900' : 'text-gray-300'}`}>{step.label}</p>
                         </div>
                         {i < TIMELINE_STEPS.length - 1 && (
-                          <div className={`flex-1 h-px mt-4 ${lineFilled ? 'bg-purple-300' : 'bg-gray-100'}`} />
+                          <div className={`flex-1 h-px mt-4 ${lineFilled ? 'bg-[#111114]' : 'bg-gray-100'}`} />
                         )}
                       </React.Fragment>
                     );
@@ -359,7 +345,7 @@ export default function OrderDetailPage() {
             {hasShipping && (
               <Section title="Shipping address">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-50 text-purple-600">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#f6f5f2] text-[#111114]">
                     <MapPin size={15} strokeWidth={1.75} />
                   </div>
                   <div className="space-y-0.5">
@@ -380,7 +366,7 @@ export default function OrderDetailPage() {
             {hasPayment && (
               <Section title="Payment">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-purple-50 text-purple-600">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#f6f5f2] text-[#111114]">
                     <CreditCard size={15} strokeWidth={1.75} />
                   </div>
                   <div>
@@ -396,6 +382,6 @@ export default function OrderDetailPage() {
 
         </div>
       </div>
-    </AccountShell>
+    </AccountPage>
   );
 }

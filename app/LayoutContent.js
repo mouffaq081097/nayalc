@@ -14,7 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 const ChatWidget = lazy(() => import('./components/ChatWidget'));
 const WELCOME_POPUP_SEEN_KEY = 'naya_welcome_popup_seen';
 // Account pages that use AccountShell (keep in step with it); /account/addresses/[id] too
-const SIDEBAR_PAGES = ['/account/orders', '/account/profile', '/account/settings', '/account/wishlist'];
+const SIDEBAR_PAGES = ['/account/profile', '/account/settings'];
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
@@ -55,7 +55,7 @@ export default function LayoutContent({ children }) {
   const isAdminPage   = pathname.startsWith('/admin');
   // Account pages inside AccountShell have its fixed 200px sidebar on desktop, so
   // the footer moves over by the same width. The pages redone after Pitaka (My
-  // account, Addresses, Naya Rewards) have no sidebar and keep it full width.
+  // account, Addresses, Orders, Wishlist, Naya Rewards) have no sidebar and keep it full width.
   const hasAccountSidebar = SIDEBAR_PAGES.some(path => pathname === path || pathname.startsWith(`${path}/`))
     || /^\/account\/addresses\/[^/]+/.test(pathname);
   const isCartPage = pathname === '/cart';
