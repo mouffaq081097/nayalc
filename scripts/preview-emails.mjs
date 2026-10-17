@@ -56,6 +56,16 @@ const emails = {
   'stock-clearance':         mail.buildStockClearanceEmail({ firstName: 'Layla', code: 'LASTPIECES', discountPercent: 30, expiresAt: new Date(Date.now() + 7 * 864e5), heroImage: IMG, products }),
   'admin-new-order':         mail.buildAdminNotificationEmail(10482, 'layla@example.com', 891, address, { customerName: 'Layla Haddad', customerPhone: '+971501234567', paymentMethod: 'cashOnDelivery', items, subtotal: 990, shippingCost: 0, taxAmount: 42.43, discountAmount: 99, couponCode: 'WELCOME10', placedAt }),
   'admin-new-preorder':      mail.buildAdminNotificationEmail(10486, 'layla@example.com', 990, address, { customerName: 'Layla Haddad', customerPhone: '+971501234567', paymentMethod: 'card', items: items.map((item, i) => i === 0 ? { ...item, note: 'Pre-order · ships by Tue 27 Oct' } : item), subtotal: 990, shippingCost: 0, taxAmount: 47.14, placedAt, preorderShipBy: 'Tue 27 Oct' }),
+  'admin-requisition-approval': mail.buildRequisitionApprovalEmail({
+    id: 2, requestedBy: 'Mouffaq Dalloul', submittedAt: new Date(), supplierName: 'GERnétic International', neededBy: new Date(Date.now() + 14 * 864e5), currency: 'EUR',
+    notes: 'Cells Life is sold out and three customers are waiting on pre-orders.\nPlease approve before Monday so it ships with the next consolidation.',
+    items: [
+      { name: 'Cells Life Repairing Concentrate', imageUrl: IMG, quantity: 30, unitPrice: 28.5, stockQuantity: 0, owed: 3, note: 'Owed to pre-orders' },
+      { name: 'Cold Cream Mousse, Strengthening Moisturizer for Delicate Skin, 1.7 oz/50 ml', imageUrl: IMG, quantity: 20, unitPrice: 19.8, stockQuantity: 5 },
+      { name: 'GERnétic Derma Liquid Soap – Gentle Cleansing Lotion for Face & Body (200ml / 6.7 fl oz)', imageUrl: IMG, quantity: 40, unitPrice: 14.2, stockQuantity: 0, onOrder: 10 },
+      { name: 'LIFT Crème by Gernetic: Eye, Lip & Neck Firming Cream', imageUrl: IMG, quantity: 20, unitPrice: 30.55, stockQuantity: 4 },
+    ],
+  }),
   'admin-chat':              mail.buildChatNotificationEmail('Layla Haddad', 'layla@example.com', 77, 'Hi! Is the Hydra serum suitable for sensitive skin?\nThank you <3'),
   'admin-payout':            mail.buildPayoutRequestEmail(12450.5, 'aed', 'po_1PqR2sT3uV4wX5yZ'),
   'admin-transaction':       mail.buildTransactionEmail({ id: 'txn_3PqR2sT3uV4wX5yZ', amount: 89100, fee: 2614, net: 86486, currency: 'aed', status: 'available', type: 'charge', created: Math.floor(Date.now() / 1000), source: { payment_method_details: { card: { brand: 'visa', last4: '4242', exp_month: 8, exp_year: 2029, country: 'AE' } }, billing_details: { name: 'Layla Haddad', email: 'layla@example.com' } } }),
