@@ -33,7 +33,7 @@ function Copy({ eyebrow, title, text, cta, dark }) {
  * so they can be replaced without a deploy; `bg` / `mobileBg` match each photo's
  * empty edge so the copy panel blends in.
  */
-export function FeatureBanner({ desktopSlot, mobileSlot, tone = 'light', bg, mobileBg, ...copy }) {
+export function FeatureBanner({ desktopSlot, mobileSlot, tone = 'light', bg, mobileBg, mobileTrimTop = 0, ...copy }) {
   const desktop = useHomepageImage(desktopSlot);
   const mobile = useHomepageImage(mobileSlot);
   const dark = tone === 'dark';
@@ -44,13 +44,23 @@ export function FeatureBanner({ desktopSlot, mobileSlot, tone = 'light', bg, mob
       <div className="hidden md:block relative" style={{ background: bg }}>
         <Image src={desktop.src} alt={desktop.alt} width={1584} height={672} sizes="100vw" className="w-full h-auto" />
         <div className="absolute inset-0 flex items-center">
-          <Container className="w-full"><Copy {...copy} dark={dark} /></Container>
+          <Container wide className="w-full"><Copy {...copy} dark={dark} /></Container>
         </div>
       </div>
       {/* Phones: copy panel, then the photo */}
       <div className="md:hidden" style={{ background: mobileBg || bg }}>
-        <Container className="pt-9 pb-6"><Copy {...copy} dark={dark} /></Container>
-        <Image src={mobile.src} alt={mobile.alt} width={928} height={1152} sizes="100vw" className="w-full h-auto" />
+        {/* The panel carries its own background, so a gradient ends exactly where the photo starts */}
+        <div style={{ background: mobileBg || bg }}>
+          <Container wide className="pt-9 pb-6"><Copy {...copy} dark={dark} /></Container>
+        </div>
+        {mobileTrimTop > 0 ? (
+          // Drop the photo's empty top (a fraction of its height) so it sits close to the copy
+          <div className="relative w-full overflow-hidden" style={{ aspectRatio: `928 / ${Math.round(1152 * (1 - mobileTrimTop))}` }}>
+            <Image src={mobile.src} alt={mobile.alt} fill sizes="100vw" className="object-cover object-bottom" />
+          </div>
+        ) : (
+          <Image src={mobile.src} alt={mobile.alt} width={928} height={1152} sizes="100vw" className="w-full h-auto" />
+        )}
       </div>
     </section>
   );
@@ -72,13 +82,13 @@ export function BrandPhotoBanner({ brand: slugStart, eyebrow, title, text, ctaLa
       <div className="hidden md:flex relative min-h-[620px] items-center overflow-hidden">
         <Image src={brand.imageurl} alt={brand.name} fill sizes="100vw" className="object-cover" />
         <div className="absolute inset-0 bg-[linear-gradient(270deg,rgba(255,250,244,0.92)_0%,rgba(255,250,244,0.6)_38%,rgba(255,250,244,0)_62%)]" />
-        <Container className="relative w-full flex justify-end"><Copy {...copy} /></Container>
+        <Container wide className="relative w-full flex justify-end"><Copy {...copy} /></Container>
       </div>
       <div className="md:hidden bg-[#fbf6ef]">
         <div className="relative aspect-[4/3]">
           <Image src={brand.imageurl} alt={brand.name} fill sizes="100vw" className="object-cover" />
         </div>
-        <Container className="pt-7 pb-10"><Copy {...copy} /></Container>
+        <Container wide className="pt-7 pb-10"><Copy {...copy} /></Container>
       </div>
     </section>
   );

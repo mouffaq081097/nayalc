@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import AccountShell from '../../_components/AccountShell';
-import { useAccountData } from '../../_components/useAccountData';
+import { useAccountData, markAccountDataStale } from '../../_components/useAccountData';
 import { ArrowLeft, Package, MapPin, CreditCard, CheckCircle, Truck, RefreshCw, FileText } from 'lucide-react';
 import Image from 'next/image';
 import { useAppContext } from '../../../context/AppContext';
@@ -88,6 +88,7 @@ export default function OrderDetailPage() {
       const res = await fetchWithAuth(`/api/orders/${orderId}/cancel`, { method: 'POST' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || 'The order could not be cancelled.');
+      markAccountDataStale(); // the order list and points change too
       toast.success("Your order has been cancelled. We've emailed you the details.");
       await loadOrder();
     } catch (err) {

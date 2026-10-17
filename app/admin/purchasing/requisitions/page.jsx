@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ClipboardList } from 'lucide-react';
-import { PR_STATUS, poNumber, prNumber } from '@/lib/erp/documents';
+import { PR_STATUS, fmtMoney, poNumber, prNumber } from '@/lib/erp/documents';
 import { canOpenPage, isApproverOnly } from '@/lib/erp/roles';
 import DocumentIndex from '../_components/DocumentIndex';
 import { StatusBadge, fmtDate, secondary, subdued, text, usePurchasing } from '../_components/purchasingUi';
@@ -29,6 +29,9 @@ const COLUMNS = [
   { label: 'Requested by', render: r => <span style={secondary}>{r.requested_by_name || '—'}</span> },
   { label: 'Supplier', render: r => <span style={secondary}>{r.supplier_name || '—'}</span> },
   { label: 'Products', align: 'right', render: r => <span style={secondary}>{r.line_count} · {r.units} units</span> },
+  { label: 'Estimated total', align: 'right', render: r => (r.estimated_total == null
+    ? <span style={subdued}>—</span>
+    : <span className="tabular-nums" style={text}>{fmtMoney(r.estimated_total, r.currency || 'AED')}</span>) },
   { label: 'Needed by', render: r => <span style={secondary}>{fmtDate(r.needed_by)}</span> },
   { label: 'Created', render: r => <span style={subdued}>{fmtDate(r.created_at)}</span> },
 ];

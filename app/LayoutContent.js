@@ -1,13 +1,10 @@
 'use client';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useCart } from './context/CartContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import MobileBottomNav from './components/MobileBottomNav';
 import SideCart from './components/SideCart';
-import GlobalLoader from './components/GlobalLoader';
 import WelcomePopup from './components/WelcomePopup';
 import { WelcomeCornerBadge } from './components/WelcomeCornerBadge';
 import VerifyEmailBanner from './components/VerifyEmailBanner';
@@ -19,7 +16,6 @@ const WELCOME_POPUP_SEEN_KEY = 'naya_welcome_popup_seen';
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [chatReady, setChatReady] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   useCart();
@@ -44,12 +40,6 @@ export default function LayoutContent({ children }) {
   };
 
   useEffect(() => {
-    setIsTransitioning(true);
-    const timer = setTimeout(() => setIsTransitioning(false), 600);
-    return () => clearTimeout(timer);
-  }, [pathname]);
-
-  useEffect(() => {
     if (typeof window === 'undefined') return;
     if ('requestIdleCallback' in window) {
       const id = requestIdleCallback(() => setChatReady(true));
@@ -61,7 +51,9 @@ export default function LayoutContent({ children }) {
 
   const isAuthPage    = pathname === '/auth';
   const isAdminPage   = pathname.startsWith('/admin');
-  const isAccountPage = pathname.startsWith('/account');
+  // Account sub-pages have AccountShell's fixed 200px sidebar on desktop; the
+  // My account overview (/account itself) doesn't, so its footer stays full width
+  const hasAccountSidebar = pathname.startsWith('/account/');
   const isCartPage = pathname === '/cart';
   const isCheckoutPage = pathname === '/checkout';
   const isNeedAnythingElsePage  = pathname === '/need-anything-else';
@@ -72,7 +64,6 @@ export default function LayoutContent({ children }) {
 
   return (
     <>
-      <GlobalLoader isLoading={isTransitioning} />
       {showMobileChrome && <WelcomePopup isOpen={welcomeOpen} onClose={closeWelcome} />}
       {showMobileChrome && !welcomeOpen && <WelcomeCornerBadge onOpen={() => setWelcomeOpen(true)} />}
       {showMobileChrome && chatReady && <Suspense fallback={null}><ChatWidget /></Suspense>}
@@ -80,16 +71,15 @@ export default function LayoutContent({ children }) {
       {showMobileChrome && <Header />}
       <SideCart /> {/* Add SideCart component here */}
       <div
-        className={`flex min-h-screen flex-col ${showMobileChrome ? 'pb-[var(--mobile-main-pad-bottom)] md:pb-0' : ''}`}
+        className="flex min-h-screen flex-col"
       >
         <main className="min-h-0 flex-1">{children}</main>
         {showMobileChrome && (
-          <div className={isAccountPage ? 'md:pl-[200px]' : ''}>
+          <div className={hasAccountSidebar ? 'md:pl-[200px]' : ''}>
             <Footer />
           </div>
         )}
       </div>
-      {showMobileChrome && <MobileBottomNav />}
       <ToastContainer
         position="top-right"
         autoClose={3000}

@@ -21,8 +21,8 @@ export function ShopByConcern() {
   const chip = 'rounded-full px-5 py-3 text-[13.5px] md:text-[14px] font-medium transition-colors';
 
   return (
-    <section className="py-14 md:py-24 bg-white">
-      <Container>
+    <section className="py-8 md:py-12 bg-white">
+      <Container wide>
         <SectionHeading title="Shop by concern" />
         <ul className="flex flex-wrap justify-center gap-2 md:gap-2.5">
           {shown.map((c) => (

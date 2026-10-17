@@ -1,7 +1,7 @@
 import { headingFont } from '../../../components/home/SectionHeading';
 
 // Product page palette — taken from the homepage sections (BestSellers,
-// Categories, BuildYourRoutine, HeroSection) so the two read as one store:
+// Categories, HeroSection) so the two read as one store:
 // white sections, gray-900 headings, gray-50 image wells, one lavender accent.
 // Literal values rather than var(--cl-*) so a scoped override (admin) can never
 // leak into the storefront.

@@ -1,10 +1,14 @@
 "use client";
 
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import ProductCard from '../components/ProductCard';
-import { ListingHeader } from '@/app/components/ListingHeader';
-import { Search, X, Filter, Check, ArrowRight, Minus, Plus as PlusIcon, Grid2X2, List } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { headingFont } from '../components/home/SectionHeading';
+import { FranceFlag } from '../components/MadeInFranceBadge';
+import { UAEFlag } from '../components/MadeInUAEBadge';
+import { Search, X, Filter, Check, ArrowRight, Minus, Plus as PlusIcon, Grid2X2, List, ChevronDown } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { Slider } from '../components/ui/slider';
@@ -215,9 +219,164 @@ const SidebarFilters = ({
   );
 };
 
+/* ─── Desktop filter bar pieces ───────────────────────────────── */
+
+/** A pill that opens a small panel under itself; closes on outside click or Esc. */
+const FilterDropdown = ({ label, count = 0, active = false, align = 'left', children }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const on = active || count > 0;
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+        className={`h-9 px-4 rounded-full border text-[12px] font-medium flex items-center gap-1.5 transition-colors ${
+          on ? 'border-gray-900 text-gray-900' : 'border-gray-200 text-gray-700 hover:border-gray-700'
+        }`}
+      >
+        {label}
+        {count > 0 && (
+          <span className="w-4 h-4 rounded-full bg-gray-900 text-white text-[9px] flex items-center justify-center font-bold">{count}</span>
+        )}
+        <ChevronDown size={13} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-[calc(100%+8px)] z-30 w-[270px] bg-white border border-gray-200 rounded-xl shadow-lg p-4`}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/** Price slider with min/max readout; applies half a second after the last move. */
+const PriceFilter = ({ priceRange, setPriceRange, maxPrice }) => {
+  const [local, setLocal] = useState(priceRange);
+  useEffect(() => {
+    const handler = setTimeout(() => setPriceRange(local), 500);
+    return () => clearTimeout(handler);
+  }, [local, setPriceRange]);
+
+  return (
+    <div className="pt-2 px-1">
+      <Slider defaultValue={priceRange} max={maxPrice} step={10} onValueChange={setLocal} className="mb-5" />
+      <div className="flex items-center gap-2 text-[12px] font-semibold text-gray-900">
+        <span className="flex-1 border border-gray-200 rounded-[8px] px-3 py-2">AED {local[0]}</span>
+        <span className="text-gray-300">—</span>
+        <span className="flex-1 border border-gray-200 rounded-[8px] px-3 py-2">AED {local[1]}</span>
+      </div>
+    </div>
+  );
+};
+
+/** The page title with a ⌄ that jumps to another listing: best sellers, a brand or a collection. */
+const PageSwitcher = ({ title, brands, collections }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const groups = [
+    { label: 'Shop', links: [{ name: 'All products', href: '/all-products' }, { name: 'Best sellers', href: '/all-products?bestseller=true' }, { name: 'New arrivals', href: '/new-arrivals' }, { name: 'Offers', href: '/sales' }] },
+    { label: 'Brands', links: brands.map(b => ({ name: b.name, href: `/brand/${b.slug || b.id}` })) },
+    { label: 'Collections', links: collections.map(c => ({ name: c.name, href: `/collections/${c.slug || c.id}` })) },
+  ].filter(g => g.links.length);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="group flex items-center gap-3 text-left">
+        <h1 className={`${headingFont} text-[30px] md:text-[44px] font-medium leading-tight text-[#111114]`}>{title}</h1>
+        <ChevronDown size={26} strokeWidth={1.5} className={`mt-1 shrink-0 text-[#111114] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-40 mt-2 w-[min(88vw,560px)] max-h-[70vh] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 shadow-lg grid gap-5 sm:grid-cols-3">
+          {groups.map(g => (
+            <div key={g.label}>
+              <p className="text-[12px] text-[#8a8a92]">{g.label}</p>
+              <ul className="mt-2 space-y-1.5">
+                {g.links.map(l => (
+                  <li key={l.href}>
+                    <Link href={l.href} onClick={() => setOpen(false)} className="text-[14px] text-[#111114] hover:underline underline-offset-4">{l.name}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/** One large rounded card per brand: photo, name, origin and product count. Click to filter; click again to clear. */
+const BrandCards = ({ brands, selected, onToggle, counts }) => (
+  <div>
+    <div className="flex items-center justify-between gap-4">
+      <p className="text-[15px] text-[#111114]">Brand</p>
+      <Link href="/brands" className="text-[13px] text-[#5a5a64] underline underline-offset-4 hover:text-[#111114]">About our brands</Link>
+    </div>
+    <div className="mt-3 -mx-4 px-4 sm:mx-0 sm:px-0 flex gap-3 overflow-x-auto scrollbar-hide lg:grid lg:grid-cols-4 lg:overflow-visible">
+      {brands.map(b => {
+        const on = selected.includes(b.name);
+        const french = /gern[eé]t/i.test(b.name);
+        const emirati = /perfumes?/i.test(b.name) && /naya/i.test(b.name);
+        const n = counts[b.name] || 0;
+        return (
+          <button
+            key={b.id}
+            type="button"
+            onClick={() => onToggle(b.name)}
+            aria-pressed={on}
+            className={`shrink-0 w-[270px] lg:w-auto flex items-center gap-3.5 rounded-full border bg-white pl-3 pr-6 py-3 text-left transition-colors ${
+              on ? 'border-[#111114] ring-1 ring-[#111114]' : 'border-[#e4e4e7] hover:border-[#a1a1aa]'
+            }`}
+          >
+            <span className="relative w-11 h-11 shrink-0 overflow-hidden rounded-full bg-[#f6f5f2]">
+              {b.imageurl && <Image src={b.imageurl} alt="" fill sizes="44px" className="object-cover" />}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-[15px] font-semibold text-[#111114]">{b.name}</span>
+              <span className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap text-[12.5px] text-[#8a8a92]">
+                {french && <><FranceFlag title="Made in France" /> Made in France ·</>}
+                {emirati && <><UAEFlag title="Made in the UAE" /> Made in the UAE ·</>}
+                {` ${n} ${n === 1 ? 'product' : 'products'}`}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 /* ─── Main Page ───────────────────────────────────────────────── */
 export default function AllProductsPage() {
-  const { products: allProducts, categories: appCategories, concerns, fetchProducts } = useAppContext();
+  const { products: allProducts, categories: appCategories, concerns, fetchProducts, brands: brandList } = useAppContext();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
@@ -273,6 +432,13 @@ export default function AllProductsPage() {
     const match = concerns.find(c => c.slug === concern || String(c.id) === concern);
     if (match) setSelectedConcern(match);
   }, [searchParams, concerns]);
+
+  // Counts beside each brand in the desktop Brand dropdown (collections are the pills above)
+  const brandCounts = useMemo(() => {
+    const c = {};
+    allProducts.forEach(p => { if (p.brand) c[p.brand] = (c[p.brand] || 0) + 1; });
+    return c;
+  }, [allProducts]);
 
   const maxPrice = useMemo(() => {
     if (!allProducts.length) return 1000;
@@ -336,92 +502,64 @@ export default function AllProductsPage() {
   return (
     <div className="bg-white min-h-screen text-gray-900 overflow-x-hidden">
 
-      <ListingHeader
-        crumbs={[{ label: 'Home', href: '/' }, { label: bestsellerOnly ? 'Best sellers' : 'All products' }]}
-        title={bestsellerOnly ? 'Best sellers' : 'All products'}
-        subtitle={bestsellerOnly
-          ? 'Our real top sellers, ranked by units sold.'
-          : allProducts.length > 0 ? `${allProducts.length} products from GERnétic, Zorah and Naya Lumière.` : null}
-      />
-
-      {/* ── Category pills bar ── */}
-      <div className="border-b border-gray-100 bg-white sticky top-[var(--header-h)] z-20">
-        <div className="max-w-[1320px] mx-auto px-5 md:px-8 py-3 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-          {/* Search pill */}
-          <div className="relative flex-shrink-0">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="h-[34px] pl-8 pr-4 rounded-full border border-gray-200 text-[11px] focus:outline-none focus:border-gray-700 transition-colors bg-white w-36"
+      {/* ── Top (after Pitaka): a title that switches listing, then the brands as large cards ── */}
+      <div className="max-w-[2400px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-[4%] pt-8 md:pt-14 pb-6 md:pb-8">
+        <PageSwitcher
+          title={bestsellerOnly ? 'Best sellers' : 'All products'}
+          brands={(brandList || []).filter(b => brandCounts[b.name])}
+          collections={appCategories || []}
+        />
+        <p className="mt-1.5 text-[14px] text-[#6b6b73]">
+          {bestsellerOnly
+            ? 'Our real top sellers, ranked by units sold.'
+            : allProducts.length > 0 ? `${allProducts.length} products from GERnétic, Zorah and Naya Lumière.` : '\u00a0'}
+        </p>
+        {(brandList || []).some(b => brandCounts[b.name]) && (
+          <div className="mt-7 md:mt-9 max-w-[1320px]">
+            <BrandCards
+              brands={(brandList || []).filter(b => brandCounts[b.name])}
+              selected={selectedBrands}
+              onToggle={(name) => setSelectedBrands(prev => (prev.includes(name) ? prev.filter(x => x !== name) : [...prev, name]))}
+              counts={brandCounts}
             />
           </div>
-
-          <div className="w-px h-5 bg-gray-200 flex-shrink-0" />
-
-          <button
-            onClick={clearFilters}
-            className={`flex-shrink-0 h-[34px] px-4 rounded-full border text-[11px] font-semibold tracking-[0.04em] transition-all ${
-              !hasActiveFilters
-                ? 'bg-gray-900 border-gray-900 text-white'
-                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-700'
-            }`}
-          >
-            All
-          </button>
-
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategories(prev =>
-                prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-              )}
-              className={`flex-shrink-0 h-[34px] px-4 rounded-full border text-[11px] font-semibold tracking-[0.04em] transition-all ${
-                selectedCategories.includes(cat)
-                  ? 'bg-gray-900 border-gray-900 text-white'
-                  : 'bg-white border-gray-200 text-gray-700 hover:border-gray-700'
-              }`}
-            >
-              {cat.charAt(0).toUpperCase() + cat.slice(1)}
-            </button>
-          ))}
-        </div>
+        )}
       </div>
 
-      {/* ── Shell: sidebar + content ── */}
-      <div className="max-w-[1320px] mx-auto px-5 md:px-8 py-6 md:py-8 flex gap-10 md:gap-12 items-start">
-
-        {/* Desktop Sidebar */}
-        <aside className="hidden lg:block w-[230px] flex-shrink-0 sticky top-[calc(var(--header-h)+72px)]">
-          <SidebarFilters
-            categories={categories}
-            brands={brands}
-            selectedCategories={selectedCategories}
-            setSelectedCategories={setSelectedCategories}
-            selectedBrands={selectedBrands}
-            setSelectedBrands={setSelectedBrands}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            showInStock={showInStock}
-            setShowInStock={setShowInStock}
-            maxPrice={maxPrice}
-            clearFilters={clearFilters}
-            allProducts={allProducts}
-          />
-        </aside>
-
-        {/* Main Content */}
-        <section className="flex-1 min-w-0">
+      {/* ── Content: on desktop the filters run across the top; phones use the Filters drawer ── */}
+      <div className="max-w-[2400px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-[4%] py-6 md:py-8">
+        <section className="min-w-0">
 
           {/* Toolbar */}
           <div className="flex items-center justify-between gap-3 pb-4 mb-5 border-b border-gray-100 flex-wrap">
-            <div className="text-[12px] text-gray-500">
-              <span className="font-semibold text-gray-900">{filteredAndSortedProducts.length} products</span>
-              <span> · curated this season</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="hidden lg:flex items-center gap-2">
+                <FilterDropdown label="Price" active={priceRange[0] > 0 || priceRange[1] < maxPrice}>
+                  <PriceFilter priceRange={priceRange} setPriceRange={setPriceRange} maxPrice={maxPrice} />
+                </FilterDropdown>
+                <button
+                  type="button"
+                  onClick={() => setShowInStock(!showInStock)}
+                  aria-pressed={showInStock}
+                  className={`h-9 px-4 rounded-full border text-[12px] font-medium flex items-center gap-1.5 transition-colors ${
+                    showInStock ? 'bg-gray-900 border-gray-900 text-white' : 'border-gray-200 text-gray-700 hover:border-gray-700'
+                  }`}
+                >
+                  {showInStock && <Check size={12} strokeWidth={3} />}
+                  In stock only
+                </button>
+                {hasActiveFilters && (
+                  <button type="button" onClick={clearFilters} className="ml-1 text-[12px] text-gray-500 underline underline-offset-4 hover:text-gray-900">
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <div className="lg:hidden text-[12px] text-gray-500">
+                <span className="font-semibold text-gray-900">{filteredAndSortedProducts.length} products</span>
+              </div>
             </div>
             <div className="flex items-center gap-3">
+              <span className="hidden lg:inline text-[12px] font-semibold text-gray-900">{filteredAndSortedProducts.length} products</span>
               {/* Mobile filter button */}
               <button
                 onClick={() => setIsFilterOpen(true)}
@@ -500,8 +638,8 @@ export default function AllProductsPage() {
 
           {/* Products */}
           {isLoading ? (
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5">
-              {Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4">
+              {Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : filteredAndSortedProducts.length === 0 ? (
             <motion.div
@@ -528,7 +666,7 @@ export default function AllProductsPage() {
                 className={
                   viewMode === 'list'
                     ? 'flex flex-col gap-4'
-                    : 'grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5'
+                    : 'grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4'
                 }
               >
                 <AnimatePresence mode="popLayout">

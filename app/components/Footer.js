@@ -76,7 +76,7 @@ export default function Footer() {
   return (
     <footer className="bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p className={`${headingFont} pt-24 pb-16 md:pt-36 md:pb-24 text-center text-[40px] md:text-[84px] font-normal uppercase leading-[1.05] tracking-[-0.01em]`}>
+        <p className={`${headingFont} pt-14 pb-10 md:pt-20 md:pb-14 text-center text-[40px] md:text-[84px] font-normal uppercase leading-[1.05] tracking-[-0.01em]`}>
           <span className="text-[#b79cff]">Glow</span> with<br />Naya Lumière
         </p>
 

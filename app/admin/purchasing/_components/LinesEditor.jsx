@@ -7,10 +7,10 @@ import { ProductSearch, ProductThumb, RemoveButton, secondary, stockLine, subdue
 const numberInput = { width: 96, textAlign: 'right' };
 
 /**
- * Product lines of a requisition (quantity + note) or purchase order (quantity + unit price).
+ * Product lines of a requisition (quantity + unit price + note) or purchase order (quantity + unit price).
  * lines: [{ product_id, product_name, quantity, unit_price?, note?, ... }] — quantities and prices as strings while editing
  */
-export default function LinesEditor({ lines, onChange, products, withPrice = false, currency = 'AED', readOnly = false, error }) {
+export default function LinesEditor({ lines, onChange, products, withPrice = false, withNote = !withPrice, currency = 'AED', readOnly = false, error }) {
   const byId = useMemo(() => new Map(products.map(p => [p.id, p])), [products]);
 
   const update = (index, patch) => onChange(lines.map((l, i) => (i === index ? { ...l, ...patch } : l)));
@@ -45,7 +45,7 @@ export default function LinesEditor({ lines, onChange, products, withPrice = fal
                 <th className="text-right">Quantity</th>
                 {withPrice && <th className="text-right">Unit price ({currency})</th>}
                 {withPrice && <th className="text-right">Amount</th>}
-                {!withPrice && <th>Note</th>}
+                {withNote && <th>Note</th>}
                 {!readOnly && <th />}
               </tr>
             </thead>
@@ -79,7 +79,7 @@ export default function LinesEditor({ lines, onChange, products, withPrice = fal
                     {withPrice && (
                       <td className="text-right">
                         {readOnly
-                          ? <span className="tabular-nums" style={secondary}>{fmtMoney(line.unit_price, currency, { maxDigits: 4 })}</span>
+                          ? <span className="tabular-nums" style={secondary}>{line.unit_price === '' || line.unit_price == null ? '—' : fmtMoney(line.unit_price, currency, { maxDigits: 4 })}</span>
                           : (
                             <input
                               type="number" min="0" step="0.01" inputMode="decimal"
@@ -97,10 +97,10 @@ export default function LinesEditor({ lines, onChange, products, withPrice = fal
                     )}
                     {withPrice && (
                       <td className="text-right tabular-nums" style={text}>
-                        {fmtMoney((Number(line.quantity) || 0) * (Number(line.unit_price) || 0), currency)}
+                        {line.unit_price === '' || line.unit_price == null ? '—' : fmtMoney((Number(line.quantity) || 0) * (Number(line.unit_price) || 0), currency)}
                       </td>
                     )}
-                    {!withPrice && (
+                    {withNote && (
                       <td className="min-w-[200px]">
                         {readOnly
                           ? <span style={secondary}>{line.note || '—'}</span>
@@ -145,7 +145,8 @@ export function linesPayload(lines, { withPrice = false } = {}) {
     items: lines.map(l => ({
       product_id: l.product_id,
       quantity: Number(l.quantity),
-      ...(withPrice ? { unit_price: Number(l.unit_price) } : { note: l.note || null }),
+      ...(withPrice ? { unit_price: Number(l.unit_price) } : {}),
+      note: l.note || null,
       requisition_item_id: l.requisition_item_id || null,
     })),
   };

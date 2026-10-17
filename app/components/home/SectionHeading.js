@@ -22,7 +22,7 @@ const LAVENDER = 'rgb(147,104,236)';
 export function SectionHeading({ eyebrow, title, href, linkLabel, external = false, action, tone = 'light' }) {
   const dark = tone === 'dark';
   return (
-    <div className="mb-8 md:mb-12 flex flex-col items-center text-center gap-3">
+    <div className="mb-5 md:mb-7 flex flex-col items-center text-center gap-2">
       {eyebrow && (
         <p className="text-[11.5px] font-semibold tracking-[0.14em] uppercase" style={{ color: dark ? '#d8c8ff' : LAVENDER }}>
           {eyebrow}

@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minus, Plus, Trash2, ChevronDown, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
@@ -166,6 +167,9 @@ export default function SideCart() {
   const { isCartOpen, closeCart, cartItems, removeFromCart, updateQuantity, clearCart, addToCart, discountAmount, appliedCoupon } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  // On the bag page itself the drawer would only cover what it shows, so adding there doesn't open it
+  const onBagPage = usePathname() === '/cart';
+  useEffect(() => { if (onBagPage && isCartOpen) closeCart(); }, [onBagPage, isCartOpen, closeCart]);
 
   const subtotal = cartItems.reduce((t, i) => t + i.price * i.quantity, 0);
   const count = cartItems.reduce((t, i) => t + i.quantity, 0);
@@ -179,7 +183,7 @@ export default function SideCart() {
 
   return (
     <AnimatePresence>
-      {isCartOpen && (
+      {isCartOpen && !onBagPage && (
         <div className="fixed inset-0 z-[300]" role="dialog" aria-modal="true" aria-label="Cart">
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

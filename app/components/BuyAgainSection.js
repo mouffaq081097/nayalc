@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import CartSuggestionCard from './CartSuggestionCard';
-
-const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9869f7]/40';
-const arrowBtn = `hidden h-9 w-9 items-center justify-center rounded-full border border-[#e5e5ea] bg-white text-[#2a2a31] transition-colors hover:bg-[#f3f3f5] disabled:opacity-30 disabled:hover:bg-white lg:flex ${focusRing}`;
+import { useAppContext } from '../context/AppContext';
+import { HomeProductCard } from './home/HomeProductCard';
+import { headingFont } from './home/SectionHeading';
+import { toCardProduct, cardGrid } from './PairItWithSection';
 
 export function orderedLabel(value) {
   if (!value) return null;
@@ -21,102 +19,52 @@ export function orderedLabel(value) {
   })}`;
 }
 
+/** "Buy it again" under the bag: homepage product cards for past purchases, with when each was last ordered. */
 export default function BuyAgainSection({ products, cartItems }) {
-  const { addToCart, closeCart } = useCart();
-  const railRef = useRef(null);
-  const [canScroll, setCanScroll] = useState({ prev: false, next: false });
+  const { products: catalogue } = useAppContext();
   // Hide what was already in the bag when this appeared; products added from here
-  // stay visible as "In your bag" rather than disappearing mid-tap.
+  // stay in place instead of vanishing.
   const [initialCartIds] = useState(() => new Set(cartItems.map(i => i.id)));
+  const [showAll, setShowAll] = useState(false);
 
-  const cartIds = useMemo(() => new Set(cartItems.map(i => i.id)), [cartItems]);
   const visible = useMemo(
     () => (products || []).filter(p => !initialCartIds.has(p.id)),
     [products, initialCartIds]
   );
 
-  useEffect(() => {
-    const el = railRef.current;
-    if (!el) return;
-    const update = () =>
-      setCanScroll({
-        prev: el.scrollLeft > 4,
-        next: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
-      });
-    update();
-    el.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    return () => {
-      el.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
-  }, [visible.length]);
-
   if (visible.length === 0) return null;
-
-  const scrollByPage = (direction) => {
-    const el = railRef.current;
-    if (!el) return;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: reduceMotion ? 'auto' : 'smooth' });
-  };
-
-  const handleAdd = (product) => {
-    addToCart({ ...product, stock_quantity: product.stockQuantity ?? product.stock_quantity }, 1);
-    closeCart(); // already on the bag page — don't slide the drawer over it
-  };
+  const shown = showAll ? visible : visible.slice(0, 3);
 
   return (
     <section aria-labelledby="buy-again-heading">
-      <div className="mb-4 flex items-end justify-between gap-4">
-        <div className="min-w-0">
-          <h2 id="buy-again-heading" className="text-[18px] font-semibold text-[#111114]">Buy it again</h2>
-          <p className="mt-0.5 text-[13px] text-[#8a8a93]">From your past orders</p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <Link
-            href="/account/orders"
-            className={`inline-flex h-11 items-center rounded-full px-3 text-[13px] font-semibold text-[#7c3aed] transition-colors hover:bg-[#f5f0fd] lg:h-9 ${focusRing}`}
-          >
-            View orders
-          </Link>
-          <button
-            type="button"
-            onClick={() => scrollByPage(-1)}
-            disabled={!canScroll.prev}
-            aria-label="Show previous products"
-            className={arrowBtn}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollByPage(1)}
-            disabled={!canScroll.next}
-            aria-label="Show more products"
-            className={arrowBtn}
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <h2 id="buy-again-heading" className={`${headingFont} text-[20px] md:text-[24px] font-medium uppercase text-[#111114]`}>
+          Buy it again
+        </h2>
+        <Link href="/account/orders" className="shrink-0 text-[13px] text-[#111114] underline underline-offset-4 hover:opacity-70">
+          View orders
+        </Link>
       </div>
-
-      <ul
-        ref={railRef}
-        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 scroll-px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:px-0 lg:scroll-px-0"
-      >
-        {visible.map(product => (
-          <li key={product.id} className="w-[44%] shrink-0 snap-start sm:w-[200px] lg:w-[calc((100%_-_2.25rem)/4)]">
-            <CartSuggestionCard
-              product={product}
-              inBag={cartIds.has(product.id)}
-              onAdd={handleAdd}
-              meta={orderedLabel(product.lastOrderedAt)}
-            />
-          </li>
-        ))}
-      </ul>
+      <div className={cardGrid}>
+        {shown.map(product => {
+          const ordered = orderedLabel(product.lastOrderedAt);
+          return (
+            <div key={product.id}>
+              <HomeProductCard product={toCardProduct(product, catalogue)} />
+              {ordered && <p className="px-0.5 pt-1 text-[12px] text-[#8a8a93]">{ordered}</p>}
+            </div>
+          );
+        })}
+      </div>
+      {visible.length > 3 && (
+        <button
+          type="button"
+          onClick={() => setShowAll(v => !v)}
+          className="mt-5 text-[13px] text-[#111114] underline underline-offset-4 hover:opacity-70"
+        >
+          {showAll ? 'Show less' : `Show all ${visible.length}`}
+        </button>
+      )}
     </section>
   );
 }

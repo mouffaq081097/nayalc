@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { uploadImageToCloudinary, uploadMediaToCloudinary } from '@/lib/cloudinary';
 import { HOMEPAGE_IMAGE_SLOTS, getSlot } from '@/lib/homepageImageSlots';
 
 async function ensureTable() {
@@ -31,6 +31,7 @@ export async function GET() {
         key: slot.key,
         label: slot.label,
         section: slot.section,
+        media: slot.media || 'image',
         fallbackUrl: slot.fallbackUrl,
         alt: override?.alt_text || slot.alt,
         imageUrl: override?.image_url || slot.fallbackUrl,
@@ -112,7 +113,9 @@ export async function POST(request) {
       }
 
       const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
-      const uploadResult = await uploadImageToCloudinary(imageBuffer);
+      const uploadResult = slot.media === 'video'
+        ? await uploadMediaToCloudinary(imageBuffer, 'video')
+        : await uploadImageToCloudinary(imageBuffer);
       imageUrl = uploadResult.secure_url;
     }
 

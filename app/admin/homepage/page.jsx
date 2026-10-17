@@ -10,7 +10,8 @@ import CampaignsSection from './CampaignsSection';
 /** Shared upload/reset card shell — a preview, a "Custom"/"Default" badge, and
  * Replace/Reset buttons. Callers supply the actual network calls. Pass
  * `onPickExisting` to also offer the Cloudinary library as a source. */
-function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onReset, onPickExisting }) {
+function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onReset, onPickExisting, media = 'image' }) {
+  const isVideo = media === 'video';
   const fileInputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -29,7 +30,7 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
       await onUpload(file);
     } catch (err) {
       console.error('Error uploading image:', err);
-      setError('Upload failed. Please try again.');
+      setError(err?.message && isVideo ? err.message : 'Upload failed. Please try again.');
     } finally {
       setBusy(false);
       setPreview(null);
@@ -52,7 +53,7 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
   };
 
   const handleReset = async () => {
-    if (!window.confirm(`Revert "${label}" to the default image?`)) return;
+    if (!window.confirm(isVideo ? `Remove the video from "${label}"?` : `Revert "${label}" to the default image?`)) return;
     setBusy(true);
     setError('');
     try {
@@ -81,7 +82,9 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
 
       <div className="p-6 space-y-4">
         <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden bg-gray-50 border border-gray-100">
-          {displayUrl ? (
+          {displayUrl && isVideo ? (
+            <video src={displayUrl} className="absolute inset-0 w-full h-full object-cover" muted loop playsInline autoPlay controls />
+          ) : displayUrl ? (
             <Image src={displayUrl} alt={alt || label} fill className="object-cover" sizes="(max-width: 768px) 100vw, 480px" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300">
@@ -106,7 +109,7 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
             style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}
           >
             <UploadCloud size={14} />
-            Replace image
+            {isVideo ? (displayUrl ? 'Replace video' : 'Upload video') : 'Replace image'}
           </button>
           {onPickExisting && (
             <button
@@ -127,10 +130,10 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border border-purple-200 text-purple-600 hover:bg-purple-50 disabled:opacity-60"
             >
               <RotateCcw size={14} />
-              Reset to default
+              {isVideo ? 'Remove video' : 'Reset to default'}
             </button>
           )}
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          <input ref={fileInputRef} type="file" accept={isVideo ? 'video/mp4,video/webm,video/quicktime' : 'image/*'} className="hidden" onChange={handleFileChange} />
         </div>
       </div>
 
@@ -146,7 +149,8 @@ function ImageSlotCard({ label, subtitle, imageUrl, alt, isCustom, onUpload, onR
   );
 }
 
-function HomepageSlotsSection() {
+/** `media` picks which slots to list: the photo slots or the story videos. */
+function HomepageSlotsSection({ media = 'image' }) {
   const { fetchWithAuth } = useAppContext();
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -166,12 +170,14 @@ function HomepageSlotsSection() {
 
   const updateSlot = (key, patch) => setSlots((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
 
+  const shown = slots.filter((s) => (s.media || 'image') === media);
+
   if (loading) return <PageLoader />;
-  if (slots.length === 0) return <p className="text-sm text-gray-400">No editable homepage images yet.</p>;
+  if (shown.length === 0) return <p className="text-sm text-gray-400">No editable homepage {media === 'video' ? 'videos' : 'images'} yet.</p>;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-      {slots.map((slot) => (
+      {shown.map((slot) => (
         <ImageSlotCard
           key={slot.key}
           label={slot.label}
@@ -179,7 +185,33 @@ function HomepageSlotsSection() {
           imageUrl={slot.imageUrl}
           alt={slot.alt}
           isCustom={slot.isCustom}
+          media={slot.media}
           onUpload={async (file) => {
+            if (slot.media === 'video') {
+              // Straight from the browser to Cloudinary (Vercel caps our own uploads at 4.5 MB)
+              if (file.size > 100 * 1024 * 1024) throw new Error('Videos must be under 100 MB.');
+              const signRes = await fetchWithAuth('/api/admin/cloudinary-sign', { method: 'POST' });
+              if (!signRes.ok) throw new Error('Could not start the upload.');
+              const sign = await signRes.json();
+              const up = new FormData();
+              up.append('file', file);
+              up.append('api_key', sign.apiKey);
+              up.append('timestamp', sign.timestamp);
+              up.append('signature', sign.signature);
+              up.append('folder', sign.folder);
+              const cloud = await fetch(`https://api.cloudinary.com/v1_1/${sign.cloudName}/video/upload`, { method: 'POST', body: up });
+              if (!cloud.ok) throw new Error('Cloudinary rejected the video. Try an MP4 under 100 MB.');
+              const { secure_url } = await cloud.json();
+              const res = await fetchWithAuth('/api/admin/homepage-images', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: slot.key, image_url: secure_url }),
+              });
+              if (!res.ok) throw new Error('Uploaded, but could not save it. Please try again.');
+              const data = await res.json();
+              updateSlot(slot.key, { imageUrl: data.slot.image_url, alt: data.slot.alt_text, isCustom: true, updatedAt: data.slot.updated_at });
+              return;
+            }
             const form = new FormData();
             form.append('key', slot.key);
             form.append('image', file);
@@ -187,7 +219,7 @@ function HomepageSlotsSection() {
             const data = await res.json();
             updateSlot(slot.key, { imageUrl: data.slot.image_url, alt: data.slot.alt_text, isCustom: true, updatedAt: data.slot.updated_at });
           }}
-          onPickExisting={async (image) => {
+          onPickExisting={slot.media === 'video' ? undefined : async (image) => {
             const res = await fetchWithAuth('/api/admin/homepage-images', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -319,7 +351,25 @@ export default function AdminHomepageImages() {
 
       <CampaignsSection />
 
-      <HomepageSlotsSection />
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">Story videos</h2>
+          <p className="text-sm text-gray-500 mt-1 max-w-2xl">
+            The two videos in the black &quot;The Naya ritual&quot; band, just above the journal on the homepage. They play silently
+            on a loop. Use MP4 (or MOV / WebM) under 100 MB, ideally 5–15 seconds and slightly taller than square (about 9 : 10).
+            The band stays hidden until at least one video is uploaded; changes show on the site within about 5 minutes.
+          </p>
+        </div>
+        <HomepageSlotsSection media="video" />
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">Banner photos</h2>
+          <p className="text-sm text-gray-500 mt-1 max-w-2xl">The GERnétic and perfume banners, desktop and phone versions.</p>
+        </div>
+        <HomepageSlotsSection />
+      </div>
 
       <div className="space-y-4">
         <div>

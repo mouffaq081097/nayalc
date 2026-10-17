@@ -87,11 +87,11 @@ const AdminLayout = ({ children }) => {
   if (loading || (isStaff && (!staff || !canOpenPage(staff.access, pathname)))) return <PageLoader />;
 
   return (
-    <div className="sp-admin flex flex-col h-screen">
+    <div className="sp-admin flex flex-col h-[100dvh]">
 
       {/* ── Top bar ── */}
       <header
-        className="h-14 shrink-0 flex items-center gap-3 px-3 sm:px-4 z-30"
+        className="h-14 shrink-0 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 z-30"
         style={{ background: 'var(--sp-topbar)' }}
       >
         {/* Mobile toggle */}
@@ -111,13 +111,14 @@ const AdminLayout = ({ children }) => {
             alt="Naya Lumière Cosmetics"
             width={491}
             height={76}
-            className="h-[28px] sm:h-[36px] w-auto object-contain"
+            className="h-[22px] sm:h-[36px] w-auto object-contain"
             priority
           />
         </Link>
 
-        {/* Search */}
-        <div className="flex-1 max-w-[640px] mx-auto">
+        {/* Search — hidden on phones, where the top bar has no room for it */}
+        <div className="flex-1 sm:hidden" aria-hidden="true" />
+        <div className="hidden sm:block flex-1 max-w-[640px] mx-auto">
           <div
             className="flex items-center gap-2 h-9 px-3 rounded-lg w-full"
             style={{ background: 'var(--sp-topbar-2)', border: '1px solid rgba(255,255,255,0.10)' }}
@@ -152,7 +153,7 @@ const AdminLayout = ({ children }) => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.97 }}
                   transition={{ duration: 0.14 }}
-                  className="absolute right-0 mt-2 w-80 bg-white rounded-xl overflow-hidden z-50"
+                  className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-24px))] bg-white rounded-xl overflow-hidden z-50"
                   style={{ border: '1px solid var(--sp-border)', boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}
                 >
                   <div className="px-4 py-3 flex justify-between items-center" style={{ borderBottom: '1px solid var(--sp-border)' }}>

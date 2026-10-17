@@ -135,16 +135,6 @@ export default function ProductClient({ params, initialProduct }) {
     return () => observer.disconnect();
   }, [product]);
 
-  // Broadcast sticky-bar visibility so the global chat launcher can lift above it
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('nayalc:product-sticky-bar', { detail: { visible: showStickyBar } }));
-  }, [showStickyBar]);
-
-  // Reset the chat launcher position when leaving the product page
-  useEffect(() => () => {
-    window.dispatchEvent(new CustomEvent('nayalc:product-sticky-bar', { detail: { visible: false } }));
-  }, []);
-
   const stock = product ? Number(product.stock_quantity ?? product.stockQuantity ?? NaN) : NaN;
   const hasStockInfo = Number.isFinite(stock);
   // Past the shelf stock, a product that takes pre-orders can still be bought (lib/backorderRules.js)
@@ -243,12 +233,12 @@ export default function ProductClient({ params, initialProduct }) {
 
   return (
     <div className="relative min-h-screen bg-white text-gray-900 overflow-x-clip">
-      {/* ── Sticky buy bar once the main button scrolls away (desktop: bottom bar, phone: above the nav) ── */}
+      {/* ── Sticky buy bar along the bottom once the main button scrolls away ── */}
       <AnimatePresence>
         {showStickyBar && (
           <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed left-0 right-0 z-[140] bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] md:bottom-0">
+            className="fixed left-0 right-0 bottom-0 z-[140] pb-[env(safe-area-inset-bottom,0px)] bg-white">
             <div className="bg-white border-t border-[#ececec] shadow-[0_-4px_20px_rgba(17,24,39,0.06)]">
               <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center gap-3">
                 {allImages[0] && (

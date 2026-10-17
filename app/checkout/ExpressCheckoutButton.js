@@ -18,17 +18,19 @@ import { toast } from 'react-toastify';
  * @param onBeforePay  sync guard; return false to abort (e.g. no address selected)
  * @param onSuccess    async(piId) called after the wallet payment succeeds
  */
-function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess }) {
+function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess, onAvailable, show = true }) {
   const stripe = useStripe();
   const [paymentRequest, setPaymentRequest] = useState(null);
 
   // Keep the latest callbacks/amount without re-creating the paymentRequest on every render
   const onBeforePayRef = useRef(onBeforePay);
   const onSuccessRef = useRef(onSuccess);
+  const onAvailableRef = useRef(onAvailable);
   const amountRef = useRef(amount);
   useEffect(() => {
     onBeforePayRef.current = onBeforePay;
     onSuccessRef.current = onSuccess;
+    onAvailableRef.current = onAvailable;
     amountRef.current = amount;
   });
 
@@ -41,11 +43,16 @@ function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess }) {
       total: { label: 'Naya Lumière Cosmetics', amount },
       requestPayerName: true,
       requestPayerEmail: true,
+      // Apple Pay / Google Pay only — Stripe Link here confused the payment step
+      disableWallets: ['link'],
     });
 
     let active = true;
     pr.canMakePayment().then((result) => {
-      if (active) setPaymentRequest(result ? pr : null);
+      if (!active) return;
+      setPaymentRequest(result ? pr : null);
+      // Lets checkout list "Apple Pay" / "Google Pay" as a payment option only when it exists
+      onAvailableRef.current?.(result ? { applePay: !!result.applePay, googlePay: !!result.googlePay } : null);
     });
 
     pr.on('paymentmethod', async (ev) => {
@@ -84,33 +91,29 @@ function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess }) {
     return () => { active = false; };
   }, [stripe, amount]);
 
-  if (!paymentRequest) return null;
+  if (!paymentRequest || !show) return null;
 
   return (
-    <div className="mb-4">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-[#8a8a93] mb-2">Express checkout</p>
-      <div className={disabled ? 'opacity-50 pointer-events-none' : ''}>
+    <div>
+      {/* Stripe draws the wallet button in an iframe and only lets us set its height,
+          so the wrapper clips it to the same 12px corners as the other checkout buttons */}
+      <div className={`overflow-hidden rounded-xl ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <PaymentRequestButtonElement
           options={{
             paymentRequest,
-            style: { paymentRequestButton: { type: 'buy', theme: 'dark', height: '48px' } },
+            style: { paymentRequestButton: { type: 'buy', theme: 'dark', height: '52px' } },
           }}
         />
-      </div>
-      <div className="flex items-center gap-3 mt-4">
-        <div className="h-px flex-1 bg-[#e5e5ea]" />
-        <span className="text-[10px] uppercase tracking-wider text-[#8a8a93]">or pay another way</span>
-        <div className="h-px flex-1 bg-[#e5e5ea]" />
       </div>
     </div>
   );
 }
 
-export default function ExpressCheckoutButton({ stripePromise, amount, disabled, onBeforePay, onSuccess }) {
+export default function ExpressCheckoutButton({ stripePromise, amount, disabled, onBeforePay, onSuccess, onAvailable, show }) {
   if (!stripePromise) return null;
   return (
     <Elements stripe={stripePromise}>
-      <ExpressButtonInner amount={amount} disabled={disabled} onBeforePay={onBeforePay} onSuccess={onSuccess} />
+      <ExpressButtonInner amount={amount} disabled={disabled} onBeforePay={onBeforePay} onSuccess={onSuccess} onAvailable={onAvailable} show={show} />
     </Elements>
   );
 }

@@ -8,8 +8,7 @@ const STORAGE_KEY = 'naya_corner_badge_dismissed';
 
 /**
  * Persistent reminder of the same real WELCOME10 offer as WelcomePopup,
- * shown as a vertical tab docked to the right edge (clear of the mobile bottom
- * nav). Opens the same WelcomePopup on click (via onOpen, lifted to
+ * shown as a vertical tab docked to the right edge. Opens the same WelcomePopup on click (via onOpen, lifted to
  * LayoutContent.js) rather than duplicating the email-capture form — useful
  * for someone who dismissed the popup earlier without taking the code.
  */
@@ -35,7 +34,7 @@ export function WelcomeCornerBadge({ onOpen }) {
   };
 
   return (
-    // Phones: a short "10%" tab low on the edge, just above the bottom nav, so it doesn't
+    // Phones: a short "10%" tab low on the edge, so it doesn't
     // sit over the hero copy and product cards mid-screen. Desktop: the full tab, mid-edge.
     <div
       className="fixed right-0 bottom-[96px] md:bottom-auto md:top-[60%] md:-translate-y-1/2 z-[120] flex flex-col items-center rounded-l-2xl shadow-lg overflow-hidden"

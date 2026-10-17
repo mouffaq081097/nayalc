@@ -16,8 +16,8 @@ export function JournalSection() {
   if (!loading && articles.length === 0) return null;
 
   return (
-    <section className="pt-14 md:pt-24 bg-white">
-      <Container>
+    <section className="pt-8 md:pt-12 bg-white">
+      <Container wide>
         <SectionHeading title="From the journal" />
         <div className="grid grid-flow-col auto-cols-[82%] md:grid-flow-row md:grid-cols-3 md:auto-cols-auto gap-3.5 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-px-4 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {loading
@@ -37,7 +37,7 @@ export function JournalSection() {
                 </Link>
               ))}
         </div>
-        <div className="mt-9 md:mt-11 flex justify-center">
+        <div className="mt-6 md:mt-8 flex justify-center">
           <Pill href="/journal">Visit the journal</Pill>
         </div>
       </Container>

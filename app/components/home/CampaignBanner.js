@@ -58,7 +58,7 @@ export function CampaignBanner({ campaign }) {
 
   return (
     <section aria-label={campaign.title} className="py-6 md:py-8 bg-white">
-      <Container>
+      <Container wide>
         <div className="grid md:grid-cols-2 rounded-[24px] overflow-hidden bg-[#f5f5f6]">
           <div className="order-2 md:order-1 flex flex-col justify-center gap-4 p-6 md:p-10 lg:p-12">
             <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: LAVENDER }}>

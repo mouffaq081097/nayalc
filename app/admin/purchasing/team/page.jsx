@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
 import PageLoader from '@/app/components/PageLoader';
@@ -7,29 +7,40 @@ import { PURCHASING_ROLES } from '@/lib/erp/roles';
 import { ErrorBanner, Notice, PageHeader, api, secondary, subdued, text, usePurchasing } from '../_components/purchasingUi';
 
 export default function TeamPage() {
-  const { data, error, setData } = usePurchasing('/api/admin/purchasing/team');
-  const [saving, setSaving] = useState(null);
+  const { data, error, setData, reload } = usePurchasing('/api/admin/purchasing/team');
+  // Members whose roles are being saved; their checkboxes wait until it's done
+  const [saving, setSaving] = useState(() => new Set());
+  // Each click builds on the latest roles, not on what the screen showed before an earlier save returned
+  const latest = useRef(null);
+  latest.current = data;
 
   if (!data && !error) return <PageLoader />;
   const access = data?.access;
   const manage = access?.full;
 
-  const save = async (member, body) => {
-    setSaving(member.id);
+  const patchMember = (id, patch) => setData(d => ({ ...d, team: d.team.map(m => (m.id === id ? { ...m, ...patch } : m)) }));
+
+  const save = async (memberId, body) => {
+    setSaving(s => new Set(s).add(memberId));
+    // Show the change straight away; the server's answer replaces it
+    patchMember(memberId, body.full ? { full: true, roles: [] } : { full: false, roles: body.roles });
     try {
-      const result = await api('/api/admin/purchasing/team', { method: 'PUT', body: { userId: member.id, ...body } });
-      setData(d => ({ ...d, team: d.team.map(m => (m.id === member.id ? { ...m, full: result.full, roles: result.roles } : m)) }));
+      const result = await api('/api/admin/purchasing/team', { method: 'PUT', body: { userId: memberId, ...body } });
+      patchMember(memberId, { full: result.full, roles: result.roles });
       toast.success('Roles saved');
     } catch (e) {
       toast.error(e.message);
+      reload(); // put the table back to what is really stored
     } finally {
-      setSaving(null);
+      setSaving(s => { const next = new Set(s); next.delete(memberId); return next; });
     }
   };
 
-  const toggleRole = (member, role) => {
+  const toggleRole = (memberId, role) => {
+    const member = latest.current?.team.find(m => m.id === memberId);
+    if (!member) return;
     const roles = member.roles.includes(role) ? member.roles.filter(r => r !== role) : [...member.roles, role];
-    save(member, { roles });
+    save(memberId, { roles });
   };
 
   return (
@@ -66,7 +77,7 @@ export default function TeamPage() {
               <tbody>
                 {data.team.map(m => {
                   const self = m.id === access.userId;
-                  const disabled = !manage || saving === m.id;
+                  const disabled = !manage || saving.has(m.id);
                   return (
                     <tr key={m.id}>
                       <td>
@@ -80,7 +91,7 @@ export default function TeamPage() {
                           style={{ accentColor: 'var(--sp-primary)' }}
                           checked={m.full}
                           disabled={disabled || (self && m.full)}
-                          onChange={() => save(m, m.full ? { roles: [] } : { full: true })}
+                          onChange={() => save(m.id, m.full ? { roles: [] } : { full: true })}
                           aria-label={`Full access for ${m.email}`}
                         />
                       </td>
@@ -93,7 +104,7 @@ export default function TeamPage() {
                               style={{ accentColor: 'var(--sp-primary)' }}
                               checked={m.roles.includes(r.id)}
                               disabled={disabled}
-                              onChange={() => toggleRole(m, r.id)}
+                              onChange={() => toggleRole(m.id, r.id)}
                               aria-label={`${r.label} for ${m.email}`}
                             />
                           )}

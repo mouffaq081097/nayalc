@@ -1,730 +1,269 @@
 'use client';
 
-import React, { Suspense, useEffect } from 'react';
+import { useRef, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { AccountMenuList } from './_components/AccountMenuList';
-import { setAccountNavDirection } from './_components/navDirection';
-import { Elements } from '@stripe/react-stripe-js';
-import getStripe from '@/lib/stripe';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
-import {
-  Package, Heart, MapPin,
-  LogOut, ChevronRight, Star, Sparkles, Plus, Settings, Bell, Lock, ShieldCheck, ShoppingBag, CreditCard, ArrowRight, Camera, Crown, Trash2, Clock, Gift, RotateCcw,
-} from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { toast } from 'react-toastify';
+import { Package, Heart, MapPin, UserRound, Settings, Headset, Camera, ShoppingBag, Gift, TrendingUp, Check, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { useUser } from '../context/UserContext';
-import { User, Phone, AtSign } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import Modal from '../components/Modal';
-import AddressInputForm from '../components/AddressInputForm';
-import Image from 'next/image';
-import { toast } from 'react-toastify';
-import PageLoader from '@/app/components/PageLoader';
+import { useAccountData } from './_components/useAccountData';
+import { statusMeta } from './_components/orderStatus';
+import { JournalSection } from '../components/JournalSection';
+import { formatAED } from '../lib/utils';
+import { TIERS, AED_PER_POINT, POINTS_BLOCK, AED_PER_BLOCK, WELCOME_BONUS_POINTS, pointsToAed } from '@/lib/loyalty';
 
-const stripePromise = getStripe();
+/**
+ * My account (after Pitaka): a greeting column on the left, the points balance
+ * with a link to Naya Rewards, icon links to every account page and the latest
+ * orders; then membership tiers, ways to earn points and the journal.
+ * Every figure comes from lib/loyalty.js and the customer's own data.
+ */
 
-// ── Design tokens (Cloud Luxe) ──────────────────────────────────────────────
-const CL = {
-  glass:      'rgba(255,255,255,0.72)',
-  glassBorder:'var(--ink-200)',
-  gradient:   'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))',
-  gradientSoft:'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))',
-  purple:     'rgb(126,105,230)',
-  purpleMid:  'rgb(147,104,236)',
-  purpleLight:'rgba(196,167,254,0.18)',
-  bgPage:     'var(--cl-bg)',
-  bgLav:      'var(--cl-bg-lavender)',
-  bgRose:     'var(--cl-bg-rose)',
-  textDeep:   'var(--cl-text-deep)',
-  textMid:    'var(--cl-text-mid)',
-  textSoft:   'var(--cl-text-soft)',
-  cardShadow: '0 4px 32px rgba(147,51,234,0.07), 0 1px 4px rgba(0,0,0,0.04)',
-  glowShadow: '0 8px 32px rgba(147,51,234,0.18)',
-};
+const LAVENDER = 'rgb(147,104,236)';
 
-const glassCard = {
-  background: CL.glass,
-  border: `1px solid ${CL.glassBorder}`,
-  backdropFilter: 'blur(20px)',
-  boxShadow: CL.cardShadow,
-};
-
-// ── Section title ────────────────────────────────────────────────────────────
-const SectionTitle = ({ title, subtitle }) => (
-  <div className="mb-8">
-    <div className="flex items-center gap-2 mb-2">
-      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
-      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>{subtitle}</p>
-    </div>
-    <h2 className="text-[28px] md:text-[36px] font-bold tracking-tight leading-tight" style={{ color: CL.textDeep }}>
-      {title}
-    </h2>
-  </div>
+const BigTitle = ({ children, className = '' }) => (
+  <h2 className={`pb-4 md:pb-5 border-b border-[#111114] text-[28px] md:text-[42px] leading-tight tracking-tight ${className}`}>{children}</h2>
 );
 
-// ── Stat badge ───────────────────────────────────────────────────────────────
-const StatBadge = ({ label, value, icon: Icon }) => (
-  <div className="flex flex-col items-center justify-center gap-1 px-5 py-4 rounded-2xl" style={{ background: CL.purpleLight, border: `1px solid ${CL.glassBorder}` }}>
-    <Icon size={16} style={{ color: CL.purple }} strokeWidth={1.5} />
-    <p className="text-xl font-black" style={{ color: CL.textDeep }}>{value}</p>
-    <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: CL.textSoft }}>{label}</p>
-  </div>
-);
-
-const AccountPageContent = () => {
-  const { user, logout } = useAuth();
-  const { fetchWithAuth } = useAppContext();
-  const { shippingAddresses, addShippingAddress, updateShippingAddress, deleteShippingAddress, contactInfo } = useUser();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'dashboard';
-
-  const [orders, setOrders] = useState([]);
-  const [wishlistItems, setWishlistItems] = useState([]);
-  const [loyaltyData, setLoyaltyData] = useState({ stats: { points: 0, tier: 'Silver', nextTierPoints: 2000 } });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
-
-  useEffect(() => {
-    if (!user) { router.push('/auth'); return; }
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const [ordersRes, wishlistRes, loyaltyRes] = await Promise.all([
-          fetchWithAuth(`/api/orders?userId=${user.id}`).then(r => r.json()).catch(() => ({ orders: [] })),
-          fetchWithAuth(`/api/wishlist?userId=${user.id}`).then(r => r.json()).catch(() => ({ wishlist: [] })),
-          fetchWithAuth(`/api/users/${user.id}/loyalty`).then(r => r.json()).catch(() => ({ stats: { points: 0, tier: 'Silver', nextTierPoints: 2000 }, transactions: [] })),
-        ]);
-        setOrders(ordersRes.orders || []);
-        setWishlistItems(wishlistRes.wishlist || []);
-        setLoyaltyData(loyaltyRes);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadData();
-  }, [user, router, fetchWithAuth]);
-
-  const handleAddressSave = async (addressData) => {
-    try {
-      if (editingAddress) {
-        await updateShippingAddress({ ...addressData, id: editingAddress.id });
-        toast.success('Address updated.');
-      } else {
-        await addShippingAddress(addressData);
-        toast.success('Address added.');
-      }
-      setIsAddressModalOpen(false);
-      setEditingAddress(null);
-    } catch (err) {
-      toast.error('Failed to save address.');
-      console.error(err);
-    }
-  };
-
-  const handleDeleteAddress = async (addressId) => {
-    if (window.confirm('Remove this address?')) {
-      try {
-        await deleteShippingAddress(addressId);
-        toast.success('Address removed.');
-      } catch (err) {
-        if (err.message?.includes('409')) {
-          toast.error('This address is linked to existing orders and cannot be deleted.');
-        } else {
-          toast.error('Failed to remove address.');
-        }
-      }
-    }
-  };
-
-  const openAddressModal = (address = null) => {
-    setEditingAddress(address);
-    setIsAddressModalOpen(true);
-  };
-
-  if (isLoading) return <PageLoader />;
-
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard',  icon: Sparkles },
-    { id: 'profile',   label: 'Profile',    icon: User,    href: '/account/profile' },
-    { id: 'orders',    label: 'Orders',     icon: Package  },
-    { id: 'wishlist',  label: 'Wishlist',   icon: Heart    },
-    { id: 'loyalty',   label: 'Loyalty',    icon: Star     },
-    { id: 'addresses', label: 'Addresses',  icon: MapPin   },
-    { id: 'settings',  label: 'Settings',   icon: Settings },
-  ];
-
-  const loyaltyPct = Math.min(100, Math.round(((loyaltyData?.stats?.points ?? 0) / (loyaltyData?.stats?.nextTierPoints ?? 2000)) * 100));
-  const tiers = [
-    { name: 'Silver',   min: 0,     color: 'rgba(192,192,192,0.9)' },
-    { name: 'Gold',     min: 2000,  color: 'rgba(234,179,8,0.9)'   },
-    { name: 'Platinum', min: 5000,  color: 'rgba(196,167,254,0.9)' },
-    { name: 'Diamond',  min: 10000, color: 'rgba(147,197,253,0.9)' },
-  ];
-
-  return (
-    <div className="min-h-screen font-sans antialiased relative" style={{ background: CL.bgPage }}>
-
-      {/* Aura background (Now handled globally in LayoutContent.js) */}
-
-
-      <div className="max-w-[1400px] mx-auto px-6 pt-10 pb-28 relative z-10">
-        <div className="grid lg:grid-cols-12 gap-8">
-
-          {/* ── Sidebar ── */}
-          <aside className="lg:col-span-3 space-y-5 self-start sticky top-24">
-
-            {/* Profile card */}
-            <div className="rounded-3xl p-7" style={glassCard}>
-              {/* Avatar */}
-              <div className="flex flex-col items-center text-center gap-3 mb-7">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg overflow-hidden" style={{ background: CL.gradient }}>
-                    {user?.profile_image ? (
-                      <Image src={user.profile_image} alt={user.first_name} fill className="object-cover" />
-                    ) : (
-                      <>{user.first_name?.[0]}{user.last_name?.[0]}</>
-                    )}
-                  </div>
-                  <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors"
-                    style={{ background: CL.glass, border: `1px solid ${CL.glassBorder}`, color: CL.purple }}>
-                    <Camera size={14} />
-                  </button>
-                  <div className="absolute inset-0 rounded-full -z-10" style={{ boxShadow: CL.glowShadow, opacity: 0.3 }} />
-                </div>
-                <div className="mt-2">
-                  <h3 className="text-lg font-bold tracking-tight" style={{ color: CL.textDeep }}>{user.first_name} {user.last_name}</h3>
-                  <p className="text-[10px] font-black uppercase tracking-[0.12em] mt-1" style={{ color: CL.purple }}>{loyaltyData?.stats?.tier ?? 'Silver'} Member</p>
-                </div>
-              </div>
-
-              {/* Nav */}
-              <nav className="space-y-1">
-                {navItems.map((item) => {
-                  const active = activeTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => router.push(item.href ?? `/account?tab=${item.id}`)}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300"
-                      style={active
-                        ? { background: 'rgba(196,167,254,0.22)', color: 'rgb(126,105,230)', border: '1px solid rgba(196,167,254,0.45)', boxShadow: '0 2px 12px rgba(147,51,234,0.12)' }
-                        : { color: 'rgba(59,7,100,0.50)' }
-                      }
-                    >
-                      <div className="flex items-center gap-3">
-                        <item.icon size={16} strokeWidth={active ? 2 : 1.5} />
-                        <span className="text-[13px] font-semibold tracking-tight">{item.label}</span>
-                      </div>
-                      {active && <ChevronRight size={13} />}
-                    </button>
-                  );
-                })}
-              </nav>
-
-              <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
-                <button
-                  onClick={() => { logout(); router.push('/'); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-red-400 hover:text-red-600 hover:bg-red-50/60"
-                >
-                  <LogOut size={16} strokeWidth={1.5} />
-                  <span className="text-[13px] font-semibold">Sign Out</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Loyalty card */}
-            <div className="rounded-3xl p-7 overflow-hidden relative" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
-
-              <div className="relative z-10 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Star size={14} className="fill-yellow-300 text-yellow-300" />
-                  <span className="text-[9px] font-black uppercase tracking-[0.12em] text-white/60">Loyalty Points</span>
-                </div>
-                <p className="text-4xl font-black text-white">{(loyaltyData?.stats?.points || 0).toLocaleString()}</p>
-                <div>
-                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${loyaltyPct}%` }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
-                      className="h-full rounded-full"
-                      style={{ background: 'linear-gradient(90deg, rgba(249,168,212,0.9), rgba(253,224,71,0.9))' }}
-                    />
-                  </div>
-                  <p className="text-[9px] text-white/40 font-medium uppercase tracking-widest mt-2">
-                    {Math.max(0, (loyaltyData?.stats?.nextTierPoints || 2000) - (loyaltyData?.stats?.points || 0))} pts to next tier
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <Crown size={12} style={{ color: 'rgba(253,224,71,0.8)' }} />
-                  <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">{loyaltyData?.stats?.tier || 'Silver'} Prestige</span>
-                </div>
-              </div>
-            </div>
-
-          </aside>
-
-          {/* ── Main content ── */}
-          <main className="lg:col-span-9">
-            <AnimatePresence mode="wait">
-
-              {/* ── Dashboard ── */}
-              {activeTab === 'dashboard' && (
-                <motion.div key="dashboard" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-6">
-                  <SectionTitle title="My Sanctuary" subtitle="Personal Dashboard" />
-
-                  {/* Welcome + stats row */}
-                  <div className="grid md:grid-cols-3 gap-5">
-                    <div className="md:col-span-2 rounded-3xl p-8 flex flex-col justify-between" style={glassCard}>
-                      <div className="space-y-4">
-                        <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: CL.purpleLight }}>
-                          <ShieldCheck size={20} strokeWidth={1.5} style={{ color: CL.purple }} />
-                        </div>
-                        <h3 className="text-2xl font-bold leading-snug" style={{ color: CL.textDeep }}>
-                          Welcome back,<br />{user.first_name}.
-                        </h3>
-                        <p className="text-sm leading-relaxed font-normal" style={{ color: 'rgba(59,7,100,0.55)' }}>
-                          Manage your orders, wishlist, and addresses all in one place.
-                        </p>
-                      </div>
-                      <div className="flex gap-3 mt-7 flex-wrap">
-                        <button
-                          onClick={() => router.push('/all-products')}
-                          className="px-7 py-3 text-white text-[11px] font-black uppercase tracking-widest rounded-full transition-all active:scale-95"
-                          style={{ background: CL.gradient, boxShadow: '0 4px 16px rgba(147,51,234,0.3)' }}
-                        >
-                          Shop Now
-                        </button>
-                        <button
-                          onClick={() => router.push('/account?tab=settings')}
-                          className="px-7 py-3 text-[11px] font-bold uppercase tracking-widest rounded-full border transition-all"
-                          style={{ border: `1px solid ${CL.glassBorder}`, color: CL.textMid, background: CL.glass }}
-                        >
-                          Settings
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Quick stats */}
-                    <div className="flex flex-col gap-3">
-                      <StatBadge label="Orders" value={orders.length} icon={Package} />
-                      <StatBadge label="Wishlist" value={wishlistItems.length} icon={Heart} />
-                      <StatBadge label="Addresses" value={shippingAddresses.length} icon={MapPin} />
-                    </div>
-                  </div>
-
-                  {/* Recent orders + addresses */}
-                  <div className="grid md:grid-cols-2 gap-5">
-                    {/* Recent orders */}
-                    <div className="rounded-3xl p-7" style={glassCard}>
-                      <div className="flex items-center justify-between mb-6">
-                        <h4 className="text-sm font-bold tracking-tight" style={{ color: CL.textDeep }}>Recent Orders</h4>
-                        <button onClick={() => router.push('/account?tab=orders')} className="text-[10px] font-black uppercase tracking-widest" style={{ color: CL.purple }}>View All</button>
-                      </div>
-                      {orders.length > 0 ? (
-                        <div className="space-y-4">
-                          {orders.slice(0, 3).map((order, i) => (
-                            <div key={order.id || i} className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: CL.purpleLight }}>
-                                  <Package size={16} strokeWidth={1.5} style={{ color: CL.purple }} />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-semibold leading-none mb-0.5" style={{ color: CL.textDeep }}>#{order.id}</p>
-                                  <p className="text-[10px] text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-bold" style={{ color: CL.textDeep }}>AED {Number(order.totalAmount).toFixed(2)}</p>
-                                <p className="text-[10px]" style={{ color: CL.textSoft }}>VAT included</p>
-                                <p className="text-[9px] font-bold uppercase tracking-wide" style={{ color: CL.purple }}>{order.status}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="py-8 text-center">
-                          <p className="text-sm italic" style={{ color: 'rgba(59,7,100,0.35)' }}>No orders yet</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Saved addresses */}
-                    <div className="rounded-3xl p-7" style={glassCard}>
-                      <div className="flex items-center justify-between mb-6">
-                        <h4 className="text-sm font-bold tracking-tight" style={{ color: CL.textDeep }}>Saved Addresses</h4>
-                        <button onClick={() => router.push('/account?tab=addresses')} className="text-[10px] font-black uppercase tracking-widest" style={{ color: CL.purple }}>Manage</button>
-                      </div>
-                      {shippingAddresses.length > 0 ? (
-                        <div className="space-y-4">
-                          {shippingAddresses.slice(0, 2).map((addr, i) => (
-                            <div key={addr.id || i} className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: CL.purpleLight }}>
-                                <MapPin size={16} strokeWidth={1.5} style={{ color: CL.purple }} />
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold leading-none mb-0.5" style={{ color: CL.textDeep }}>{addr.addressLabel || 'Home'}</p>
-                                <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgba(59,7,100,0.45)' }}>{addr.addressLine1}, {addr.city}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="py-8 text-center">
-                          <p className="text-sm italic" style={{ color: 'rgba(59,7,100,0.35)' }}>No addresses saved</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── Orders ── */}
-              {activeTab === 'orders' && (
-                <motion.div key="orders" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-6">
-                  <SectionTitle title="Order History" subtitle="Your Acquisitions" />
-                  <div className="space-y-3">
-                    {orders.map((order, i) => (
-                      <Link key={order.id || i} href={`/account/orders/${order.id}`} className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl p-6 transition-all hover:-translate-y-0.5" style={glassCard}>
-                        <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: CL.purpleLight }}>
-                            <Package size={22} strokeWidth={1.5} style={{ color: CL.purple }} />
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-base font-bold" style={{ color: CL.textDeep }}>Order #{order.id}</p>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.1em]">{new Date(order.createdAt).toLocaleDateString()}</span>
-                              <span className="w-1 h-1 rounded-full bg-gray-300 inline-block" />
-                              <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: CL.purple }}>{order.status}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between md:justify-end gap-8 pt-4 md:pt-0" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
-                          <div className="text-left md:text-right">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em] mb-1">Total</p>
-                            <p className="text-xl font-black" style={{ color: CL.textDeep }}>AED {Number(order.totalAmount).toFixed(2)}</p>
-                          </div>
-                          <div className="w-11 h-11 rounded-full flex items-center justify-center transition-all" style={{ background: CL.purpleLight, color: CL.purple }}>
-                            <ArrowRight size={16} />
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                    {orders.length === 0 && (
-                      <div className="py-28 text-center rounded-3xl border border-dashed" style={{ borderColor: CL.glassBorder, background: CL.purpleLight }}>
-                        <Package size={44} strokeWidth={1} className="mx-auto mb-5" style={{ color: 'rgba(147,51,234,0.3)' }} />
-                        <h3 className="text-xl font-bold mb-2" style={{ color: CL.textDeep }}>No Orders Yet</h3>
-                        <p className="text-xs uppercase tracking-widest" style={{ color: CL.textSoft }}>Start shopping to see your orders here</p>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── Wishlist ── */}
-              {activeTab === 'wishlist' && (
-                <motion.div key="wishlist" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-6">
-                  <SectionTitle title="My Wishlist" subtitle="Saved for Later" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {wishlistItems.map((item, i) => (
-                      <div key={item.id || i} className="rounded-3xl overflow-hidden transition-all group hover:-translate-y-1" style={{ ...glassCard, boxShadow: CL.cardShadow }}>
-                        <div className="aspect-square relative p-6" style={{ background: CL.bgLav }}>
-                          <Image src={item.imageUrl} alt={item.name} fill className="object-contain p-4 transition-transform duration-700 group-hover:scale-105" />
-                          <button className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center shadow-md" style={{ background: CL.glass, color: CL.purple }}>
-                            <Heart size={15} fill="currentColor" />
-                          </button>
-                        </div>
-                        <div className="p-6 space-y-3">
-                          <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: CL.purple }}>{item.brandName || 'Naya Lumière'}</p>
-                            <h4 className="text-sm font-bold tracking-tight line-clamp-1" style={{ color: CL.textDeep }}>{item.name}</h4>
-                          </div>
-                          <div className="flex items-center justify-between pt-3" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
-                            <p className="text-base font-black" style={{ color: CL.textDeep }}>AED {item.price}</p>
-                            <button className="w-9 h-9 rounded-full flex items-center justify-center text-white transition-all" style={{ background: CL.gradient }}>
-                              <ShoppingBag size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {wishlistItems.length === 0 && (
-                      <div className="md:col-span-3 py-28 text-center rounded-3xl border border-dashed" style={{ borderColor: CL.glassBorder, background: CL.purpleLight }}>
-                        <Heart size={44} strokeWidth={1} className="mx-auto mb-5" style={{ color: 'rgba(147,51,234,0.3)' }} />
-                        <h3 className="text-xl font-bold mb-2" style={{ color: CL.textDeep }}>Wishlist is Empty</h3>
-                        <p className="text-xs uppercase tracking-widest" style={{ color: CL.textSoft }}>Save products you love to find them here</p>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── Loyalty ── */}
-              {activeTab === 'loyalty' && (
-                <motion.div key="loyalty" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-6">
-                  <SectionTitle title="Loyalty" subtitle="My Account" />
-
-                  {/* Hero points card */}
-                  <div className="rounded-3xl p-8 relative overflow-hidden" style={{ background: 'var(--brand-gradient)', boxShadow: CL.glowShadow }}>
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Crown size={14} style={{ color: 'rgba(253,224,71,0.85)' }} />
-                        <p className="text-[9px] font-black uppercase tracking-[0.35em] text-white/60">{loyaltyData?.stats?.tier ?? 'Silver'} Prestige</p>
-                      </div>
-                      <div className="flex items-baseline gap-1.5 mb-5">
-                        <p className="text-6xl font-black text-white tabular-nums">{(loyaltyData?.stats?.points ?? 0).toLocaleString()}</p>
-                        <p className="text-white/50 text-sm font-semibold">points</p>
-                      </div>
-                      <div className="w-full h-2 rounded-full overflow-hidden mb-2" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${loyaltyPct}%` }} transition={{ duration: 1.2, ease: 'easeOut' }} className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, rgba(249,168,212,0.9), rgba(253,224,71,0.85))' }} />
-                      </div>
-                      <div className="flex justify-between mt-2">
-                        <p className="text-[9px] text-white/40 uppercase tracking-widest">{(loyaltyData?.stats?.points ?? 0).toLocaleString()} pts</p>
-                        <p className="text-[9px] text-white/40 uppercase tracking-widest">{(loyaltyData?.stats?.nextTierPoints ?? 2000).toLocaleString()} pts</p>
-                      </div>
-                      <p className="text-xs text-white/60 mt-3 font-medium">{Math.max(0, (loyaltyData?.stats?.nextTierPoints ?? 2000) - (loyaltyData?.stats?.points ?? 0)).toLocaleString()} points to reach the next tier</p>
-                    </div>
-                  </div>
-
-                  {/* Tier progression */}
-                  <div className="rounded-3xl p-8" style={glassCard}>
-                    <div className="flex items-center gap-2 mb-6">
-                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Tier Progression</p>
-                    </div>
-                    <div className="space-y-5">
-                      {tiers.map((t) => (
-                        <div key={t.name} className="flex items-center gap-5">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: (loyaltyData?.stats?.tier ?? 'Silver') === t.name ? CL.gradient : CL.purpleLight }}>
-                            <Star size={14} strokeWidth={2} style={{ color: (loyaltyData?.stats?.tier ?? 'Silver') === t.name ? '#fff' : 'rgba(147,51,234,0.5)' }} fill={(loyaltyData?.stats?.tier ?? 'Silver') === t.name ? '#fff' : 'none'} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex justify-between items-baseline">
-                              <p className="text-[14px] font-bold" style={{ color: (loyaltyData?.stats?.tier ?? 'Silver') === t.name ? CL.textDeep : 'rgba(59,7,100,0.45)' }}>{t.name}</p>
-                              <p className="text-[10px] font-semibold" style={{ color: 'rgba(59,7,100,0.40)' }}>{t.min.toLocaleString()}+ pts</p>
-                            </div>
-                          </div>
-                          {(loyaltyData?.stats?.tier ?? 'Silver') === t.name && (
-                            <span className="text-[8px] font-black uppercase tracking-[0.1em] px-3 py-1 rounded-full text-white" style={{ background: CL.gradient }}>Current</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Transaction history */}
-                  <div className="rounded-3xl p-8" style={glassCard}>
-                    <div className="flex items-center gap-2 mb-6">
-                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Transaction History</p>
-                    </div>
-                    <div className="space-y-3">
-                      {loyaltyData?.transactions?.length > 0 ? (
-                        loyaltyData.transactions.map((tx) => {
-                          const isPlaced = tx.type === 'placed' || tx.type === 'pending';
-                          const isRedeem = tx.type === 'redeem';
-                          const isRefund = tx.type === 'refund';
-                          const isBonus  = tx.type === 'bonus';
-                          const pts      = tx.points ?? 0;
-                          const TxIcon   = isPlaced ? Clock : isRedeem ? RotateCcw : isBonus ? Gift : Package;
-                          const iconBg   = isPlaced ? 'rgba(196,167,254,0.18)' : isRedeem ? 'rgba(239,68,68,0.10)' : 'rgba(196,167,254,0.18)';
-                          const iconColor = isPlaced ? CL.purple : isRedeem ? '#ef4444' : CL.purple;
-                          const ptColor  = isPlaced ? CL.purple : isRedeem || pts < 0 ? '#ef4444' : '#22c55e';
-                          const ptLabel  = isPlaced ? `~${pts.toLocaleString()} est.` : `${pts >= 0 ? '+' : ''}${pts.toLocaleString()}`;
-                          return (
-                            <div key={tx.id} className="flex items-center gap-4 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(216,180,254,0.22)' }}>
-                              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
-                                <TxIcon size={14} style={{ color: iconColor }} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[13px] font-semibold truncate" style={{ color: CL.textDeep }}>{tx.description}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <p className="text-[10px] font-medium" style={{ color: 'rgba(59,7,100,0.40)' }}>
-                                    {new Date(tx.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                                  </p>
-                                  {isPlaced && (
-                                    <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: 'rgba(196,167,254,0.22)', color: CL.purple }}>Pending</span>
-                                  )}
-                                </div>
-                              </div>
-                              <p className="text-[13px] font-black flex-shrink-0" style={{ color: ptColor }}>{ptLabel}</p>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="py-10 text-center">
-                          <p className="text-sm italic" style={{ color: 'rgba(59,7,100,0.35)' }}>No points history yet. Place your first order to start earning!</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── Addresses ── */}
-              {activeTab === 'addresses' && (
-                <motion.div key="addresses" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <SectionTitle title="My Addresses" subtitle="Delivery Locations" />
-                    <button
-                      onClick={() => openAddressModal()}
-                      className="flex items-center gap-2 px-6 py-3 text-white text-[11px] font-bold uppercase tracking-widest rounded-full transition-all flex-shrink-0 mt-1"
-                      style={{ background: CL.gradient, boxShadow: '0 4px 16px rgba(147,51,234,0.3)' }}
-                    >
-                      <Plus size={14} /> Add Address
-                    </button>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-5">
-                    {shippingAddresses.map((addr, i) => (
-                      <div 
-                        key={addr.id || i} 
-                        onClick={() => openAddressModal(addr)}
-                        className="rounded-3xl p-7 flex flex-col justify-between transition-all hover:-translate-y-0.5 cursor-pointer group/card" 
-                        style={glassCard}
-                      >
-                        <div className="space-y-5">
-                          <div className="flex items-center justify-between">
-                            <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: CL.purpleLight }}>
-                              <MapPin size={20} strokeWidth={1.5} style={{ color: CL.purple }} />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {addr.isDefault && (
-                                <span className="text-[9px] font-black uppercase tracking-[0.1em] px-3 py-1 rounded-full text-white" style={{ background: CL.gradient }}>
-                                  Primary
-                                </span>
-                              )}
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }} 
-                                className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-gray-400 hover:text-red-600 hover:bg-red-50"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <h4 className="text-lg font-bold tracking-tight" style={{ color: CL.textDeep }}>{addr.addressLabel || 'Address'}</h4>
-                            <p className="text-sm leading-relaxed" style={{ color: 'rgba(59,7,100,0.50)' }}>
-                              {addr.addressLine1}<br />{addr.city}, {addr.country}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="pt-4 mt-4 opacity-0 group-hover/card:opacity-100 transition-opacity" style={{ borderTop: `1px solid ${CL.glassBorder}` }}>
-                          <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: CL.purple }}>Click to edit address</p>
-                        </div>
-                      </div>
-                    ))}
-                    {shippingAddresses.length === 0 && (
-                      <div className="md:col-span-2 py-28 text-center rounded-3xl border border-dashed" style={{ borderColor: CL.glassBorder, background: CL.purpleLight }}>
-                        <MapPin size={44} strokeWidth={1} className="mx-auto mb-5" style={{ color: 'rgba(147,51,234,0.3)' }} />
-                        <h3 className="text-xl font-bold mb-2" style={{ color: CL.textDeep }}>No Addresses Saved</h3>
-                        <p className="text-xs uppercase tracking-widest" style={{ color: CL.textSoft }}>Add your first delivery address above</p>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── Settings ── */}
-              {activeTab === 'settings' && (
-                <motion.div key="settings" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} className="space-y-6">
-                  <SectionTitle title="Account Settings" subtitle="Preferences" />
-
-                  {/* Profile info card */}
-                  <div className="rounded-3xl p-7" style={glassCard}>
-                    <div className="flex items-center gap-2 mb-6">
-                      <span className="w-5 h-px" style={{ background: CL.gradient }}></span>
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em]" style={{ color: CL.purple }}>Profile Information</p>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-4">
-                      {[
-                        { label: 'Username',      icon: AtSign, value: user.username || '—' },
-                        { label: 'Email Address', icon: User,   value: user.email    || '—' },
-                        { label: 'Phone Number',  icon: Phone,  value: contactInfo?.phone || '—' },
-                      ].map(({ label, icon: Icon, value }) => (
-                        <div key={label} className="flex items-center gap-4 rounded-2xl px-5 py-4" style={{ background: CL.purpleLight, border: `1px solid ${CL.glassBorder}` }}>
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: CL.glass, color: CL.purple }}>
-                            <Icon size={16} strokeWidth={1.5} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[9px] font-black uppercase tracking-widest mb-0.5" style={{ color: CL.textSoft }}>{label}</p>
-                            <p className="text-sm font-semibold truncate" style={{ color: CL.textDeep }}>{value}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl overflow-hidden" style={glassCard}>
-                    <div>
-                      {[
-                        { label: 'Notification Preferences', Icon: Bell, desc: 'Manage email and push notification settings.' },
-                        { label: 'Security & Password', Icon: Lock, desc: 'Update your password and security settings.' },
-                        { label: 'Privacy Settings', Icon: ShieldCheck, desc: 'Control how your data is used and stored.' },
-                        { label: 'Payment Methods', Icon: CreditCard, desc: 'Manage your saved payment instruments.' },
-                      ].map((item, i, arr) => (
-                        <button
-                          key={item.label}
-                          className="w-full p-7 flex items-center justify-between group transition-all text-left hover:bg-white/40"
-                          style={{ borderBottom: i < arr.length - 1 ? `1px solid ${CL.glassBorder}` : 'none' }}
-                        >
-                          <div className="flex items-center gap-6">
-                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all" style={{ background: CL.purpleLight, color: CL.purple }}>
-                              <item.Icon size={20} strokeWidth={1.5} />
-                            </div>
-                            <div>
-                              <p className="text-base font-bold mb-0.5" style={{ color: CL.textDeep }}>{item.label}</p>
-                              <p className="text-xs leading-relaxed" style={{ color: 'rgba(59,7,100,0.45)' }}>{item.desc}</p>
-                            </div>
-                          </div>
-                          <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" style={{ color: CL.textSoft }} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-            </AnimatePresence>
-          </main>
-
-        </div>
-      </div>
-
-      <Modal
-        isOpen={isAddressModalOpen}
-        onClose={() => { setIsAddressModalOpen(false); setEditingAddress(null); }}
-        title={editingAddress ? 'Edit Address' : 'Add New Address'}
-        size="max-w-3xl"
-      >
-        <AddressInputForm
-          initialData={editingAddress}
-          onSave={handleAddressSave}
-          onCancel={() => { setIsAddressModalOpen(false); setEditingAddress(null); }}
-        />
-      </Modal>
-    </div>
-  );
-};
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
 export default function AccountPage() {
   const router = useRouter();
+  const { logout } = useAuth();
+  const { setIsChatOpen, fetchWithAuth } = useAppContext();
+  const { update } = useSession();
+  const fileRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const { user, orders, wishlistItems, loyaltyData } = useAccountData();
 
-  // On desktop, go straight to profile
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-      setAccountNavDirection(1);
-      router.replace('/account/profile');
-    }
-  }, [router]);
+  const stats = loyaltyData?.stats || {};
+  const points = Number(stats.points) || 0;
+  const tierName = stats.tier || 'Silver';
+  const spend = Number(stats.lifetimeSpend) || 0;
+  const tierIdx = Math.max(0, TIERS.findIndex((t) => t.name === tierName));
+  const nextTier = TIERS[tierIdx + 1];
+  const bonusEarned = (loyaltyData?.transactions || []).some((t) => t.type === 'bonus');
+  const recent = [...(orders || [])]
+    .sort((a, b) => new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at))
+    .slice(0, 3);
+  const wishCount = Array.isArray(wishlistItems) ? wishlistItems.length : 0;
 
-  // Mobile: show the iOS-style account menu
-  // Desktop: handled by the redirect above
-  return <AccountMenuList />;
+  const links = [
+    { label: 'Orders', href: '/account/orders', Icon: Package },
+    { label: 'Wishlist', href: '/account/wishlist', Icon: Heart, count: wishCount },
+    { label: 'Addresses', href: '/account/addresses', Icon: MapPin },
+    { label: 'Profile', href: '/account/profile', Icon: UserRound },
+    { label: 'Settings', href: '/account/settings', Icon: Settings },
+    { label: 'Support', onClick: () => setIsChatOpen?.(true), Icon: Headset },
+  ];
+
+  // Same upload as the Profile page: Cloudinary via /profile-image, then the session picks up the new photo
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image.'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Max 5MB.'); return; }
+    setUploading(true);
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const res = await fetchWithAuth(`/api/users/${user.id}/profile-image`, { method: 'POST', body: fd, headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      await update({ profile_image: data.imageUrl });
+      toast.success('Photo updated!');
+    } catch { toast.error('Upload failed.'); }
+    finally { setUploading(false); }
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="bg-white text-[#111114]">
+      <div className="max-w-[1320px] mx-auto px-5 md:px-10 pt-8 md:pt-14">
+
+        {/* ── Greeting | points, links, latest orders ── */}
+        <div className="grid md:grid-cols-[260px_1fr] lg:grid-cols-[320px_1fr]">
+          <aside className="flex items-center gap-5 md:block pb-6 md:pb-0 md:pr-10 md:border-r md:border-[#111114]">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              aria-label="Change profile photo"
+              className="relative w-[76px] h-[76px] md:w-[140px] md:h-[140px] shrink-0 group"
+            >
+              <span className="absolute inset-0 rounded-full overflow-hidden bg-[#efedea] flex items-center justify-center">
+                {user.profile_image
+                  ? <Image src={user.profile_image} alt="" fill sizes="140px" className="object-cover" />
+                  : <UserRound strokeWidth={1.25} className="w-[46%] h-[46%] text-[#8c8480]" />}
+                {uploading && (
+                  <span className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  </span>
+                )}
+              </span>
+              {/* Always visible — phones have no hover */}
+              <span className="absolute right-0 bottom-0 md:right-1.5 md:bottom-1.5 w-7 h-7 md:w-9 md:h-9 rounded-full bg-[#111114] text-white flex items-center justify-center ring-2 ring-white group-hover:bg-[#2a2a31] transition-colors">
+                <Camera className="w-3.5 h-3.5 md:w-4 md:h-4" strokeWidth={1.75} />
+              </span>
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            <div className="min-w-0 md:mt-12">
+              <h1 className="text-[28px] md:text-[42px] leading-tight tracking-tight truncate">Hi, {user.first_name || 'there'}</h1>
+              <p className="text-[15px] md:text-[18px] text-[#6b6b73]">Welcome back!</p>
+              <button
+                type="button"
+                onClick={() => { logout(); router.push('/'); }}
+                className="mt-3 md:mt-12 text-[14px] text-[#6b6b73] underline underline-offset-4 hover:text-[#111114]"
+              >
+                Log out
+              </button>
+            </div>
+          </aside>
+
+          <div className="min-w-0 md:pl-10 border-t border-[#ececec] md:border-t-0">
+            {/* Points */}
+            <section className="py-10 md:py-16 text-center">
+              <p className="text-[26px] md:text-[42px] leading-tight tracking-tight text-balance">
+                You have <span style={{ color: LAVENDER }}>{points.toLocaleString()}</span> Naya points now.
+              </p>
+              <p className="mt-2 text-[14px] text-[#6b6b73]">
+                {tierName} member{points >= POINTS_BLOCK ? ` · worth ${formatAED(pointsToAed(points))} at checkout` : ''}
+              </p>
+              <Link href="/account/loyalty" className="inline-block mt-6 px-7 py-2.5 rounded-full bg-[#111114] text-white text-[15px] hover:bg-[#2a2a31] transition-colors">
+                Go to Naya Rewards
+              </Link>
+            </section>
+
+            {/* Account pages */}
+            <nav aria-label="My account" className="border-t border-[#111114] grid grid-cols-3 md:grid-cols-6 gap-y-8 py-10 md:py-14">
+              {links.map(({ label, href, onClick, Icon, count }) => {
+                const inner = (
+                  <>
+                    <span className="relative">
+                      <Icon strokeWidth={1.1} className="w-10 h-10 md:w-12 md:h-12 text-[#4a4a52] group-hover:text-[#111114] transition-colors" />
+                      <span className="absolute -right-1 -bottom-1 w-3 h-3 rounded-full" style={{ background: LAVENDER, opacity: 0.85 }} />
+                      {count > 0 && (
+                        <span className="absolute -top-1 -right-3 min-w-[18px] h-[18px] px-1 rounded-full bg-[#111114] text-white text-[10px] font-semibold flex items-center justify-center">{count}</span>
+                      )}
+                    </span>
+                    <span className="text-[15px] md:text-[17px] text-[#4a4a52] underline underline-offset-4 decoration-1 group-hover:text-[#111114]">{label}</span>
+                  </>
+                );
+                const cls = 'group flex flex-col items-center gap-3';
+                return href
+                  ? <Link key={label} href={href} className={cls}>{inner}</Link>
+                  : <button key={label} type="button" onClick={onClick} className={cls}>{inner}</button>;
+              })}
+            </nav>
+
+            {/* Latest orders */}
+            <section className="pb-4">
+              <BigTitle className="pt-8 md:pt-10 border-t border-t-[#111114]">My orders</BigTitle>
+              {recent.length === 0 ? (
+                <p className="py-6 text-[15px] text-[#6b6b73]">
+                  You haven&apos;t placed any orders yet. <Link href="/all-products" className="text-[#111114] underline underline-offset-4">Start shopping</Link>
+                </p>
+              ) : (
+                <>
+                  <ul className="divide-y divide-[#ececec]">
+                    {recent.map((o) => {
+                      const meta = statusMeta(o.status, o.awaitingStock);
+                      const items = o.items || [];
+                      return (
+                        <li key={o.id}>
+                          <Link href={`/account/orders/${o.id}`} className="flex items-center gap-4 py-5 group">
+                            <div className="flex -space-x-3 shrink-0">
+                              {items.slice(0, 3).map((it, i) => (
+                                <span key={i} className="relative w-14 h-14 md:w-16 md:h-16 bg-[#f6f5f2] border-2 border-white">
+                                  {it.imageUrl && <Image src={it.imageUrl} alt="" fill sizes="64px" className="object-contain p-1 mix-blend-multiply" />}
+                                </span>
+                              ))}
+                              {items.length === 0 && <span className="w-14 h-14 md:w-16 md:h-16 bg-[#f6f5f2] flex items-center justify-center"><Package size={20} strokeWidth={1.25} className="text-gray-400" /></span>}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[15px] font-medium">Order #{o.id}</p>
+                              <p className="text-[13px] text-[#6b6b73]">
+                                {formatDate(o.createdAt || o.created_at)} · {items.length} {items.length === 1 ? 'item' : 'items'}
+                              </p>
+                            </div>
+                            <span className={`hidden sm:inline-block shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium ${meta.badge}`}>{meta.label}</span>
+                            <span className="shrink-0 text-[15px] tabular-nums">{formatAED(o.totalAmount ?? o.total_amount ?? 0)}</span>
+                            <ChevronRight size={18} className="shrink-0 text-gray-400 group-hover:text-[#111114]" />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <Link href="/account/orders" className="inline-block mt-2 text-[14px] underline underline-offset-4 decoration-gray-300 hover:decoration-[#111114]">
+                    View all orders
+                  </Link>
+                </>
+              )}
+            </section>
+          </div>
+        </div>
+
+        {/* ── Membership tiers ── */}
+        <section className="pt-14 md:pt-20">
+          <BigTitle>Membership tiers</BigTitle>
+          <p className="mt-5 text-[14px] text-[#6b6b73]">
+            You&apos;ve spent {formatAED(spend)} with us so far.
+            {nextTier ? ` Spend ${formatAED(Math.max(0, nextTier.min - spend))} more to reach ${nextTier.name}.` : ' You are at our highest tier.'}
+          </p>
+          <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
+            {TIERS.map((t, i) => {
+              const current = i === tierIdx;
+              return (
+                <div key={t.name} className={`relative rounded-xl border p-5 md:p-7 text-center ${current ? 'border-[#111114]' : 'border-[#e5e5e5]'}`}>
+                  {current && (
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-[#111114] text-white text-[11px]">Your tier</span>
+                  )}
+                  <p className="text-[16px] md:text-[18px] font-medium">{t.name}</p>
+                  <p className="mt-3 text-[12px] text-[#8a8a92]">Goal</p>
+                  <p className="text-[14px] md:text-[15px]">{t.min === 0 ? 'Your first order' : `Spend ${formatAED(t.min)}`}</p>
+                  <p className="mt-2 text-[12px] text-[#8a8a92]">Reward</p>
+                  <p className="text-[14px] md:text-[15px]">{t.multiplier === 1 ? '1 point per AED 5' : `${t.multiplier}× points on every order`}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── Ways to earn ── */}
+        <section className="pt-14 md:pt-20">
+          <BigTitle>Ways to earn points</BigTitle>
+          <div className="mt-8 rounded-xl border border-[#e5e5e5] px-6 py-5">
+            <p className="text-[18px] font-medium">Your balance <span style={{ color: LAVENDER }}>{points.toLocaleString()}</span> points</p>
+            <p className="mt-1 text-[13px] text-[#6b6b73]">Every {POINTS_BLOCK} points take AED {AED_PER_BLOCK} off at checkout.</p>
+          </div>
+          <div className="mt-3 md:mt-5 grid sm:grid-cols-3 gap-3 md:gap-5">
+            {[
+              { Icon: ShoppingBag, title: 'Place an order', text: `1 point for every AED ${AED_PER_POINT} spent on products` },
+              { Icon: Gift, title: 'First order delivered', text: `${WELCOME_BONUS_POINTS} bonus points`, done: bonusEarned },
+              { Icon: TrendingUp, title: 'Move up a tier', text: `Up to ${TIERS[TIERS.length - 1].multiplier}× points on every order` },
+            ].map(({ Icon, title, text, done }) => (
+              <div key={title} className={`rounded-xl border border-[#e5e5e5] px-6 py-7 text-center ${done ? 'bg-[#fafafa]' : ''}`}>
+                <span className="mx-auto w-14 h-14 rounded-full flex items-center justify-center" style={{ background: done ? '#e8f7ee' : 'rgba(147,104,236,0.1)' }}>
+                  {done ? <Check size={22} className="text-[#22a35a]" /> : <Icon size={22} strokeWidth={1.5} style={{ color: LAVENDER }} />}
+                </span>
+                <p className="mt-4 text-[16px] font-medium">{title}</p>
+                {done
+                  ? <p className="mt-1.5 text-[14px] text-[#22a35a] inline-flex items-center gap-1"><Check size={14} /> Completed</p>
+                  : <p className="mt-1.5 text-[14px] text-[#6b6b73]">{text}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* ── Journal ── */}
+      <div className="pt-6 md:pt-8 pb-8 md:pb-12">
+        <JournalSection />
+      </div>
+    </div>
+  );
 }

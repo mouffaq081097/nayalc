@@ -28,11 +28,11 @@ export function SocialFeed() {
   if (!loading && posts.length === 0) return null;
 
   return (
-    <section className="pt-14 md:pt-24 bg-white">
+    <section className="pt-8 md:pt-12 bg-white">
       <div className="flex flex-col items-center px-4">
         <p className="mb-3 text-[13px] font-semibold tracking-[0.1em] uppercase" style={{ color: LAVENDER }}>@nayalc</p>
         <SectionHeading title="Follow the glow" />
-        <Pill href={INSTAGRAM_URL} external className="-mt-3 md:-mt-6 mb-8 md:mb-10">Follow us on Instagram</Pill>
+        <Pill href={INSTAGRAM_URL} external className="-mt-1 md:-mt-2 mb-5 md:mb-7">Follow us on Instagram</Pill>
       </div>
       <div className="grid grid-cols-3 md:grid-cols-6 gap-[2px]">
         {loading

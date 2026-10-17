@@ -2,13 +2,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import BrandLogo from '../components/BrandLogo';
+import { headingFont } from '../components/home/SectionHeading';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, CreditCard, MapPin, Lock, Check, Gift, ShieldCheck, Loader2,
-  Pencil, Trash2, Plus, RotateCcw, ChevronDown, Tag, Star, AlertTriangle, ShoppingBag, Banknote,
+  ArrowLeft, ArrowRight, MapPin, Lock, Check, Gift, ShieldCheck, Loader2,
+  Pencil, Trash2, Plus, RotateCcw, ChevronDown, Star, AlertTriangle, ShoppingBag,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { loadStripe } from '@stripe/stripe-js';
@@ -18,7 +19,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import { createFetchWithAuth } from '../lib/api';
-import { calcShipping, getPreorderInfo } from '@/lib/shipping';
+import { calcShipping, getPreorderInfo, getDeliveryInfo } from '@/lib/shipping';
 import { orderableQty, preorderUnits, leadDays } from '@/lib/backorderRules';
 import { POINTS_BLOCK, AED_PER_BLOCK } from '@/lib/loyalty';
 import { vatFromGross } from '@/lib/vat';
@@ -29,15 +30,18 @@ import TabbyCard from '../components/TabbyCard';
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
 const AddressInputForm = dynamic(() => import('../components/AddressInputForm'), { ssr: false });
 
-const GRADIENT = 'linear-gradient(90deg,#c087fc,#9869f7)';
+// Storefront palette: ink actions and selections, warm off-white panels, lavender only for small accents
+// Checkout action buttons: solid violet, 12px corners (one shape for every action in the flow)
+const ACTION = '#5b35ec';
+const ACCENT = 'rgb(147,104,236)';
 // Must match app/api/orders/route.js, which rejects an order whose total drifts
 // from its own calculation.
 const GIFT_WRAP_FEE = 100;
 // Redemption rate comes from lib/loyalty.js so checkout can never show a
 // discount the order API would compute differently.
 
-const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9869f7]/40';
-const cardClass = 'rounded-2xl border border-[#e5e5ea] bg-white';
+const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111114]/30';
+const cardClass = 'rounded-xl border border-[#e4e4e7] bg-white';
 
 const fmt = (n) =>
   `AED ${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -55,13 +59,13 @@ const isDefaultAddress = (a) => Boolean(a.isDefault ?? a.is_default);
 
 function FlowHeader({ onBack }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e5e5ea] bg-white">
-      <div className="relative mx-auto flex h-[56px] max-w-[1180px] items-center justify-between px-4 sm:px-6 md:h-[60px]">
+    <header className="sticky top-0 z-40 border-b border-[#ececec] bg-white">
+      <div className="relative mx-auto flex h-[60px] max-w-[1240px] items-center justify-between px-4 sm:px-6 md:h-[72px] lg:px-8">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back to bag"
-          className={`group flex h-[38px] shrink-0 items-center gap-2 rounded-full border border-[#e5e5ea] bg-white px-3 text-[12px] font-semibold text-[#2a2a31] transition-colors hover:border-[#c8c8cf] hover:bg-[#f3f3f5] sm:px-4 ${focusRing}`}
+          className={`group flex h-[38px] shrink-0 items-center gap-2 text-[13px] font-medium text-[#111114] transition-opacity hover:opacity-70 ${focusRing}`}
         >
           <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
           <span className="hidden sm:inline">Back to bag</span>
@@ -75,7 +79,7 @@ function FlowHeader({ onBack }) {
         </Link>
 
         <div className="hidden shrink-0 items-center gap-1.5 text-[11px] font-medium text-[#8a8a93] sm:flex">
-          <ShieldCheck size={13} className="text-emerald-500" />
+          <ShieldCheck size={14} className="text-[#111114]" />
           Secure checkout
         </div>
         <div className="w-[38px] sm:hidden" aria-hidden="true" />
@@ -84,74 +88,15 @@ function FlowHeader({ onBack }) {
   );
 }
 
-function CheckoutSteps({ step, canPay, onGoTo }) {
-  const items = [
-    { key: 'bag', label: 'Bag', state: 'done', href: '/cart' },
-    { key: 1, label: 'Delivery', state: step > 1 ? 'done' : 'current' },
-    { key: 2, label: 'Payment', state: step === 2 ? 'current' : 'upcoming' },
-  ];
-
-  return (
-    <ol aria-label="Checkout progress" className="flex items-center gap-2 text-[12px] font-medium">
-      {items.map((item, i) => {
-        const dot = (
-          <span
-            className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-              item.state === 'done'
-                ? 'bg-[#f5f0fd] text-[#7c3aed]'
-                : item.state === 'current'
-                  ? 'text-white'
-                  : 'border border-[#e5e5ea] text-[#a1a1aa]'
-            }`}
-            style={item.state === 'current' ? { background: GRADIENT } : undefined}
-          >
-            {item.state === 'done' ? <Check size={11} strokeWidth={3} /> : i}
-          </span>
-        );
-        const tone = item.state === 'upcoming' ? 'text-[#a1a1aa]' : 'text-[#2a2a31]';
-        const clickable = item.href || (item.state === 'done') || (item.key === 2 && canPay && item.state === 'upcoming');
-
-        let node;
-        if (item.href) {
-          node = (
-            <Link href={item.href} className={`flex items-center gap-1.5 rounded-full ${tone} hover:text-[#7c3aed] ${focusRing}`}>
-              {dot}{item.label}
-            </Link>
-          );
-        } else if (clickable) {
-          node = (
-            <button type="button" onClick={() => onGoTo(item.key)} className={`flex items-center gap-1.5 rounded-full ${tone} hover:text-[#7c3aed] ${focusRing}`}>
-              {dot}{item.label}
-            </button>
-          );
-        } else {
-          node = (
-            <span aria-current={item.state === 'current' ? 'step' : undefined} className={`flex items-center gap-1.5 ${tone}`}>
-              {dot}{item.label}
-            </span>
-          );
-        }
-
-        return (
-          <li key={item.key} className="flex items-center gap-2">
-            {node}
-            {i < items.length - 1 && <span aria-hidden="true" className="h-px w-5 bg-[#e5e5ea] sm:w-8" />}
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
 function CheckoutSkeleton() {
   return (
-    <div role="status" className="mt-5 grid grid-cols-1 gap-6 motion-safe:animate-pulse sm:mt-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
+    <div role="status" className="mt-5 grid grid-cols-1 gap-6 motion-safe:animate-pulse sm:mt-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-14">
       <span className="sr-only">Loading checkout</span>
       <div className="space-y-4">
-        <div className="h-52 rounded-2xl bg-[#f5f5f7]" />
-        <div className="h-14 rounded-full bg-[#f5f5f7]" />
+        <div className="h-52 rounded-xl bg-[#f6f5f2]" />
+        <div className="h-[52px] rounded-xl bg-[#f6f5f2]" />
       </div>
-      <div className="hidden h-96 rounded-2xl bg-[#f5f5f7] lg:block" />
+      <div className="hidden h-96 rounded-xl bg-[#f6f5f2] lg:block" />
     </div>
   );
 }
@@ -163,9 +108,8 @@ function RadioDot({ checked }) {
     <span
       aria-hidden="true"
       className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-        checked ? 'border-transparent' : 'border-[#d4d4dc] bg-white'
+        checked ? 'border-[#111114] bg-[#111114]' : 'border-[#d4d4dc] bg-white'
       }`}
-      style={checked ? { background: GRADIENT } : undefined}
     >
       {checked && <span className="h-2 w-2 rounded-full bg-white" />}
     </span>
@@ -174,7 +118,7 @@ function RadioDot({ checked }) {
 
 function DefaultBadge() {
   return (
-    <span className="rounded-full bg-[#f5f0fd] px-2 py-0.5 text-[10.5px] font-semibold text-[#7c3aed]">Default</span>
+    <span className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold text-white" style={{ background: ACCENT }}>Default</span>
   );
 }
 
@@ -187,23 +131,22 @@ function SummaryRow({ label, value, positive = false }) {
   );
 }
 
-function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, couponCode, pointsDiscount, shipping, giftWrapFee, tax, total, scrollItems = false }) {
+function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, couponCode, pointsDiscount, shipping, giftWrapFee, tax, total, promo = null, scrollItems = false }) {
   return (
     <>
       <ul className={`space-y-3 ${scrollItems ? 'max-h-[280px] overflow-y-auto pr-1 pt-1.5' : 'pt-1.5'}`}>
         {items.map(item => (
           <li key={item.id} className="flex items-center gap-3">
-            <div className="relative h-14 w-14 shrink-0 rounded-xl border border-[#eeeef1] bg-[#f7f7f9] p-1.5">
+            <div className="h-16 w-14 shrink-0 bg-white p-1.5">
               <ImageWithFallback src={item.image} alt={item.name} className="h-full w-full object-contain mix-blend-multiply" />
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#2a2a31] px-1 text-[10.5px] font-semibold tabular-nums text-white">
-                {item.quantity}
-              </span>
             </div>
             <div className="min-w-0 flex-1">
               <p className="line-clamp-2 text-[13px] font-medium leading-snug text-[#111114]">{item.name}</p>
-              {item.brand && <p className="truncate text-[11.5px] text-[#8a8a93]">{item.brand}</p>}
+              <p className="truncate text-[11.5px] text-[#8a8a93]">
+                {item.brand ? `${item.brand} · ` : ''}<span className="tabular-nums text-[#111114]">× {item.quantity}</span>
+              </p>
               {preorderUnits(item, item.quantity) > 0 && (
-                <p className="truncate text-[11.5px] font-semibold text-[#7c3aed]">
+                <p className="truncate text-[11.5px] font-semibold" style={{ color: ACCENT }}>
                   {preorderUnits(item, item.quantity) === item.quantity ? 'Pre-order' : `${preorderUnits(item, item.quantity)} on pre-order`}
                 </p>
               )}
@@ -213,7 +156,9 @@ function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, coupon
         ))}
       </ul>
 
-      <dl className="mt-5 space-y-2.5 border-t border-[#eeeef1] pt-4 text-[13.5px]">
+      {promo && <div className="mt-5">{promo}</div>}
+
+      <dl className="mt-5 space-y-2.5 border-t border-[#e2e0db] pt-4 text-[13.5px]">
         <SummaryRow label={`Subtotal (${totalQty} ${totalQty === 1 ? 'item' : 'items'})`} value={fmt(subtotal)} />
         {discountAmount > 0 && (
           <SummaryRow label={`Promo${couponCode ? ` (${couponCode})` : ''}`} value={`−${fmt(discountAmount)}`} positive />
@@ -223,7 +168,7 @@ function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, coupon
         {giftWrapFee > 0 && <SummaryRow label="Gift wrap" value={fmt(giftWrapFee)} />}
       </dl>
 
-      <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-[#e5e5ea] pt-4">
+      <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-[#111114] pt-4">
         <span className="text-[15px] font-semibold text-[#111114]">Total</span>
         <span className="text-[22px] font-bold tabular-nums text-[#111114]">{fmt(total)}</span>
       </div>
@@ -234,8 +179,8 @@ function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, coupon
 
 function ToggleRow({ icon, title, description, checked, onChange, disabled = false }) {
   return (
-    <label className={`flex items-center gap-3 py-3.5 has-[:focus-visible]:rounded-lg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#9869f7]/40 ${disabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer'}`}>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f0fd] text-[#9869f7]">{icon}</span>
+    <label className={`flex items-center gap-3 py-3.5 has-[:focus-visible]:rounded-lg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111114]/30 ${disabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer'}`}>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f6f5f2] text-[#111114]">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-[14px] font-medium text-[#111114]">{title}</span>
         <span className="block text-[12px] text-[#8a8a93]">{description}</span>
@@ -243,8 +188,7 @@ function ToggleRow({ icon, title, description, checked, onChange, disabled = fal
       <input type="checkbox" role="switch" className="sr-only" checked={checked} disabled={disabled} onChange={e => onChange(e.target.checked)} />
       <span
         aria-hidden="true"
-        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${checked ? '' : 'bg-[#e5e5ea]'}`}
-        style={checked ? { background: GRADIENT } : undefined}
+        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${checked ? 'bg-[#111114]' : 'bg-[#e5e5ea]'}`}
       >
         <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
       </span>
@@ -252,23 +196,17 @@ function ToggleRow({ icon, title, description, checked, onChange, disabled = fal
   );
 }
 
-function PaymentOption({ value, checked, onSelect, icon, title, description, children }) {
+/** One row of the payment list: radio, name, a short hint on the right; what it needs opens underneath. */
+function PaymentOption({ value, checked, onSelect, title, hint, children }) {
   return (
-    <div
-      className={`overflow-hidden rounded-xl border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#9869f7]/40 ${
-        checked ? 'border-[#9869f7] bg-[#faf7ff]' : 'border-[#e5e5ea] bg-white hover:border-[#c8c8cf]'
-      }`}
-    >
-      <label className="flex cursor-pointer items-center gap-3 p-4">
+    <div className="has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-inset has-[:focus-visible]:ring-[#111114]/30">
+      <label className="flex cursor-pointer items-center gap-3 px-4 py-3.5">
         <input type="radio" name="payment-method" value={value} className="sr-only" checked={checked} onChange={onSelect} />
         <RadioDot checked={checked} />
-        <span className="min-w-0 flex-1">
-          <span className="block text-[14px] font-semibold text-[#111114]">{title}</span>
-          <span className="block text-[12px] text-[#8a8a93]">{description}</span>
-        </span>
-        <span className="shrink-0">{icon}</span>
+        <span className="min-w-0 flex-1 text-[14px] font-semibold text-[#111114]">{title}</span>
+        <span className="shrink-0 text-[12px] text-[#8a8a93]">{hint}</span>
       </label>
-      {checked && children}
+      {checked && children && <div className="px-4 pb-4 sm:pl-12">{children}</div>}
     </div>
   );
 }
@@ -278,7 +216,7 @@ function AddAddressTile({ onClick, label }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-[120px] w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e5e5ea] text-[#8a8a93] transition-colors hover:border-[#9869f7] hover:bg-[#faf7ff] hover:text-[#7c3aed] ${focusRing}`}
+      className={`flex min-h-[120px] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c8c8cf] text-[#5a5a64] transition-colors hover:border-[#111114] hover:bg-[#f6f5f2] hover:text-[#111114] ${focusRing}`}
     >
       <span className="flex h-9 w-9 items-center justify-center rounded-full border border-current">
         <Plus size={16} />
@@ -327,7 +265,11 @@ export default function CheckoutPage() {
   const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
   const router = useRouter();
 
-  const [currentStep, setCurrentStep] = useState(1);
+  const [extrasOpen, setExtrasOpen] = useState(false);
+  // From the card field: complete (ready to pay) and while a payment is processing
+  const [cardStatus, setCardStatus] = useState({ ready: false, processing: false });
+  // { applePay, googlePay } when this device has a wallet, else null (reported by ExpressCheckoutButton)
+  const [wallet, setWallet] = useState(null);
   const [shippingAddresses, setShippingAddresses] = useState([]);
   const [addressesLoaded, setAddressesLoaded] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState(selectedShippingAddressId);
@@ -343,7 +285,6 @@ export default function CheckoutPage() {
   const [loyaltyLoaded, setLoyaltyLoaded] = useState(false);
   const [isTabbyLoading, setIsTabbyLoading] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [promoOpen, setPromoOpen] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   // Set when the card was charged but creating the order failed, so the order can be
@@ -406,6 +347,13 @@ export default function CheckoutPage() {
 
   useEffect(() => { setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY)); }, []);
 
+  // The wallet row disappears if the device stops offering one; don't leave it selected
+  useEffect(() => {
+    if (!wallet && formData.paymentMethod === 'wallet') {
+      setFormData(p => ({ ...p, paymentMethod: hasPreorder ? 'card' : 'cashOnDelivery' }));
+    }
+  }, [wallet, formData.paymentMethod, hasPreorder]);
+
   // Cash on delivery isn't offered for pre-orders, so move a COD selection to card
   useEffect(() => {
     if (hasPreorder && formData.paymentMethod === 'cashOnDelivery') {
@@ -440,8 +388,6 @@ export default function CheckoutPage() {
 
   useEffect(() => { setSelectedShippingAddressId(selectedAddressId); }, [selectedAddressId, setSelectedShippingAddressId]);
 
-  useEffect(() => { window.scrollTo({ top: 0 }); }, [currentStep]);
-
   // Recovery payload for /order-confirmation if a card payment redirects away
   useEffect(() => {
     if (formData.paymentMethod !== 'card' || !selectedAddressId || !user?.id || cartItems.length === 0) return;
@@ -475,7 +421,7 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          step: currentStep === 1 ? 'address' : 'payment',
+          step: selectedAddressId ? 'payment' : 'address',
           paymentMethod: formData.paymentMethod,
           addressId: selectedAddressId,
           total: parseFloat(total.toFixed(2)),
@@ -484,7 +430,7 @@ export default function CheckoutPage() {
       }).catch(() => {});
     }, 1500);
     return () => clearTimeout(timer);
-  }, [user?.id, isCartReady, cartItems, isPlacingOrder, currentStep, formData.paymentMethod, selectedAddressId, total]);
+  }, [user?.id, isCartReady, cartItems, isPlacingOrder, formData.paymentMethod, selectedAddressId, total]);
 
   const openAddressModal = (addr) => { setEditingAddress(addr); setIsAddressModalOpen(true); };
   const closeAddressModal = () => { setEditingAddress(null); setIsAddressModalOpen(false); };
@@ -663,21 +609,11 @@ export default function CheckoutPage() {
     try { await applyCoupon(code); } finally { setIsApplyingCoupon(false); }
   };
 
-  const goToStep = (step) => {
-    if (step === 2 && !selectedAddressId) return;
-    if (step === 1) setShowAddressPicker(false);
-    setCurrentStep(step);
-  };
-
+  // One page: the place-order button (cash on delivery / Tabby) or the card form's own Pay button
   const handlePrimary = () => {
-    if (currentStep === 1) {
-      if (!selectedAddressId) { toast.error('Please choose a delivery address.'); return; }
-      goToStep(2);
-    } else if (method === 'tabby') {
-      handleTabbyCheckout();
-    } else if (method === 'cashOnDelivery') {
-      handlePlaceOrder();
-    }
+    if (!selectedAddressId) { setShowAddressPicker(true); toast.error('Please choose a delivery address.'); return; }
+    if (method === 'tabby') handleTabbyCheckout();
+    else if (method === 'cashOnDelivery') handlePlaceOrder();
   };
 
   if (!authLoading && !isAuthenticated) return null;
@@ -685,17 +621,78 @@ export default function CheckoutPage() {
   const pageReady = !authLoading && isCartReady && addressesLoaded;
   // After an order succeeds the cart is cleared before navigation finishes; don't flash "empty".
   const bagEmpty = isCartReady && cartItems.length === 0 && !isPlacingOrder;
-  // With card selected, the card form's own "Pay" button is the action.
-  const showPrimary = !(currentStep === 2 && method === 'card');
-  const primaryDisabled = isPlacingOrder || isTabbyLoading || hasStockIssues || (currentStep === 1 && !selectedAddressId);
-  const showMobileBar = pageReady && !bagEmpty && showPrimary;
+  const walletName = wallet?.applePay ? 'Apple Pay' : 'Google Pay';
+  // With a wallet chosen (and an address), Stripe's own wallet button takes the main button's place
+  const walletButton = method === 'wallet' && !!selectedAddressId;
+  const walletProps = {
+    stripePromise,
+    amount: Math.round(total * 100),
+    disabled: isPlacingOrder || hasStockIssues,
+    onBeforePay: () => {
+      if (!selectedAddressId) { toast.error('Please select a shipping address first.'); return false; }
+      return total > 0;
+    },
+    onSuccess: handleWalletPayment,
+  };
 
-  let desktopLabel = 'Continue to payment';
-  let mobileLabel = 'Continue to payment';
-  if (currentStep === 2) {
-    if (method === 'tabby') { desktopLabel = `Continue to Tabby · ${fmt(total)}`; mobileLabel = 'Continue to Tabby'; }
-    else { desktopLabel = `Place order · ${fmt(total)}`; mobileLabel = 'Place order'; }
-  }
+  // One main button for every method; for card it submits the card field's form
+  const showPrimary = true;
+  const payByCard = method === 'card' && !!selectedAddressId;
+  const primaryDisabled = isPlacingOrder || isTabbyLoading || hasStockIssues
+    || (payByCard && (!clientSecret || !cardStatus.ready || cardStatus.processing || !!paidIntentId));
+  const showMobileBar = pageReady && !bagEmpty && showPrimary;
+  const primaryProps = payByCard
+    ? { type: 'submit', form: 'card-payment-form' }
+    : { type: 'button', onClick: handlePrimary };
+
+  let desktopLabel = `Place order · ${fmt(total)}`;
+  let mobileLabel = 'Place order';
+  if (method === 'tabby') { desktopLabel = `Continue to Tabby · ${fmt(total)}`; mobileLabel = 'Continue to Tabby'; }
+  if (method === 'card') { desktopLabel = `Pay ${fmt(total)}`; mobileLabel = 'Pay now'; }
+  if (method === 'wallet') { desktopLabel = 'Choose a delivery address'; mobileLabel = 'Choose an address'; }
+  if (cardStatus.processing) { desktopLabel = 'Processing payment…'; mobileLabel = 'Processing…'; }
+
+  // Promo code, always open in the order summary (`id` differs for the phone and desktop copies)
+  const promoBlock = (id) => (appliedCoupon ? (
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-2">
+      <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-emerald-700">
+        <Check size={14} className="shrink-0" />
+        <span className="truncate">{appliedCoupon.code} applied · −{fmt(discountAmount)}</span>
+      </span>
+      <button type="button" onClick={removeCoupon} className={`h-8 shrink-0 rounded-full px-2 text-[12px] font-semibold text-[#111114] underline underline-offset-4 ${focusRing}`}>
+        Remove
+      </button>
+    </div>
+  ) : (
+    <>
+      <form onSubmit={e => { e.preventDefault(); handleApplyCoupon(); }} className="flex gap-2">
+        <label htmlFor={id} className="sr-only">Discount code</label>
+        <input
+          id={id}
+          value={couponCode}
+          onChange={e => { setCouponCode(e.target.value); if (couponError) removeCoupon(); }}
+          placeholder="Discount code"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          enterKeyHint="done"
+          aria-invalid={!!couponError}
+          className="h-11 min-w-0 flex-1 rounded-xl border border-[#d9d9de] bg-white px-4 text-[16px] text-[#111114] placeholder:text-[#9a9aa2] focus:border-[#111114] focus:outline-none focus:ring-2 focus:ring-[#111114]/10 lg:text-[14px]"
+        />
+        <button
+          type="submit"
+          disabled={!couponCode.trim() || isApplyingCoupon}
+          className="inline-flex h-11 min-w-[84px] items-center justify-center rounded-xl px-5 text-[13px] font-semibold text-white transition-opacity disabled:opacity-35"
+          style={{ background: ACTION }}
+        >
+          {isApplyingCoupon
+            ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-label="Applying" />
+            : 'Apply'}
+        </button>
+      </form>
+      {couponError && <p role="alert" className="mt-2 text-[12px] font-medium text-red-600">{couponError}</p>}
+    </>
+  ));
 
   const summaryProps = {
     items: cartItems,
@@ -710,45 +707,55 @@ export default function CheckoutPage() {
     total,
   };
 
-  const deliveryStep = (
-    <motion.section
-      key="delivery"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.18 }}
-      aria-labelledby="delivery-heading"
-      className={`${cardClass} p-5 sm:p-6`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 id="delivery-heading" className="text-[18px] font-semibold text-[#111114]">Delivery address</h2>
-          <p className="mt-0.5 text-[13px] text-[#8a8a93]">Where should we deliver your order?</p>
-        </div>
-        {selectedAddress && showAddressPicker && (
-          <button
-            type="button"
-            onClick={() => setShowAddressPicker(false)}
-            className={`h-10 shrink-0 rounded-full px-3 text-[13px] font-semibold text-[#7c3aed] transition-colors hover:bg-[#f5f0fd] ${focusRing}`}
-          >
-            Done
-          </button>
-        )}
-      </div>
+  // A row of the details card: label on the left (above on phones), value on the right
+  const rowLabel = 'w-full shrink-0 text-[13px] text-[#8a8a93] sm:w-[120px] sm:pt-px';
+  const delivery = getDeliveryInfo();
+  const extrasSummary = [
+    formData.giftWrap && 'Gift wrap',
+    usePoints && !pointsLocked && `${redeemablePoints.toLocaleString()} points`,
+  ].filter(Boolean).join(' · ');
 
-      <div className="mt-4">
-        {shippingAddresses.length === 0 ? (
-          <AddAddressTile onClick={() => openAddressModal(null)} label="Add a delivery address" />
-        ) : showAddressPicker || !selectedAddress ? (
-          <div role="radiogroup" aria-labelledby="delivery-heading" className="grid grid-cols-1 gap-3 md:grid-cols-2">
+  const detailsCard = (
+    <section aria-label="Delivery and payment" className={`${cardClass} divide-y divide-[#ececec]`}>
+      {/* Deliver to */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAddressPicker(o => !o)}
+          aria-expanded={showAddressPicker || !selectedAddress}
+          className={`flex w-full flex-col gap-1 px-5 py-4 text-left sm:flex-row sm:gap-4 sm:px-6 ${focusRing}`}
+        >
+          <span className={rowLabel}>Deliver to</span>
+          <span className="flex min-w-0 flex-1 items-start gap-3">
+            <span className="min-w-0 flex-1 text-[14px] leading-snug text-[#111114]">
+              {selectedAddress ? (
+                <>
+                  <span className="block font-semibold">{addressName(selectedAddress, user?.name)}</span>
+                  <span className="block text-[#5a5a64]">
+                    {[addressLine(selectedAddress), selectedAddress.city, selectedAddress.country].filter(Boolean).join(', ')}
+                  </span>
+                </>
+              ) : (
+                <span className="text-[#5a5a64]">{shippingAddresses.length ? 'Choose a delivery address' : 'Add a delivery address'}</span>
+              )}
+            </span>
+            <ChevronDown size={18} className={`mt-0.5 shrink-0 text-[#8a8a93] transition-transform ${showAddressPicker || !selectedAddress ? 'rotate-180' : ''}`} />
+          </span>
+        </button>
+        {(showAddressPicker || !selectedAddress) && (
+          <div className="px-5 pb-5 sm:px-6">
+            {shippingAddresses.length === 0 ? (
+              <AddAddressTile onClick={() => openAddressModal(null)} label="Add a delivery address" />
+            ) : (
+          <div role="radiogroup" aria-label="Delivery address" className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {shippingAddresses.map(addr => {
               const checked = selectedAddressId === addr.id;
               const name = addressName(addr, user?.name);
               return (
                 <div
                   key={addr.id}
-                  className={`rounded-xl border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#9869f7]/40 ${
-                    checked ? 'border-[#9869f7] bg-[#faf7ff]' : 'border-[#e5e5ea] bg-white hover:border-[#c8c8cf]'
+                  className={`rounded-xl border transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#111114]/30 ${
+                    checked ? 'border-[#111114] bg-white' : 'border-[#e4e4e7] bg-white hover:border-[#a1a1aa]'
                   }`}
                 >
                   <label className="flex cursor-pointer items-start gap-3 p-4">
@@ -757,7 +764,7 @@ export default function CheckoutPage() {
                       name="delivery-address"
                       className="sr-only"
                       checked={checked}
-                      onChange={() => setSelectedAddressId(addr.id)}
+                      onChange={() => { setSelectedAddressId(addr.id); setShowAddressPicker(false); }}
                     />
                     <RadioDot checked={checked} />
                     <span className="min-w-0 flex-1">
@@ -785,221 +792,110 @@ export default function CheckoutPage() {
             })}
             <AddAddressTile onClick={() => openAddressModal(null)} label="Add new address" />
           </div>
-        ) : (
-          <div className="rounded-xl border border-[#9869f7] bg-[#faf7ff]">
-            <div className="flex items-start gap-3 p-4">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ece3fb] bg-white text-[#9869f7]">
-                <MapPin size={16} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-2">
-                  <span className="text-[14px] font-semibold text-[#111114]">{addressName(selectedAddress, user?.name)}</span>
-                  {isDefaultAddress(selectedAddress) && <DefaultBadge />}
-                </p>
-                <p className="mt-1 text-[13px] text-[#5a5a64]">{addressLine(selectedAddress)}</p>
-                <p className="mt-0.5 text-[12px] text-[#8a8a93]">
-                  {[selectedAddress.city, selectedAddress.country].filter(Boolean).join(', ')}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-1 border-t border-[#ece3fb] px-2 py-1">
-              <button
-                type="button"
-                onClick={() => setShowAddressPicker(true)}
-                className={`flex h-10 items-center rounded-full px-3 text-[12.5px] font-semibold text-[#7c3aed] transition-colors hover:bg-white ${focusRing}`}
-              >
-                Change address
-              </button>
-              <AddressActions
-                name={addressName(selectedAddress, user?.name)}
-                onEdit={() => openAddressModal(selectedAddress)}
-                onRemove={() => handleDeleteAddress(selectedAddress.id)}
-                canRemove={selectedAddress.isDeletable !== false}
-              />
-            </div>
+            )}
           </div>
         )}
       </div>
-    </motion.section>
-  );
 
-  const paymentStep = (
-    <motion.div
-      key="payment"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.18 }}
-      className="space-y-4"
-    >
-      {/* Delivery recap */}
-      {selectedAddress && (
-        <section aria-label="Delivery address" className={`${cardClass} flex items-center gap-3 p-4 sm:px-5`}>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f0fd] text-[#9869f7]">
-            <MapPin size={16} />
+      {/* Delivery: one standard service, so it's a read-out rather than a choice */}
+      <div className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:gap-4 sm:px-6">
+        <span className={rowLabel}>Delivery</span>
+        <span className="min-w-0 flex-1 text-[14px] leading-snug text-[#111114]">
+          <span className="block font-semibold">Standard delivery · {shipping === 0 ? 'Free' : fmt(shipping)}</span>
+          <span className="block text-[#5a5a64]">
+            {hasPreorder ? `Ships by ${preorderShipBy}, in one parcel` : `Arrives ${delivery.rangeLabel} with our courier partners`}
           </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] text-[#8a8a93]">Delivering to</p>
-            <p className="truncate text-[14px] font-semibold text-[#111114]">{addressName(selectedAddress, user?.name)}</p>
-            <p className="truncate text-[12.5px] text-[#5a5a64]">
-              {[addressLine(selectedAddress), selectedAddress.city].filter(Boolean).join(', ')}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => { setShowAddressPicker(true); setCurrentStep(1); }}
-            className={`h-10 shrink-0 rounded-full px-3 text-[13px] font-semibold text-[#7c3aed] transition-colors hover:bg-[#f5f0fd] ${focusRing}`}
-          >
-            Change
-          </button>
-        </section>
-      )}
+        </span>
+      </div>
 
-      {/* Savings & extras — before payment, so the total is final when you pay */}
-      <section aria-labelledby="extras-heading" className={`${cardClass} p-5 sm:p-6`}>
-        <h2 id="extras-heading" className="text-[18px] font-semibold text-[#111114]">Savings &amp; extras</h2>
-
-        <div className="mt-2 divide-y divide-[#eeeef1]">
-          <div className="py-3.5">
-            {appliedCoupon ? (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2">
-                <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-emerald-700">
-                  <Check size={14} className="shrink-0" />
-                  <span className="truncate">{appliedCoupon.code} applied · −{fmt(discountAmount)}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={removeCoupon}
-                  className={`h-9 shrink-0 rounded-full px-2 text-[12px] font-semibold text-emerald-700 hover:underline ${focusRing}`}
-                >
-                  Remove
-                </button>
-              </div>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setPromoOpen(o => !o)}
-                  aria-expanded={promoOpen}
-                  aria-controls="checkout-promo"
-                  className={`flex w-full items-center gap-3 rounded-lg text-left ${focusRing}`}
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f5f0fd] text-[#9869f7]">
-                    <Tag size={16} />
-                  </span>
-                  <span className="min-w-0 flex-1 text-[14px] font-medium text-[#111114]">Add a promo code</span>
-                  <ChevronDown size={16} className={`shrink-0 text-[#8a8a93] transition-transform ${promoOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {promoOpen && (
-                  <div id="checkout-promo" className="mt-3">
-                    <form onSubmit={e => { e.preventDefault(); handleApplyCoupon(); }} className="flex gap-2">
-                      <label htmlFor="checkout-promo-code" className="sr-only">Promo code</label>
-                      <input
-                        id="checkout-promo-code"
-                        value={couponCode}
-                        onChange={e => { setCouponCode(e.target.value); if (couponError) removeCoupon(); }}
-                        placeholder="Enter code"
-                        autoComplete="off"
-                        autoCapitalize="characters"
-                        spellCheck={false}
-                        enterKeyHint="done"
-                        aria-invalid={!!couponError}
-                        aria-describedby={couponError ? 'checkout-promo-error' : undefined}
-                        className="h-11 min-w-0 flex-1 rounded-xl border border-[#e5e5ea] bg-white px-3.5 text-[16px] text-[#111114] placeholder:text-[#b4b4bb] focus:border-[#9869f7] focus:outline-none focus:ring-2 focus:ring-[#9869f7]/15 lg:text-[14px]"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!couponCode.trim() || isApplyingCoupon}
-                        className="inline-flex h-11 min-w-[84px] items-center justify-center rounded-xl px-5 text-[13px] font-semibold text-white transition-opacity disabled:opacity-40"
-                        style={{ background: GRADIENT }}
-                      >
-                        {isApplyingCoupon
-                          ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-label="Applying" />
-                          : 'Apply'}
-                      </button>
-                    </form>
-                    {couponError && (
-                      <p id="checkout-promo-error" role="alert" className="mt-2 text-[12px] font-medium text-red-600">{couponError}</p>
-                    )}
-                  </div>
-                )}
-              </>
+      {/* Extras: gift wrap and loyalty points, opened in place */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setExtrasOpen(o => !o)}
+          aria-expanded={extrasOpen}
+          className={`flex w-full flex-col gap-1 px-5 py-4 text-left sm:flex-row sm:gap-4 sm:px-6 ${focusRing}`}
+        >
+          <span className={rowLabel}>Extras</span>
+          <span className="flex min-w-0 flex-1 items-start gap-3">
+            <span className="min-w-0 flex-1 text-[14px] leading-snug text-[#111114]">
+              {extrasSummary || <span className="text-[#5a5a64]">Gift wrap{redeemablePoints > 0 ? ', loyalty points' : ''}</span>}
+            </span>
+            <ChevronDown size={18} className={`mt-0.5 shrink-0 text-[#8a8a93] transition-transform ${extrasOpen ? 'rotate-180' : ''}`} />
+          </span>
+        </button>
+        {extrasOpen && (
+          <div className="divide-y divide-[#ececec] px-5 pb-2 sm:px-6 sm:pl-[160px]">
+            {redeemablePoints > 0 && (
+              <ToggleRow
+                icon={<Star size={16} />}
+                title="Use loyalty points"
+                description={pointsLocked
+                  ? `Remove ${appliedCoupon.code} to redeem points — an order takes one discount`
+                  : `Redeem ${redeemablePoints.toLocaleString()} of ${loyaltyPoints.toLocaleString()} points · −${fmt((redeemablePoints / POINTS_BLOCK) * AED_PER_BLOCK)}`}
+                checked={usePoints && !pointsLocked}
+                onChange={setUsePoints}
+                disabled={pointsLocked}
+              />
+            )}
+            <ToggleRow
+              icon={<Gift size={16} />}
+              title="Gift wrap"
+              description={`Naya signature packaging · +${fmt(GIFT_WRAP_FEE)}`}
+              checked={formData.giftWrap}
+              onChange={checked => setFormData(p => ({ ...p, giftWrap: checked }))}
+            />
+            {method === 'card' && (
+              <p className="py-3 text-[11.5px] text-[#8a8a93]">Changing these refreshes the card form, so set them before entering your card.</p>
             )}
           </div>
-
-          {redeemablePoints > 0 && (
-            <ToggleRow
-              icon={<Star size={16} />}
-              title="Use loyalty points"
-              description={pointsLocked
-                ? `Remove ${appliedCoupon.code} to redeem points — an order takes one discount`
-                : `Redeem ${redeemablePoints.toLocaleString()} of ${loyaltyPoints.toLocaleString()} points · −${fmt((redeemablePoints / POINTS_BLOCK) * AED_PER_BLOCK)}`}
-              checked={usePoints && !pointsLocked}
-              onChange={setUsePoints}
-              disabled={pointsLocked}
-            />
-          )}
-
-          <ToggleRow
-            icon={<Gift size={16} />}
-            title="Gift wrap"
-            description={`Naya signature packaging · +${fmt(GIFT_WRAP_FEE)}`}
-            checked={formData.giftWrap}
-            onChange={checked => setFormData(p => ({ ...p, giftWrap: checked }))}
-          />
-        </div>
-
-        {method === 'card' && (
-          <p className="mt-2 text-[11.5px] text-[#8a8a93]">Changing these refreshes the card form, so set them before entering your card.</p>
         )}
-      </section>
+      </div>
 
       {/* Payment */}
-      <section aria-labelledby="payment-heading" className={`${cardClass} p-5 sm:p-6`}>
-        <h2 id="payment-heading" className="text-[18px] font-semibold text-[#111114]">Payment</h2>
-        <p className="mt-0.5 text-[13px] text-[#8a8a93]">All transactions are secure and encrypted.</p>
+      <div className="px-5 py-4 sm:px-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
+          <span className={rowLabel}>Payment</span>
+          <span className="flex-1 text-[13px] text-[#5a5a64]">All transactions are secure and encrypted.</span>
+        </div>
         {hasPreorder && (
-          <div className="mt-4 rounded-xl border border-[#e4d8fb] bg-[#f8f4ff] px-4 py-3 text-[13px] leading-relaxed text-[#4c3a75]">
-            <p className="font-semibold text-[#7c3aed]">Your order includes pre-order items · ships by {preorderShipBy}</p>
+          <div className="mt-4 rounded-xl bg-[#f6f5f2] px-4 py-3 text-[13px] leading-relaxed text-[#2a2a31]">
+            <p className="font-semibold" style={{ color: ACCENT }}>Your order includes pre-order items · ships by {preorderShipBy}</p>
             <p className="mt-0.5">We&apos;ll send everything together in one parcel once they arrive, and email you when it&apos;s on its way. Cash on delivery isn&apos;t available for pre-orders.</p>
           </div>
         )}
 
-        <div className="mt-4">
-          <ExpressCheckoutButton
-            stripePromise={stripePromise}
-            amount={Math.round(total * 100)}
-            disabled={isPlacingOrder || hasStockIssues}
-            onBeforePay={() => {
-              if (!selectedAddressId) { toast.error('Please select a shipping address first.'); return false; }
-              if (total <= 0) return false;
-              return true;
-            }}
-            onSuccess={handleWalletPayment}
-          />
-        </div>
-
-        <div role="radiogroup" aria-labelledby="payment-heading" className="space-y-2.5">
+        <div role="radiogroup" aria-label="Payment method" className="mt-4 divide-y divide-[#ececec] overflow-hidden rounded-xl border border-[#e4e4e7]">
+          {wallet && (
+            <PaymentOption
+              value="wallet"
+              checked={method === 'wallet'}
+              onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'wallet' }))}
+              title={walletName}
+              hint="Pay in one tap"
+            />
+          )}
           <PaymentOption
             value="card"
             checked={method === 'card'}
             onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'card' }))}
-            icon={<CreditCard size={20} strokeWidth={1.6} className="text-[#5a5a64]" />}
-            title="Credit or debit card"
-            description="Visa, Mastercard, Amex"
+            title="Card"
+            hint="Visa · Mastercard · Amex"
           >
-            <div className="border-t border-[#ece3fb] bg-white p-4 sm:p-5">
-              {paidIntentId ? (
+            <div>
+              {!selectedAddressId ? (
+                <p className="text-[13px] text-[#5a5a64]">Choose a delivery address above to pay by card.</p>
+              ) : paidIntentId ? (
                 <p className="text-[13px] text-[#5a5a64]">Your card has already been charged — use “Try again” above to finish your order.</p>
               ) : hasStockIssues ? (
                 <p className="text-[13px] text-[#5a5a64]">Update your bag before paying.</p>
               ) : clientSecret && stripePromise ? (
                 <Elements key={clientSecret} stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm onSuccessfulPayment={handleCardPaid} buttonLabel={`Pay ${fmt(total)}`} clientSecret={clientSecret} />
+                  <CheckoutForm onSuccessfulPayment={handleCardPaid} clientSecret={clientSecret} formId="card-payment-form" onStatusChange={setCardStatus} />
                 </Elements>
               ) : (
-                <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-[#8a8a93]">
-                  <Loader2 size={18} className="animate-spin text-[#9869f7]" />
+                <div className="flex items-center gap-2 py-3 text-[13px] text-[#8a8a93]">
+                  <Loader2 size={18} className="animate-spin text-[#111114]" />
                   Preparing secure card form…
                 </div>
               )}
@@ -1011,9 +907,8 @@ export default function CheckoutPage() {
               value="cashOnDelivery"
               checked={method === 'cashOnDelivery'}
               onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'cashOnDelivery' }))}
-              icon={<Banknote size={20} strokeWidth={1.6} className="text-[#5a5a64]" />}
               title="Cash on delivery"
-              description="Pay when your order arrives"
+              hint="Pay when it arrives"
             />
           )}
 
@@ -1021,17 +916,14 @@ export default function CheckoutPage() {
             value="tabby"
             checked={method === 'tabby'}
             onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'tabby' }))}
-            icon={<Image src="/0x0.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover" />}
-            title="Pay in instalments with Tabby"
-            description={`From 4 × ${fmt(total / 4)} · choose your plan at Tabby`}
+            title="Tabby"
+            hint={<span className="flex items-center gap-2">Split into payments<Image src="/0x0.png" alt="" width={22} height={22} className="h-[22px] w-[22px] rounded-md object-cover" /></span>}
           >
-            <div className="border-t border-[#ece3fb] bg-white p-4 sm:p-5">
-              <TabbyCard price={total} />
-            </div>
+            <TabbyCard price={total} />
           </PaymentOption>
         </div>
-      </section>
-    </motion.div>
+      </div>
+    </section>
   );
 
   return (
@@ -1039,16 +931,15 @@ export default function CheckoutPage() {
       <div className={`min-h-screen bg-white lg:pb-16 ${showMobileBar ? 'pb-32' : 'pb-16'}`}>
         <FlowHeader onBack={() => router.push('/cart')} />
 
-        <main className="mx-auto max-w-[1180px] px-4 pt-6 sm:px-6 sm:pt-8">
-          <CheckoutSteps step={currentStep} canPay={!!selectedAddressId} onGoTo={goToStep} />
-          <h1 className="mt-4 text-[26px] font-semibold tracking-tight text-[#111114] sm:text-[32px]">Checkout</h1>
+        <main className="mx-auto max-w-[1240px] px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
+          <h1 className={`${headingFont} mt-5 text-[28px] font-medium uppercase leading-tight text-[#111114] sm:text-[40px]`}>Checkout</h1>
 
           {!pageReady ? (
             <CheckoutSkeleton />
           ) : bagEmpty ? (
             <div className="flex flex-col items-center gap-5 py-16 text-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#f5f0fd]">
-                <ShoppingBag size={30} strokeWidth={1.5} className="text-[#9869f7]" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#f6f5f2]">
+                <ShoppingBag size={30} strokeWidth={1.3} className="text-[#111114]" />
               </div>
               <div>
                 <h2 className="text-[20px] font-semibold text-[#111114]">Your bag is empty</h2>
@@ -1056,18 +947,18 @@ export default function CheckoutPage() {
               </div>
               <Link
                 href="/all-products"
-                className={`inline-flex h-12 items-center gap-2 rounded-full px-8 text-[14px] font-semibold text-white transition-transform active:scale-[0.98] ${focusRing}`}
-                style={{ background: GRADIENT }}
+                className={`inline-flex h-12 items-center gap-2 rounded-xl px-8 text-[14px] font-semibold text-white transition-transform active:scale-[0.98] ${focusRing}`}
+                style={{ background: ACTION }}
               >
                 Explore the collection
                 <ArrowRight size={15} />
               </Link>
             </div>
           ) : (
-            <div className="mt-5 grid grid-cols-1 items-start gap-6 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10">
+            <div className="mt-5 grid grid-cols-1 items-start gap-6 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-14">
               <div className="min-w-0 space-y-4">
                 {/* Mobile: collapsible summary with the total always visible */}
-                <div className="-mx-4 border-y border-[#e5e5ea] bg-[#faf9fc] sm:mx-0 sm:rounded-2xl sm:border lg:hidden">
+                <div className="-mx-4 bg-[#f6f5f2] sm:mx-0 sm:rounded-xl lg:hidden">
                   <button
                     type="button"
                     onClick={() => setSummaryOpen(o => !o)}
@@ -1075,7 +966,7 @@ export default function CheckoutPage() {
                     aria-controls="mobile-order-summary"
                     className={`flex w-full items-center justify-between gap-3 px-4 py-3.5 ${focusRing}`}
                   >
-                    <span className="flex items-center gap-2 text-[14px] font-medium text-[#7c3aed]">
+                    <span className="flex items-center gap-2 text-[14px] font-medium text-[#111114]">
                       <ShoppingBag size={16} />
                       {summaryOpen ? 'Hide' : 'Show'} order summary
                       <ChevronDown size={15} className={`transition-transform ${summaryOpen ? 'rotate-180' : ''}`} />
@@ -1092,8 +983,8 @@ export default function CheckoutPage() {
                         transition={{ duration: 0.22 }}
                         className="overflow-hidden"
                       >
-                        <div className="border-t border-[#eeeef1] px-4 pb-4 pt-3">
-                          <OrderSummaryContent {...summaryProps} />
+                        <div className="border-t border-[#e2e0db] px-4 pb-4 pt-3">
+                          <OrderSummaryContent {...summaryProps} promo={promoBlock('promo-code-mobile')} />
                         </div>
                       </motion.div>
                     )}
@@ -1133,33 +1024,41 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <AnimatePresence mode="wait" initial={false}>
-                  {currentStep === 1 ? deliveryStep : paymentStep}
-                </AnimatePresence>
+                {detailsCard}
 
-                {showPrimary && (
+                {/* Always mounted so it can report the device's wallet; drawn only when chosen */}
+                <div className="hidden lg:block">
+                  <ExpressCheckoutButton {...walletProps} onAvailable={setWallet} show={walletButton} />
+                </div>
+                {showPrimary && !walletButton && (
                   <button
-                    type="button"
-                    onClick={handlePrimary}
+                    {...primaryProps}
                     disabled={primaryDisabled}
-                    className="hidden h-14 w-full items-center justify-center gap-2.5 rounded-full text-[15px] font-semibold text-white transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9869f7] focus-visible:ring-offset-2 lg:flex"
-                    style={{ background: GRADIENT, boxShadow: '0 6px 22px rgba(152,105,247,.32)' }}
+                    className="hidden h-[52px] w-full items-center justify-center gap-2.5 rounded-xl text-[15px] font-semibold text-white transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5b35ec] focus-visible:ring-offset-2 lg:flex"
+                    style={{ background: ACTION }}
                   >
                     {desktopLabel}
                     <ArrowRight size={17} />
                   </button>
                 )}
+                <p className="flex items-center gap-1.5 pt-1 text-[12px] text-[#8a8a93]">
+                  <Lock size={12} /> Payments are encrypted and processed securely.
+                </p>
+                <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-[#5a5a64]">
+                  <Link href="/terms" className="underline underline-offset-4 hover:text-[#111114]">Terms of service</Link>
+                  <Link href="/privacy" className="underline underline-offset-4 hover:text-[#111114]">Privacy policy</Link>
+                </p>
               </div>
 
               <aside className="hidden lg:sticky lg:top-[84px] lg:block">
-                <section aria-labelledby="summary-heading" className={`${cardClass} p-6`}>
-                  <h2 id="summary-heading" className="mb-4 text-[17px] font-semibold text-[#111114]">Order summary</h2>
-                  <OrderSummaryContent {...summaryProps} scrollItems />
-                  <ul className="mt-5 space-y-2.5 border-t border-[#e5e5ea] pt-4">
+                <section aria-labelledby="summary-heading" className="rounded-xl bg-[#f6f5f2] p-6 sm:p-7">
+                  <h2 id="summary-heading" className={`${headingFont} mb-4 text-[17px] font-medium uppercase tracking-wide text-[#111114]`}>Order summary</h2>
+                  <OrderSummaryContent {...summaryProps} promo={promoBlock('promo-code')} scrollItems />
+                  <ul className="mt-5 space-y-2.5 border-t border-[#e2e0db] pt-4">
                     {[
-                      { Icon: Lock, text: 'Secured transaction', color: 'text-emerald-500' },
-                      { Icon: ShieldCheck, text: 'Authentic products', color: 'text-[#9869f7]' },
-                      { Icon: RotateCcw, text: '14-day returns', color: 'text-[#9869f7]' },
+                      { Icon: Lock, text: 'Secured transaction', color: 'text-[#111114]' },
+                      { Icon: ShieldCheck, text: 'Authentic products', color: 'text-[#111114]' },
+                      { Icon: RotateCcw, text: '14-day returns', color: 'text-[#111114]' },
                     ].map(({ Icon, text, color }) => (
                       <li key={text} className="flex items-center gap-2.5 text-[12px] text-[#5a5a64]">
                         <Icon size={13} className={color} /> {text}
@@ -1174,7 +1073,7 @@ export default function CheckoutPage() {
 
         {showMobileBar && (
           <div
-            className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e5e5ea] bg-white/95 backdrop-blur-md lg:hidden"
+            className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ececec] bg-white lg:hidden"
             style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
           >
             <div className="mx-auto flex max-w-[640px] items-center gap-4 px-4 pt-3">
@@ -1182,16 +1081,19 @@ export default function CheckoutPage() {
                 <p className="text-[11px] leading-none text-[#8a8a93]">Total · VAT incl.</p>
                 <p className="mt-1 text-[18px] font-bold leading-none tabular-nums text-[#111114]">{fmt(total)}</p>
               </div>
+              {walletButton ? (
+                <div className="min-w-0 flex-1"><ExpressCheckoutButton {...walletProps} show /></div>
+              ) : (
               <button
-                type="button"
-                onClick={handlePrimary}
+                {...primaryProps}
                 disabled={primaryDisabled}
-                className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-full px-4 text-[15px] font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9869f7] focus-visible:ring-offset-2"
-                style={{ background: GRADIENT, boxShadow: '0 6px 20px rgba(152,105,247,.30)' }}
+                className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5b35ec] focus-visible:ring-offset-2"
+                style={{ background: ACTION }}
               >
                 {mobileLabel}
                 <ArrowRight size={17} />
               </button>
+              )}
             </div>
           </div>
         )}
@@ -1207,7 +1109,7 @@ export default function CheckoutPage() {
               className="fixed inset-0 z-[120] flex items-center justify-center bg-white/85 px-6 backdrop-blur-sm"
             >
               <div className="flex flex-col items-center gap-3 text-center">
-                <Loader2 size={30} className="animate-spin text-[#9869f7]" />
+                <Loader2 size={30} className="animate-spin text-[#111114]" />
                 <p className="text-[16px] font-semibold text-[#111114]">
                   {isTabbyLoading ? 'Taking you to Tabby…' : 'Placing your order…'}
                 </p>

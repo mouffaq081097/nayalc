@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '@/app/context/AuthContext';
 import { useAppContext } from '@/app/context/AppContext';
-import { Send, MessageSquare, X, Loader2, Sparkles, ShoppingBag, Zap, HelpCircle, UserCheck, Clock, Check, CheckCheck, AlertCircle } from 'lucide-react';
+import { Send, X, Loader2, Sparkles, ShoppingBag, Zap, HelpCircle, UserCheck, Clock, Check, CheckCheck, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
@@ -38,9 +38,8 @@ const ChatWidget = () => {
     const [isSending, setIsSending] = useState(false);
     const [isRequestingHuman, setIsRequestingHuman] = useState(false);
     const [adminIsTyping, setAdminIsTyping] = useState(false);
-    const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+    const [, setUnreadMessageCount] = useState(0);
     const [isConnected, setIsConnected] = useState(false);
-    const [liftForStickyBar, setLiftForStickyBar] = useState(false);
 
     const messagesEndRef = useRef(null);
     const socketRef = useRef(null);
@@ -50,13 +49,6 @@ const ChatWidget = () => {
 
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, []);
-
-    // Lift the launcher above the product page's bottom sticky bar when it is visible
-    useEffect(() => {
-        const handler = (e) => setLiftForStickyBar(!!e.detail?.visible);
-        window.addEventListener('nayalc:product-sticky-bar', handler);
-        return () => window.removeEventListener('nayalc:product-sticky-bar', handler);
     }, []);
 
     const fetchActiveConversation = useCallback(async () => {
@@ -335,57 +327,6 @@ const ChatWidget = () => {
 
     return (
         <div className="fixed inset-0 pointer-events-none z-[200]">
-            {/* FAB */}
-            <AnimatePresence>
-                {!isChatOpen && (
-                    <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1, y: liftForStickyBar ? -56 : 0 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                        className="absolute hidden md:flex items-end bottom-8 right-8 pointer-events-auto group gap-3"
-                    >
-                        {/* Speech bubble tooltip */}
-                        <motion.div
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.6, duration: 0.3 }}
-                            className="bg-white rounded-2xl rounded-br-sm shadow-lg px-4 py-2.5 mb-2 relative"
-                            style={{ border: '1px solid rgba(216,180,254,0.35)' }}
-                        >
-                            <p className="text-sm font-semibold text-gray-800 whitespace-nowrap">Live Chat!</p>
-                            <p className="text-xs text-gray-400 whitespace-nowrap">How can we help you?</p>
-                            {/* Arrow pointing right */}
-                            <span className="absolute -right-2 bottom-3 w-0 h-0" style={{
-                                borderTop: '6px solid transparent',
-                                borderBottom: '6px solid transparent',
-                                borderLeft: '8px solid white',
-                            }} />
-                        </motion.div>
-
-                        <button
-                            onClick={() => setIsChatOpen(true)}
-                            className="relative w-14 h-14 rounded-full text-white flex items-center justify-center shadow-luxury hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1 shrink-0"
-                            style={{ background: 'var(--brand-gradient)' }}
-                        >
-                            <MessageSquare className="w-6 h-6" />
-                            <AnimatePresence>
-                                {unreadMessageCount > 0 && (
-                                    <motion.span
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        exit={{ scale: 0 }}
-                                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white"
-                                    >
-                                        {unreadMessageCount}
-                                    </motion.span>
-                                )}
-                            </AnimatePresence>
-                        </button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             {/* Chat panel */}
             <AnimatePresence>
                 {isChatOpen && (

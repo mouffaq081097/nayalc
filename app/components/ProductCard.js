@@ -63,7 +63,6 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const delivery = useDeliveryEstimate();
 
   const showComparePrice = originalPrice && originalPrice > price;
-  const discount = showComparePrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
   const productUrl = `/product/${slug || id}`;
   const seoAlt = altText || `${name} - ${brandName || 'Luxury Beauty'} | nayalc.com`;
   const isLowStock = stock_quantity > 0 && stock_quantity < 5;
@@ -79,10 +78,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const displayImage = (isHovered && imageUrls.length > 1) ? imageUrls[1] : (image || (imageUrls.length > 0 ? imageUrls[0] : '/placeholder-image.jpg'));
   const secondImage = imageUrls.length > 1 ? imageUrls[1] : null;
 
-  // One tag, top-right: sold out › pre-order › discount › rank › best seller › new
+  // One tag, top-right: sold out › pre-order › rank › best seller › new (no discount badge — the old price shows it)
   const tag = !canBuy ? { label: 'Sold out', muted: true }
     : preorderOnly ? { label: 'Pre-order' }
-    : discount > 0 ? { label: `−${discount}%` }
     : rank ? { label: `No. ${rank}` }
     : isBestseller ? { label: 'Best seller', soft: true }
     : isNew ? { label: 'New' }
@@ -422,11 +420,6 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   style={{ backgroundImage: 'var(--brand-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
                 >{formatAED(price)}</span>
                 {showComparePrice && <span className="text-lg line-through" style={{ color: 'var(--cl-text-muted)' }}>{formatAED(originalPrice)}</span>}
-                {discount > 0 && (
-                  <span className="text-[10px] font-bold text-white px-3 py-1 rounded-full" style={{ background: 'var(--brand-gradient)' }}>
-                    -{discount}%
-                  </span>
-                )}
               </div>
 
               <p className="text-sm leading-[1.8] italic mb-8" style={{ color: 'var(--cl-text-light)' }}>

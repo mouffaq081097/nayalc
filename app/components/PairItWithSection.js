@@ -1,44 +1,50 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useCart } from '../context/CartContext';
-import CartSuggestionCard from './CartSuggestionCard';
+import { useAppContext } from '../context/AppContext';
+import { HomeProductCard } from './home/HomeProductCard';
+import { headingFont } from './home/SectionHeading';
+import { orderableQty } from '@/lib/backorderRules';
 
 const SHOW = 4;
 
-// Mobile/tablet: swipeable snap rail bleeding to the screen edge. Desktop: 4-up grid.
-const railClass =
-  '-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 scroll-px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 lg:pb-0';
-const slotClass = 'w-[44%] shrink-0 snap-start sm:w-[200px] lg:w-auto';
+/**
+ * The live product (price, stock, views, photos) for an id from a smaller API
+ * payload, so the bag page's cards match the homepage's exactly. Falls back to
+ * the payload itself, normalised to the field names HomeProductCard reads.
+ */
+export function toCardProduct(p, products) {
+  const live = (products || []).find((x) => Number(x.id) === Number(p.id));
+  if (live) return live;
+  return {
+    ...p,
+    imageUrl: p.imageUrl || p.image,
+    brandName: p.brandName || p.brand,
+    stock_quantity: p.stockQuantity ?? p.stock_quantity,
+    originalPrice: p.originalPrice ?? (p.comparedprice ? Number(p.comparedprice) : null),
+  };
+}
 
-function RailSkeleton() {
+// Two across on phones (2 × 2), three across from md up — the bag column is narrower than the homepage
+export const cardGrid = 'grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-4';
+
+function GridSkeleton() {
   return (
     <div aria-hidden="true" className="motion-safe:animate-pulse">
-      <div className="mb-4 space-y-2">
-        <div className="h-5 w-44 rounded bg-[#f1f1f4]" />
-        <div className="h-3.5 w-32 rounded bg-[#f5f5f7]" />
-      </div>
-      <div className={`${railClass} overflow-hidden`}>
-        {Array.from({ length: SHOW }).map((_, i) => (
-          <div key={i} className={`${slotClass} overflow-hidden rounded-2xl border border-[#eeeef1]`}>
-            <div className="aspect-square bg-[#f5f5f7]" />
-            <div className="space-y-2 p-3">
-              <div className="h-2.5 w-1/2 rounded bg-[#f1f1f4]" />
-              <div className="h-3 w-4/5 rounded bg-[#f1f1f4]" />
-              <div className="h-9 rounded-full bg-[#f5f5f7]" />
-            </div>
-          </div>
-        ))}
+      <div className="mb-5 h-6 w-48 bg-[#f6f5f2]" />
+      <div className={cardGrid}>
+        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="aspect-[3/4] bg-[#f6f5f2]" />)}
       </div>
     </div>
   );
 }
 
+/** "You may also like" under the bag: homepage product cards for a few products not already in it. */
 export default function PairItWithSection({ currentCartItems }) {
-  const { addToCart, closeCart } = useCart();
+  const { products: catalogue } = useAppContext();
   const [products, setProducts] = useState(null); // null while loading
   // Snapshot of the bag when the section appeared: those products are hidden, but
-  // anything added from here stays in place and flips to "In your bag" instead of vanishing.
+  // anything added from here stays in place instead of vanishing.
   const [initialCartIds] = useState(() => new Set(currentCartItems.map(i => i.id)));
 
   useEffect(() => {
@@ -51,36 +57,30 @@ export default function PairItWithSection({ currentCartItems }) {
     return () => { cancelled = true; };
   }, []);
 
-  const cartIds = useMemo(() => new Set(currentCartItems.map(i => i.id)), [currentCartItems]);
   const visible = useMemo(
-    () => (products || []).filter(p => !initialCartIds.has(p.id)).slice(0, SHOW),
-    [products, initialCartIds]
+    // Like the homepage rows: only things that can be bought now (in stock or open for pre-order)
+    () => (products || []).filter(p => !initialCartIds.has(p.id)).map(p => toCardProduct(p, catalogue)).filter(p => orderableQty(p) > 0).slice(0, SHOW),
+    [products, initialCartIds, catalogue]
   );
 
-  if (products === null) return <RailSkeleton />;
+  if (products === null) return <GridSkeleton />;
   if (visible.length === 0) return null;
-
-  const handleAdd = (product) => {
-    addToCart({ ...product, stock_quantity: product.stockQuantity ?? product.stock_quantity }, 1);
-    closeCart(); // already on the bag page — don't slide the drawer over it
-  };
 
   return (
     <section aria-labelledby="also-like-heading">
       {/* The suggestions API returns random active products, so this is labelled as
           discovery rather than "frequently bought together". */}
-      <div className="mb-4">
-        <h2 id="also-like-heading" className="text-[18px] font-semibold text-[#111114]">You may also like</h2>
-        <p className="mt-0.5 text-[13px] text-[#8a8a93]">More from our collection</p>
-      </div>
-
-      <ul className={railClass}>
-        {visible.map(product => (
-          <li key={product.id} className={slotClass}>
-            <CartSuggestionCard product={product} inBag={cartIds.has(product.id)} onAdd={handleAdd} />
-          </li>
+      <h2 id="also-like-heading" className={`${headingFont} mb-5 text-[20px] md:text-[24px] font-medium uppercase text-[#111114]`}>
+        You may also like
+      </h2>
+      <div className={cardGrid}>
+        {visible.map((product, i) => (
+          // Four on phones (2 × 2), three from md up
+          <div key={product.id} className={i === 3 ? 'md:hidden' : undefined}>
+            <HomeProductCard product={product} />
+          </div>
         ))}
-      </ul>
+      </div>
     </section>
   );
 }

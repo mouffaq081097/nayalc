@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import BrandLogo from '../components/BrandLogo';
+import { headingFont } from '../components/home/SectionHeading';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import {
@@ -18,7 +19,13 @@ import PairItWithSection from '../components/PairItWithSection';
 import BuyAgainSection from '../components/BuyAgainSection';
 import TabbyPromo from '../components/TabbyPromo';
 
-const GRADIENT = 'linear-gradient(90deg,#c087fc,#9869f7)';
+// Storefront palette: ink actions, warm off-white panels, lavender only for small accents
+const INK = '#111114';
+const ACCENT = 'rgb(147,104,236)';
+const PANEL = 'bg-[#f6f5f2]';
+// Checkout action buttons: solid violet, 12px corners (one shape for every action in the flow)
+const ACTION = '#5b35ec';
+
 const UNDO_WINDOW_MS = 4000;
 
 // Must match app/api/orders/route.js, which rejects orders whose total drifts
@@ -30,17 +37,17 @@ const AED_PER_BLOCK = 5;
 const fmt = (n) =>
   `AED ${Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9869f7]/40';
+const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111114]/30';
 
 function CartHeader({ onBack }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e5e5ea] bg-white">
-      <div className="mx-auto relative flex h-[56px] md:h-[60px] max-w-[1180px] items-center justify-between px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-[#ececec] bg-white">
+      <div className="mx-auto relative flex h-[60px] md:h-[72px] max-w-[1240px] items-center justify-between px-4 sm:px-6">
         <button
           type="button"
           onClick={onBack}
           aria-label="Continue shopping"
-          className={`group shrink-0 flex items-center gap-2 h-[38px] px-3 sm:px-4 rounded-full border border-[#e5e5ea] bg-white text-[12px] font-semibold text-[#2a2a31] hover:bg-[#f3f3f5] hover:border-[#c8c8cf] transition-colors ${focusRing}`}
+          className={`group shrink-0 flex items-center gap-2 h-[38px] text-[13px] font-medium text-[#111114] hover:opacity-70 transition-opacity ${focusRing}`}
         >
           <ArrowLeft size={14} className="transition-transform group-hover:-translate-x-0.5" />
           <span className="hidden sm:inline">Continue shopping</span>
@@ -54,7 +61,7 @@ function CartHeader({ onBack }) {
         </Link>
 
         <div className="shrink-0 hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-[#8a8a93]">
-          <ShieldCheck size={13} className="text-emerald-500" />
+          <ShieldCheck size={14} className="text-[#111114]" />
           Secure checkout
         </div>
         <div className="sm:hidden w-[38px]" aria-hidden="true" />
@@ -65,7 +72,7 @@ function CartHeader({ onBack }) {
 
 function IconBadge({ children }) {
   return (
-    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-[#f5f0fd] text-[#9869f7]">
+    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-white text-[#111114]">
       {children}
     </span>
   );
@@ -93,10 +100,10 @@ function CartItemRow({ item, onQuantity, onRemove }) {
   const productHref = `/product/${item.id}`;
 
   return (
-    <div className={`flex gap-3.5 sm:gap-5 px-4 sm:px-6 py-4 sm:py-5 ${outOfStock ? 'bg-red-50/50' : ''}`}>
+    <div className={`flex gap-4 sm:gap-6 py-5 sm:py-6 ${outOfStock ? 'bg-red-50/50' : ''}`}>
       <Link
         href={productHref}
-        className={`shrink-0 w-[76px] h-[76px] sm:w-[96px] sm:h-[96px] rounded-xl bg-[#f7f7f9] border border-[#eeeef1] overflow-hidden p-2 ${focusRing}`}
+        className={`shrink-0 w-[92px] h-[110px] sm:w-[120px] sm:h-[144px] bg-[#f6f5f2] overflow-hidden p-2.5 ${focusRing}`}
       >
         <ImageWithFallback
           src={item.image}
@@ -108,12 +115,12 @@ function CartItemRow({ item, onQuantity, onRemove }) {
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8a8a93] truncate">
+            <p className="text-[11px] sm:text-[12px] text-[#8a8a93] truncate">
               {item.brand || 'Naya Lumière'}
             </p>
             <Link
               href={productHref}
-              className="mt-0.5 block text-[14px] sm:text-[15px] font-semibold leading-snug text-[#111114] line-clamp-2 hover:underline underline-offset-2"
+              className="mt-0.5 block text-[15px] sm:text-[16px] font-medium leading-snug text-[#111114] line-clamp-2 hover:underline underline-offset-2"
             >
               {item.name}
             </Link>
@@ -144,14 +151,14 @@ function CartItemRow({ item, onQuantity, onRemove }) {
             <button
               type="button"
               onClick={() => onQuantity(item.id, maxQty)}
-              className="font-semibold text-[#7c3aed] underline underline-offset-2"
+              className="font-semibold text-[#111114] underline underline-offset-2"
             >
               Update to {maxQty}
             </button>
           </div>
         )}
         {preorderQty > 0 && (
-          <p className="mt-2 self-start rounded-full bg-[#f3eefe] px-2.5 py-1 text-[11px] font-semibold text-[#7c3aed]">
+          <p className="mt-2 self-start rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" style={{ background: ACCENT }}>
             {preorderQty === item.quantity ? 'Pre-order' : `${preorderQty} of ${item.quantity} on pre-order`} · ships by {getPreorderInfo(leadDays(item)).shipByLabel}
           </p>
         )}
@@ -160,7 +167,7 @@ function CartItemRow({ item, onQuantity, onRemove }) {
           <div
             role="group"
             aria-label={`Quantity for ${item.name}`}
-            className="flex items-center rounded-full border border-[#e5e5ea] bg-white"
+            className="flex items-center rounded-full border border-[#d9d9de] bg-white"
           >
             <button
               type="button"
@@ -200,21 +207,21 @@ function CartItemRow({ item, onQuantity, onRemove }) {
 
 function RemovedRow({ item, onUndo }) {
   return (
-    <div role="status" className="relative flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-[#faf7ff]">
+    <div role="status" className="relative flex items-center justify-between gap-3 px-4 py-3 bg-[#f6f5f2]">
       <p className="min-w-0 truncate text-[13px] text-[#5a5a64]">
         Removed <span className="font-semibold text-[#111114]">{item.name}</span>
       </p>
       <button
         type="button"
         onClick={() => onUndo(item.id)}
-        className={`shrink-0 h-11 px-4 rounded-full text-[13px] font-semibold text-[#7c3aed] hover:bg-[#f0e6ff] transition-colors ${focusRing}`}
+        className={`shrink-0 h-11 px-4 rounded-full text-[13px] font-semibold text-[#111114] underline underline-offset-4 hover:opacity-70 transition-opacity ${focusRing}`}
       >
         Undo
       </button>
       <motion.span
         aria-hidden="true"
         className="absolute left-0 bottom-0 h-0.5 w-full origin-left"
-        style={{ background: GRADIENT }}
+        style={{ background: INK }}
         initial={{ scaleX: 1 }}
         animate={{ scaleX: 0 }}
         transition={{ duration: UNDO_WINDOW_MS / 1000, ease: 'linear' }}
@@ -361,19 +368,19 @@ export default function CartPage() {
       <div className="min-h-screen bg-white flex flex-col">
         <CartHeader onBack={handleBack} />
         <main className="flex-1 flex flex-col items-center justify-center gap-5 px-6 py-16 text-center">
-          <div className="w-20 h-20 rounded-full flex items-center justify-center bg-[#f5f0fd]">
-            <ShoppingBag size={30} strokeWidth={1.5} className="text-[#9869f7]" />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center bg-[#f6f5f2]">
+            <ShoppingBag size={30} strokeWidth={1.3} className="text-[#111114]" />
           </div>
           <div>
-            <h1 className="text-[24px] font-semibold text-[#111114]">Your bag is empty</h1>
+            <h1 className={`${headingFont} text-[24px] md:text-[30px] font-medium uppercase text-[#111114]`}>Your bag is empty</h1>
             <p className="mt-1.5 max-w-xs text-[14px] text-[#5a5a64]">
               Find something you love — shipping is free from 3 items.
             </p>
           </div>
           <Link
             href="/all-products"
-            className={`inline-flex items-center gap-2 h-12 px-8 rounded-full text-[14px] font-semibold text-white transition-transform active:scale-[0.98] ${focusRing}`}
-            style={{ background: GRADIENT }}
+            className={`inline-flex items-center gap-2 h-12 px-8 rounded-xl text-[14px] font-semibold text-white transition-transform active:scale-[0.98] ${focusRing}`}
+            style={{ background: ACTION }}
           >
             Explore the collection
             <ArrowRight size={15} />
@@ -388,19 +395,19 @@ export default function CartPage() {
       <div className="min-h-screen bg-white pb-32 lg:pb-16">
         <CartHeader onBack={handleBack} />
 
-        <main className="max-w-[1180px] mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
-          <h1 className="mb-5 sm:mb-8 text-[26px] sm:text-[32px] font-semibold tracking-tight text-[#111114]">
+        <main className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-12">
+          <h1 className={`${headingFont} mb-5 sm:mb-8 text-[28px] sm:text-[40px] font-medium uppercase leading-tight text-[#111114]`}>
             Your bag
-            <span className="ml-2 text-[15px] sm:text-[17px] font-medium text-[#8a8a93]">
+            <span className="ml-3 align-middle text-[14px] sm:text-[16px] font-normal normal-case tracking-normal text-[#8a8a93]">
               ({totalQty} {totalQty === 1 ? 'item' : 'items'})
             </span>
           </h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-6 lg:gap-10 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-8 lg:gap-14 items-start">
 
             {/* ── Items ── */}
             <section aria-label="Items in your bag" className="min-w-0">
-              <ul className="-mx-4 sm:mx-0 border-y sm:border border-[#e5e5ea] sm:rounded-2xl overflow-hidden bg-white divide-y divide-[#eeeef1]">
+              <ul className="border-y border-[#111114] divide-y divide-[#ececec]">
                 <AnimatePresence initial={false}>
                   {cartItems.map(item => (
                     <motion.li
@@ -421,8 +428,8 @@ export default function CartPage() {
 
             {/* ── Summary (sticky on desktop; directly after the items on mobile) ── */}
             <aside className="lg:row-span-2 lg:sticky lg:top-[84px] space-y-4 min-w-0">
-              <section aria-labelledby="summary-heading" className="bg-white border border-[#e5e5ea] rounded-2xl p-5 sm:p-6">
-                <h2 id="summary-heading" className="text-[17px] font-semibold text-[#111114]">Order summary</h2>
+              <section aria-labelledby="summary-heading" className={`${PANEL} rounded-xl p-5 sm:p-7`}>
+                <h2 id="summary-heading" className={`${headingFont} text-[17px] font-medium uppercase tracking-wide text-[#111114]`}>Order summary</h2>
 
                 <dl className="mt-4 space-y-2.5 text-[14px]">
                   <SummaryRow label={`Subtotal (${totalQty} ${totalQty === 1 ? 'item' : 'items'})`} value={fmt(subtotal)} />
@@ -437,7 +444,7 @@ export default function CartPage() {
                 </dl>
 
                 {/* Promo code */}
-                <div className="mt-4 pt-4 border-t border-[#eeeef1]">
+                <div className="mt-4 pt-4 border-t border-[#e2e0db]">
                   {appliedCoupon ? (
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2">
                       <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-emerald-700">
@@ -462,7 +469,7 @@ export default function CartPage() {
                         className={`w-full h-11 -my-1 flex items-center justify-between rounded-lg text-[14px] font-medium text-[#2a2a31] ${focusRing}`}
                       >
                         <span className="flex items-center gap-2">
-                          <Tag size={15} className="text-[#9869f7]" />
+                          <Tag size={15} className="text-[#111114]" />
                           Add a promo code
                         </span>
                         <ChevronDown size={16} className={`text-[#8a8a93] transition-transform ${promoOpen ? 'rotate-180' : ''}`} />
@@ -486,13 +493,13 @@ export default function CartPage() {
                               enterKeyHint="done"
                               aria-invalid={!!couponError}
                               aria-describedby={couponError ? 'promo-error' : undefined}
-                              className="flex-1 min-w-0 h-11 px-3.5 rounded-xl border border-[#e5e5ea] bg-white text-[16px] lg:text-[14px] text-[#111114] placeholder:text-[#b4b4bb] focus:outline-none focus:border-[#9869f7] focus:ring-2 focus:ring-[#9869f7]/15"
+                              className="flex-1 min-w-0 h-11 px-4 rounded-xl border border-[#d9d9de] bg-white text-[16px] lg:text-[14px] text-[#111114] placeholder:text-[#b4b4bb] focus:outline-none focus:border-[#111114] focus:ring-2 focus:ring-[#111114]/10"
                             />
                             <button
                               type="submit"
                               disabled={!couponCode.trim() || isApplyingCoupon}
                               className="min-w-[84px] h-11 px-5 rounded-xl inline-flex items-center justify-center text-[13px] font-semibold text-white disabled:opacity-40 transition-opacity"
-                              style={{ background: GRADIENT }}
+                              style={{ background: ACTION }}
                             >
                               {isApplyingCoupon
                                 ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-label="Applying" />
@@ -509,7 +516,7 @@ export default function CartPage() {
                 </div>
 
                 {/* Total */}
-                <div className="mt-4 pt-4 border-t border-[#e5e5ea]">
+                <div className="mt-4 pt-4 border-t border-[#111114]">
                   <div className="flex items-baseline justify-between gap-4">
                     <span className="text-[16px] font-semibold text-[#111114]">Total</span>
                     <span className="text-[22px] font-bold text-[#111114] tabular-nums">{fmt(total)}</span>
@@ -526,8 +533,8 @@ export default function CartPage() {
                   type="button"
                   onClick={handleCheckout}
                   disabled={!canCheckout}
-                  className="hidden lg:flex mt-5 w-full h-14 rounded-full items-center justify-center gap-2.5 text-[15px] font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#9869f7]"
-                  style={{ background: GRADIENT, boxShadow: '0 6px 22px rgba(152,105,247,.32)' }}
+                  className="hidden lg:flex mt-5 w-full h-[52px] rounded-xl items-center justify-center gap-2.5 text-[15px] font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#111114]"
+                  style={{ background: ACTION }}
                 >
                   {checkoutLabel}
                   <ArrowRight size={17} />
@@ -556,7 +563,7 @@ export default function CartPage() {
               </section>
 
               {totalQty > 0 && (
-                <section aria-label="Delivery and rewards" className="bg-white border border-[#e5e5ea] rounded-2xl p-5 sm:p-6 space-y-5">
+                <section aria-label="Delivery and rewards" className={`${PANEL} rounded-xl p-5 sm:p-7 space-y-5`}>
                   {/* Shipping tiers */}
                   <div>
                     <div className="flex items-start gap-3">
@@ -579,7 +586,7 @@ export default function CartPage() {
                         const reached = totalQty >= tier.minItems;
                         return (
                           <div key={tier.label}>
-                            <div className="h-1.5 rounded-full transition-colors" style={{ background: reached ? GRADIENT : '#f1eef6' }} />
+                            <div className="h-1.5 rounded-full transition-colors" style={{ background: reached ? INK : '#e2e0db' }} />
                             <p className={`mt-1.5 text-[11px] ${reached ? 'font-semibold text-[#2a2a31]' : 'text-[#a1a1aa]'}`}>
                               {tier.label} · {formatShipping(tier.cost)}
                             </p>
@@ -590,14 +597,14 @@ export default function CartPage() {
                   </div>
 
                   {/* Artisan gift */}
-                  <div className="pt-5 border-t border-[#eeeef1] flex items-start gap-3">
+                  <div className="pt-5 border-t border-[#e2e0db] flex items-start gap-3">
                     <IconBadge><Gift size={15} /></IconBadge>
                     <div className="flex-1 min-w-0 pt-1.5">
                       <p className="text-[13px] leading-snug text-[#2a2a31]">
                         {artisanGap <= 0 ? (
-                          <>You&apos;ve unlocked a free <span className="font-semibold text-[#7c3aed]">{ARTISAN_GIFT_NAME}</span></>
+                          <>You&apos;ve unlocked a free <span className="font-semibold text-[#111114]">{ARTISAN_GIFT_NAME}</span></>
                         ) : (
-                          <><span className="font-semibold">{fmt(artisanGap)}</span> away from a free <span className="font-semibold text-[#7c3aed]">{ARTISAN_GIFT_NAME}</span></>
+                          <><span className="font-semibold">{fmt(artisanGap)}</span> away from a free <span className="font-semibold text-[#111114]">{ARTISAN_GIFT_NAME}</span></>
                         )}
                       </p>
                       {artisanGap > 0 && (
@@ -607,11 +614,11 @@ export default function CartPage() {
                           aria-valuemin={0}
                           aria-valuemax={100}
                           aria-valuenow={artisanPct}
-                          className="mt-2.5 h-1.5 rounded-full bg-[#f1eef6] overflow-hidden"
+                          className="mt-2.5 h-1.5 rounded-full bg-[#e2e0db] overflow-hidden"
                         >
                           <motion.div
                             className="h-full rounded-full"
-                            style={{ background: GRADIENT }}
+                            style={{ background: ACCENT }}
                             initial={false}
                             animate={{ width: `${artisanPct}%` }}
                             transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -622,7 +629,7 @@ export default function CartPage() {
                   </div>
 
                   {/* Loyalty — informational only; points are redeemed at checkout */}
-                  <div className="pt-5 border-t border-[#eeeef1] flex items-start gap-3">
+                  <div className="pt-5 border-t border-[#e2e0db] flex items-start gap-3">
                     <IconBadge><Star size={15} /></IconBadge>
                     <div className="flex-1 min-w-0 pt-1.5 text-[13px] leading-snug text-[#2a2a31]">
                       {isAuthenticated ? (
@@ -634,7 +641,7 @@ export default function CartPage() {
                           {loyaltyPoints >= POINTS_BLOCK ? (
                             <p className="mt-1 text-[12px] text-[#5a5a64]">
                               You have {loyaltyPoints.toLocaleString()} points — worth{' '}
-                              <span className="font-semibold text-[#7c3aed]">{fmt(redeemableAed)}</span> off. Redeem them at checkout.
+                              <span className="font-semibold text-[#111114]">{fmt(redeemableAed)}</span> off. Redeem them at checkout.
                             </p>
                           ) : loyaltyPoints > 0 ? (
                             <p className="mt-1 text-[12px] text-[#5a5a64]">
@@ -644,7 +651,7 @@ export default function CartPage() {
                         </>
                       ) : (
                         <p>
-                          <Link href="/auth?callbackUrl=/cart" className="font-semibold text-[#7c3aed] underline underline-offset-2">
+                          <Link href="/auth?callbackUrl=/cart" className="font-semibold text-[#111114] underline underline-offset-2">
                             Sign in
                           </Link>{' '}
                           to earn {pointsEarned.toLocaleString()} points on this order
@@ -665,13 +672,13 @@ export default function CartPage() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
-                    className="flex items-start gap-3 rounded-2xl border border-[#ece3fb] bg-[#faf7ff] p-4"
+                    className="flex items-start gap-3 rounded-xl bg-[#f6f5f2] p-4"
                   >
-                    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white" style={{ background: GRADIENT }}>
+                    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white" style={{ background: ACCENT }}>
                       <Sparkles size={14} />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-semibold text-[#7c3aed]">Routine advice</p>
+                      <p className="text-[12px] font-semibold text-[#111114]">Routine advice</p>
                       <p className="mt-1 text-[13.5px] leading-relaxed text-[#2a2a31]">{aiAdvice}</p>
                     </div>
                     <button
@@ -694,7 +701,7 @@ export default function CartPage() {
                     disabled={isAiLoading || visibleItems.length === 0}
                     className={`inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#e5e5ea] bg-white text-[13px] font-medium text-[#2a2a31] hover:border-[#c8c8cf] hover:bg-[#fafafb] disabled:opacity-50 transition-colors ${focusRing}`}
                   >
-                    <Sparkles size={14} className={`text-[#9869f7] ${isAiLoading ? 'motion-safe:animate-pulse' : ''}`} />
+                    <Sparkles size={14} style={{ color: ACCENT }} className={isAiLoading ? 'motion-safe:animate-pulse' : ''} />
                     {isAiLoading ? 'Building your routine advice…' : 'Get routine advice for your bag'}
                   </motion.button>
                 )}
@@ -708,7 +715,7 @@ export default function CartPage() {
 
         {/* ── Mobile checkout bar ── */}
         <div
-          className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-[#e5e5ea] bg-white/95 backdrop-blur-md"
+          className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-[#ececec] bg-white"
           style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
         >
           {hasStockIssues && (
@@ -725,8 +732,8 @@ export default function CartPage() {
               type="button"
               onClick={handleCheckout}
               disabled={!canCheckout}
-              className="flex-1 h-[52px] rounded-full flex items-center justify-center gap-2 text-[15px] font-semibold text-white disabled:opacity-40 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#9869f7]"
-              style={{ background: GRADIENT, boxShadow: '0 6px 20px rgba(152,105,247,.30)' }}
+              className="flex-1 h-[52px] rounded-xl flex items-center justify-center gap-2 text-[15px] font-semibold text-white disabled:opacity-40 transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#111114]"
+              style={{ background: ACTION }}
             >
               {checkoutLabel}
               <ArrowRight size={17} />

@@ -24,7 +24,7 @@ export function FreeShippingNote() {
 
   return (
     <section aria-label="Delivery" className="bg-white border-b border-gray-100">
-      <Container className="py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <Container wide className="py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="w-8 h-8 shrink-0 rounded-full bg-gray-100 flex items-center justify-center">
           {needed === 0
             ? <Check size={16} strokeWidth={2} style={{ color: LAVENDER }} />

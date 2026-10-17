@@ -516,6 +516,15 @@ body {
   .sp-globe-ring { display: none; }
 }
 
+/* Admin on phones: wide tables scroll sideways inside their card instead of
+   pushing the page off-screen (the packing slip keeps its print layout). */
+@media (max-width: 767px) {
+  .sp-admin main table:not(.items-table) { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sp-admin main table:not(.items-table) th,
+  .sp-admin main table:not(.items-table) td { white-space: nowrap; }
+  .sp-admin main img, .sp-admin main video { max-width: 100%; }
+}
+
 /* Live visitors pulse indicator (Shopify-style) */
 .sp-live-ring {
   position: relative;

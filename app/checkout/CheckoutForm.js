@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { toast } from 'react-toastify';
-import { Lock, Loader2 } from 'lucide-react';
 
 const CARD_STYLE = {
+  // No Stripe Link badge inside the field — one less thing to explain at checkout
+  disableLink: true,
   style: {
     base: {
       color: '#111114',
@@ -14,7 +15,7 @@ const CARD_STYLE = {
       // 16px keeps iOS Safari from zooming the page when the card field is focused
       fontSize: '16px',
       '::placeholder': { color: '#a1a1aa' },
-      iconColor: '#9869f7',
+      iconColor: '#111114',
     },
     invalid: {
       color: '#dc2626',
@@ -23,7 +24,12 @@ const CARD_STYLE = {
   },
 };
 
-const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = 'Pay now', clientSecret = null }) => {
+/**
+ * The card number field only. The checkout page's main button submits it
+ * (`<button type="submit" form={formId}>`), and `onStatusChange` tells the page
+ * when the card is complete and while a payment is processing.
+ */
+const CheckoutForm = ({ onSuccessfulPayment, clientSecret = null, formId = 'card-payment-form', onStatusChange }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -31,9 +37,13 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = 'Pay now', clientSecr
   const [isFocused, setIsFocused] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
+  useEffect(() => {
+    onStatusChange?.({ ready: !!stripe && isComplete, processing: isProcessing });
+  }, [stripe, isComplete, isProcessing, onStatusChange]);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || isProcessing) return;
 
     setIsProcessing(true);
     setErrorMessage(null);
@@ -65,15 +75,14 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = 'Pay now', clientSecr
     }
   };
 
-  let fieldState = 'border-[#e5e5ea]';
+  let fieldState = 'border-[#d9d9de]';
   if (errorMessage) fieldState = 'border-red-300 ring-2 ring-red-100';
-  else if (isFocused) fieldState = 'border-[#9869f7] ring-2 ring-[#9869f7]/15';
+  else if (isFocused) fieldState = 'border-[#111114] ring-2 ring-[#111114]/10';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form id={formId} onSubmit={handleSubmit}>
       <div>
-        <p className="text-[12px] font-medium text-[#5a5a64]">Card details</p>
-        <div className={`mt-1.5 rounded-xl border bg-white px-3.5 py-[15px] transition-[border-color,box-shadow] duration-150 ${fieldState}`}>
+        <div className={`rounded-xl border bg-white px-4 py-[15px] transition-[border-color,box-shadow] duration-150 ${fieldState}`}>
           <CardElement
             options={CARD_STYLE}
             onFocus={() => setIsFocused(true)}
@@ -88,27 +97,6 @@ const CheckoutForm = ({ onSuccessfulPayment, buttonLabel = 'Pay now', clientSecr
           <p role="alert" className="mt-2 text-[12px] font-medium text-red-600">{errorMessage}</p>
         )}
       </div>
-
-      <button
-        type="submit"
-        disabled={!stripe || isProcessing || !isComplete}
-        className="flex h-14 w-full items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-white transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9869f7] focus-visible:ring-offset-2"
-        style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)', boxShadow: '0 6px 22px rgba(152,105,247,.32)' }}
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 size={17} className="animate-spin" />
-            Processing payment…
-          </>
-        ) : (
-          buttonLabel
-        )}
-      </button>
-
-      <p className="flex items-center justify-center gap-1.5 text-[11.5px] text-[#8a8a93]">
-        <Lock size={12} />
-        Encrypted and processed securely by Stripe
-      </p>
     </form>
   );
 };

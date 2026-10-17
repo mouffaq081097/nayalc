@@ -5,14 +5,19 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import PageLoader from '@/app/components/PageLoader';
 import { canOpenPage, hasRole } from '@/lib/erp/roles';
-import { PO_STATUS, PR_STATUS, poNumber, prNumber } from '@/lib/erp/documents';
+import { CURRENCIES, PO_STATUS, PR_STATUS, poNumber, prNumber } from '@/lib/erp/documents';
 import LinesEditor, { linesPayload } from './LinesEditor';
 import {
   ActionButton, Dialog, ErrorBanner, FieldLabel, MetaRow, Notice, PageHeader, SectionCard, StatusBadge, SupplierSelect,
   api, fmtDate, subdued, text, toDateInput, usePurchasingProducts, useSuppliers,
 } from './purchasingUi';
 
-const toLines = (items) => items.map(i => ({ ...i, quantity: String(i.quantity), note: i.note || '' }));
+const toLines = (items) => items.map(i => ({
+  ...i,
+  quantity: String(i.quantity),
+  unit_price: i.unit_price == null ? '' : String(Number(i.unit_price)),
+  note: i.note || '',
+}));
 
 /** id = null for a new requisition */
 export default function RequisitionView({ id }) {
@@ -21,7 +26,7 @@ export default function RequisitionView({ id }) {
   const suppliers = useSuppliers();
   const [access, setAccess] = useState(null);
   const [pr, setPr] = useState(null);
-  const [form, setForm] = useState({ supplier_id: null, needed_by: '', notes: '' });
+  const [form, setForm] = useState({ supplier_id: null, needed_by: '', notes: '', currency: 'AED' });
   const [lines, setLines] = useState([]);
   const [error, setError] = useState('');
   const [lineError, setLineError] = useState('');
@@ -34,7 +39,7 @@ export default function RequisitionView({ id }) {
     if (data.requisition) {
       const r = data.requisition;
       setPr(r);
-      setForm({ supplier_id: r.supplier_id, needed_by: toDateInput(r.needed_by), notes: r.notes || '' });
+      setForm({ supplier_id: r.supplier_id, needed_by: toDateInput(r.needed_by), notes: r.notes || '', currency: r.currency || 'AED' });
       setLines(toLines(r.items));
     }
   };
@@ -49,7 +54,7 @@ export default function RequisitionView({ id }) {
     if (new URLSearchParams(window.location.search).get('from') !== 'backorders') return;
     setLines(prev => (prev.length ? prev : products
       .filter(p => p.owed > p.on_order)
-      .map(p => ({ product_id: p.id, product_name: p.name, quantity: String(p.owed - p.on_order), note: 'Owed to pre-orders' }))));
+      .map(p => ({ product_id: p.id, product_name: p.name, quantity: String(p.owed - p.on_order), unit_price: '', note: 'Owed to pre-orders' }))));
   }, [id, products]);
 
   if (!access && !error) return <PageLoader />;
@@ -61,13 +66,13 @@ export default function RequisitionView({ id }) {
   const status = pr?.status;
 
   const payload = () => {
-    const { items, error: msg } = linesPayload(lines);
+    const { items, error: msg } = linesPayload(lines, { withPrice: true });
     if (msg) {
       setLineError(msg);
       throw new Error(msg);
     }
     setLineError('');
-    return { supplier_id: form.supplier_id, needed_by: form.needed_by || null, notes: form.notes, items };
+    return { supplier_id: form.supplier_id, needed_by: form.needed_by || null, notes: form.notes, currency: form.currency, items };
   };
 
   const save = async (submit) => {
@@ -168,8 +173,22 @@ export default function RequisitionView({ id }) {
       )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] items-start">
-        <SectionCard title="Products" hint={editable ? 'What is needed and how many. Stock, pre-orders and units already on order are shown under each product.' : undefined}>
-          <LinesEditor lines={lines} onChange={setLines} products={products} readOnly={!editable} error={lineError} />
+        <SectionCard
+          title="Products"
+          hint={editable ? 'What is needed, how many and the expected price for each. Stock, pre-orders and units already on order are shown under each product.' : undefined}
+          action={editable ? (
+            // The currency of the prices, chosen right where they're typed
+            <label className="flex shrink-0 items-center gap-2 text-[13px] whitespace-nowrap" style={text}>
+              Prices in
+              <select id="pr_currency" className="sp-input" style={{ width: 88 }} value={form.currency} onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}>
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </label>
+          ) : (
+            <span className="shrink-0 text-[13px] whitespace-nowrap" style={subdued}>Prices in {pr?.currency || 'AED'}</span>
+          )}
+        >
+          <LinesEditor lines={lines} onChange={setLines} products={products} withPrice withNote currency={form.currency} readOnly={!editable} error={lineError} />
         </SectionCard>
 
         <div className="space-y-4">
@@ -178,7 +197,11 @@ export default function RequisitionView({ id }) {
               <div className="space-y-4">
                 <div>
                   <FieldLabel htmlFor="supplier" optional>Preferred supplier</FieldLabel>
-                  <SupplierSelect id="supplier" suppliers={suppliers} value={form.supplier_id} allowNone onChange={v => setForm(f => ({ ...f, supplier_id: v }))} />
+                  <SupplierSelect
+                    id="supplier" suppliers={suppliers} value={form.supplier_id} allowNone
+                    onChange={v => setForm(f => ({ ...f, supplier_id: v, currency: (suppliers || []).find(s => s.id === v)?.currency || f.currency }))}
+                  />
+                  <p className="text-[12px] mt-1.5" style={subdued}>Choosing a supplier switches the prices to their currency. You can still change it above the products.</p>
                 </div>
                 <div>
                   <FieldLabel htmlFor="needed_by" optional>Needed by</FieldLabel>
@@ -248,7 +271,7 @@ export default function RequisitionView({ id }) {
           <FieldLabel htmlFor="convert_supplier">Supplier</FieldLabel>
           <SupplierSelect id="convert_supplier" suppliers={suppliers} value={convertSupplier} onChange={setConvertSupplier} />
           <p className="text-[12px] mt-1.5" style={subdued}>
-            The PO is created as a draft in the supplier&apos;s currency, with each product at the last price this supplier charged. Check it before sending.
+            The PO is created as a draft in the supplier&apos;s currency. Each product keeps this requisition&apos;s price when the supplier bills in {pr?.currency || 'AED'}; otherwise it takes the last price this supplier charged. Check it before sending.
             {suppliers?.length === 0 && <> <Link href="/admin/purchasing/suppliers" className="underline">Add a supplier</Link> first.</>}
           </p>
         </div>

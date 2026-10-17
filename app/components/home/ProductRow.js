@@ -13,7 +13,7 @@ function Arrow({ dir, disabled, onClick }) {
       onClick={onClick}
       disabled={disabled}
       aria-label={dir === 'prev' ? 'Previous products' : 'Next products'}
-      className={`hidden md:flex absolute z-10 top-[38%] -translate-y-1/2 ${dir === 'prev' ? '-left-4 xl:-left-14' : '-right-4 xl:-right-14'} xl:bg-transparent xl:shadow-none w-10 h-10 items-center justify-center rounded-full text-gray-800 bg-white shadow-[0_2px_12px_rgba(31,18,53,0.12)] transition-opacity hover:bg-[#f5f1fd] disabled:opacity-0 disabled:pointer-events-none`}
+      className={`hidden md:flex absolute z-10 top-[38%] -translate-y-1/2 ${dir === 'prev' ? '-left-4 2xl:-left-14' : '-right-4 2xl:-right-14'} 2xl:bg-transparent 2xl:shadow-none w-10 h-10 items-center justify-center rounded-full text-gray-800 bg-white shadow-[0_2px_12px_rgba(31,18,53,0.12)] transition-opacity hover:bg-[#f5f1fd] disabled:opacity-0 disabled:pointer-events-none`}
     >
       <Icon size={20} strokeWidth={1.5} />
     </button>
@@ -48,14 +48,14 @@ export function ProductRow({ products, tone = 'light' }) {
 
   if (!products.length) return null;
 
-  const basis = 'basis-[47%] sm:basis-[31%] md:basis-[calc((100%-30px)/4)]';
+  const basis = 'basis-[47%] sm:basis-[31%] md:basis-[calc((100%-48px)/4)]';
 
   return (
     <div className="relative">
       <div
         ref={scroller}
         onScroll={update}
-        className="flex gap-2 md:gap-2.5 overflow-x-auto snap-x snap-mandatory scroll-px-4 sm:scroll-px-0 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-2 md:gap-4 overflow-x-auto snap-x snap-mandatory scroll-px-4 sm:scroll-px-0 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {products.map((p) => (
           <div key={p.id} className={`${basis} shrink-0 snap-start`}>
