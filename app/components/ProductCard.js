@@ -196,7 +196,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             </span>
           )}
 
-          <div className="relative flex-1 min-h-0 mx-[8%] mt-3.5 mb-3 pointer-events-none">
+          <div className="relative flex-1 min-h-0 -mx-1 md:-mx-2 mt-2 mb-2 pointer-events-none">
             {imgError ? (
               <div className="w-full h-full flex items-center justify-center">
                 <Sparkles size={30} className="text-gray-300" strokeWidth={1} />
