@@ -109,8 +109,8 @@ export function HomeProductCard({ product, tone = 'light', variant = 'panel' }) 
         {gallery ? (
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[#111114] text-[24px] md:text-[20px] lg:text-[24px] leading-[1.2] tracking-tight line-clamp-2">{cardName(product.name)}</p>
-              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] lg:text-[17px] text-[#111114]">
+              <p className="text-[#111114] text-[24px] md:text-[20px] xl:text-[24px] leading-[1.2] tracking-tight line-clamp-2">{cardName(product.name)}</p>
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] xl:text-[17px] text-[#111114]">
                 {formatAED(price)}
                 {onSale && <span className="text-[13px] text-[#9a9aa2] line-through">{formatAED(was)}</span>}
                 {tag && (

@@ -436,7 +436,7 @@ export default function BrandClient({ brand: serverBrand }) {
 
           {/* Products */}
           {isLoading ? (
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5">
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-5">
               {Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)}
             </div>
           ) : filteredAndSortedProducts.length === 0 ? (
@@ -477,7 +477,7 @@ export default function BrandClient({ brand: serverBrand }) {
                 className={
                   viewMode === 'list'
                     ? 'flex flex-col gap-4'
-                    : 'grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-5'
+                    : 'grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-5'
                 }
               >
                 <AnimatePresence mode="popLayout">
