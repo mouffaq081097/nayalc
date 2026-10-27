@@ -21,7 +21,7 @@ function Grid({ products, tone, variant, desktopMax }) {
   return (
     <div className="flex flex-wrap justify-center gap-2 md:gap-4">
       {products.map((p, i) => (
-        <div key={p.id} className={`w-[calc(50%-4px)] md:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/4)]${desktopMax != null && i >= desktopMax ? ' lg:hidden' : ''}`}>
+        <div key={p.id} className={`w-[calc(50%-4px)] md:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/4)] ${desktopMax != null && i >= desktopMax ? 'lg:hidden' : ''}`}>
           <HomeProductCard product={p} tone={tone} variant={variant} />
         </div>
       ))}
