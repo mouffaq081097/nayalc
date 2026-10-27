@@ -62,7 +62,7 @@ function SearchList({ items, onPick }) {
 }
 
 // Fixed header height (also --header-h in globals.css, for layouts that offset around it)
-export const HEADER_H = { mobile: 70, desktop: 88 };
+export const HEADER_H = { mobile: 56, desktop: 64 };
 
 const Header = forwardRef((_, ref) => {
   const { openSignIn } = useSignIn();

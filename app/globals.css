@@ -3,7 +3,7 @@
 :root {
   /* ── Header ─────────────────────────────────────────────────────── */
   /* Height of the fixed storefront header (HEADER_H in app/components/Header.js) */
-  --header-h: 70px;
+  --header-h: 56px;
 
   /* ── Brand ─────────────────────────────────────────────────────── */
   --brand-purple-1: #c087fc;
@@ -635,5 +635,5 @@ body {
 
 /* Desktop header height — after every :root block so it wins */
 @media (min-width: 768px) {
-  :root { --header-h: 88px; }
+  :root { --header-h: 64px; }
 }
