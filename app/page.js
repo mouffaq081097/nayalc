@@ -5,6 +5,7 @@ import { CampaignBanner } from './components/home/CampaignBanner';
 import { BestSellers, BrandProducts, BuyAgainShelf, RecentlyViewedShelf } from './components/home/HomeShelves';
 import { FeatureBanner, BrandPhotoBanner } from './components/home/FeatureBanner';
 import { ShopByConcern } from './components/home/ShopByConcern';
+import { CategoryStrip } from './components/home/CategoryStrip';
 import { JournalSection } from './components/JournalSection';
 import { StoryVideos } from './components/home/StoryVideos';
 import { SocialFeed } from './components/SocialFeed';
@@ -34,6 +35,9 @@ export default async function HomePage() {
         // help (shop by concern) follows the GERnétic banner. The footer (Footer.js) closes with "Glow with Naya Lumière".
         <div className="flex flex-col bg-white min-h-screen">
             <HeroSection dbSlides={dbSlides} />
+
+            {/* Collections at a glance, right under the hero */}
+            <CategoryStrip />
 
             {/* Only with items in the bag */}
             <FreeShippingNote />
