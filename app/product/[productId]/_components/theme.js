@@ -1,4 +1,4 @@
-import { headingFont } from '../../../components/home/SectionHeading';
+import { headingFont } from '../../../components/home/headingFont';
 
 // Product page palette — taken from the homepage sections (BestSellers,
 // Categories, HeroSection) so the two read as one store:

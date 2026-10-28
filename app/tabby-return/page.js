@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 import { CheckCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { useT } from '../context/LocaleContext';
 
 const glass = {
   background: 'rgba(255,255,255,0.72)',
@@ -15,6 +16,7 @@ function TabbyReturn() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { clearCart } = useCart();
+  const t = useT();
 
   const [phase, setPhase] = useState('placing'); // placing | success | error
   const [errorMsg, setErrorMsg] = useState('');
@@ -75,10 +77,11 @@ function TabbyReturn() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, paymentId]);
 
+  // Messages are kept in English and translated here, so they follow the language once it loads
   const phaseConfig = {
-    placing:   { Icon: Loader2,     spin: true,  color: '#7e69e6', title: 'Placing Order',      msg: 'Confirming your Tabby payment and creating your order…' },
-    success:   { Icon: CheckCircle, spin: false, color: '#16a34a', title: 'Order Placed!',      msg: 'Redirecting to your order…' },
-    error:     { Icon: XCircle,     spin: false, color: '#dc2626', title: 'Payment Issue',      msg: errorMsg },
+    placing:   { Icon: Loader2,     spin: true,  color: '#7e69e6', title: 'Placing order',      msg: 'Confirming your Tabby payment and creating your order…' },
+    success:   { Icon: CheckCircle, spin: false, color: '#16a34a', title: 'Order placed!',      msg: 'Redirecting to your order…' },
+    error:     { Icon: XCircle,     spin: false, color: '#dc2626', title: 'Payment issue',      msg: errorMsg },
   };
 
   const cfg = phaseConfig[phase];
@@ -86,8 +89,8 @@ function TabbyReturn() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#ffffff' }}>
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] rounded-full blur-[100px]" style={{ background: 'rgba(196,167,254,0.15)' }} />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[35%] h-[35%] rounded-full blur-[90px]"  style={{ background: 'rgba(216,180,254,0.1)' }} />
+        <div className="absolute top-[-10%] start-[-5%] w-[40%] h-[40%] rounded-full blur-[100px]" style={{ background: 'rgba(196,167,254,0.15)' }} />
+        <div className="absolute bottom-[-10%] end-[-5%] w-[35%] h-[35%] rounded-full blur-[90px]"  style={{ background: 'rgba(216,180,254,0.1)' }} />
       </div>
 
       <div className="relative z-10 w-full max-w-md text-center space-y-6 rounded-3xl p-10" style={glass}>
@@ -105,8 +108,8 @@ function TabbyReturn() {
         />
 
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#3b0764' }}>{cfg.title}</h1>
-          <p className="text-[13px] mt-2" style={{ color: 'rgba(59,7,100,0.55)' }}>{cfg.msg}</p>
+          <h1 className="text-xl font-bold" style={{ color: '#3b0764' }}>{t(cfg.title)}</h1>
+          <p className="text-[13px] mt-2" style={{ color: 'rgba(59,7,100,0.55)' }}>{t(cfg.msg)}</p>
         </div>
 
         {phase === 'error' && (
@@ -115,14 +118,14 @@ function TabbyReturn() {
               onClick={() => router.push('/checkout')}
               className="cl-gradient-btn w-full py-3.5 rounded-full text-[14px] font-semibold"
             >
-              Return to Checkout
+              {t('Return to checkout')}
             </button>
             <button
               onClick={() => router.push('/cart')}
               className="w-full py-3 rounded-full text-[12px] font-semibold flex items-center justify-center gap-2"
               style={{ border: '1px solid rgba(216,180,254,0.45)', color: 'rgb(126,105,230)' }}
             >
-              <ArrowLeft size={13} /> Back to Cart
+              <ArrowLeft size={13} className="flip-rtl" /> {t('Back to bag')}
             </button>
           </div>
         )}

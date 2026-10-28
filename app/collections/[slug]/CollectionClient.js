@@ -7,6 +7,7 @@ import ProductCard from '../../components/ProductCard';
 import StoreCategoryNav from '../../components/StoreCategoryNav';
 import { Filter, Search, X, Check, ArrowRight, Minus, Plus as PlusIcon, Grid2X2, List, ChevronDown } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import { useLocale, useT } from '../../context/LocaleContext';
 import ProductCardSkeleton from '../../components/ProductCardSkeleton';
 import { Slider } from '../../components/ui/slider';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,6 +35,7 @@ const SidebarFilters = ({
   allProducts,
   compact = false,
 }) => {
+  const t = useT();
   const [localPriceRange, setLocalPriceRange] = useState(priceRange);
   const [showAllBrands, setShowAllBrands] = useState(false);
 
@@ -66,7 +68,7 @@ const SidebarFilters = ({
       active ? 'bg-gray-900 border-gray-900' : 'border-gray-300 bg-white'
     }`;
   const itemText = (active) =>
-    `ml-2.5 text-[12px] tracking-wide transition-colors ${
+    `ms-2.5 text-[12px] tracking-wide transition-colors ${
       active ? 'text-gray-900 font-semibold' : 'text-gray-500 group-hover/item:text-gray-900'
     }`;
 
@@ -74,7 +76,7 @@ const SidebarFilters = ({
     <div className={compact ? "space-y-0" : "space-y-0"}>
       {/* Header */}
       <div className="flex items-center justify-between pb-5 mb-5 border-b border-gray-100">
-        <span className="text-[11px] uppercase tracking-[0.25em] font-bold text-gray-900">Filters</span>
+        <span className="text-[11px] uppercase tracking-[0.25em] font-bold text-gray-900">{t('Filters')}</span>
         <button
           onClick={clearFilters}
           className="text-[10px] uppercase tracking-widest text-[#6b6b73] hover:text-gray-900 transition-colors font-medium"
@@ -88,8 +90,8 @@ const SidebarFilters = ({
         {/* Skin Concern */}
         {concerns && concerns.length > 0 && (
           <AccordionItem value="concern" className="border-b border-gray-100">
-            <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900 flex-1 text-left">
-              Skin concern
+            <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900 flex-1 text-start">
+              {t('Skin concern')}
             </AccordionTrigger>
             <AccordionContent>
               <div className="pb-5 space-y-0">
@@ -108,7 +110,7 @@ const SidebarFilters = ({
                       <div className={checkBox(selectedConcerns.includes(con.id))}>
                         {selectedConcerns.includes(con.id) && <Check size={9} className="text-white" strokeWidth={3.5} />}
                       </div>
-                      <span className={itemText(selectedConcerns.includes(con.id))}>{con.name}</span>
+                      <span className={itemText(selectedConcerns.includes(con.id))}>{t(con.name)}</span>
                     </div>
                     <span className="text-[10px] text-gray-300 group-hover/item:text-gray-500 transition-colors font-medium">
                       {concernCounts[con.id] || 0}
@@ -122,8 +124,8 @@ const SidebarFilters = ({
 
         {/* Brand */}
         <AccordionItem value="brand" className="border-b border-gray-100">
-          <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900 flex-1 text-left">
-            Brand
+          <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900 flex-1 text-start">
+            {t('Brand')}
           </AccordionTrigger>
           <AccordionContent>
             <div className="pb-5 space-y-0">
@@ -155,7 +157,7 @@ const SidebarFilters = ({
                   className="mt-2 text-[10px] uppercase tracking-widest text-[#6b6b73] hover:text-gray-900 transition-colors font-medium flex items-center gap-1.5"
                 >
                   {showAllBrands ? <Minus size={10} /> : <PlusIcon size={10} />}
-                  {showAllBrands ? 'Show less' : `View all (${brands.length})`}
+                  {showAllBrands ? t('Show less') : t('View all ({n})', { n: brands.length })}
                 </button>
               )}
             </div>
@@ -165,7 +167,7 @@ const SidebarFilters = ({
         {/* Price */}
         <AccordionItem value="price" className="border-b border-gray-100">
           <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900">
-            Price (AED)
+            {t('Price (AED)')}
           </AccordionTrigger>
           <AccordionContent>
             <div className="pb-5 pt-2 px-1">
@@ -178,12 +180,12 @@ const SidebarFilters = ({
               />
               <div className="flex items-center gap-2">
                 <div className="flex-1 border border-gray-200 rounded-[8px] px-3 py-2">
-                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">Min</div>
+                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">{t('Min')}</div>
                   <div className="text-[12px] font-semibold text-gray-900">AED {localPriceRange[0]}</div>
                 </div>
                 <span className="text-gray-300 text-sm">—</span>
                 <div className="flex-1 border border-gray-200 rounded-[8px] px-3 py-2">
-                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">Max</div>
+                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">{t('Max')}</div>
                   <div className="text-[12px] font-semibold text-gray-900">AED {localPriceRange[1]}</div>
                 </div>
               </div>
@@ -194,7 +196,7 @@ const SidebarFilters = ({
         {/* In Stock */}
         <AccordionItem value="stock" className="border-none">
           <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900">
-            Availability
+            {t('Availability')}
           </AccordionTrigger>
           <AccordionContent>
             <div className="pb-5">
@@ -206,7 +208,7 @@ const SidebarFilters = ({
                   <div className={checkBox(showInStock)}>
                     {showInStock && <Check size={9} className="text-white" strokeWidth={3.5} />}
                   </div>
-                  <span className={itemText(showInStock)}>In stock only</span>
+                  <span className={itemText(showInStock)}>{t('In stock only')}</span>
                 </div>
               </div>
             </div>
@@ -221,6 +223,7 @@ const SidebarFilters = ({
 /* ─── Hero Banner ─────────────────────────────────────────────── */
 const CategoryHero = ({ category }) => {
   if (!category) return null;
+  // ListingHeader translates the crumbs, title and subtitle
   return (
     <ListingHeader
       crumbs={[{ label: 'Home', href: '/' }, { label: 'Shop', href: '/collections' }, { label: category.name }]}
@@ -236,6 +239,7 @@ const CategoryHero = ({ category }) => {
 export default function CollectionClient({ category: serverCategory }) {
   const { slug } = useParams();
   const { products: allProducts, categories: appCategories, concerns, fetchProducts } = useAppContext();
+  const { t, dir: textDir } = useLocale();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
   const [isLoading, setIsLoading] = useState(true);
@@ -317,10 +321,11 @@ export default function CollectionClient({ category: serverCategory }) {
       const con = concerns?.find(c => c.id === cid);
       return con ? { label: con.name, remove: () => setSelectedConcerns(prev => prev.filter(x => x !== cid)) } : null;
     }).filter(Boolean),
-    ...(showInStock ? [{ label: 'In stock', remove: () => setShowInStock(false) }] : []),
+    ...(showInStock ? [{ label: t('In stock'), remove: () => setShowInStock(false) }] : []),
   ];
 
   const hasActiveFilters = activeChips.length > 0 || searchTerm;
+  const countLabel = t(filteredAndSortedProducts.length === 1 ? '{n} product' : '{n} products', { n: filteredAndSortedProducts.length });
 
   return (
     <div className="bg-white min-h-screen text-gray-900 overflow-x-hidden">
@@ -338,7 +343,7 @@ export default function CollectionClient({ category: serverCategory }) {
                 : 'bg-white border-gray-200 text-gray-700 hover:border-gray-700'
             }`}
           >
-            All
+            {t('All')}
           </button>
           {brands.map(brand => (
             <button
@@ -386,7 +391,7 @@ export default function CollectionClient({ category: serverCategory }) {
           {/* Toolbar */}
           <div className="flex items-center justify-between gap-3 pb-4 mb-5 border-b border-gray-100 flex-wrap">
             <div className="text-[12px] text-gray-500">
-              <span className="font-semibold text-gray-900">{filteredAndSortedProducts.length} products</span>
+              <span className="font-semibold text-gray-900">{countLabel}</span>
               {currentCategory && <span> · {currentCategory.name}</span>}
             </div>
             <div className="flex items-center gap-3">
@@ -396,7 +401,7 @@ export default function CollectionClient({ category: serverCategory }) {
                 className="lg:hidden flex items-center gap-1.5 h-9 px-4 bg-white border border-gray-200 rounded-full text-[11px] font-semibold text-gray-700 hover:border-gray-700 transition-all"
               >
                 <Filter size={12} />
-                Filters
+                {t('Filters')}
                 {activeChips.length > 0 && (
                   <span className="w-4 h-4 rounded-full bg-gray-900 text-white text-[9px] flex items-center justify-center font-bold">
                     {activeChips.length}
@@ -408,18 +413,19 @@ export default function CollectionClient({ category: serverCategory }) {
                 <select
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value)}
-                  className="h-9 pl-3 pr-8 border border-gray-200 rounded-full text-[11px] font-medium text-gray-700 bg-white appearance-none cursor-pointer focus:outline-none focus:border-gray-700 transition-colors"
+                  aria-label={t('Sort products')}
+                  className="h-9 ps-3 pe-8 border border-gray-200 rounded-full text-[11px] font-medium text-gray-700 bg-white appearance-none cursor-pointer focus:outline-none focus:border-gray-700 transition-colors"
                   style={{
                     backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a5a64' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>")`,
                     backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 10px center',
+                    backgroundPosition: textDir === 'rtl' ? 'left 10px center' : 'right 10px center',
                   }}
                 >
-                  <option value="featured">Featured</option>
-                  <option value="newest">Newest first</option>
-                  <option value="rating">Best rated</option>
-                  <option value="price-low">Price · low to high</option>
-                  <option value="price-high">Price · high to low</option>
+                  <option value="featured">{t('Featured')}</option>
+                  <option value="newest">{t('Newest first')}</option>
+                  <option value="rating">{t('Best rated')}</option>
+                  <option value="price-low">{t('Price · low to high')}</option>
+                  <option value="price-high">{t('Price · high to low')}</option>
                 </select>
               </div>
               {/* View toggle */}
@@ -429,7 +435,7 @@ export default function CollectionClient({ category: serverCategory }) {
                   className={`w-8 h-7 flex items-center justify-center rounded-full transition-all ${
                     viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
                   }`}
-                  aria-label="Grid view"
+                  aria-label={t('Grid view')}
                 >
                   <Grid2X2 size={13} />
                 </button>
@@ -438,7 +444,7 @@ export default function CollectionClient({ category: serverCategory }) {
                   className={`w-8 h-7 flex items-center justify-center rounded-full transition-all ${
                     viewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
                   }`}
-                  aria-label="List view"
+                  aria-label={t('List view')}
                 >
                   <List size={13} />
                 </button>
@@ -454,11 +460,11 @@ export default function CollectionClient({ category: serverCategory }) {
                   key={i}
                   className="inline-flex items-center gap-1.5 h-7 px-3 border border-gray-200 rounded-full text-[11px] font-medium text-gray-700"
                 >
-                  {chip.label}
+                  {t(chip.label)}
                   <button
                     onClick={chip.remove}
                     className="text-[#6b6b73] hover:text-gray-900 transition-colors leading-none"
-                    aria-label={`Remove ${chip.label}`}
+                    aria-label={t('Remove filter {name}', { name: t(chip.label) })}
                   >
                     ×
                   </button>
@@ -468,7 +474,7 @@ export default function CollectionClient({ category: serverCategory }) {
                 onClick={clearFilters}
                 className="text-[11px] font-semibold text-purple-600 hover:text-purple-800 transition-colors"
               >
-                Clear all
+                {t('Clear all')}
               </button>
             </div>
           )}
@@ -487,13 +493,13 @@ export default function CollectionClient({ category: serverCategory }) {
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 border border-gray-100 shadow-sm">
                 <Search size={22} strokeWidth={1.5} className="text-gray-300" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-2">No products found</h3>
-              <p className="text-sm text-gray-500 mb-6">Try adjusting your filters</p>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-2">{t('No products found')}</h3>
+              <p className="text-sm text-gray-500 mb-6">{t('Try adjusting your filters')}</p>
               <button
                 onClick={clearFilters}
                 className="px-8 py-3 bg-gray-900 text-white rounded-full text-[12px] font-semibold hover:bg-purple-700 transition-all"
               >
-                Clear filters
+                {t('Clear filters')}
               </button>
             </motion.div>
           ) : (
@@ -550,15 +556,15 @@ export default function CollectionClient({ category: serverCategory }) {
                       />
                     </div>
                     <span className="text-[10px] uppercase tracking-[0.25em] text-[#6b6b73] font-medium">
-                      {displayedProducts.length} of {filteredAndSortedProducts.length}
+                      {t('{n} of {total}', { n: displayedProducts.length, total: filteredAndSortedProducts.length })}
                     </span>
                   </div>
                   <button
                     onClick={() => setVisibleCount(prev => prev + 12)}
                     className="group flex items-center gap-2 px-7 py-3 bg-gray-900 text-white rounded-full text-[12px] font-semibold hover:bg-purple-700 transition-all shadow-sm active:scale-95"
                   >
-                    Show more
-                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                    {t('Show more')}
+                    <ArrowRight size={13} className="flip-rtl group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform" />
                   </button>
                 </div>
               )}
@@ -579,22 +585,23 @@ export default function CollectionClient({ category: serverCategory }) {
               onClick={() => setIsFilterOpen(false)}
             />
             <motion.div
-              initial={{ x: '100%' }}
+              initial={{ x: textDir === 'rtl' ? '-100%' : '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              exit={{ x: textDir === 'rtl' ? '-100%' : '100%' }}
               transition={{ type: 'spring', damping: 35, stiffness: 300 }}
-              className="absolute right-0 top-0 bottom-0 w-[88%] max-w-sm bg-white shadow-2xl overflow-y-auto rounded-l-3xl flex flex-col"
+              className="absolute end-0 top-0 bottom-0 w-[88%] max-w-sm bg-white shadow-2xl overflow-y-auto rounded-s-3xl flex flex-col"
             >
               <div className="px-7 py-6 border-b border-gray-100 sticky top-0 bg-white z-10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t('Filters')}</h2>
                     <p className="text-[10px] uppercase tracking-[0.25em] text-purple-500 font-semibold mt-1">
-                      {filteredAndSortedProducts.length} products
+                      {countLabel}
                     </p>
                   </div>
                   <button
                     onClick={() => setIsFilterOpen(false)}
+                    aria-label={t('Close')}
                     className="w-10 h-10 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center"
                   >
                     <X size={18} strokeWidth={2} />
@@ -626,7 +633,7 @@ export default function CollectionClient({ category: serverCategory }) {
                   onClick={() => setIsFilterOpen(false)}
                   className="w-full bg-gray-900 text-white py-4 rounded-2xl text-[13px] font-semibold hover:bg-purple-700 transition-all active:scale-95"
                 >
-                  Show {filteredAndSortedProducts.length} products
+                  {t(filteredAndSortedProducts.length === 1 ? 'Show {n} product' : 'Show {n} products', { n: filteredAndSortedProducts.length })}
                 </button>
               </div>
             </motion.div>

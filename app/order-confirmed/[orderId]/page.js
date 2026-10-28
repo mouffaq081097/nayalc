@@ -10,16 +10,20 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CONTACT_EMAIL, WHATSAPP_DISPLAY, whatsappUrl } from '@/lib/contact';
 import { useSignIn } from '@/app/context/SignInContext';
+import { useLocale } from '@/app/context/LocaleContext';
 
 /* ── helpers ── */
 const fmtAed = (n) => `AED ${parseFloat(n || 0).toFixed(0)}`;
-function estimatedDelivery(createdAt) {
+function estimatedDelivery(createdAt, locale) {
   const d = new Date(createdAt || Date.now());
   const from = new Date(d); from.setDate(from.getDate() + 3);
   const to   = new Date(d); to.setDate(to.getDate() + 5);
   const opts = { month: 'short', day: 'numeric', year: 'numeric' };
-  return `${from.toLocaleDateString('en-AE', opts)} – ${to.toLocaleDateString('en-AE', opts)}`;
+  // Arabic month names with the Western digits used everywhere else on the site
+  const tag = locale === 'ar' ? 'ar-AE-u-nu-latn' : 'en-AE';
+  return `${from.toLocaleDateString(tag, opts)} – ${to.toLocaleDateString(tag, opts)}`;
 }
+// English keys for t()
 function paymentLabel(method) {
   if (method === 'card')           return 'Credit/Debit Card';
   if (method === 'cashOnDelivery') return 'Cash on Delivery';
@@ -41,6 +45,7 @@ export default function OrderConfirmedPage() {
   const { fetchWithAuth } = useAppContext();
   const { user } = useAuth();
   const { openSignIn } = useSignIn();
+  const { t, rich, locale } = useLocale();
   // A guest checkout arrives with a signed link (?access=…) instead of a session
   const [access, setAccess] = useState(null);
   useEffect(() => { setAccess(new URLSearchParams(window.location.search).get('access') || ''); }, []);
@@ -77,9 +82,9 @@ export default function OrderConfirmedPage() {
   );
   if (error || !order) return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4 px-6">
-      <p className="text-[16px] font-semibold text-[#111114]">Could not load your order.</p>
+      <p className="text-[16px] font-semibold text-[#111114]">{t('Could not load your order.')}</p>
       <button onClick={() => router.push('/account/orders')} className="text-[13px] text-[#9869f7] underline underline-offset-2">
-        View all orders
+        {t('View all orders')}
       </button>
     </div>
   );
@@ -99,6 +104,8 @@ export default function OrderConfirmedPage() {
   const pointsEarned = Math.floor(totalPaid);
   const prevBal      = prevPoints ?? 0;
   const newBal       = prevBal + pointsEarned;
+  const confirmationEmail = order.customerEmail || user?.email;
+  const pts = (n) => t('{n} pts', { n: n.toLocaleString('en-US') });
 
   return (
     <div className="min-h-screen bg-white pb-20">
@@ -127,19 +134,17 @@ export default function OrderConfirmedPage() {
                 >
                   <Check size={28} strokeWidth={3} />
                 </div>
-                <h1 className="text-[28px] font-bold text-[#111114] mb-2">Order Placed!</h1>
+                <h1 className="text-[28px] font-bold text-[#111114] mb-2">{t('Order placed!')}</h1>
                 <p className="text-[14px] text-[#5a5a64] leading-relaxed">
-                  Thank you for your order. We've sent a confirmation email
-                  {order.customerEmail
-                    ? <> to <span className="font-semibold text-[#111114]">{order.customerEmail}</span></>
-                    : user?.email
-                    ? <> to <span className="font-semibold text-[#111114]">{user.email}</span></>
-                    : null
-                  }.
+                  {confirmationEmail
+                    ? rich('Thank you for your order. We’ve sent a confirmation email to {email}.', {
+                      email: <span className="font-semibold text-[#111114]">{confirmationEmail}</span>,
+                    })
+                    : t('Thank you for your order. We’ve sent a confirmation email.')}
                 </p>
                 <div className="inline-flex items-center gap-3 mt-5 px-5 py-2.5 rounded-full border border-[#e5e5ea] bg-[#f9f9fb]">
-                  <span className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-widest">Order</span>
-                  <span className="text-[15px] font-bold text-[#111114] tracking-wide">{orderRef}</span>
+                  <span className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-widest">{t('Order')}</span>
+                  <span className="latin text-[15px] font-bold text-[#111114] tracking-wide" dir="ltr">{orderRef}</span>
                 </div>
               </SCard>
             </motion.div>
@@ -148,14 +153,14 @@ export default function OrderConfirmedPage() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.35 }}>
               <SCard>
                 <div className="px-6 py-4 border-b border-[#e5e5ea]">
-                  <h2 className="text-[16px] font-semibold text-[#111114]">Items Ordered</h2>
+                  <h2 className="text-[16px] font-semibold text-[#111114]">{t('Items ordered')}</h2>
                 </div>
                 {items.length === 0 && (
-                  <p className="px-6 py-5 text-[13px] text-[#8a8a93]">No items found.</p>
+                  <p className="px-6 py-5 text-[13px] text-[#8a8a93]">{t('No items found.')}</p>
                 )}
                 {items.map((item, i) => {
                   const product  = item.product || {};
-                  const name     = product.name || item.name || 'Product';
+                  const name     = product.name || item.name || t('Product');
                   const imageUrl = product.imageUrl || item.imageUrl || null;
                   const price    = parseFloat(item.price || 0);
                   const qty      = item.quantity || 1;
@@ -181,12 +186,12 @@ export default function OrderConfirmedPage() {
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.1em] mb-0.5">
+                        <p className="latin text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.1em] mb-0.5">
                           Naya Lumière
                         </p>
-                        <p className="text-[15px] font-semibold text-[#111114] leading-snug">{name}</p>
+                        <p className="text-[15px] font-semibold text-[#111114] leading-snug"><bdi>{name}</bdi></p>
                         <p className="text-[12px] text-[#8a8a93] mt-0.5">
-                          Qty {qty}
+                          {t('Qty {n}', { n: qty })}
                         </p>
                       </div>
 
@@ -203,20 +208,20 @@ export default function OrderConfirmedPage() {
             {/* Delivery details */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18, duration: 0.35 }}>
               <SCard className="p-6">
-                <h2 className="text-[16px] font-semibold text-[#111114] mb-5">Delivery Details</h2>
+                <h2 className="text-[16px] font-semibold text-[#111114] mb-5">{t('Delivery details')}</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
                   {/* Ship to */}
                   <div>
-                    <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.14em] mb-2">Ship To</p>
+                    <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.14em] mb-2">{t('Ship to')}</p>
                     <div className="space-y-0.5 text-[14px] text-[#2a2a31]">
                       {order.customerName && <p className="font-semibold">{order.customerName}</p>}
                       {addr.addressLine1  && <p>{addr.addressLine1}</p>}
                       {addr.addressLine2  && <p>{addr.addressLine2}</p>}
-                      {addr.city         && <p>{[addr.city, addr.state].filter(Boolean).join(', ')}</p>}
-                      {addr.country      && <p>{addr.country}</p>}
+                      {addr.city         && <p>{[t(addr.city), addr.state].filter(Boolean).join(t(', '))}</p>}
+                      {addr.country      && <p>{t(addr.country)}</p>}
                       {!order.customerName && !addr.addressLine1 && (
-                        <p className="text-[#8a8a93]">Address on file</p>
+                        <p className="text-[#8a8a93]">{t('Address on file')}</p>
                       )}
                     </div>
                   </div>
@@ -224,13 +229,13 @@ export default function OrderConfirmedPage() {
                   {/* Delivery + payment */}
                   <div className="space-y-4">
                     <div>
-                      <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.14em] mb-1.5">Estimated Delivery</p>
-                      <p className="text-[14px] font-semibold text-[#111114]">{estimatedDelivery(order.createdAt || order.created_at)}</p>
-                      <p className="text-[12px] text-[#8a8a93] mt-0.5">Standard delivery within UAE</p>
+                      <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.14em] mb-1.5">{t('Estimated delivery')}</p>
+                      <p className="text-[14px] font-semibold text-[#111114]">{estimatedDelivery(order.createdAt || order.created_at, locale)}</p>
+                      <p className="text-[12px] text-[#8a8a93] mt-0.5">{t('Standard delivery within UAE')}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.14em] mb-1.5">Payment</p>
-                      <p className="text-[14px] font-semibold text-[#111114]">{paymentLabel(order.payment_method || order.paymentMethod)}</p>
+                      <p className="text-[11px] font-semibold text-[#8a8a93] uppercase tracking-[0.14em] mb-1.5">{t('Payment')}</p>
+                      <p className="text-[14px] font-semibold text-[#111114]">{t(paymentLabel(order.payment_method || order.paymentMethod))}</p>
                     </div>
                   </div>
                 </div>
@@ -248,15 +253,15 @@ export default function OrderConfirmedPage() {
                 onClick={() => (user ? router.push(`/account/orders/${orderId}`) : openSignIn(`/account/orders/${orderId}`))}
                 className="flex-1 h-14 rounded-full border border-[#e5e5ea] text-[14px] font-semibold text-[#111114] hover:bg-[#f3f3f5] transition-colors"
               >
-                Track Order
+                {t('Track order')}
               </button>
               <button
                 onClick={() => router.push('/all-products')}
                 className="flex-1 h-14 rounded-full flex items-center justify-center gap-2 text-[13px] font-semibold tracking-[0.1em] uppercase text-white"
                 style={{ background: 'linear-gradient(90deg,#c087fc,#9869f7)' }}
               >
-                Continue Shopping
-                <ArrowRight size={15} strokeWidth={2} />
+                {t('Continue shopping')}
+                <ArrowRight size={15} strokeWidth={2} className="flip-rtl" />
               </button>
             </motion.div>
           </div>
@@ -267,39 +272,39 @@ export default function OrderConfirmedPage() {
             {/* Payment summary */}
             <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12, duration: 0.35 }}>
               <SCard className="p-5">
-                <h3 className="text-[16px] font-semibold text-[#111114] mb-4">Payment Summary</h3>
+                <h3 className="text-[16px] font-semibold text-[#111114] mb-4">{t('Payment summary')}</h3>
                 <div className="space-y-3 text-[14px]">
                   <div className="flex justify-between">
-                    <span className="text-[#5a5a64]">Subtotal</span>
+                    <span className="text-[#5a5a64]">{t('Subtotal')}</span>
                     <span className="font-semibold text-[#111114]">{fmtAed(subtotal)}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between font-semibold text-green-600">
-                      <span>Discount</span>
-                      <span>−{fmtAed(discount)}</span>
+                      <span>{t('Discount')}</span>
+                      <bdi>−{fmtAed(discount)}</bdi>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-[#5a5a64]">Shipping</span>
+                    <span className="text-[#5a5a64]">{t('Shipping')}</span>
                     <span className={shipping === 0 ? 'font-semibold text-green-600' : 'font-semibold text-[#111114]'}>
-                      {shipping === 0 ? 'Free' : fmtAed(shipping)}
+                      {shipping === 0 ? t('Free') : fmtAed(shipping)}
                     </span>
                   </div>
                   {tax > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-[#5a5a64]">Tax (5%)</span>
+                      <span className="text-[#5a5a64]">{t('VAT (5%)')}</span>
                       <span className="font-semibold text-[#111114]">{fmtAed(tax)}</span>
                     </div>
                   )}
                   {giftWrap > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-[#5a5a64]">Gift wrap</span>
+                      <span className="text-[#5a5a64]">{t('Gift wrap')}</span>
                       <span className="font-semibold text-[#111114]">{fmtAed(giftWrap)}</span>
                     </div>
                   )}
                 </div>
                 <div className="mt-4 pt-4 border-t border-[#e5e5ea] flex justify-between items-baseline">
-                  <span className="text-[16px] font-semibold text-[#111114]">Total Paid</span>
+                  <span className="text-[16px] font-semibold text-[#111114]">{t('Total paid')}</span>
                   <span className="text-[20px] font-bold text-[#111114] tabular-nums">{fmtAed(totalPaid)}</span>
                 </div>
               </SCard>
@@ -319,22 +324,23 @@ export default function OrderConfirmedPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[15px] font-bold text-[#111114]">+{pointsEarned.toLocaleString()} Points Earned</p>
-                    <p className="text-[12px] text-[#8a8a93]">Added to your loyalty balance</p>
+                    <p className="text-[15px] font-bold text-[#111114]">{t('+{n} points to earn', { n: pointsEarned.toLocaleString('en-US') })}</p>
+                    {/* Points are credited when the order is delivered (lib/loyalty.js) */}
+                    <p className="text-[12px] text-[#8a8a93]">{t('Credited to your balance on delivery')}</p>
                   </div>
                 </div>
                 <div className="space-y-2.5 text-[13px]">
                   <div className="flex justify-between">
-                    <span className="text-[#5a5a64]">Previous balance</span>
-                    <span className="font-semibold text-[#111114]">{prevBal.toLocaleString()} pts</span>
+                    <span className="text-[#5a5a64]">{t('Current balance')}</span>
+                    <span className="font-semibold text-[#111114]">{pts(prevBal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#5a5a64]">Earned this order</span>
-                    <span className="font-semibold" style={{ color: '#9869f7' }}>+{pointsEarned.toLocaleString()} pts</span>
+                    <span className="text-[#5a5a64]">{t('Earned with this order')}</span>
+                    <span className="font-semibold" style={{ color: '#9869f7' }}><bdi>+{pts(pointsEarned)}</bdi></span>
                   </div>
                   <div className="flex justify-between pt-2.5 border-t border-[#e5e5ea]">
-                    <span className="font-semibold text-[#111114]">New balance</span>
-                    <span className="font-bold text-[#111114]">{newBal.toLocaleString()} pts</span>
+                    <span className="font-semibold text-[#111114]">{t('Balance after delivery')}</span>
+                    <span className="font-bold text-[#111114]">{pts(newBal)}</span>
                   </div>
                 </div>
               </SCard>
@@ -343,7 +349,7 @@ export default function OrderConfirmedPage() {
             {/* Need help */}
             <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.24, duration: 0.35 }}>
               <SCard className="p-5">
-                <h3 className="text-[15px] font-semibold text-[#111114] mb-3">Need help?</h3>
+                <h3 className="text-[15px] font-semibold text-[#111114] mb-3">{t('Need help?')}</h3>
                 <div className="space-y-2.5">
                   <a href={`mailto:${CONTACT_EMAIL}`}
                     className="flex items-center gap-2.5 text-[13px] text-[#2a2a31] hover:text-[#9869f7] transition-colors">
@@ -351,16 +357,16 @@ export default function OrderConfirmedPage() {
                     {CONTACT_EMAIL}
                   </a>
                   {whatsappUrl() && (
-                    <a href={whatsappUrl(`Hello, I have a question about order ${orderRef}.`)} target="_blank" rel="noopener noreferrer"
+                    <a href={whatsappUrl(t('Hello, I have a question about order {ref}.', { ref: orderRef }))} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-2.5 text-[13px] text-[#2a2a31] hover:text-[#9869f7] transition-colors">
                       <Phone size={14} className="text-[#6b6b73] flex-shrink-0" />
-                      WhatsApp {WHATSAPP_DISPLAY}
+                      {t('WhatsApp')} <bdi>{WHATSAPP_DISPLAY}</bdi>
                     </a>
                   )}
                   <Link href="/contact"
                     className="flex items-center gap-2.5 text-[13px] text-[#2a2a31] hover:text-[#9869f7] transition-colors">
                     <MessageSquare size={14} className="text-[#6b6b73] flex-shrink-0" />
-                    All the ways to reach us
+                    {t('All the ways to reach us')}
                   </Link>
                 </div>
               </SCard>

@@ -32,7 +32,7 @@ export default function BrandLogo({ size = 'responsive', tone = 'dark', priority
   const s = SIZES[size] || SIZES.responsive;
   const light = tone === 'light';
   return (
-    <span className={`inline-flex items-center ${s.gap} ${className}`}>
+    <span dir="ltr" className={`latin inline-flex items-center ${s.gap} ${className}`}>
       <span className="sr-only">Naya Lumière Cosmetics</span>
       <Image
         src={light ? LOTUS_LIGHT_SRC : LOTUS_SRC}

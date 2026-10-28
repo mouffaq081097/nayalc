@@ -5,6 +5,7 @@ import PhoneNumberInput from './PhoneNumberInput';
 import { Tag, MapPin, Building2, Navigation, ChevronDown, Loader2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parsePhone } from '@/lib/phone';
+import { useT } from '../context/LocaleContext';
 
 const UAE_EMIRATES = [
   'Abu Dhabi', 'Dubai', 'Sharjah', 'Ajman',
@@ -70,6 +71,7 @@ function FieldError({ message }) {
 }
 
 export default function AddressInputForm({ initialData, onSave, onCancel }) {
+  const t = useT();
   const [form, setForm] = useState({
     addressLabel:  initialData?.addressLabel  || '',
     customerPhone: initialData?.customerPhone || initialData?.customer_phone || '',
@@ -98,9 +100,9 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
 
   const validate = () => {
     const errs = {};
-    if (!form.city)                { errs.city          = 'Please select an emirate'; }
-    if (!form.state.trim())        { errs.state         = 'Area / community is required'; }
-    if (!form.addressLine1.trim()) { errs.addressLine1  = 'Building / villa / street is required'; }
+    if (!form.city)                { errs.city          = t('Please select an emirate'); }
+    if (!form.state.trim())        { errs.state         = t('Area / community is required'); }
+    if (!form.addressLine1.trim()) { errs.addressLine1  = t('Building / villa / street is required'); }
     // parsePhone carries the reason, so the customer is told what is wrong with
     // the number rather than just that something is.
     const phone = parsePhone(form.customerPhone);
@@ -132,7 +134,7 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
       await onSave({ ...rest, addressLine1, customerPhone });
       // Parent closes the modal on success — saving stays true until unmount
     } catch (err) {
-      setSaveError(err?.message || 'Something went wrong. Please try again.');
+      setSaveError(t(err?.message || 'Something went wrong. Please try again.'));
       setSaving(false);
     }
   };
@@ -146,21 +148,22 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
 
           <div>
             <label style={lbl}>
-              Emirate <span style={{ color: 'rgb(196,167,254)' }}>*</span>
+              {t('Emirate')} <span style={{ color: 'rgb(196,167,254)' }}>*</span>
             </label>
             <div className="relative">
-              <MapPin size={13} className="absolute left-3 top-[13px] pointer-events-none" style={{ color: errors.city ? 'rgb(220,38,38)' : 'rgb(196,167,254)' }} />
-              <ChevronDown size={13} className="absolute right-3 top-[13px] pointer-events-none" style={{ color: errors.city ? 'rgb(220,38,38)' : 'rgb(196,167,254)' }} />
+              <MapPin size={13} className="absolute start-3 top-[13px] pointer-events-none" style={{ color: errors.city ? 'rgb(220,38,38)' : 'rgb(196,167,254)' }} />
+              <ChevronDown size={13} className="absolute end-3 top-[13px] pointer-events-none" style={{ color: errors.city ? 'rgb(220,38,38)' : 'rgb(196,167,254)' }} />
               <select
                 name="city"
                 value={form.city}
                 onChange={set}
-                style={{ ...fieldStyle(!!errors.city), paddingLeft: '34px', paddingRight: '32px', cursor: 'pointer' }}
+                style={{ ...fieldStyle(!!errors.city), paddingInlineStart: '34px', paddingInlineEnd: '32px', cursor: 'pointer' }}
                 {...focus(!!errors.city)}
               >
-                <option value="">Select emirate…</option>
+                <option value="">{t('Select emirate…')}</option>
+                {/* Stored in English (couriers read it); shown in the visitor's language */}
                 {UAE_EMIRATES.map(em => (
-                  <option key={em} value={em}>{em}</option>
+                  <option key={em} value={em}>{t(em)}</option>
                 ))}
               </select>
             </div>
@@ -169,13 +172,13 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
 
           <div>
             <label style={lbl}>
-              Area / Community <span style={{ color: 'rgb(196,167,254)' }}>*</span>
+              {t('Area / Community')} <span style={{ color: 'rgb(196,167,254)' }}>*</span>
             </label>
             <input
               name="state"
               value={form.state}
               onChange={set}
-              placeholder="e.g. Jumeirah, JBR, Mirdif, Al Nahyan"
+              placeholder={t('e.g. Jumeirah, JBR, Mirdif, Al Nahyan')}
               style={fieldStyle(!!errors.state)}
               {...focus(!!errors.state)}
             />
@@ -186,16 +189,16 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
         {/* ── Row 2: Building / Villa / Street ── */}
         <div>
           <label style={lbl}>
-            Building / Villa / Street <span style={{ color: 'rgb(196,167,254)' }}>*</span>
+            {t('Building / Villa / Street')} <span style={{ color: 'rgb(196,167,254)' }}>*</span>
           </label>
           <div className="relative">
-            <Building2 size={13} className="absolute left-3 top-[13px] pointer-events-none" style={{ color: errors.addressLine1 ? 'rgb(220,38,38)' : 'rgb(196,167,254)' }} />
+            <Building2 size={13} className="absolute start-3 top-[13px] pointer-events-none" style={{ color: errors.addressLine1 ? 'rgb(220,38,38)' : 'rgb(196,167,254)' }} />
             <input
               name="addressLine1"
               value={form.addressLine1}
               onChange={set}
-              placeholder="e.g. Al Fattan Tower, Villa 23, Shk Zayed Rd"
-              style={{ ...fieldStyle(!!errors.addressLine1), paddingLeft: '34px' }}
+              placeholder={t('e.g. Al Fattan Tower, Villa 23, Shk Zayed Rd')}
+              style={{ ...fieldStyle(!!errors.addressLine1), paddingInlineStart: '34px' }}
               {...focus(!!errors.addressLine1)}
             />
           </div>
@@ -207,13 +210,13 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
 
           <div>
             <label style={lbl}>
-              Floor / Apartment <span style={opt}>optional</span>
+              {t('Floor / Apartment')} <span style={opt}>{t('optional')}</span>
             </label>
             <input
               name="apartment"
               value={form.apartment}
               onChange={set}
-              placeholder="e.g. Floor 5, Apt 501, Unit B"
+              placeholder={t('e.g. Floor 5, Apt 501, Unit B')}
               style={fieldStyle(false)}
               {...focus(false)}
             />
@@ -221,16 +224,16 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
 
           <div>
             <label style={lbl}>
-              Nearest Landmark <span style={opt}>optional</span>
+              {t('Nearest Landmark')} <span style={opt}>{t('optional')}</span>
             </label>
             <div className="relative">
-              <Navigation size={13} className="absolute left-3 top-[13px] pointer-events-none" style={{ color: 'rgb(196,167,254)' }} />
+              <Navigation size={13} className="absolute start-3 top-[13px] pointer-events-none" style={{ color: 'rgb(196,167,254)' }} />
               <input
                 name="landmark"
                 value={form.landmark}
                 onChange={set}
-                placeholder="e.g. Near Mall of Emirates"
-                style={{ ...fieldStyle(false), paddingLeft: '34px' }}
+                placeholder={t('e.g. Near Mall of Emirates')}
+                style={{ ...fieldStyle(false), paddingInlineStart: '34px' }}
                 {...focus(false)}
               />
             </div>
@@ -243,7 +246,7 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
         {/* ── Phone ── */}
         <div>
           <label style={lbl}>
-            Phone Number <span style={{ color: 'rgb(196,167,254)' }}>*</span>
+            {t('Phone Number')} <span style={{ color: 'rgb(196,167,254)' }}>*</span>
           </label>
           {/* The input renders its own error styling and message, including the
               submit-time one we hand it, so there is no second FieldError here. */}
@@ -260,16 +263,16 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
 
           <div>
             <label style={lbl}>
-              Address Label <span style={opt}>optional</span>
+              {t('Address Label')} <span style={opt}>{t('optional')}</span>
             </label>
             <div className="relative">
-              <Tag size={13} className="absolute left-3 top-[13px] pointer-events-none" style={{ color: 'rgb(196,167,254)' }} />
+              <Tag size={13} className="absolute start-3 top-[13px] pointer-events-none" style={{ color: 'rgb(196,167,254)' }} />
               <input
                 name="addressLabel"
                 value={form.addressLabel}
                 onChange={set}
-                placeholder="e.g. Home, Office, Villa…"
-                style={{ ...fieldStyle(false), paddingLeft: '34px' }}
+                placeholder={t('e.g. Home, Office, Villa…')}
+                style={{ ...fieldStyle(false), paddingInlineStart: '34px' }}
                 {...focus(false)}
               />
             </div>
@@ -287,7 +290,7 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
               className="w-4 h-4 rounded"
               style={{ accentColor: 'rgb(126,105,230)' }}
             />
-            <span className="text-[12px] font-semibold" style={{ color: '#3b0764' }}>Set as primary address</span>
+            <span className="text-[12px] font-semibold" style={{ color: '#3b0764' }}>{t('Set as primary address')}</span>
           </label>
         </div>
 
@@ -325,7 +328,7 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
               background: 'rgba(255,255,255,0.6)',
             }}
           >
-            Cancel
+            {t('Cancel')}
           </button>
 
           <button
@@ -336,10 +339,10 @@ export default function AddressInputForm({ initialData, onSave, onCancel }) {
             {saving ? (
               <>
                 <Loader2 size={14} className="animate-spin" />
-                Saving…
+                {t('Saving…')}
               </>
             ) : (
-              'Save Address'
+              t('Save Address')
             )}
           </button>
         </div>

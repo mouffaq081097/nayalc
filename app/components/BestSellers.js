@@ -46,9 +46,9 @@ export function BestSellers() {
         {/* Mobile: carousel */}
         <div className="md:hidden">
           <Carousel opts={{ align: 'start', loop: false }} className="w-full">
-            <CarouselContent className="-ml-2">
+            <CarouselContent className="-ms-2">
               {topSellers.map((product, i) => (
-                <CarouselItem key={product.id} className="pl-2 basis-1/2">
+                <CarouselItem key={product.id} className="ps-2 basis-1/2">
                   <ProductCard {...cardProps(product)} rank={i + 1} />
                 </CarouselItem>
               ))}

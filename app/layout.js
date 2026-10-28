@@ -1,6 +1,7 @@
 import "./globals.css";
 import {
   Inter,
+  IBM_Plex_Sans_Arabic,
 } from 'next/font/google';
 
 const inter = Inter({
@@ -10,6 +11,17 @@ const inter = Inter({
   display: 'swap',
 });
 import Providers from './Providers';
+import { LocaleProvider } from './context/LocaleContext';
+import { LOCALE_SCRIPT } from '@/lib/i18n';
+
+// The Arabic version's face (lib/i18n); browsers only download it when Arabic text is on the page
+const plexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-arabic',
+  display: 'swap',
+  preload: false,
+});
 import { INSTAGRAM_URL } from '@/lib/seo';
 import LayoutContent from './LayoutContent';
 import VisitTracker from './components/VisitTracker';
@@ -99,11 +111,13 @@ export default function RootLayout({ children }) {
     },
   ];
 
-  const fontVars = [inter.variable].join(' ');
+  const fontVars = [inter.variable, plexArabic.variable].join(' ');
 
   return (
-    <html lang="en" className={fontVars}>
+    // LOCALE_SCRIPT switches <html lang dir> for Arabic visitors before the first paint
+    <html lang="en" dir="ltr" className={fontVars} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: LOCALE_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd[0]) }}
@@ -114,10 +128,14 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="antialiased">
-        <Providers>
-          <VisitTracker />
-          <LayoutContent>{children}</LayoutContent>
-        </Providers>
+        {/* Covers the English page for Arabic visitors until the Arabic text is in (globals.css) */}
+        <div className="i18n-splash latin" aria-hidden="true" />
+        <LocaleProvider>
+          <Providers>
+            <VisitTracker />
+            <LayoutContent>{children}</LayoutContent>
+          </Providers>
+        </LocaleProvider>
       </body>
     </html>
   );

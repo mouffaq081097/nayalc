@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import CollectionsGrid from '../components/CollectionsGrid';
+import { useT } from '../context/LocaleContext';
 
 function CollectionCardSkeleton() {
   return (
@@ -18,6 +19,7 @@ function CollectionCardSkeleton() {
 export default function CollectionsListClient() {
   const [collections, setCollections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const t = useT();
 
   useEffect(() => {
     const fetchCollections = async () => {
@@ -42,18 +44,17 @@ export default function CollectionsListClient() {
     <div className="bg-white min-h-screen text-gray-900">
       {/* Header */}
       <div className="max-w-[1320px] mx-auto px-5 md:px-8 pt-10 md:pt-14 pb-8">
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Shop by</p>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-3">Collections</h1>
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">{t('Shop by')}</p>
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-3">{t('Collections')}</h1>
         <p className="text-[14px] text-gray-500 max-w-xl leading-relaxed">
-          Browse our collections, each curated around a skincare need or ritual.
+          {t('Browse our collections, each curated around a skincare need or ritual.')}
         </p>
       </div>
 
       {/* Count */}
       <div className="max-w-[1320px] mx-auto px-5 md:px-8 pb-5 border-b border-gray-100">
         <p className="text-[12px] text-gray-500">
-          <span className="font-semibold text-gray-900">{collections.length}</span>{' '}
-          {collections.length === 1 ? 'collection' : 'collections'}
+          {t(collections.length === 1 ? '{n} collection' : '{n} collections', { n: collections.length })}
         </p>
       </div>
 
@@ -65,7 +66,7 @@ export default function CollectionsListClient() {
         </div>
       ) : collections.length === 0 ? (
         <div className="max-w-[1320px] mx-auto px-5 md:px-8 py-20 text-center text-sm text-gray-400">
-          No collections available right now.
+          {t('No collections available right now.')}
         </div>
       ) : (
         <CollectionsGrid collections={collections} />

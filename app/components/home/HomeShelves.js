@@ -10,6 +10,7 @@ import { ProductRow } from './ProductRow';
 import { HomeProductCard } from './HomeProductCard';
 import { slugify } from '@/lib/slugify';
 import { orderableQty } from '@/lib/backorderRules';
+import { useLocale, useT } from '../../context/LocaleContext';
 
 const byBest = (a, b) =>
   (Number(!!b.isBestseller) - Number(!!a.isBestseller)) || (Number(b.totalSold || 0) - Number(a.totalSold || 0));
@@ -81,7 +82,7 @@ function PlaceholderGrid({ count, tone, gallery, desktopMax, tabletMax }) {
 
 // Thin ( ) arrow, as on Pitaka
 const Paren = ({ dir }) => (
-  <svg width="11" height="38" viewBox="0 0 10 34" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true">
+  <svg width="11" height="38" viewBox="0 0 10 34" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" aria-hidden="true" className="flip-rtl">
     <path d={dir === 'prev' ? 'M8 1.5C2.5 8 2.5 26 8 32.5' : 'M2 1.5C7.5 8 7.5 26 2 32.5'} />
   </svg>
 );
@@ -91,17 +92,20 @@ const Paren = ({ dir }) => (
  * with the thin ( ) arrows at the card's middle; a "2 / 8" count underneath.
  */
 function GalleryCarousel({ products }) {
+  const { t, dir: textDir } = useLocale();
   const scroller = useRef(null);
   const [index, setIndex] = useState(0);
+  // Right to left, scrollLeft runs from 0 down to negative numbers
+  const sign = textDir === 'rtl' ? -1 : 1;
   const go = (step) => {
     const el = scroller.current;
     if (!el) return;
     const next = Math.max(0, Math.min(products.length - 1, index + step));
-    el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' });
+    el.scrollTo({ left: sign * next * el.clientWidth, behavior: 'smooth' });
   };
   const onScroll = () => {
     const el = scroller.current;
-    if (el) setIndex(Math.round(el.scrollLeft / el.clientWidth));
+    if (el) setIndex(Math.round(Math.abs(el.scrollLeft) / el.clientWidth));
   };
   // The arrows sit at the middle of the 3:4 panel: its width is the screen less the 16px gutters
   const arrowTop = { top: 'calc((100vw - 32px) * 2 / 3)' };
@@ -127,8 +131,8 @@ function GalleryCarousel({ products }) {
             type="button"
             onClick={() => go(dir === 'prev' ? -1 : 1)}
             disabled={off}
-            aria-label={dir === 'prev' ? 'Previous product' : 'Next product'}
-            className={`absolute -translate-y-1/2 ${dir === 'prev' ? 'left-6' : 'right-6'} w-9 h-14 flex items-center justify-center text-[#8a8a92] active:text-[#111114] transition-opacity disabled:opacity-0`}
+            aria-label={dir === 'prev' ? t('Previous product') : t('Next product')}
+            className={`absolute -translate-y-1/2 ${dir === 'prev' ? 'start-6' : 'end-6'} w-9 h-14 flex items-center justify-center text-[#8a8a92] active:text-[#111114] transition-opacity disabled:opacity-0`}
             style={arrowTop}
           >
             <Paren dir={dir} />
@@ -163,6 +167,7 @@ const band = (tone) => (tone === 'dark' ? 'bg-black' : 'bg-white');
  */
 export function BrandProducts({ brand: slugStart, title, tone = 'light', cardVariant }) {
   const { brands, products, loading } = useAppContext();
+  const t = useT();
   const dark = tone === 'dark';
 
   // Hold the section's space while the catalogue loads
@@ -205,7 +210,7 @@ export function BrandProducts({ brand: slugStart, title, tone = 'light', cardVar
           <Grid products={range.slice(0, 9)} tone={tone} desktopMax={8} />
         )}
         <div className="mt-6 md:mt-8 flex justify-center">
-          <Pill href={href} variant={dark ? 'light' : 'dark'}>View all {range.length} products</Pill>
+          <Pill href={href} variant={dark ? 'light' : 'dark'}>{t('View all {n} products', { n: range.length })}</Pill>
         </div>
       </Container>
     </section>

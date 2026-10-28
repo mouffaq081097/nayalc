@@ -23,10 +23,11 @@ import {
   Zap
 } from 'lucide-react';
 import StoreHeader from '../components/StoreHeader';
-import { headingFont } from '@/app/components/home/SectionHeading';
+import { headingFont } from '@/app/components/home/headingFont';
 import StoreCategoryNav from '../components/StoreCategoryNav';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useAppContext } from '../context/AppContext';
+import { useLocale } from '@/app/context/LocaleContext';
 
 const fragranceFamilies = [
   {
@@ -77,6 +78,7 @@ const fragranceFamilies = [
 
 export default function FragranceClient() {
   const { fetchProductsByCategory, products: allProducts } = useAppContext();
+  const { t, rich } = useLocale();
   const [fragranceProducts, setFragranceProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFamily, setActiveFamily] = useState(null);
@@ -135,7 +137,7 @@ export default function FragranceClient() {
                       <div className={`relative aspect-[4/3] lg:aspect-[1/1] rounded-[2rem] overflow-hidden border border-gray-100 bg-gradient-to-br ${family.gradient} shadow-xl transition-all duration-700 group-hover:shadow-2xl group-hover:-translate-y-2`}>
                           
                           {/* formula ID - Top Right */}
-                          <div className="absolute top-6 right-6 z-20">
+                          <div className="absolute top-6 end-6 z-20">
                               <span className="text-[8px] font-black tracking-[0.3em] text-gray-400 group-hover:text-gray-900 transition-colors bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-gray-200/50">
                                   {family.formula}
                               </span>
@@ -179,17 +181,17 @@ export default function FragranceClient() {
                                   <family.icon size={22} />
                               </div>
                               <div className="space-y-0.5">
-                                  <h3 className="text-2xl font-serif italic text-gray-900 leading-none">{family.title}</h3>
+                                  <h3 className="text-2xl font-serif italic text-gray-900 leading-none">{t(family.title)}</h3>
                                   <div className="flex flex-wrap gap-1.5 pt-1">
                                       {family.notes.map(note => (
                                           <span key={note} className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-white/40 text-gray-500 group-hover:text-gray-900 transition-colors border border-gray-200/20">
-                                              {note}
+                                              {t(note)}
                                           </span>
                                       ))}
                                   </div>
                               </div>
                               <p className="text-[10px] text-gray-600 leading-relaxed line-clamp-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                                  {family.description}
+                                  {t(family.description)}
                               </p>
                               
                               {/* Interactive Scale Indicator */}
@@ -203,7 +205,7 @@ export default function FragranceClient() {
                                           style={{ color: family.accent }} 
                                       />
                                   </div>
-                                  <span className="text-[6px] font-black uppercase tracking-widest text-gray-400 italic">Intensity</span>
+                                  <span className="text-[6px] font-black uppercase tracking-widest text-gray-400 italic">{t('Intensity')}</span>
                               </div>
                           </div>
                       </div>
@@ -219,7 +221,7 @@ export default function FragranceClient() {
       
                     <Container>
       
-                      <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-8 mb-16 border-b border-gray-100 pb-12 text-center md:text-left">
+                      <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-8 mb-16 border-b border-gray-100 pb-12 text-center md:text-start">
       
                         <div className="space-y-4 items-center md:items-start flex flex-col">
       
@@ -227,17 +229,17 @@ export default function FragranceClient() {
       
                                 <span className="w-8 h-px bg-brand-pink"></span>
       
-                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-pink">Selection</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-pink">{t('Selection')}</span>
       
                             </div>
       
-                            <h2 className={`${headingFont} text-[24px] md:text-[34px] font-medium uppercase leading-[1.1] text-[#111114]`}>All fragrances</h2>
+                            <h2 className={`${headingFont} text-[24px] md:text-[34px] font-medium uppercase leading-[1.1] text-[#111114]`}>{t('All fragrances')}</h2>
       
                         </div>
             <div className="flex bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
                 {['All', 'For Her', 'For Him', 'Unisex'].map((cat) => (
                     <button key={cat} className="px-6 py-2.5 rounded-xl text-[12px] font-semibold text-gray-400 hover:text-gray-900 transition-all hover:bg-gray-50 first:bg-gray-900 first:text-white first:shadow-lg">
-                        {cat}
+                        {t(cat)}
                     </button>
                 ))}
             </div>
@@ -269,11 +271,11 @@ export default function FragranceClient() {
           <div className="text-center space-y-6 max-w-2xl mx-auto mb-24">
             <div className="flex items-center justify-center gap-4">
                 <span className="h-px w-8 bg-gray-200"></span>
-                <span className="text-[10px] font-black uppercase tracking-[0.6em] text-gray-400">The Atelier Method</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.6em] text-gray-400">{t('The Atelier Method')}</span>
                 <span className="h-px w-8 bg-gray-200"></span>
             </div>
-            <h2 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">The Art of <br/> Fragrance Layering</h2>
-            <p className="text-gray-500 text-sm font-light italic leading-relaxed">A biological approach to personal scent. Discover how to synchronize different olfactory layers to create a signature that is uniquely yours.</p>
+            <h2 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">{rich('The Art of {br}Fragrance Layering', { br: <br /> })}</h2>
+            <p className="text-gray-500 text-sm font-light italic leading-relaxed">{t('A biological approach to personal scent. Discover how to synchronize different olfactory layers to create a signature that is uniquely yours.')}</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-12 relative">
@@ -310,13 +312,13 @@ export default function FragranceClient() {
                     <div className="space-y-3">
                         <div className="flex items-center gap-3">
                             <span className="text-xs font-black text-brand-pink">{ritual.step}</span>
-                            <h3 className="text-2xl font-serif italic text-gray-900">{ritual.title}</h3>
+                            <h3 className="text-2xl font-serif italic text-gray-900">{t(ritual.title)}</h3>
                         </div>
-                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">{ritual.sub}</p>
-                        <p className="text-xs text-gray-500 leading-[1.8] font-light italic">{ritual.desc}</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">{t(ritual.sub)}</p>
+                        <p className="text-xs text-gray-500 leading-[1.8] font-light italic">{t(ritual.desc)}</p>
                     </div>
                     <button className="flex items-center gap-3 text-[9px] font-black uppercase tracking-widest text-gray-900 group-hover:text-brand-pink transition-colors">
-                        Explore Notes <ArrowRight size={12} />
+                        {t('Explore Notes')} <ArrowRight size={12} className="flip-rtl" />
                     </button>
                 </div>
             ))}
@@ -333,8 +335,8 @@ export default function FragranceClient() {
             <div className="grid lg:grid-cols-2 gap-16 p-12 md:p-24 relative z-10 items-center">
                 <div className="space-y-10">
                     <div className="space-y-4">
-                        <span className="text-[10px] font-black uppercase tracking-[0.6em] text-brand-pink">Preservation</span>
-                        <h2 className="text-4xl md:text-6xl font-serif italic text-white leading-tight">Protect Your <br/> Liquid Memories</h2>
+                        <span className="text-[10px] font-black uppercase tracking-[0.6em] text-brand-pink">{t('Preservation')}</span>
+                        <h2 className="text-4xl md:text-6xl font-serif italic text-white leading-tight">{rich('Protect Your {br}Liquid Memories', { br: <br /> })}</h2>
                     </div>
                     <div className="space-y-6">
                         {[
@@ -346,7 +348,7 @@ export default function FragranceClient() {
                                 <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-brand-pink group-hover:bg-brand-pink group-hover:text-white transition-all">
                                     <tip.icon size={18} strokeWidth={1.5} />
                                 </div>
-                                <p className="text-white/60 text-sm font-light italic">{tip.text}</p>
+                                <p className="text-white/60 text-sm font-light italic">{t(tip.text)}</p>
                             </div>
                         ))}
                     </div>
@@ -357,14 +359,14 @@ export default function FragranceClient() {
                         <Sparkles size={32} className="text-brand-pink animate-pulse" />
                     </div>
                     <div className="space-y-3">
-                        <h3 className="text-2xl font-serif italic text-white">Scent Concierge</h3>
-                        <p className="text-white/40 text-xs uppercase tracking-widest font-bold">Personalized Olfactory Mapping</p>
+                        <h3 className="text-2xl font-serif italic text-white">{t('Scent Concierge')}</h3>
+                        <p className="text-white/40 text-xs uppercase tracking-widest font-bold">{t('Personalized Olfactory Mapping')}</p>
                     </div>
                     <p className="text-white/60 text-sm font-light leading-relaxed italic">
-                        "Finding a signature scent is a synchronization of soul and science. Our experts are ready to curate your journey."
+                        "{t('Finding a signature scent is a synchronization of soul and science. Our experts are ready to curate your journey.')}"
                     </p>
                     <button className="w-full bg-white text-gray-900 py-5 rounded-2xl text-[14px] font-semibold hover:bg-brand-pink hover:text-white transition-all duration-500">
-                        Book Consultation
+                        {t('Book Consultation')}
                     </button>
                 </div>
             </div>

@@ -637,3 +637,57 @@ body {
 @media (min-width: 768px) {
   :root { --header-h: 64px; }
 }
+
+/* ── Headings face (SectionHeading's headingFont) ─────────────────── */
+.font-heading {
+  font-family: var(--font-montserrat), 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ── Arabic version (lib/i18n): <html lang="ar" dir="rtl"> ─────────
+   Arabic text in IBM Plex Sans Arabic, Latin words (product and brand
+   names) still in Inter. Letter-spacing breaks Arabic joining, so it is
+   switched off except on Latin lockups marked .latin (the logo) and
+   left-to-right text (English pages, dir="auto" copy that is English). Arrows
+   and chevrons that point "forward" get .flip-rtl. */
+
+/* The page is served in English; for Arabic visitors this white cover with
+   the name sits over it until the Arabic text is in, and lifts itself after
+   4 s whatever happens. */
+.i18n-splash { display: none; }
+html.i18n-pending .i18n-splash {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  animation: i18n-splash-out 0s linear 4s forwards;
+}
+html.i18n-pending .i18n-splash::after {
+  content: 'NAYA LUMIÈRE';
+  font: 400 15px/1 var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: 0.22em;
+  color: #111114;
+}
+@keyframes i18n-splash-out { to { visibility: hidden; } }
+
+/* Inter (Montserrat in headings) draws the Latin letters and IBM Plex Sans
+   Arabic the Arabic ones: each next/font face only covers its own scripts
+   (unicode-range). The family names come first because the var()s end in a
+   local Arial fallback, which has Arabic letters on Windows and would win. */
+html[lang="ar"] {
+  --font-sans: 'Inter', 'IBM Plex Sans Arabic', var(--font-arabic), var(--font-inter), -apple-system, 'Segoe UI', sans-serif;
+}
+html[lang="ar"] body {
+  font-family: var(--font-sans);
+}
+html[lang="ar"] .font-heading {
+  font-family: 'Montserrat', 'IBM Plex Sans Arabic', var(--font-arabic), var(--font-montserrat), sans-serif;
+}
+html[lang="ar"] body *:not(:where(.latin, .latin *, :dir(ltr), :dir(ltr) *)) {
+  letter-spacing: normal !important;
+}
+html[dir="rtl"] .flip-rtl {
+  transform: scaleX(-1);
+}

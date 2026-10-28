@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Container } from '../ui/Container';
 import { useAppContext } from '../../context/AppContext';
 import { SectionHeading } from './SectionHeading';
+import { useT } from '../../context/LocaleContext';
 
 /**
  * The skin concerns from Admin → Concerns as a centred row of chips; each opens
@@ -12,6 +13,7 @@ import { SectionHeading } from './SectionHeading';
  */
 export function ShopByConcern() {
   const { concerns, products } = useAppContext();
+  const t = useT();
 
   const tagged = new Set();
   products.forEach((p) => (p.concern_ids || []).forEach((id) => tagged.add(Number(id))));
@@ -31,13 +33,13 @@ export function ShopByConcern() {
                 href={`/all-products?concern=${encodeURIComponent(c.slug || c.id)}`}
                 className={`${chip} inline-block border border-[#e7e6e2] text-[#111114] hover:border-[#111114]`}
               >
-                {c.name}
+                {t(c.name)}
               </Link>
             </li>
           ))}
           <li>
             <Link href="/skin-quiz" className={`${chip} inline-block bg-[#111114] text-white hover:bg-[#2a2a31]`}>
-              Not sure? Take the skin quiz
+              {t('Not sure? Take the skin quiz')}
             </Link>
           </li>
         </ul>

@@ -4,6 +4,7 @@ import { Truck, Check } from 'lucide-react';
 import { Container } from '../ui/Container';
 import { useCart } from '../../context/CartContext';
 import { FREE_SHIPPING_FROM } from '@/lib/shipping';
+import { useLocale } from '../../context/LocaleContext';
 
 const LAVENDER = 'rgb(147,104,236)';
 
@@ -14,6 +15,7 @@ const LAVENDER = 'rgb(147,104,236)';
  */
 export function FreeShippingNote() {
   const { cartItems, isCartReady, openCart } = useCart();
+  const { t, rich } = useLocale();
   if (!isCartReady) return null;
 
   const count = cartItems.reduce((n, i) => n + (Number(i.quantity) || 0), 0);
@@ -23,7 +25,7 @@ export function FreeShippingNote() {
   const progress = Math.min(1, count / FREE_SHIPPING_FROM);
 
   return (
-    <section aria-label="Delivery" className="bg-white border-b border-gray-100">
+    <section aria-label={t('Delivery')} className="bg-white border-b border-gray-100">
       <Container wide className="py-3 flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="w-8 h-8 shrink-0 rounded-full bg-gray-100 flex items-center justify-center">
           {needed === 0
@@ -31,17 +33,21 @@ export function FreeShippingNote() {
             : <Truck size={16} strokeWidth={1.75} style={{ color: LAVENDER }} />}
         </span>
         <p className="text-[13px] text-gray-700 min-w-0">
-          {needed === 0 ? (
-            <><span className="font-semibold text-gray-900">Free delivery unlocked</span> for the {count} items in your bag.</>
-          ) : (
-            <>Add <span className="font-semibold text-gray-900">{needed} more item{needed === 1 ? '' : 's'}</span> for free delivery ({count} in your bag).</>
-          )}
+          {needed === 0
+            ? rich('{unlocked} for the {n} items in your bag.', {
+              unlocked: <span className="font-semibold text-gray-900">{t('Free delivery unlocked')}</span>,
+              n: count,
+            })
+            : rich('Add {more} for free delivery ({n} in your bag).', {
+              more: <span className="font-semibold text-gray-900">{t(needed === 1 ? '{n} more item' : '{n} more items', { n: needed })}</span>,
+              n: count,
+            })}
         </p>
         <span className="hidden sm:block h-1.5 w-32 rounded-full bg-gray-100 overflow-hidden" aria-hidden="true">
           <span className="block h-full rounded-full transition-[width] duration-500" style={{ width: `${progress * 100}%`, background: LAVENDER }} />
         </span>
-        <button type="button" onClick={openCart} className="ml-auto text-[13px] font-medium text-gray-900 underline underline-offset-4 decoration-gray-300 hover:decoration-gray-900">
-          View bag
+        <button type="button" onClick={openCart} className="ms-auto text-[13px] font-medium text-gray-900 underline underline-offset-4 decoration-gray-300 hover:decoration-gray-900">
+          {t('View bag')}
         </button>
       </Container>
     </section>

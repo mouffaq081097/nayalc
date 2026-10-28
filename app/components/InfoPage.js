@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Container } from './ui/Container';
-import { headingFont } from './home/SectionHeading';
+import { headingFont } from './home/headingFont';
 import { CONTACT_EMAIL, whatsappUrl } from '@/lib/contact';
 
 /**

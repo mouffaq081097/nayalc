@@ -49,9 +49,9 @@ export function Categories() {
 
         {/* Categories Carousel */}
         <Carousel opts={{ align: 'start', loop: true }} className="w-full">
-          <CarouselContent className="-ml-3">
+          <CarouselContent className="-ms-3">
             {categories.map((category) => (
-              <CarouselItem key={category.id} className="pl-3 basis-[44%] sm:basis-[30%] md:basis-[22%] lg:basis-[17%]">
+              <CarouselItem key={category.id} className="ps-3 basis-[44%] sm:basis-[30%] md:basis-[22%] lg:basis-[17%]">
                 <Link
                   href={category.slug ? `/collections/${category.slug}` : `/collections/${category.id}`}
                   className="block group"

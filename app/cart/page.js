@@ -18,6 +18,7 @@ import PairItWithSection from '../components/PairItWithSection';
 import BuyAgainSection from '../components/BuyAgainSection';
 import TabbyPromo from '../components/TabbyPromo';
 import { useSignIn } from '@/app/context/SignInContext';
+import { useLocale, useT } from '@/app/context/LocaleContext';
 
 // Storefront palette: ink actions, warm off-white panels, lavender only for small accents
 const INK = '#111114';
@@ -41,23 +42,24 @@ const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible
 // Same header as checkout (Shopify's): logo over the left column, "Continue
 // shopping" over the right
 function CartHeader({ onBack }) {
+  const t = useT();
   return (
     <header className="border-b border-[#dedede] bg-white">
       <div className="flex h-[64px] items-center justify-between px-4 sm:px-6 md:h-[84px] lg:grid lg:grid-cols-2 lg:px-0">
-        <div className="lg:ml-auto lg:w-full lg:max-w-[600px] lg:px-[38px]">
+        <div className="lg:ms-auto lg:w-full lg:max-w-[600px] lg:px-[38px]">
           <Link href="/" className="inline-flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60">
             <BrandLogo priority />
           </Link>
         </div>
-        <div className="lg:w-full lg:max-w-[500px] lg:px-[38px] lg:text-right">
+        <div className="lg:w-full lg:max-w-[500px] lg:px-[38px] lg:text-end">
           <button
             type="button"
             onClick={onBack}
             className={`inline-flex h-10 items-center gap-1.5 rounded-md text-[14px] text-[#111114] underline-offset-4 hover:underline ${focusRing}`}
           >
-            <ArrowLeft size={15} />
-            <span className="hidden sm:inline">Continue shopping</span>
-            <span className="sm:hidden">Shop</span>
+            <ArrowLeft size={15} className="flip-rtl" />
+            <span className="hidden sm:inline">{t('Continue shopping')}</span>
+            <span className="sm:hidden">{t('Shop')}</span>
           </button>
         </div>
       </div>
@@ -85,6 +87,7 @@ function SummaryRow({ label, value, positive = false }) {
 const stepBtn = `w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center rounded-full text-[#2a2a31] hover:bg-[#f3f3f5] disabled:opacity-30 disabled:hover:bg-transparent transition-colors ${focusRing}`;
 
 function CartItemRow({ item, onQuantity, onRemove }) {
+  const { t, date } = useLocale();
   // Shelf stock plus what may still be pre-ordered (lib/backorderRules.js)
   const maxQty = orderableQty(item);
   const outOfStock = maxQty === 0;
@@ -117,57 +120,57 @@ function CartItemRow({ item, onQuantity, onRemove }) {
               href={productHref}
               className="mt-0.5 block text-[15px] sm:text-[16px] font-medium leading-snug text-[#111114] line-clamp-2 hover:underline underline-offset-2"
             >
-              {item.name}
+              <bdi>{item.name}</bdi>
             </Link>
             {(item.size || item.shade) && (
-              <p className="mt-0.5 text-[12px] text-[#8a8a93]">{[item.size, item.shade].filter(Boolean).join(' · ')}</p>
+              <p className="mt-0.5 text-[12px] text-[#8a8a93]"><bdi>{[item.size, item.shade].filter(Boolean).join(' · ')}</bdi></p>
             )}
           </div>
 
-          <div className="shrink-0 text-right">
+          <div className="shrink-0 text-end">
             <p className="text-[14px] sm:text-[16px] font-semibold text-[#111114] tabular-nums">{fmt(item.price * item.quantity)}</p>
             {onSale && (
               <p className="text-[11.5px] text-[#a1a1aa] line-through tabular-nums">{fmt(item.originalPrice * item.quantity)}</p>
             )}
             {item.quantity > 1 && (
-              <p className="text-[11px] text-[#8a8a93] tabular-nums">{fmt(item.price)} each</p>
+              <p className="text-[11px] text-[#8a8a93] tabular-nums">{t('{price} each', { price: fmt(item.price) })}</p>
             )}
           </div>
         </div>
 
         {outOfStock && (
           <p className="mt-2 self-start rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700">
-            Out of stock — remove to continue
+            {t('Out of stock — remove to continue')}
           </p>
         )}
         {overStock && (
           <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
-            <span className="font-semibold text-amber-700">Only {maxQty} left</span>
+            <span className="font-semibold text-amber-700">{t('Only {n} left', { n: maxQty })}</span>
             <button
               type="button"
               onClick={() => onQuantity(item.id, maxQty)}
               className="font-semibold text-[#111114] underline underline-offset-2"
             >
-              Update to {maxQty}
+              {t('Update to {n}', { n: maxQty })}
             </button>
           </div>
         )}
         {preorderQty > 0 && (
           <p className="mt-2 self-start rounded-full px-2.5 py-1 text-[11px] font-semibold text-white" style={{ background: ACCENT }}>
-            {preorderQty === item.quantity ? 'Pre-order' : `${preorderQty} of ${item.quantity} on pre-order`} · ships by {getPreorderInfo(leadDays(item)).shipByLabel}
+            {preorderQty === item.quantity ? t('Pre-order') : t('{n} of {total} on pre-order', { n: preorderQty, total: item.quantity })} · {t('ships by {date}', { date: date(getPreorderInfo(leadDays(item)).shipByLabel) })}
           </p>
         )}
 
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
           <div
             role="group"
-            aria-label={`Quantity for ${item.name}`}
+            aria-label={t('Quantity of {name}', { name: item.name })}
             className="flex items-center rounded-full border border-[#d9d9de] bg-white"
           >
             <button
               type="button"
               onClick={() => (item.quantity <= 1 ? onRemove(item.id) : onQuantity(item.id, item.quantity - 1))}
-              aria-label={item.quantity <= 1 ? `Remove ${item.name}` : `Decrease quantity of ${item.name}`}
+              aria-label={item.quantity <= 1 ? t('Remove {name} from bag', { name: item.name }) : t('Decrease quantity of {name}', { name: item.name })}
               className={stepBtn}
             >
               {item.quantity <= 1 ? <Trash2 size={15} /> : <Minus size={15} />}
@@ -179,7 +182,7 @@ function CartItemRow({ item, onQuantity, onRemove }) {
               type="button"
               onClick={() => onQuantity(item.id, item.quantity + 1)}
               disabled={outOfStock || atStockLimit}
-              aria-label={`Increase quantity of ${item.name}`}
+              aria-label={t('Increase quantity of {name}', { name: item.name })}
               className={stepBtn}
             >
               <Plus size={15} />
@@ -189,10 +192,10 @@ function CartItemRow({ item, onQuantity, onRemove }) {
           <button
             type="button"
             onClick={() => onRemove(item.id)}
-            className={`h-11 px-2 -mr-2 inline-flex items-center gap-1.5 rounded-full text-[13px] font-medium text-[#8a8a93] hover:text-red-600 transition-colors ${focusRing}`}
+            className={`h-11 px-2 -me-2 inline-flex items-center gap-1.5 rounded-full text-[13px] font-medium text-[#8a8a93] hover:text-red-600 transition-colors ${focusRing}`}
           >
             <Trash2 size={14} />
-            Remove
+            {t('Remove')}
           </button>
         </div>
       </div>
@@ -201,21 +204,22 @@ function CartItemRow({ item, onQuantity, onRemove }) {
 }
 
 function RemovedRow({ item, onUndo }) {
+  const { t, rich } = useLocale();
   return (
     <div role="status" className="relative flex items-center justify-between gap-3 px-4 py-3 bg-[#f6f5f2]">
       <p className="min-w-0 truncate text-[13px] text-[#5a5a64]">
-        Removed <span className="font-semibold text-[#111114]">{item.name}</span>
+        {rich('Removed {name}', { name: <bdi className="font-semibold text-[#111114]">{item.name}</bdi> })}
       </p>
       <button
         type="button"
         onClick={() => onUndo(item.id)}
         className={`shrink-0 h-11 px-4 rounded-full text-[13px] font-semibold text-[#111114] underline underline-offset-4 hover:opacity-70 transition-opacity ${focusRing}`}
       >
-        Undo
+        {t('Undo')}
       </button>
       <motion.span
         aria-hidden="true"
-        className="absolute left-0 bottom-0 h-0.5 w-full origin-left"
+        className="absolute start-0 bottom-0 h-0.5 w-full origin-left rtl:origin-right"
         style={{ background: INK }}
         initial={{ scaleX: 1 }}
         animate={{ scaleX: 0 }}
@@ -227,6 +231,7 @@ function RemovedRow({ item, onUndo }) {
 
 export default function CartPage() {
   const { openSignIn } = useSignIn();
+  const { t, rich, locale } = useLocale();
   const {
     cartItems, removeFromCart, updateQuantity,
     appliedCoupon, discountAmount, applyCoupon, removeCoupon, couponError,
@@ -319,7 +324,8 @@ export default function CartPage() {
   const artisanGap = Math.max(0, ARTISAN_GIFT_THRESHOLD - subtotal);
   const redeemableAed = Math.floor(loyaltyPoints / POINTS_BLOCK) * AED_PER_BLOCK;
   const pointsEarned = Math.floor(subtotal);
-  const checkoutLabel = 'Checkout';
+  const checkoutLabel = t('Checkout');
+  const itemsLabel = t(totalQty === 1 ? '{n} item' : '{n} items', { n: totalQty });
 
   const handleBack = () => {
     if (window.history.length > 1) router.back();
@@ -351,9 +357,9 @@ export default function CartPage() {
         body: JSON.stringify({ cartItems: visibleItems }),
       });
       const d = await res.json();
-      setAiAdvice(d.advice || "I'm sorry, I couldn't generate advice at this moment.");
+      setAiAdvice(d.advice || t('Sorry, we couldn’t put advice together just now.'));
     } catch {
-      setAiAdvice("I'm sorry, I couldn't generate advice at this moment.");
+      setAiAdvice(t('Sorry, we couldn’t put advice together just now.'));
     } finally {
       setIsAiLoading(false);
     }
@@ -368,9 +374,9 @@ export default function CartPage() {
             <ShoppingBag size={30} strokeWidth={1.3} className="text-[#111114]" />
           </div>
           <div>
-            <h1 className="text-[22px] md:text-[26px] font-semibold text-[#111114]">Your bag is empty</h1>
+            <h1 className="text-[22px] md:text-[26px] font-semibold text-[#111114]">{t('Your bag is empty')}</h1>
             <p className="mt-1.5 max-w-xs text-[14px] text-[#5a5a64]">
-              Find something you love — shipping is free from 3 items.
+              {t('Find something you love — shipping is free from 3 items.')}
             </p>
           </div>
           <Link
@@ -378,8 +384,8 @@ export default function CartPage() {
             className={`inline-flex items-center gap-2 h-12 px-8 rounded-xl text-[14px] font-semibold text-white transition-transform active:scale-[0.98] ${focusRing}`}
             style={{ background: ACTION }}
           >
-            Explore the collection
-            <ArrowRight size={15} />
+            {t('Explore the collection')}
+            <ArrowRight size={15} className="flip-rtl" />
           </Link>
         </main>
       </div>
@@ -396,9 +402,9 @@ export default function CartPage() {
         <main className="lg:grid lg:min-h-[calc(100vh-85px)] lg:grid-cols-2 lg:grid-rows-[auto_1fr]">
 
             {/* ── Items ── */}
-            <section aria-labelledby="bag-heading" className="mx-auto min-w-0 max-w-[600px] px-4 pt-6 pb-8 sm:px-6 lg:col-start-1 lg:row-start-1 lg:mx-0 lg:ml-auto lg:w-full lg:px-[38px] lg:pt-[38px] lg:pb-6">
+            <section aria-labelledby="bag-heading" className="mx-auto min-w-0 max-w-[600px] px-4 pt-6 pb-8 sm:px-6 lg:col-start-1 lg:row-start-1 lg:mx-0 lg:ms-auto lg:w-full lg:px-[38px] lg:pt-[38px] lg:pb-6">
               <h1 id="bag-heading" className="mb-4 text-[22px] sm:text-[24px] font-semibold text-[#111114]">
-                Your bag <span className="text-[15px] font-normal text-[#707070]">· {totalQty} {totalQty === 1 ? 'item' : 'items'}</span>
+                {t('Your bag')} <span className="text-[15px] font-normal text-[#707070]">· {itemsLabel}</span>
               </h1>
               <ul className="border-y border-[#dedede] divide-y divide-[#ececec]">
                 <AnimatePresence initial={false}>
@@ -420,21 +426,21 @@ export default function CartPage() {
             </section>
 
             {/* ── Summary: the grey right half, as on checkout ── */}
-            <aside className="min-w-0 border-y border-[#dedede] bg-[#f5f5f5] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:border-y-0 lg:border-l">
+            <aside className="min-w-0 border-y border-[#dedede] bg-[#f5f5f5] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:border-y-0 lg:border-s">
               <div className="mx-auto max-w-[600px] space-y-6 px-4 py-8 sm:px-6 lg:sticky lg:top-0 lg:mx-0 lg:max-w-[500px] lg:px-[38px] lg:py-[38px]">
               <section aria-labelledby="summary-heading">
-                <h2 id="summary-heading" className="text-[17px] font-semibold text-[#111114]">Order summary</h2>
+                <h2 id="summary-heading" className="text-[17px] font-semibold text-[#111114]">{t('Order summary')}</h2>
 
                 <dl className="mt-4 space-y-2 text-[14px]">
-                  <SummaryRow label={`Subtotal (${totalQty} ${totalQty === 1 ? 'item' : 'items'})`} value={fmt(subtotal)} />
+                  <SummaryRow label={`${t('Subtotal')} (${itemsLabel})`} value={fmt(subtotal)} />
                   {discountAmount > 0 && (
                     <SummaryRow
-                      label={`Promo${appliedCoupon?.code ? ` (${appliedCoupon.code})` : ''}`}
-                      value={`−${fmt(discountAmount)}`}
+                      label={`${t('Promo')}${appliedCoupon?.code ? ` (${appliedCoupon.code})` : ''}`}
+                      value={<bdi>−{fmt(discountAmount)}</bdi>}
                       positive
                     />
                   )}
-                  <SummaryRow label="Shipping" value={shipping === 0 ? 'Free' : fmt(shipping)} positive={shipping === 0} />
+                  <SummaryRow label={t('Shipping')} value={shipping === 0 ? t('Free') : fmt(shipping)} positive={shipping === 0} />
                 </dl>
 
                 {/* Discount code: always open, as on checkout */}
@@ -443,25 +449,25 @@ export default function CartPage() {
                     <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-2">
                       <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-emerald-700">
                         <Check size={14} className="shrink-0" />
-                        <span className="truncate">{appliedCoupon.code} applied</span>
+                        <span className="truncate">{t('{code} applied', { code: appliedCoupon.code })}</span>
                       </span>
                       <button
                         type="button"
                         onClick={removeCoupon}
                         className={`shrink-0 h-9 px-2 rounded-full text-[12px] font-semibold text-[#111114] underline underline-offset-4 ${focusRing}`}
                       >
-                        Remove
+                        {t('Remove')}
                       </button>
                     </div>
                   ) : (
                     <>
                       <form onSubmit={e => { e.preventDefault(); handleApplyCoupon(); }} className="flex gap-2">
-                        <label htmlFor="promo-code" className="sr-only">Discount code</label>
+                        <label htmlFor="promo-code" className="sr-only">{t('Discount code')}</label>
                         <input
                           id="promo-code"
                           value={couponCode}
                           onChange={e => { setCouponCode(e.target.value); if (couponError) removeCoupon(); }}
-                          placeholder="Discount code"
+                          placeholder={t('Discount code')}
                           autoComplete="off"
                           autoCapitalize="characters"
                           spellCheck={false}
@@ -476,12 +482,12 @@ export default function CartPage() {
                           className="inline-flex h-[52px] min-w-[84px] items-center justify-center rounded-xl border border-[#dedede] bg-[#111114] px-5 text-[14px] font-semibold text-white transition-colors disabled:bg-[#ebebeb] disabled:text-[#707070]"
                         >
                           {isApplyingCoupon
-                            ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-label="Applying" />
-                            : 'Apply'}
+                            ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-label={t('Applying')} />
+                            : t('Apply')}
                         </button>
                       </form>
                       {couponError && (
-                        <p id="promo-error" role="alert" className="mt-2 text-[12px] font-medium text-red-600">{couponError}</p>
+                        <p id="promo-error" role="alert" className="mt-2 text-[12px] font-medium text-red-600">{t(couponError)}</p>
                       )}
                     </>
                   )}
@@ -491,8 +497,8 @@ export default function CartPage() {
                 <div className="mt-5">
                   <div className="flex items-baseline justify-between gap-4">
                     <div>
-                      <span className="text-[19px] font-semibold text-[#111114]">Total</span>
-                      <p className="text-[12.5px] text-[#707070]">Including {fmt(vat)} in VAT</p>
+                      <span className="text-[19px] font-semibold text-[#111114]">{t('Total')}</span>
+                      <p className="text-[12.5px] text-[#707070]">{t('Including {vat} in VAT', { vat: fmt(vat) })}</p>
                     </div>
                     <span className="flex items-baseline gap-2">
                       <span className="text-[12px] text-[#707070]">AED</span>
@@ -503,7 +509,7 @@ export default function CartPage() {
                   </div>
                   {totalSavings > 0 && (
                     <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-[12.5px] font-semibold text-emerald-700">
-                      You&apos;re saving {fmt(totalSavings)} on this order
+                      {t('You’re saving {amount} on this order', { amount: fmt(totalSavings) })}
                     </p>
                   )}
                 </div>
@@ -516,38 +522,36 @@ export default function CartPage() {
                   style={{ background: ACTION }}
                 >
                   {checkoutLabel}
-                  <ArrowRight size={17} />
+                  <ArrowRight size={17} className="flip-rtl" />
                 </button>
                 {hasStockIssues && (
                   <p role="alert" className="hidden lg:block mt-2.5 text-center text-[12px] font-medium text-red-600">
-                    Remove or update the highlighted items to continue.
+                    {t('Remove or update the highlighted items to continue.')}
                   </p>
                 )}
 
                 {/* TabbyPromo renders an empty div when unconfigured — collapse the gap then */}
                 <div className="mt-4 has-[>div:empty]:hidden">
-                  <TabbyPromo price={total} source="cart" />
+                  <TabbyPromo price={total} source="cart" lang={locale} />
                 </div>
 
               </section>
 
               {totalQty > 0 && (
-                <section aria-label="Delivery and rewards" className="rounded-xl border border-[#dedede] bg-white p-5 space-y-5">
+                <section aria-label={t('Delivery and rewards')} className="rounded-xl border border-[#dedede] bg-white p-5 space-y-5">
                   {/* Shipping tiers */}
                   <div>
                     <div className="flex items-start gap-3">
                       <IconBadge><Truck size={15} /></IconBadge>
                       <p className="pt-1.5 text-[13px] leading-snug text-[#2a2a31]">
                         {!nextTier ? (
-                          <><span className="font-semibold text-emerald-600">Free shipping unlocked</span> on this order</>
-                        ) : (
-                          <>
-                            Add <span className="font-semibold">{nextTier.itemsNeeded} more {nextTier.itemsNeeded === 1 ? 'item' : 'items'}</span>
-                            {nextTier.newCost === 0
-                              ? <> for <span className="font-semibold text-emerald-600">free shipping</span></>
-                              : <> to cut shipping to <span className="font-semibold">AED {nextTier.newCost}</span></>}
-                          </>
-                        )}
+                          rich('{unlocked} on this order', { unlocked: <span className="font-semibold text-emerald-600">{t('Free shipping unlocked')}</span> })
+                        ) : (() => {
+                          const more = <span className="font-semibold">{t(nextTier.itemsNeeded === 1 ? '{n} more item' : '{n} more items', { n: nextTier.itemsNeeded })}</span>;
+                          return nextTier.newCost === 0
+                            ? rich('Add {more} for {free}', { more, free: <span className="font-semibold text-emerald-600">{t('free shipping')}</span> })
+                            : rich('Add {more} to cut shipping to {cost}', { more, cost: <span className="font-semibold">AED {nextTier.newCost}</span> });
+                        })()}
                       </p>
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-1.5">
@@ -557,7 +561,7 @@ export default function CartPage() {
                           <div key={tier.label}>
                             <div className="h-1.5 rounded-full transition-colors" style={{ background: reached ? INK : '#e2e0db' }} />
                             <p className={`mt-1.5 text-[11px] ${reached ? 'font-semibold text-[#2a2a31]' : 'text-[#a1a1aa]'}`}>
-                              {tier.label} · {formatShipping(tier.cost)}
+                              {t(tier.label)} · {t(formatShipping(tier.cost))}
                             </p>
                           </div>
                         );
@@ -570,16 +574,17 @@ export default function CartPage() {
                     <IconBadge><Gift size={15} /></IconBadge>
                     <div className="flex-1 min-w-0 pt-1.5">
                       <p className="text-[13px] leading-snug text-[#2a2a31]">
-                        {artisanGap <= 0 ? (
-                          <>You&apos;ve unlocked a free <span className="font-semibold text-[#111114]">{ARTISAN_GIFT_NAME}</span></>
-                        ) : (
-                          <><span className="font-semibold">{fmt(artisanGap)}</span> away from a free <span className="font-semibold text-[#111114]">{ARTISAN_GIFT_NAME}</span></>
-                        )}
+                        {artisanGap <= 0
+                          ? rich('You’ve unlocked a free {gift}', { gift: <span className="font-semibold text-[#111114]">{t(ARTISAN_GIFT_NAME)}</span> })
+                          : rich('{amount} away from a free {gift}', {
+                            amount: <span className="font-semibold">{fmt(artisanGap)}</span>,
+                            gift: <span className="font-semibold text-[#111114]">{t(ARTISAN_GIFT_NAME)}</span>,
+                          })}
                       </p>
                       {artisanGap > 0 && (
                         <div
                           role="progressbar"
-                          aria-label={`Progress to ${ARTISAN_GIFT_NAME}`}
+                          aria-label={t('Progress to {gift}', { gift: t(ARTISAN_GIFT_NAME) })}
                           aria-valuemin={0}
                           aria-valuemax={100}
                           aria-valuenow={artisanPct}
@@ -604,26 +609,36 @@ export default function CartPage() {
                       {isAuthenticated ? (
                         <>
                           <p>
-                            This order earns <span className="font-semibold">{pointsEarned.toLocaleString()} points</span>
-                            <span className="text-[#8a8a93]">, credited on delivery</span>
+                            {rich('This order earns {points}', { points: <span className="font-semibold">{t('{n} points', { n: pointsEarned.toLocaleString('en-US') })}</span> })}
+                            <span className="text-[#8a8a93]">{t(', credited on delivery')}</span>
                           </p>
                           {loyaltyPoints >= POINTS_BLOCK ? (
                             <p className="mt-1 text-[12px] text-[#5a5a64]">
-                              You have {loyaltyPoints.toLocaleString()} points — worth{' '}
-                              <span className="font-semibold text-[#111114]">{fmt(redeemableAed)}</span> off. Redeem them at checkout.
+                              {rich('You have {points} — worth {amount} off. Redeem them at checkout.', {
+                                points: t('{n} points', { n: loyaltyPoints.toLocaleString('en-US') }),
+                                amount: <span className="font-semibold text-[#111114]">{fmt(redeemableAed)}</span>,
+                              })}
                             </p>
                           ) : loyaltyPoints > 0 ? (
                             <p className="mt-1 text-[12px] text-[#5a5a64]">
-                              You have {loyaltyPoints.toLocaleString()} points. Every {POINTS_BLOCK} points is worth AED {AED_PER_BLOCK} at checkout.
+                              {t('You have {points}. Every {block} points is worth AED {aed} at checkout.', {
+                                points: t('{n} points', { n: loyaltyPoints.toLocaleString('en-US') }),
+                                block: POINTS_BLOCK,
+                                aed: AED_PER_BLOCK,
+                              })}
                             </p>
                           ) : null}
                         </>
                       ) : (
                         <p>
-                          <Link href="/auth?callbackUrl=/cart" onClick={(e) => { e.preventDefault(); openSignIn(); }} className="font-semibold text-[#111114] underline underline-offset-2">
-                            Sign in
-                          </Link>{' '}
-                          to earn {pointsEarned.toLocaleString()} points on this order
+                          {rich('{signIn} to earn {points} on this order', {
+                            signIn: (
+                              <Link href="/auth?callbackUrl=/cart" onClick={(e) => { e.preventDefault(); openSignIn(); }} className="font-semibold text-[#111114] underline underline-offset-2">
+                                {t('Sign in')}
+                              </Link>
+                            ),
+                            points: t('{n} points', { n: pointsEarned.toLocaleString('en-US') }),
+                          })}
                         </p>
                       )}
                     </div>
@@ -634,7 +649,7 @@ export default function CartPage() {
             </aside>
 
             {/* ── Advice & cross-sell (under the items on desktop, after the summary on phones) ── */}
-            <div className="mx-auto min-w-0 max-w-[600px] space-y-4 px-4 py-8 sm:px-6 lg:col-start-1 lg:row-start-2 lg:mx-0 lg:ml-auto lg:w-full lg:px-[38px] lg:pt-4 lg:pb-[38px]">
+            <div className="mx-auto min-w-0 max-w-[600px] space-y-4 px-4 py-8 sm:px-6 lg:col-start-1 lg:row-start-2 lg:mx-0 lg:ms-auto lg:w-full lg:px-[38px] lg:pt-4 lg:pb-[38px]">
               <AnimatePresence mode="wait" initial={false}>
                 {aiAdvice ? (
                   <motion.div
@@ -648,14 +663,14 @@ export default function CartPage() {
                       <Sparkles size={14} />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-semibold text-[#111114]">Routine advice</p>
+                      <p className="text-[12px] font-semibold text-[#111114]">{t('Routine advice')}</p>
                       <p className="mt-1 text-[13.5px] leading-relaxed text-[#2a2a31]">{aiAdvice}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setAiAdvice(null)}
-                      aria-label="Dismiss advice"
-                      className={`shrink-0 w-9 h-9 -mt-1 -mr-1 rounded-full flex items-center justify-center text-[#a1a1aa] hover:bg-white hover:text-[#5a5a64] transition-colors ${focusRing}`}
+                      aria-label={t('Dismiss advice')}
+                      className={`shrink-0 w-9 h-9 -mt-1 -me-1 rounded-full flex items-center justify-center text-[#a1a1aa] hover:bg-white hover:text-[#5a5a64] transition-colors ${focusRing}`}
                     >
                       <X size={15} />
                     </button>
@@ -672,7 +687,7 @@ export default function CartPage() {
                     className={`inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#e5e5ea] bg-white text-[13px] font-medium text-[#2a2a31] hover:border-[#c8c8cf] hover:bg-[#fafafb] disabled:opacity-50 transition-colors ${focusRing}`}
                   >
                     <Sparkles size={14} style={{ color: ACCENT }} className={isAiLoading ? 'motion-safe:animate-pulse' : ''} />
-                    {isAiLoading ? 'Building your routine advice…' : 'Get routine advice for your bag'}
+                    {isAiLoading ? t('Building your routine advice…') : t('Get routine advice for your bag')}
                   </motion.button>
                 )}
               </AnimatePresence>
@@ -689,12 +704,12 @@ export default function CartPage() {
         >
           {hasStockIssues && (
             <p role="alert" className="px-4 pt-2 text-center text-[11.5px] font-medium text-red-600">
-              Remove or update the highlighted items to continue.
+              {t('Remove or update the highlighted items to continue.')}
             </p>
           )}
           <div className="mx-auto flex max-w-[640px] items-center gap-4 px-4 pt-3">
             <div className="min-w-0">
-              <p className="text-[11px] leading-none text-[#8a8a93]">Total · VAT incl.</p>
+              <p className="text-[11px] leading-none text-[#8a8a93]">{t('Total · VAT incl.')}</p>
               <p className="mt-1 text-[18px] font-bold leading-none tabular-nums text-[#111114]">{fmt(total)}</p>
             </div>
             <button
@@ -705,7 +720,7 @@ export default function CartPage() {
               style={{ background: ACTION }}
             >
               {checkoutLabel}
-              <ArrowRight size={17} />
+              <ArrowRight size={17} className="flip-rtl" />
             </button>
           </div>
         </div>

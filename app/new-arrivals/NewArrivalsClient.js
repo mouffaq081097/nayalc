@@ -13,8 +13,10 @@ import { Search, X, Filter, Sparkles, Hash, ArrowRight, ShoppingBag, Star, Wind,
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useLocale } from '@/app/context/LocaleContext';
 
 export default function NewArrivalsClient() {
+  const { t, rich } = useLocale();
   const { products: allProducts, fetchProducts } = useAppContext();
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,28 +75,28 @@ export default function NewArrivalsClient() {
         {/* Apple Style Command Strip */}
         <div className="bg-white/80 backdrop-blur-2xl border border-gray-200 shadow-sm rounded-[1.5rem] flex flex-col md:flex-row items-center gap-4 py-3 px-6 mb-16">
             <div className="relative group flex-grow w-full md:w-auto">
-                <Search className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${isSearchFocused ? 'text-brand-pink' : 'text-gray-300'}`} size={16} />
+                <Search className={`absolute start-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${isSearchFocused ? 'text-brand-pink' : 'text-gray-300'}`} size={16} />
                 <input 
-                    placeholder="Search arrivals..."
+                    placeholder={t('Search arrivals...')}
                     value={searchTerm}
                     onFocus={() => setIsSearchFocused(true)}
                     onBlur={() => setIsSearchFocused(false)}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 pl-11 pr-10 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white transition-all"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-2.5 ps-11 pe-10 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white transition-all"
                 />
             </div>
 
-            <div className="flex items-center gap-4 w-full md:w-auto justify-between border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-6">
+            <div className="flex items-center gap-4 w-full md:w-auto justify-between border-t md:border-t-0 md:border-s border-gray-100 pt-3 md:pt-0 md:ps-6">
                 <div className="flex items-center gap-2">
-                    <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">Sort</span>
+                    <span className="text-[9px] uppercase font-bold text-gray-400 tracking-widest">{t('Sort')}</span>
                     <Select value={sortBy} onValueChange={setSortBy}>
                         <SelectTrigger className="border border-gray-100 bg-gray-50 rounded-xl px-4 py-2 h-10 text-[10px] font-bold uppercase tracking-widest text-gray-900 focus:ring-0 w-[140px]">
-                            <SelectValue placeholder="Newest" />
+                            <SelectValue placeholder={t('Newest')} />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-gray-200 shadow-2xl">
-                            <SelectItem value="newest" className="text-[10px] uppercase font-bold py-3 rounded-lg">Newest</SelectItem>
-                            <SelectItem value="price-low" className="text-[10px] uppercase font-bold py-3 rounded-lg">Price Low</SelectItem>
-                            <SelectItem value="price-high" className="text-[10px] uppercase font-bold py-3 rounded-lg">Price High</SelectItem>
+                            <SelectItem value="newest" className="text-[10px] uppercase font-bold py-3 rounded-lg">{t('Newest')}</SelectItem>
+                            <SelectItem value="price-low" className="text-[10px] uppercase font-bold py-3 rounded-lg">{t('Price Low')}</SelectItem>
+                            <SelectItem value="price-high" className="text-[10px] uppercase font-bold py-3 rounded-lg">{t('Price High')}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -123,8 +125,8 @@ export default function NewArrivalsClient() {
             ) : newProducts.length === 0 ? (
               <div className="py-40 text-center bg-white rounded-[3rem] border border-dashed border-gray-200">
                 <Clock size={40} className="mx-auto text-gray-200 mb-6" />
-                <h3 className="font-serif text-3xl italic text-gray-900">Synchronizing Collection...</h3>
-                <p className="text-gray-400 text-sm mt-2 max-w-xs mx-auto">Our latest Curations are undergoing final certification. Please return shortly.</p>
+                <h3 className="font-serif text-3xl italic text-gray-900">{t('Synchronizing Collection...')}</h3>
+                <p className="text-gray-400 text-sm mt-2 max-w-xs mx-auto">{t('Our latest Curations are undergoing final certification. Please return shortly.')}</p>
               </div>
             ) : (
               <div className="space-y-32">
@@ -145,14 +147,14 @@ export default function NewArrivalsClient() {
                                 </div>
                                 <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent flex flex-col justify-end p-10 lg:p-12 space-y-4">
                                     <div className="space-y-1">
-                                        <Badge className="bg-brand-pink/10 text-brand-pink border-none font-bold uppercase text-[9px] tracking-widest mb-2 px-3">Editor's Choice</Badge>
+                                        <Badge className="bg-brand-pink/10 text-brand-pink border-none font-bold uppercase text-[9px] tracking-widest mb-2 px-3">{t('Editor’s Choice')}</Badge>
                                         <h3 className="text-3xl font-serif italic text-gray-900 leading-tight">{product.name}</h3>
                                         <p className="text-gray-500 text-sm line-clamp-2 max-w-xs italic">"{product.description}"</p>
                                     </div>
                                     <div className="flex items-center justify-between pt-2">
-                                        <span className="text-xl font-bold tracking-tighter">AED {product.price.toFixed(2)}</span>
+                                        <span className="latin text-xl font-bold tracking-tighter">AED {product.price.toFixed(2)}</span>
                                         <div className="w-12 h-12 rounded-full bg-gray-900 text-white flex items-center justify-center shadow-lg group-hover:bg-brand-pink transition-all">
-                                            <ArrowRight size={20} />
+                                            <ArrowRight size={20} className="flip-rtl" />
                                         </div>
                                     </div>
                                 </div>
@@ -164,7 +166,7 @@ export default function NewArrivalsClient() {
                 {/* Main Grid */}
                 <div className="space-y-12">
                     <div className="flex items-center gap-6">
-                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-[0.5em] whitespace-nowrap">Full Inventory</span>
+                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-[0.5em] whitespace-nowrap">{t('Full Inventory')}</span>
                         <div className="h-px w-full bg-gray-100"></div>
                     </div>
                     
@@ -189,13 +191,13 @@ export default function NewArrivalsClient() {
                 {/* Editorial Callout - Apple Style */}
                 {!searchTerm && (
                     <section className="py-32 bg-white rounded-[4rem] px-12 lg:px-24 border border-gray-100 shadow-2xl relative overflow-hidden text-center space-y-10">
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-pink/5 rounded-full blur-[120px]"></div>
+                        <div className="absolute top-0 end-0 w-96 h-96 bg-brand-pink/5 rounded-full blur-[120px]"></div>
                         <div className="relative z-10 space-y-6 max-w-2xl mx-auto">
                             <Star size={32} className="text-brand-pink mx-auto" strokeWidth={1.5} />
-                            <h2 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">Be the first to reveal <br/> our next Curations.</h2>
-                            <p className="text-gray-400 text-[15px] font-medium tracking-tight leading-relaxed italic px-4">Join our exclusive journal for early access to limited seasonal previews, laboratory reveals, and private boutique events.</p>
+                            <h2 className="text-4xl md:text-6xl font-serif italic text-gray-900 leading-tight">{rich('Be the first to reveal {br}our next Curations.', { br: <br /> })}</h2>
+                            <p className="text-gray-400 text-[15px] font-medium tracking-tight leading-relaxed italic px-4">{t('Join our exclusive journal for early access to limited seasonal previews, laboratory reveals, and private boutique events.')}</p>
                             <button className="px-12 py-5 bg-gray-900 text-white rounded-full text-[14px] font-semibold hover:bg-brand-pink transition-all active:scale-95">
-                                Join the VIP list
+                                {t('Join the VIP list')}
                             </button>
                         </div>
                     </section>

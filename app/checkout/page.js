@@ -27,6 +27,7 @@ import CheckoutForm from './CheckoutForm';
 import ExpressCheckoutButton from './ExpressCheckoutButton';
 import TabbyCard from '../components/TabbyCard';
 import { useSignIn } from '@/app/context/SignInContext';
+import { useLocale, useT } from '@/app/context/LocaleContext';
 
 const Modal = dynamic(() => import('../components/Modal'), { ssr: false });
 const AddressInputForm = dynamic(() => import('../components/AddressInputForm'), { ssr: false });
@@ -68,18 +69,19 @@ const isDefaultAddress = (a) => Boolean(a.isDefault ?? a.is_default);
 // Shopify's checkout header: the logo lines up with the left column, the bag
 // icon (back to the bag) with the right one
 function FlowHeader() {
+  const t = useT();
   return (
     <header className="border-b border-[#dedede] bg-white">
       <div className="flex h-[64px] items-center justify-between px-4 sm:px-6 md:h-[84px] lg:grid lg:grid-cols-2 lg:px-0">
-        <div className="lg:ml-auto lg:w-full lg:max-w-[600px] lg:px-[38px]">
+        <div className="lg:ms-auto lg:w-full lg:max-w-[600px] lg:px-[38px]">
           <Link href="/" className="inline-flex items-center rounded-md transition-opacity hover:opacity-75 active:opacity-60">
             <BrandLogo priority />
           </Link>
         </div>
-        <div className="lg:w-full lg:max-w-[500px] lg:px-[38px] lg:text-right">
+        <div className="lg:w-full lg:max-w-[500px] lg:px-[38px] lg:text-end">
           <Link
             href="/cart"
-            aria-label="Back to bag"
+            aria-label={t('Back to bag')}
             className={`inline-flex h-10 w-10 items-center justify-center rounded-md text-[#111114] transition-opacity hover:opacity-70 ${focusRing}`}
           >
             <ShoppingBag size={22} strokeWidth={1.5} />
@@ -91,9 +93,10 @@ function FlowHeader() {
 }
 
 function CheckoutSkeleton() {
+  const t = useT();
   return (
-    <div role="status" className="mx-auto max-w-[600px] space-y-4 px-4 py-8 motion-safe:animate-pulse sm:px-6 lg:mx-0 lg:ml-auto lg:w-1/2 lg:px-[38px] lg:py-[38px]">
-      <span className="sr-only">Loading checkout</span>
+    <div role="status" className="mx-auto max-w-[600px] space-y-4 px-4 py-8 motion-safe:animate-pulse sm:px-6 lg:mx-0 lg:ms-auto lg:w-1/2 lg:px-[38px] lg:py-[38px]">
+      <span className="sr-only">{t('Loading checkout')}</span>
       <div className="h-52 rounded-xl bg-[#f5f5f5]" />
       <div className="h-[52px] rounded-xl bg-[#f5f5f5]" />
     </div>
@@ -128,6 +131,7 @@ const amount = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits:
 
 /** Shopify's order summary: photo tiles with a quantity badge, discount field, totals with "AED" before the total */
 function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, couponCode, pointsDiscount, shipping, giftWrapFee, tax, total, promo = null }) {
+  const t = useT();
   return (
     <>
       <ul className="space-y-4">
@@ -139,16 +143,16 @@ function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, coupon
                 <div className="h-16 w-16 overflow-hidden rounded-lg border border-[#dedede] bg-white p-1">
                   <ImageWithFallback src={item.image} alt={item.name} className="h-full w-full object-contain" />
                 </div>
-                <span className="absolute -right-2 -top-2 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-[#111114] px-1.5 text-[12px] font-medium tabular-nums text-white">
+                <span className="absolute -end-2 -top-2 flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-[#111114] px-1.5 text-[12px] font-medium tabular-nums text-white">
                   {item.quantity}
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-[14px] leading-snug text-[#111114]">{item.name}</p>
+                <p className="line-clamp-2 text-[14px] leading-snug text-[#111114]"><bdi>{item.name}</bdi></p>
                 {item.brand && <p className="truncate text-[12.5px] text-[#707070]">{item.brand}</p>}
                 {preorder > 0 && (
                   <p className="truncate text-[12.5px] font-medium" style={{ color: ACCENT }}>
-                    {preorder === item.quantity ? 'Pre-order' : `${preorder} on pre-order`}
+                    {preorder === item.quantity ? t('Pre-order') : t('{n} on pre-order', { n: preorder })}
                   </p>
                 )}
               </div>
@@ -161,19 +165,19 @@ function OrderSummaryContent({ items, totalQty, subtotal, discountAmount, coupon
       {promo && <div className="mt-6">{promo}</div>}
 
       <dl className="mt-6 space-y-2 text-[14px]">
-        <SummaryRow label={`Subtotal · ${totalQty} ${totalQty === 1 ? 'item' : 'items'}`} value={fmt(subtotal)} />
+        <SummaryRow label={`${t('Subtotal')} · ${t(totalQty === 1 ? '{n} item' : '{n} items', { n: totalQty })}`} value={fmt(subtotal)} />
         {discountAmount > 0 && (
-          <SummaryRow label={`Discount${couponCode ? ` (${couponCode})` : ''}`} value={`−${fmt(discountAmount)}`} />
+          <SummaryRow label={couponCode ? t('Discount ({code})', { code: couponCode }) : t('Discount')} value={<bdi>−{fmt(discountAmount)}</bdi>} />
         )}
-        {pointsDiscount > 0 && <SummaryRow label="Loyalty points" value={`−${fmt(pointsDiscount)}`} />}
-        <SummaryRow label="Shipping" value={shipping === 0 ? 'FREE' : fmt(shipping)} />
-        {giftWrapFee > 0 && <SummaryRow label="Gift wrap" value={fmt(giftWrapFee)} />}
+        {pointsDiscount > 0 && <SummaryRow label={t('Loyalty points')} value={<bdi>−{fmt(pointsDiscount)}</bdi>} />}
+        <SummaryRow label={t('Shipping')} value={shipping === 0 ? t('FREE') : fmt(shipping)} />
+        {giftWrapFee > 0 && <SummaryRow label={t('Gift wrap')} value={fmt(giftWrapFee)} />}
       </dl>
 
       <div className="mt-4 flex items-baseline justify-between gap-4">
         <div>
-          <span className="text-[19px] font-semibold text-[#111114]">Total</span>
-          <p className="text-[12.5px] text-[#707070]">Including {fmt(tax)} in VAT</p>
+          <span className="text-[19px] font-semibold text-[#111114]">{t('Total')}</span>
+          <p className="text-[12.5px] text-[#707070]">{t('Including {vat} in VAT', { vat: fmt(tax) })}</p>
         </div>
         <span className="flex items-baseline gap-2">
           <span className="text-[12px] text-[#707070]">AED</span>
@@ -197,7 +201,8 @@ function ToggleRow({ icon, title, description, checked, onChange, disabled = fal
         aria-hidden="true"
         className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${checked ? 'bg-[#111114]' : 'bg-[#e5e5ea]'}`}
       >
-        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+        {/* Slides toward the end edge when on: right, or left in Arabic */}
+        <span className={`absolute top-0.5 start-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-4 rtl:-translate-x-4' : ''}`} />
       </span>
     </label>
   );
@@ -213,7 +218,7 @@ function PaymentOption({ value, checked, onSelect, title, hint, children }) {
         <span className="min-w-0 flex-1 text-[14px] font-semibold text-[#111114]">{title}</span>
         <span className="shrink-0 text-[12px] text-[#8a8a93]">{hint}</span>
       </label>
-      {checked && children && <div className="px-4 pb-4 sm:pl-12">{children}</div>}
+      {checked && children && <div className="px-4 pb-4 sm:ps-12">{children}</div>}
     </div>
   );
 }
@@ -224,7 +229,7 @@ function AddAddressRow({ onClick, label }) {
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-[15px] text-[#111114] transition-colors hover:bg-[#fafafa] ${focusRing}`}
+      className={`flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-start text-[15px] text-[#111114] transition-colors hover:bg-[#fafafa] ${focusRing}`}
     >
       <Plus size={20} strokeWidth={1.75} className="shrink-0" />
       {label}
@@ -234,6 +239,7 @@ function AddAddressRow({ onClick, label }) {
 
 /** ⋮ menu on an address: Edit, and Remove when no past order uses it */
 function AddressMenu({ name, onEdit, onRemove, canRemove }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -245,28 +251,28 @@ function AddressMenu({ name, onEdit, onRemove, canRemove }) {
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc); };
   }, [open]);
 
-  const item = `flex w-full items-center gap-2 px-4 py-2.5 text-left text-[14px] transition-colors hover:bg-[#f5f5f5] ${focusRing}`;
+  const item = `flex w-full items-center gap-2 px-4 py-2.5 text-start text-[14px] transition-colors hover:bg-[#f5f5f5] ${focusRing}`;
   return (
     <div ref={ref} className="relative shrink-0">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        aria-label={`Options for ${name}`}
+        aria-label={t('Options for {name}', { name })}
         aria-expanded={open}
         aria-haspopup="menu"
-        className={`-mr-2 -mt-1 flex h-9 w-9 items-center justify-center rounded-full text-[#5a5a64] transition-colors hover:bg-black/5 hover:text-[#111114] ${focusRing}`}
+        className={`-me-2 -mt-1 flex h-9 w-9 items-center justify-center rounded-full text-[#5a5a64] transition-colors hover:bg-black/5 hover:text-[#111114] ${focusRing}`}
       >
         <MoreVertical size={18} />
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 top-9 z-20 min-w-[150px] overflow-hidden rounded-xl border border-[#dedede] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+        <div role="menu" className="absolute end-0 top-9 z-20 min-w-[150px] overflow-hidden rounded-xl border border-[#dedede] bg-white py-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
           <button type="button" role="menuitem" onClick={() => { setOpen(false); onEdit(); }} className={`${item} text-[#111114]`}>
-            <Pencil size={14} /> Edit
+            <Pencil size={14} /> {t('Edit')}
           </button>
           {/* Addresses used by past orders can't be deleted server-side */}
           {canRemove && (
             <button type="button" role="menuitem" onClick={() => { setOpen(false); onRemove(); }} className={`${item} text-red-600`}>
-              <Trash2 size={14} /> Remove
+              <Trash2 size={14} /> {t('Remove')}
             </button>
           )}
         </div>
@@ -286,6 +292,7 @@ export default function CheckoutPage() {
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const { fetchLoyalty } = useAppContext();
   const { openSignIn } = useSignIn();
+  const { t, rich, date, locale } = useLocale();
   // Signed out: check out as a guest with an email and an address (no sign-in step)
   const isGuest = !authLoading && !isAuthenticated;
   const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
@@ -519,13 +526,13 @@ export default function CheckoutPage() {
   };
 
   const handleDeleteAddress = async (id) => {
-    if (!window.confirm('Delete this address?')) return;
+    if (!window.confirm(t('Delete this address?'))) return;
     try {
       const res = await fetchWithAuth(`/api/users/${user.id}/addresses/${id}`, { method: 'DELETE' });
-      if (!res.ok) { toast.error("This address can't be removed."); return; }
+      if (!res.ok) { toast.error(t('This address can’t be removed.')); return; }
       fetchShippingAddresses();
       if (selectedAddressId === id) setSelectedAddressId(null);
-    } catch { toast.error('Error deleting address.'); }
+    } catch { toast.error(t('Error deleting address.')); }
   };
 
   /**
@@ -535,9 +542,9 @@ export default function CheckoutPage() {
    */
   const ensureGuest = async () => {
     const errors = {};
-    if (!EMAIL_RE.test(guest.email.trim())) errors.email = 'Enter a valid email address.';
-    if (!guest.firstName.trim()) errors.firstName = 'Enter your first name.';
-    if (!guestAddress) errors.address = 'Add a delivery address.';
+    if (!EMAIL_RE.test(guest.email.trim())) errors.email = t('Enter a valid email address.');
+    if (!guest.firstName.trim()) errors.firstName = t('Enter your first name.');
+    if (!guestAddress) errors.address = t('Add a delivery address.');
     if (Object.keys(errors).length) {
       setGuestErrors(errors);
       toast.error(Object.values(errors)[0]);
@@ -570,7 +577,7 @@ export default function CheckoutPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.token) {
-        const message = data.message || 'Something went wrong. Please try again.';
+        const message = t(data.message || 'Something went wrong. Please try again.');
         setGuestErrors({ [data.field === 'phone' ? 'address' : (data.field || 'email')]: message });
         toast.error(message);
         return null;
@@ -578,7 +585,7 @@ export default function CheckoutPage() {
       guestTokenRef.current = { token: data.token, key, at: Date.now() };
       return data.token;
     } catch {
-      toast.error('Could not reach the store. Please check your connection and try again.');
+      toast.error(t('Could not reach the store. Please check your connection and try again.'));
       return null;
     }
   };
@@ -591,9 +598,9 @@ export default function CheckoutPage() {
       if (!guestToken) return;
       addr = { ...guestAddress, customer_phone: guestAddress.customerPhone };
     } else {
-      if (!selectedAddressId) { toast.error('Please select a shipping address.'); return; }
+      if (!selectedAddressId) { toast.error(t('Please select a shipping address.')); return; }
       addr = shippingAddresses.find(a => a.id === selectedAddressId);
-      if (!addr) { toast.error('Selected address not found.'); return; }
+      if (!addr) { toast.error(t('Selected address not found.')); return; }
     }
     setIsTabbyLoading(true);
     try {
@@ -633,10 +640,10 @@ export default function CheckoutPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.error || 'Tabby checkout failed.'); setIsTabbyLoading(false); return; }
+      if (!res.ok) { toast.error(t(data.error || 'Tabby checkout failed.')); setIsTabbyLoading(false); return; }
       window.location.href = data.webUrl;
     } catch {
-      toast.error('Could not connect to Tabby. Please try another payment method.');
+      toast.error(t('Could not connect to Tabby. Please try another payment method.'));
       setIsTabbyLoading(false);
     }
   };
@@ -681,10 +688,10 @@ export default function CheckoutPage() {
         router.push(`/order-confirmed/${result.orderId}`);
         return true;
       }
-      toast.error(result.message || 'Error placing order. Please contact support.');
+      toast.error(t(result.message || 'Error placing order. Please contact support.'));
       return false;
     } catch {
-      toast.error('Error placing order. Please contact support.');
+      toast.error(t('Error placing order. Please contact support.'));
       return false;
     }
   };
@@ -707,10 +714,10 @@ export default function CheckoutPage() {
         router.push(`/order-confirmed/${result.orderId}?access=${encodeURIComponent(result.access || '')}`);
         return true;
       }
-      toast.error(result.message || 'Error placing order. Please contact support.');
+      toast.error(t(result.message || 'Error placing order. Please contact support.'));
       return false;
     } catch {
-      toast.error('Error placing order. Please contact support.');
+      toast.error(t('Error placing order. Please contact support.'));
       return false;
     }
   };
@@ -744,7 +751,7 @@ export default function CheckoutPage() {
   // Apple Pay / Google Pay express button: pay + place the order in one tap.
   // Wallet payments settle through Stripe, so they are recorded as a 'card' order.
   const handleWalletPayment = async (piId) => {
-    if (!isGuest && (!user || !selectedAddressId)) { toast.error('Please select a shipping address first.'); return; }
+    if (!isGuest && (!user || !selectedAddressId)) { toast.error(t('Please select a shipping address first.')); return; }
     setIsPlacingOrder(true);
     const ok = await postOrder(buildOrderData({ payment_method: 'card', stripe_payment_intent_id: piId }));
     if (!ok) setIsPlacingOrder(false);
@@ -755,7 +762,7 @@ export default function CheckoutPage() {
     if (!code || isApplyingCoupon) return;
     if (usePoints) {
       setUsePoints(false);
-      toast('Loyalty points removed — an order takes either a promo code or points.');
+      toast(t('Loyalty points removed — an order takes either a promo code or points.'));
     }
     setIsApplyingCoupon(true);
     try { await applyCoupon(code); } finally { setIsApplyingCoupon(false); }
@@ -763,8 +770,8 @@ export default function CheckoutPage() {
 
   // One page: the place-order button (cash on delivery / Tabby) or the card form's own Pay button
   const handlePrimary = () => {
-    if (isGuest && !guestAddress) { setGuestErrors(e => ({ ...e, address: 'Add a delivery address.' })); openAddressModal(null); return; }
-    if (!isGuest && !selectedAddressId) { setShowAddressPicker(true); toast.error('Please choose a delivery address.'); return; }
+    if (isGuest && !guestAddress) { setGuestErrors(e => ({ ...e, address: t('Add a delivery address.') })); openAddressModal(null); return; }
+    if (!isGuest && !selectedAddressId) { setShowAddressPicker(true); toast.error(t('Please choose a delivery address.')); return; }
     if (method === 'tabby') handleTabbyCheckout();
     else if (method === 'cashOnDelivery') handlePlaceOrder();
   };
@@ -782,7 +789,7 @@ export default function CheckoutPage() {
     onBeforePay: async () => {
       if (total <= 0) return false;
       if (isGuest) return !!(await ensureGuest());
-      if (!selectedAddressId) { toast.error('Please select a shipping address first.'); return false; }
+      if (!selectedAddressId) { toast.error(t('Please select a shipping address first.')); return false; }
       return true;
     },
     onSuccess: handleWalletPayment,
@@ -798,33 +805,33 @@ export default function CheckoutPage() {
     ? { type: 'submit', form: 'card-payment-form' }
     : { type: 'button', onClick: handlePrimary };
 
-  let desktopLabel = `Place order · ${fmt(total)}`;
-  let mobileLabel = 'Place order';
-  if (method === 'tabby') { desktopLabel = `Continue to Tabby · ${fmt(total)}`; mobileLabel = 'Continue to Tabby'; }
-  if (method === 'card') { desktopLabel = `Pay ${fmt(total)}`; mobileLabel = 'Pay now'; }
-  if (method === 'wallet') { desktopLabel = 'Choose a delivery address'; mobileLabel = 'Choose an address'; }
-  if (cardStatus.processing) { desktopLabel = 'Processing payment…'; mobileLabel = 'Processing…'; }
+  let desktopLabel = t('Place order · {total}', { total: fmt(total) });
+  let mobileLabel = t('Place order');
+  if (method === 'tabby') { desktopLabel = t('Continue to Tabby · {total}', { total: fmt(total) }); mobileLabel = t('Continue to Tabby'); }
+  if (method === 'card') { desktopLabel = t('Pay {total}', { total: fmt(total) }); mobileLabel = t('Pay now'); }
+  if (method === 'wallet') { desktopLabel = t('Choose a delivery address'); mobileLabel = t('Choose an address'); }
+  if (cardStatus.processing) { desktopLabel = t('Processing payment…'); mobileLabel = t('Processing…'); }
 
   // Promo code, always open in the order summary (`id` differs for the phone and desktop copies)
   const promoBlock = (id) => (appliedCoupon ? (
     <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-4 py-2">
       <span className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-emerald-700">
         <Check size={14} className="shrink-0" />
-        <span className="truncate">{appliedCoupon.code} applied · −{fmt(discountAmount)}</span>
+        <span className="truncate">{rich('{code} applied · {amount}', { code: appliedCoupon.code, amount: <bdi>−{fmt(discountAmount)}</bdi> })}</span>
       </span>
       <button type="button" onClick={removeCoupon} className={`h-8 shrink-0 rounded-full px-2 text-[12px] font-semibold text-[#111114] underline underline-offset-4 ${focusRing}`}>
-        Remove
+        {t('Remove')}
       </button>
     </div>
   ) : (
     <>
       <form onSubmit={e => { e.preventDefault(); handleApplyCoupon(); }} className="flex gap-2">
-        <label htmlFor={id} className="sr-only">Discount code</label>
+        <label htmlFor={id} className="sr-only">{t('Discount code')}</label>
         <input
           id={id}
           value={couponCode}
           onChange={e => { setCouponCode(e.target.value); if (couponError) removeCoupon(); }}
-          placeholder="Discount code"
+          placeholder={t('Discount code')}
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
@@ -838,11 +845,11 @@ export default function CheckoutPage() {
           className="inline-flex h-[52px] min-w-[84px] items-center justify-center rounded-xl border border-[#dedede] bg-[#111114] px-5 text-[14px] font-semibold text-white transition-colors disabled:bg-[#ebebeb] disabled:text-[#707070]"
         >
           {isApplyingCoupon
-            ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-label="Applying" />
-            : 'Apply'}
+            ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-label={t('Applying')} />
+            : t('Apply')}
         </button>
       </form>
-      {couponError && <p role="alert" className="mt-2 text-[12px] font-medium text-red-600">{couponError}</p>}
+      {couponError && <p role="alert" className="mt-2 text-[12px] font-medium text-red-600">{t(couponError)}</p>}
     </>
   ));
 
@@ -863,30 +870,33 @@ export default function CheckoutPage() {
   const rowLabel = 'w-full shrink-0 text-[13px] text-[#8a8a93] sm:w-[120px] sm:pt-px';
   const delivery = getDeliveryInfo();
   const extrasSummary = [
-    formData.giftWrap && 'Gift wrap',
-    usePoints && !pointsLocked && `${redeemablePoints.toLocaleString()} points`,
+    formData.giftWrap && t('Gift wrap'),
+    usePoints && !pointsLocked && t('{n} points', { n: redeemablePoints.toLocaleString('en-US') }),
   ].filter(Boolean).join(' · ');
+  // Address lines read "street, area, emirate"; Arabic uses its own comma and emirate names
+  const joinParts = (parts) => parts.filter(Boolean).join(t(', '));
 
   const detailsCard = (
-    <section aria-label="Delivery and payment" className={`${cardClass} divide-y divide-[#ececec]`}>
+    <section aria-label={t('Delivery and payment')} className={`${cardClass} divide-y divide-[#ececec]`}>
       {/* Guests: email and name first, with sign-in for anyone who has an account */}
       {isGuest && (
         <div id="guest-contact" className="px-5 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[16px] font-semibold text-[#111114]">Contact</h2>
+            <h2 className="text-[16px] font-semibold text-[#111114]">{t('Contact')}</h2>
             <button type="button" onClick={() => openSignIn('/checkout')} className={`text-[13px] font-semibold text-[#111114] underline underline-offset-4 ${focusRing}`}>
-              Sign in
+              {t('Sign in')}
             </button>
           </div>
           <div className="mt-3 grid gap-3">
             <div>
-              <label htmlFor="guest-email" className="sr-only">Email</label>
+              <label htmlFor="guest-email" className="sr-only">{t('Email')}</label>
               <input
                 id="guest-email"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
-                placeholder="Email"
+                dir="ltr"
+                placeholder={t('Email')}
                 value={guest.email}
                 onChange={e => { setGuest(g => ({ ...g, email: e.target.value })); setGuestErrors(x => ({ ...x, email: undefined })); }}
                 aria-invalid={!!guestErrors.email}
@@ -902,15 +912,15 @@ export default function CheckoutPage() {
                 onChange={e => setGuest(g => ({ ...g, newsletter: e.target.checked }))}
                 className="h-4 w-4 accent-[#111114]"
               />
-              Email me with news and offers
+              {t('Email me with news and offers')}
             </label>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="guest-first-name" className="sr-only">First name</label>
+                <label htmlFor="guest-first-name" className="sr-only">{t('First name')}</label>
                 <input
                   id="guest-first-name"
                   autoComplete="given-name"
-                  placeholder="First name"
+                  placeholder={t('First name')}
                   value={guest.firstName}
                   onChange={e => { setGuest(g => ({ ...g, firstName: e.target.value })); setGuestErrors(x => ({ ...x, firstName: undefined })); }}
                   aria-invalid={!!guestErrors.firstName}
@@ -918,11 +928,11 @@ export default function CheckoutPage() {
                 />
               </div>
               <div>
-                <label htmlFor="guest-last-name" className="sr-only">Last name</label>
+                <label htmlFor="guest-last-name" className="sr-only">{t('Last name')}</label>
                 <input
                   id="guest-last-name"
                   autoComplete="family-name"
-                  placeholder="Last name"
+                  placeholder={t('Last name')}
                   value={guest.lastName}
                   onChange={e => setGuest(g => ({ ...g, lastName: e.target.value }))}
                   className={`${guestField} border-[#dedede]`}
@@ -931,7 +941,7 @@ export default function CheckoutPage() {
             </div>
             {guestErrors.firstName && <p role="alert" className="-mt-1.5 text-[12px] font-medium text-red-600">{guestErrors.firstName}</p>}
             <p className="text-[12px] leading-relaxed text-[#6b6b73]">
-              No password needed. We&apos;ll save the order under this email, so you can track it and earn points by signing in later.
+              {t('No password needed. We’ll save the order under this email, so you can track it and earn points by signing in later.')}
             </p>
           </div>
         </div>
@@ -940,21 +950,21 @@ export default function CheckoutPage() {
       {/* Deliver to */}
       {isGuest ? (
         <div className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:gap-4 sm:px-6">
-          <span className={rowLabel}>Deliver to</span>
+          <span className={rowLabel}>{t('Deliver to')}</span>
           <div className="min-w-0 flex-1">
             {guestAddress ? (
               <div className="flex items-start gap-3">
                 <p className="min-w-0 flex-1 text-[14px] leading-snug text-[#111114]">
-                  <span className="block font-semibold">{[guest.firstName, guest.lastName].filter(Boolean).join(' ') || 'Your address'}</span>
-                  <span className="block text-[#5a5a64]">{[guestAddress.addressLine1, guestAddress.apartment, guestAddress.state, guestAddress.city].filter(Boolean).join(', ')}</span>
-                  {guestAddress.customerPhone && <span className="block text-[#5a5a64]">{formatPhone(guestAddress.customerPhone)}</span>}
+                  <span className="block font-semibold">{[guest.firstName, guest.lastName].filter(Boolean).join(' ') || t('Your address')}</span>
+                  <span className="block text-[#5a5a64]">{joinParts([guestAddress.addressLine1, guestAddress.apartment, guestAddress.state, t(guestAddress.city)])}</span>
+                  {guestAddress.customerPhone && <span className="block text-[#5a5a64]" dir="ltr">{formatPhone(guestAddress.customerPhone)}</span>}
                 </p>
                 <button type="button" onClick={() => openAddressModal(guestAddress)} className={`shrink-0 text-[13px] font-semibold text-[#111114] underline underline-offset-4 ${focusRing}`}>
-                  Edit
+                  {t('Edit')}
                 </button>
               </div>
             ) : (
-              <div className="-mx-4 -my-1"><AddAddressRow onClick={() => openAddressModal(null)} label="Add a delivery address" /></div>
+              <div className="-mx-4 -my-1"><AddAddressRow onClick={() => openAddressModal(null)} label={t('Add a delivery address')} /></div>
             )}
             {guestErrors.address && <p role="alert" className="mt-1.5 text-[12px] font-medium text-red-600">{guestErrors.address}</p>}
           </div>
@@ -965,20 +975,20 @@ export default function CheckoutPage() {
             type="button"
             onClick={() => setShowAddressPicker(o => !o)}
             aria-expanded={showAddressPicker || !selectedAddress}
-            className={`flex w-full flex-col gap-1 px-5 py-4 text-left sm:flex-row sm:gap-4 sm:px-6 ${focusRing}`}
+            className={`flex w-full flex-col gap-1 px-5 py-4 text-start sm:flex-row sm:gap-4 sm:px-6 ${focusRing}`}
           >
-            <span className={rowLabel}>Deliver to</span>
+            <span className={rowLabel}>{t('Deliver to')}</span>
             <span className="flex min-w-0 flex-1 items-start gap-3">
               <span className="min-w-0 flex-1 text-[14px] leading-snug text-[#111114]">
                 {selectedAddress ? (
                   <>
                     <span className="block font-semibold">{addressName(selectedAddress, user?.name)}</span>
                     <span className="block text-[#5a5a64]">
-                      {[addressLine(selectedAddress), selectedAddress.city, selectedAddress.country].filter(Boolean).join(', ')}
+                      {joinParts([addressLine(selectedAddress), t(selectedAddress.city), t(selectedAddress.country)])}
                     </span>
                   </>
                 ) : (
-                  <span className="text-[#5a5a64]">{shippingAddresses.length ? 'Choose a delivery address' : 'Add a delivery address'}</span>
+                  <span className="text-[#5a5a64]">{shippingAddresses.length ? t('Choose a delivery address') : t('Add a delivery address')}</span>
                 )}
               </span>
               <ChevronDown size={18} className={`mt-0.5 shrink-0 text-[#8a8a93] transition-transform ${showAddressPicker || !selectedAddress ? 'rotate-180' : ''}`} />
@@ -989,7 +999,7 @@ export default function CheckoutPage() {
             // (name and street in bold; area, emirate, country and phone), ⋮ for edit/remove
             <div className="px-3 pb-3 sm:px-4">
               {shippingAddresses.length > 0 && (
-                <div role="radiogroup" aria-label="Delivery address" className="space-y-1">
+                <div role="radiogroup" aria-label={t('Delivery address')} className="space-y-1">
                   {shippingAddresses.map(addr => {
                     const checked = selectedAddressId === addr.id;
                     const name = addressName(addr, user?.name);
@@ -1009,13 +1019,14 @@ export default function CheckoutPage() {
                             onChange={() => { setSelectedAddressId(addr.id); setShowAddressPicker(false); }}
                           />
                           <span className="block text-[15px] font-semibold leading-snug text-[#111114]">
-                            {[addr.customerName || addr.customer_name || name, addressLine(addr)].filter(Boolean).join(', ')}
+                            {joinParts([addr.customerName || addr.customer_name || name, addressLine(addr)])}
                           </span>
                           <span className="mt-0.5 block text-[15px] leading-snug text-[#111114]">
-                            {[addr.state, addr.city, country, phone && formatPhone(phone)].filter(Boolean).join(', ')}
+                            {joinParts([addr.state, t(addr.city), country])}
+                            {phone && <>{t(', ')}<bdi>{formatPhone(phone)}</bdi></>}
                           </span>
                           {isDefaultAddress(addr) && (
-                            <span className="mt-2 inline-block rounded-lg bg-[#6b6b6b] px-2 py-0.5 text-[13px] font-semibold text-white">Default</span>
+                            <span className="mt-2 inline-block rounded-lg bg-[#6b6b6b] px-2 py-0.5 text-[13px] font-semibold text-white">{t('Default')}</span>
                           )}
                         </label>
                         <AddressMenu
@@ -1031,7 +1042,7 @@ export default function CheckoutPage() {
               )}
               <AddAddressRow
                 onClick={() => openAddressModal(null)}
-                label={shippingAddresses.length ? 'Use a different address' : 'Add a delivery address'}
+                label={shippingAddresses.length ? t('Use a different address') : t('Add a delivery address')}
               />
             </div>
           )}
@@ -1040,11 +1051,13 @@ export default function CheckoutPage() {
 
       {/* Delivery: one standard service, so it's a read-out rather than a choice */}
       <div className="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:gap-4 sm:px-6">
-        <span className={rowLabel}>Delivery</span>
+        <span className={rowLabel}>{t('Delivery')}</span>
         <span className="min-w-0 flex-1 text-[14px] leading-snug text-[#111114]">
-          <span className="block font-semibold">Standard delivery · {shipping === 0 ? 'Free' : fmt(shipping)}</span>
+          <span className="block font-semibold">{t('Standard delivery · {cost}', { cost: shipping === 0 ? t('Free') : fmt(shipping) })}</span>
           <span className="block text-[#5a5a64]">
-            {hasPreorder ? `Ships by ${preorderShipBy}, in one parcel` : `Arrives ${delivery.rangeLabel} with our courier partners`}
+            {hasPreorder
+              ? t('Ships by {date}, in one parcel', { date: date(preorderShipBy) })
+              : t('Arrives {date} with our courier partners', { date: date(delivery.rangeLabel) })}
           </span>
         </span>
       </div>
@@ -1055,25 +1068,29 @@ export default function CheckoutPage() {
           type="button"
           onClick={() => setExtrasOpen(o => !o)}
           aria-expanded={extrasOpen}
-          className={`flex w-full flex-col gap-1 px-5 py-4 text-left sm:flex-row sm:gap-4 sm:px-6 ${focusRing}`}
+          className={`flex w-full flex-col gap-1 px-5 py-4 text-start sm:flex-row sm:gap-4 sm:px-6 ${focusRing}`}
         >
-          <span className={rowLabel}>Extras</span>
+          <span className={rowLabel}>{t('Extras')}</span>
           <span className="flex min-w-0 flex-1 items-start gap-3">
             <span className="min-w-0 flex-1 text-[14px] leading-snug text-[#111114]">
-              {extrasSummary || <span className="text-[#5a5a64]">Gift wrap{redeemablePoints > 0 ? ', loyalty points' : ''}</span>}
+              {extrasSummary || <span className="text-[#5a5a64]">{redeemablePoints > 0 ? t('Gift wrap, loyalty points') : t('Gift wrap')}</span>}
             </span>
             <ChevronDown size={18} className={`mt-0.5 shrink-0 text-[#8a8a93] transition-transform ${extrasOpen ? 'rotate-180' : ''}`} />
           </span>
         </button>
         {extrasOpen && (
-          <div className="divide-y divide-[#ececec] px-5 pb-2 sm:px-6 sm:pl-[160px]">
+          <div className="divide-y divide-[#ececec] px-5 pb-2 sm:px-6 sm:ps-[160px]">
             {redeemablePoints > 0 && (
               <ToggleRow
                 icon={<Star size={16} />}
-                title="Use loyalty points"
+                title={t('Use loyalty points')}
                 description={pointsLocked
-                  ? `Remove ${appliedCoupon.code} to redeem points — an order takes one discount`
-                  : `Redeem ${redeemablePoints.toLocaleString()} of ${loyaltyPoints.toLocaleString()} points · −${fmt((redeemablePoints / POINTS_BLOCK) * AED_PER_BLOCK)}`}
+                  ? t('Remove {code} to redeem points — an order takes one discount', { code: appliedCoupon.code })
+                  : t('Redeem {n} of {total} points · −{amount}', {
+                    n: redeemablePoints.toLocaleString('en-US'),
+                    total: loyaltyPoints.toLocaleString('en-US'),
+                    amount: fmt((redeemablePoints / POINTS_BLOCK) * AED_PER_BLOCK),
+                  })}
                 checked={usePoints && !pointsLocked}
                 onChange={setUsePoints}
                 disabled={pointsLocked}
@@ -1081,13 +1098,13 @@ export default function CheckoutPage() {
             )}
             <ToggleRow
               icon={<Gift size={16} />}
-              title="Gift wrap"
-              description={`Naya signature packaging · +${fmt(GIFT_WRAP_FEE)}`}
+              title={t('Gift wrap')}
+              description={t('Naya signature packaging · +{fee}', { fee: fmt(GIFT_WRAP_FEE) })}
               checked={formData.giftWrap}
               onChange={checked => setFormData(p => ({ ...p, giftWrap: checked }))}
             />
             {method === 'card' && (
-              <p className="py-3 text-[11.5px] text-[#8a8a93]">Changing these refreshes the card form, so set them before entering your card.</p>
+              <p className="py-3 text-[11.5px] text-[#8a8a93]">{t('Changing these refreshes the card form, so set them before entering your card.')}</p>
             )}
           </div>
         )}
@@ -1096,48 +1113,49 @@ export default function CheckoutPage() {
       {/* Payment */}
       <div className="px-5 py-4 sm:px-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
-          <span className={rowLabel}>Payment</span>
-          <span className="flex-1 text-[13px] text-[#5a5a64]">All transactions are secure and encrypted.</span>
+          <span className={rowLabel}>{t('Payment')}</span>
+          <span className="flex-1 text-[13px] text-[#5a5a64]">{t('All transactions are secure and encrypted.')}</span>
         </div>
         {hasPreorder && (
           <div className="mt-4 rounded-xl bg-[#f6f5f2] px-4 py-3 text-[13px] leading-relaxed text-[#2a2a31]">
-            <p className="font-semibold" style={{ color: ACCENT }}>Your order includes pre-order items · ships by {preorderShipBy}</p>
-            <p className="mt-0.5">We&apos;ll send everything together in one parcel once they arrive, and email you when it&apos;s on its way. Cash on delivery isn&apos;t available for pre-orders.</p>
+            <p className="font-semibold" style={{ color: ACCENT }}>{t('Your order includes pre-order items · ships by {date}', { date: date(preorderShipBy) })}</p>
+            <p className="mt-0.5">{t('We’ll send everything together in one parcel once they arrive, and email you when it’s on its way. Cash on delivery isn’t available for pre-orders.')}</p>
           </div>
         )}
 
-        <div role="radiogroup" aria-label="Payment method" className="mt-4 divide-y divide-[#ececec] overflow-hidden rounded-xl border border-[#e4e4e7]">
+        <div role="radiogroup" aria-label={t('Payment method')} className="mt-4 divide-y divide-[#ececec] overflow-hidden rounded-xl border border-[#e4e4e7]">
           {wallet && (
             <PaymentOption
               value="wallet"
               checked={method === 'wallet'}
               onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'wallet' }))}
               title={walletName}
-              hint="Pay in one tap"
+              hint={t('Pay in one tap')}
             />
           )}
           <PaymentOption
             value="card"
             checked={method === 'card'}
             onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'card' }))}
-            title="Card"
+            title={t('Card')}
             hint="Visa · Mastercard · Amex"
           >
             <div>
               {!hasAddress ? (
-                <p className="text-[13px] text-[#5a5a64]">{isGuest ? 'Add a delivery address above to pay by card.' : 'Choose a delivery address above to pay by card.'}</p>
+                <p className="text-[13px] text-[#5a5a64]">{isGuest ? t('Add a delivery address above to pay by card.') : t('Choose a delivery address above to pay by card.')}</p>
               ) : paidIntentId ? (
-                <p className="text-[13px] text-[#5a5a64]">Your card has already been charged — use “Try again” above to finish your order.</p>
+                <p className="text-[13px] text-[#5a5a64]">{t('Your card has already been charged — use “Try again” above to finish your order.')}</p>
               ) : hasStockIssues ? (
-                <p className="text-[13px] text-[#5a5a64]">Update your bag before paying.</p>
+                <p className="text-[13px] text-[#5a5a64]">{t('Update your bag before paying.')}</p>
               ) : clientSecret && stripePromise ? (
-                <Elements key={clientSecret} stripe={stripePromise} options={{ clientSecret }}>
+                // Stripe's own labels and messages follow the language (it can't switch after mounting, hence the key)
+                <Elements key={`${clientSecret}-${locale}`} stripe={stripePromise} options={{ clientSecret, locale }}>
                   <CheckoutForm onSuccessfulPayment={handleCardPaid} clientSecret={clientSecret} formId="card-payment-form" onStatusChange={setCardStatus} onBeforePay={isGuest ? async () => !!(await ensureGuest()) : undefined} />
                 </Elements>
               ) : (
                 <div className="flex items-center gap-2 py-3 text-[13px] text-[#8a8a93]">
                   <Loader2 size={18} className="animate-spin text-[#111114]" />
-                  Preparing secure card form…
+                  {t('Preparing secure card form…')}
                 </div>
               )}
             </div>
@@ -1147,9 +1165,9 @@ export default function CheckoutPage() {
             // An unpaid order needs a confirmed email, so cash on delivery is for signed-in customers
             <div className="flex items-center gap-3 px-4 py-3.5">
               <RadioDot checked={false} />
-              <span className="min-w-0 flex-1 text-[14px] font-semibold text-[#8a8a93]">Cash on delivery</span>
+              <span className="min-w-0 flex-1 text-[14px] font-semibold text-[#8a8a93]">{t('Cash on delivery')}</span>
               <button type="button" onClick={() => openSignIn('/checkout')} className={`shrink-0 text-[12.5px] font-semibold text-[#111114] underline underline-offset-4 ${focusRing}`}>
-                Sign in to use it
+                {t('Sign in to use it')}
               </button>
             </div>
           )}
@@ -1158,8 +1176,8 @@ export default function CheckoutPage() {
               value="cashOnDelivery"
               checked={method === 'cashOnDelivery'}
               onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'cashOnDelivery' }))}
-              title="Cash on delivery"
-              hint="Pay when it arrives"
+              title={t('Cash on delivery')}
+              hint={t('Pay when it arrives')}
             />
           )}
 
@@ -1168,9 +1186,9 @@ export default function CheckoutPage() {
             checked={method === 'tabby'}
             onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'tabby' }))}
             title="Tabby"
-            hint={<span className="flex items-center gap-2">Split into payments<Image src="/0x0.png" alt="" width={22} height={22} className="h-[22px] w-[22px] rounded-md object-cover" /></span>}
+            hint={<span className="flex items-center gap-2">{t('Split into payments')}<Image src="/0x0.png" alt="" width={22} height={22} className="h-[22px] w-[22px] rounded-md object-cover" /></span>}
           >
-            <TabbyCard price={total} />
+            <TabbyCard price={total} lang={locale} />
           </PaymentOption>
         </div>
       </div>
@@ -1191,24 +1209,24 @@ export default function CheckoutPage() {
                 <ShoppingBag size={30} strokeWidth={1.3} className="text-[#111114]" />
               </div>
               <div>
-                <h1 className="text-[20px] font-semibold text-[#111114]">Your bag is empty</h1>
-                <p className="mt-1.5 text-[14px] text-[#5a5a64]">Add something to your bag before checking out.</p>
+                <h1 className="text-[20px] font-semibold text-[#111114]">{t('Your bag is empty')}</h1>
+                <p className="mt-1.5 text-[14px] text-[#5a5a64]">{t('Add something to your bag before checking out.')}</p>
               </div>
               <Link
                 href="/all-products"
                 className={`inline-flex h-12 items-center gap-2 rounded-xl px-8 text-[14px] font-semibold text-white transition-transform active:scale-[0.98] ${focusRing}`}
                 style={{ background: ACTION }}
               >
-                Explore the collection
-                <ArrowRight size={15} />
+                {t('Explore the collection')}
+                <ArrowRight size={15} className="flip-rtl" />
               </Link>
             </div>
           ) : (
             // Shopify's split: the form on white, right-aligned in the left half; the
             // summary on grey filling the right half, with a hairline between them
             <div className="lg:grid lg:min-h-[calc(100vh-85px)] lg:grid-cols-2">
-              <h1 className="sr-only">Checkout</h1>
-              <div className="mx-auto min-w-0 max-w-[600px] space-y-4 px-4 pb-8 sm:px-6 lg:mx-0 lg:ml-auto lg:w-full lg:px-[38px] lg:py-[38px]">
+              <h1 className="sr-only">{t('Checkout')}</h1>
+              <div className="mx-auto min-w-0 max-w-[600px] space-y-4 px-4 pb-8 sm:px-6 lg:mx-0 lg:ms-auto lg:w-full lg:px-[38px] lg:py-[38px]">
                 {/* Mobile: Shopify's grey "Order summary" bar with the total always visible */}
                 <div className="-mx-4 border-b border-[#dedede] bg-[#f5f5f5] sm:-mx-6 lg:hidden">
                   <button
@@ -1219,7 +1237,7 @@ export default function CheckoutPage() {
                     className={`flex w-full items-center justify-between gap-3 px-4 py-4 sm:px-6 ${focusRing}`}
                   >
                     <span className="flex items-center gap-1.5 text-[14px] text-[#111114]">
-                      Order summary
+                      {t('Order summary')}
                       <ChevronDown size={15} className={`transition-transform ${summaryOpen ? 'rotate-180' : ''}`} />
                     </span>
                     <span className="text-[16px] font-bold tabular-nums text-[#111114]">{fmt(total)}</span>
@@ -1247,10 +1265,11 @@ export default function CheckoutPage() {
                     <div className="flex gap-3">
                       <AlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-[14px] font-semibold text-amber-900">Your payment went through, but we couldn&apos;t create your order</p>
+                        <p className="text-[14px] font-semibold text-amber-900">{t('Your payment went through, but we couldn’t create your order')}</p>
                         <p className="mt-1 text-[13px] text-amber-800">
-                          Trying again won&apos;t charge you twice. If it keeps failing, contact us with payment reference{' '}
-                          <span className="break-all font-mono text-[12px]">{paidIntentId}</span>.
+                          {rich('Trying again won’t charge you twice. If it keeps failing, contact us with payment reference {ref}.', {
+                            ref: <span className="break-all font-mono text-[12px]" dir="ltr">{paidIntentId}</span>,
+                          })}
                         </p>
                         <button
                           type="button"
@@ -1258,7 +1277,7 @@ export default function CheckoutPage() {
                           disabled={isPlacingOrder}
                           className="mt-3 h-10 rounded-full bg-amber-900 px-5 text-[13px] font-semibold text-white transition-opacity disabled:opacity-50"
                         >
-                          Try again
+                          {t('Try again')}
                         </button>
                       </div>
                     </div>
@@ -1269,8 +1288,10 @@ export default function CheckoutPage() {
                   <div role="alert" className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
                     <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-600" />
                     <p className="text-[13px] text-red-800">
-                      <span className="font-semibold">Some items aren&apos;t available in the quantity you chose.</span>{' '}
-                      <Link href="/cart" className="font-semibold underline underline-offset-2">Update your bag</Link> to continue.
+                      {rich('{problem} {update} to continue.', {
+                        problem: <span className="font-semibold">{t('Some items aren’t available in the quantity you chose.')}</span>,
+                        update: <Link href="/cart" className="font-semibold underline underline-offset-2">{t('Update your bag')}</Link>,
+                      })}
                     </p>
                   </div>
                 )}
@@ -1289,21 +1310,21 @@ export default function CheckoutPage() {
                     style={{ background: ACTION }}
                   >
                     {desktopLabel}
-                    <ArrowRight size={17} />
+                    <ArrowRight size={17} className="flip-rtl" />
                   </button>
                 )}
                 <p className="flex items-center gap-1.5 pt-1 text-[12px] text-[#8a8a93]">
-                  <Lock size={12} /> Payments are encrypted and processed securely.
+                  <Lock size={12} /> {t('Payments are encrypted and processed securely.')}
                 </p>
                 <p className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-[#5a5a64]">
-                  <Link href="/terms" className="underline underline-offset-4 hover:text-[#111114]">Terms of service</Link>
-                  <Link href="/privacy" className="underline underline-offset-4 hover:text-[#111114]">Privacy policy</Link>
+                  <Link href="/terms" className="underline underline-offset-4 hover:text-[#111114]">{t('Terms of service')}</Link>
+                  <Link href="/privacy" className="underline underline-offset-4 hover:text-[#111114]">{t('Privacy policy')}</Link>
                 </p>
               </div>
 
-              <aside aria-labelledby="summary-heading" className="hidden border-l border-[#dedede] bg-[#f5f5f5] lg:block">
+              <aside aria-labelledby="summary-heading" className="hidden border-s border-[#dedede] bg-[#f5f5f5] lg:block">
                 <div className="sticky top-0 max-w-[500px] px-[38px] py-[38px]">
-                  <h2 id="summary-heading" className="sr-only">Order summary</h2>
+                  <h2 id="summary-heading" className="sr-only">{t('Order summary')}</h2>
                   <OrderSummaryContent {...summaryProps} promo={promoBlock('promo-code')} />
                 </div>
               </aside>
@@ -1318,7 +1339,7 @@ export default function CheckoutPage() {
           >
             <div className="mx-auto flex max-w-[640px] items-center gap-4 px-4 pt-3">
               <div className="min-w-0">
-                <p className="text-[11px] leading-none text-[#8a8a93]">Total · VAT incl.</p>
+                <p className="text-[11px] leading-none text-[#8a8a93]">{t('Total · VAT incl.')}</p>
                 <p className="mt-1 text-[18px] font-bold leading-none tabular-nums text-[#111114]">{fmt(total)}</p>
               </div>
               {walletButton ? (
@@ -1331,7 +1352,7 @@ export default function CheckoutPage() {
                 style={{ background: ACTION }}
               >
                 {mobileLabel}
-                <ArrowRight size={17} />
+                <ArrowRight size={17} className="flip-rtl" />
               </button>
               )}
             </div>
@@ -1351,15 +1372,15 @@ export default function CheckoutPage() {
               <div className="flex flex-col items-center gap-3 text-center">
                 <Loader2 size={30} className="animate-spin text-[#111114]" />
                 <p className="text-[16px] font-semibold text-[#111114]">
-                  {isTabbyLoading ? 'Taking you to Tabby…' : 'Placing your order…'}
+                  {isTabbyLoading ? t('Taking you to Tabby…') : t('Placing your order…')}
                 </p>
-                <p className="text-[13px] text-[#8a8a93]">Please don&apos;t close or refresh this page.</p>
+                <p className="text-[13px] text-[#8a8a93]">{t('Please don’t close or refresh this page.')}</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? 'Edit address' : 'New address'} size="max-w-3xl">
+        <Modal isOpen={isAddressModalOpen} onClose={closeAddressModal} title={editingAddress ? t('Edit address') : t('New address')} size="max-w-3xl">
           <AddressInputForm initialData={editingAddress} onSave={handleCheckoutAddressSave} onCancel={closeAddressModal} />
         </Modal>
       </div>

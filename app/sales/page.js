@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import StoreHeader from '../components/StoreHeader';
-import { headingFont } from '@/app/components/home/SectionHeading';
+import { headingFont } from '@/app/components/home/headingFont';
 import StoreCategoryNav from '../components/StoreCategoryNav';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui/button';

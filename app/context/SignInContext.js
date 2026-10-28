@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { usePathname, useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useT } from './LocaleContext';
 import SignInPanel, { safePath } from '../components/auth/SignInPanel';
 
 /**
@@ -20,6 +21,7 @@ export function SignInProvider({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
+  const t = useT();
   const [state, setState] = useState(null); // { callbackUrl } while open
   const dialogRef = useRef(null);
 
@@ -66,8 +68,8 @@ export function SignInProvider({ children }) {
             <button
               type="button"
               onClick={() => setState(null)}
-              aria-label="Close"
-              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-[#5a5a64] transition-colors hover:bg-black/5 hover:text-[#111114] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111114]/30"
+              aria-label={t('Close')}
+              className="absolute end-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-[#5a5a64] transition-colors hover:bg-black/5 hover:text-[#111114] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111114]/30"
             >
               <X size={22} />
             </button>

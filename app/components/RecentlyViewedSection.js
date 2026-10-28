@@ -5,9 +5,11 @@ import { Container } from './ui/Container';
 import { Carousel, CarouselContent, CarouselItem } from './ui/carousel.tsx';
 import ProductCard from './ProductCard';
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed';
+import { useT } from '../context/LocaleContext';
 
 export function RecentlyViewedSection({ excludeId } = {}) {
   const { items, hydrated, clear } = useRecentlyViewed();
+  const t = useT();
   const visible = useMemo(
     () => items.filter((p) => p.id !== excludeId).slice(0, 8),
     [items, excludeId]
@@ -21,24 +23,24 @@ export function RecentlyViewedSection({ excludeId } = {}) {
         {/* Section Header */}
         <div className="mb-4 flex flex-row justify-between items-end gap-4">
           <div className="space-y-1">
-            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">Previously Viewed</p>
-            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">Pick up where you left off</h2>
+            <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-gray-400">{t('Previously viewed')}</p>
+            <h2 className="text-[28px] md:text-[32px] font-bold text-gray-900 leading-tight">{t('Pick up where you left off')}</h2>
           </div>
           <button
             onClick={clear}
             className="shrink-0 text-sm font-medium transition-colors hover:opacity-70"
             style={{ color: 'rgb(147,104,236)' }}
           >
-            Clear history →
+            {t('Clear history →')}
           </button>
         </div>
 
         {/* Mobile: Carousel — consistent with every other product section */}
         <div className="md:hidden">
           <Carousel opts={{ align: 'start', loop: true }} className="w-full">
-            <CarouselContent className="-ml-1.5">
+            <CarouselContent className="-ms-1.5">
               {visible.map((product) => (
-                <CarouselItem key={product.id} className="pl-1.5 basis-1/2">
+                <CarouselItem key={product.id} className="ps-1.5 basis-1/2">
                   <div className="p-1.5">
                     <ProductCard
                       id={product.id}

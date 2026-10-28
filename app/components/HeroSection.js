@@ -5,7 +5,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { headingFont } from './home/SectionHeading';
+import { headingFont } from './home/headingFont';
+import { useLocale, useT } from '../context/LocaleContext';
 
 // ─── Slide data Fallback ──────────────────────────────────────────────────────────────
 const fallbackSlides = [
@@ -183,7 +184,9 @@ function SlideBackground({ slide, reduceMotion, playing }) {
   );
 }
 
+// Slide copy comes from Admin → Hero banner; t() translates it when the dictionary has it
 function SlideText({ slide, variants, isMobile = false }) {
+  const t = useT();
   const textAlignment = isMobile ? 'text-center' : slide.textPosition === 'right' ? 'text-right' : 'text-left';
   const cta = slide.cta && slide.cta.text ? slide.cta : null;
   const pillBase = 'inline-flex items-center justify-center h-10 px-6 rounded-full border-[1.5px] border-white text-[13px] font-semibold transition-colors';
@@ -204,29 +207,29 @@ function SlideText({ slide, variants, isMobile = false }) {
     >
       <motion.div variants={variants.item} className={`grid gap-2.5 ${textAlignment}`}>
         {slide.eyebrow && (
-          <p className="text-[11px] md:text-[12px] font-semibold tracking-[0.14em] uppercase text-white/80">
-            {slide.eyebrow.trim()}
+          <p dir="auto" className="text-[11px] md:text-[12px] font-semibold tracking-[0.14em] uppercase text-white/80">
+            {t(slide.eyebrow.trim())}
           </p>
         )}
-        <h1 className={`${headingFont} font-medium text-white whitespace-pre-line text-balance leading-[1.1] tracking-[-0.01em] text-[26px] md:text-[clamp(30px,3.4vw,46px)]`}>
-          {slide.headline}
+        <h1 dir="auto" className={`${headingFont} font-medium text-white whitespace-pre-line text-balance leading-[1.1] tracking-[-0.01em] text-[26px] md:text-[clamp(30px,3.4vw,46px)]`}>
+          {t(slide.headline)}
         </h1>
         {slide.body && (
-          <p className={`text-[14px] md:text-[15px] leading-relaxed text-white/85 max-w-[340px] md:max-w-[440px] ${isMobile ? 'mx-auto' : slide.textPosition === 'right' ? 'ml-auto' : ''}`}>
-            {slide.body}
+          <p dir="auto" className={`text-[14px] md:text-[15px] leading-relaxed text-white/85 max-w-[340px] md:max-w-[440px] ${isMobile ? 'mx-auto' : slide.textPosition === 'right' ? 'ml-auto' : ''}`}>
+            {t(slide.body)}
           </p>
         )}
         {/* Desktop: the button follows the copy */}
         {cta && !isMobile && (
           <div className="pt-3.5">
-            <Link href={cta.href || '/'} className={pill}>{cta.text}</Link>
+            <Link href={cta.href || '/'} className={pill}>{t(cta.text)}</Link>
           </div>
         )}
       </motion.div>
       {/* Phones: the button sits at the bottom of the photo */}
       {cta && isMobile && (
         <motion.div variants={variants.item}>
-          <Link href={cta.href || '/'} className={`${pillBase} bg-white text-[#111114]`}>{cta.text}</Link>
+          <Link href={cta.href || '/'} className={`${pillBase} bg-white text-[#111114]`}>{t(cta.text)}</Link>
         </motion.div>
       )}
     </motion.div>
@@ -235,6 +238,7 @@ function SlideText({ slide, variants, isMobile = false }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export function HeroSection({ dbSlides = [] }) {
+  const { t, dir: textDir } = useLocale();
   const reduceMotion = useReducedMotion();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -282,7 +286,9 @@ export function HeroSection({ dbSlides = [] }) {
   const onTouchEnd   = (e) => {
     if (touchStartX.current === null) return;
     const delta = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(delta) > 40) delta > 0 ? next() : prev();
+    // Right to left, the next slide is the one to the left
+    const forward = textDir === 'rtl' ? delta < 0 : delta > 0;
+    if (Math.abs(delta) > 40) forward ? next() : prev();
     touchStartX.current = null;
   };
 
@@ -321,17 +327,17 @@ export function HeroSection({ dbSlides = [] }) {
       {/* ── Desktop prev/next arrows ── */}
       <button
         onClick={prev}
-        className="absolute left-7 top-1/2 -translate-y-1/2 z-20 hidden md:flex w-[38px] h-[38px] items-center justify-center rounded-full text-white border border-white/40 hover:border-white transition-colors"
-        aria-label="Previous slide"
+        className="absolute start-7 top-1/2 -translate-y-1/2 z-20 hidden md:flex w-[38px] h-[38px] items-center justify-center rounded-full text-white border border-white/40 hover:border-white transition-colors"
+        aria-label={t('Previous slide')}
       >
-        <ChevronLeft size={18} strokeWidth={1.5} />
+        <ChevronLeft size={18} strokeWidth={1.5} className="flip-rtl" />
       </button>
       <button
         onClick={next}
-        className="absolute right-7 top-1/2 -translate-y-1/2 z-20 hidden md:flex w-[38px] h-[38px] items-center justify-center rounded-full text-white border border-white/40 hover:border-white transition-colors"
-        aria-label="Next slide"
+        className="absolute end-7 top-1/2 -translate-y-1/2 z-20 hidden md:flex w-[38px] h-[38px] items-center justify-center rounded-full text-white border border-white/40 hover:border-white transition-colors"
+        aria-label={t('Next slide')}
       >
-        <ChevronRight size={18} strokeWidth={1.5} />
+        <ChevronRight size={18} strokeWidth={1.5} className="flip-rtl" />
       </button>
 
       {/* ── Dot navigation ── */}
@@ -340,7 +346,7 @@ export function HeroSection({ dbSlides = [] }) {
           <button
             key={i}
             onClick={() => goTo(i)}
-            aria-label={`Go to slide ${i + 1}`}
+            aria-label={t('Go to slide {n}', { n: i + 1 })}
             aria-current={i === current ? 'true' : undefined}
             className="rounded-full transition-colors duration-300"
             style={{
@@ -353,9 +359,9 @@ export function HeroSection({ dbSlides = [] }) {
         <button
           type="button"
           onClick={() => setStopped((v) => !v)}
-          aria-label={stopped ? 'Play slideshow' : 'Pause slideshow'}
+          aria-label={stopped ? t('Play slideshow') : t('Pause slideshow')}
           aria-pressed={stopped}
-          className="ml-2 w-6 h-6 -my-2 flex items-center justify-center text-white/85 hover:text-white transition-colors"
+          className="ms-2 w-6 h-6 -my-2 flex items-center justify-center text-white/85 hover:text-white transition-colors"
         >
           {stopped ? <Play size={12} fill="currentColor" strokeWidth={0} /> : <Pause size={12} fill="currentColor" strokeWidth={0} />}
         </button>

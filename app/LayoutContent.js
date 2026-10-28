@@ -9,6 +9,7 @@ import WelcomePopup, { WelcomeBar } from './components/WelcomePopup';
 import { WelcomeCornerBadge } from './components/WelcomeCornerBadge';
 import VerifyEmailBanner from './components/VerifyEmailBanner';
 import { ToastContainer } from 'react-toastify';
+import { LocaleScope, useLocale } from './context/LocaleContext';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ChatWidget = lazy(() => import('./components/ChatWidget'));
@@ -25,6 +26,7 @@ const SIDEBAR_PAGES = ['/account/profile', '/account/settings'];
 
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
+  const { dir } = useLocale();
   const [chatReady, setChatReady] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [welcomeBar, setWelcomeBar] = useState(false);
@@ -102,9 +104,9 @@ export default function LayoutContent({ children }) {
       <div
         className="flex min-h-screen flex-col"
       >
-        <main className="min-h-0 flex-1">{children}</main>
+        <main className="min-h-0 flex-1"><LocaleScope pathname={pathname}>{children}</LocaleScope></main>
         {showMobileChrome && (
-          <div className={hasAccountSidebar ? 'md:pl-[200px]' : ''}>
+          <div className={hasAccountSidebar ? 'md:ps-[200px]' : ''}>
             <Footer />
           </div>
         )}
@@ -115,7 +117,7 @@ export default function LayoutContent({ children }) {
         hideProgressBar={false}
         newestOnTop
         closeOnClick
-        rtl={false}
+        rtl={dir === 'rtl'}
         pauseOnFocusLoss
         draggable
         pauseOnHover

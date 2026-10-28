@@ -5,11 +5,12 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import ProductCard from '../components/ProductCard';
 import Link from 'next/link';
 import Image from 'next/image';
-import { headingFont } from '../components/home/SectionHeading';
+import { headingFont } from '../components/home/headingFont';
 import { FranceFlag } from '../components/MadeInFranceBadge';
 import { UAEFlag } from '../components/MadeInUAEBadge';
 import { Search, X, Filter, Check, ArrowRight, Minus, Plus as PlusIcon, Grid2X2, List, ChevronDown } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { useLocale, useT } from '../context/LocaleContext';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { Slider } from '../components/ui/slider';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,6 +37,7 @@ const SidebarFilters = ({
   clearFilters,
   allProducts,
 }) => {
+  const t = useT();
   const [localPriceRange, setLocalPriceRange] = useState(priceRange);
   const [showAllBrands, setShowAllBrands] = useState(false);
 
@@ -70,7 +72,7 @@ const SidebarFilters = ({
       active ? 'bg-gray-900 border-gray-900' : 'border-gray-300 bg-white'
     }`;
   const itemText = (active) =>
-    `ml-2.5 text-[12px] tracking-wide transition-colors ${
+    `ms-2.5 text-[12px] tracking-wide transition-colors ${
       active ? 'text-gray-900 font-semibold' : 'text-gray-500 group-hover/item:text-gray-900'
     }`;
 
@@ -78,12 +80,12 @@ const SidebarFilters = ({
     <div>
       {/* Header */}
       <div className="flex items-center justify-between pb-5 mb-5 border-b border-gray-100">
-        <span className="text-[11px] uppercase tracking-[0.25em] font-bold text-gray-900">Filters</span>
+        <span className="text-[11px] uppercase tracking-[0.25em] font-bold text-gray-900">{t('Filters')}</span>
         <button
           onClick={clearFilters}
           className="text-[10px] uppercase tracking-widest text-[#6b6b73] hover:text-gray-900 transition-colors font-medium"
         >
-          Clear all
+          {t('Clear all')}
         </button>
       </div>
 
@@ -91,8 +93,8 @@ const SidebarFilters = ({
 
         {/* Collections */}
         <AccordionItem value="category" className="border-b border-gray-100">
-          <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900 flex-1 text-left">
-            Collections
+          <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900 flex-1 text-start">
+            {t('Collections')}
           </AccordionTrigger>
           <AccordionContent>
             <div className="pb-5">
@@ -112,7 +114,7 @@ const SidebarFilters = ({
                       {selectedCategories.includes(category) && <Check size={9} className="text-white" strokeWidth={3.5} />}
                     </div>
                     <span className={itemText(selectedCategories.includes(category))}>
-                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                      {t(category.charAt(0).toUpperCase() + category.slice(1))}
                     </span>
                   </div>
                   <span className="text-[10px] text-gray-300 group-hover/item:text-gray-500 transition-colors font-medium">
@@ -126,8 +128,8 @@ const SidebarFilters = ({
 
         {/* Brand */}
         <AccordionItem value="brand" className="border-b border-gray-100">
-          <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900 flex-1 text-left">
-            Brand
+          <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900 flex-1 text-start">
+            {t('Brand')}
           </AccordionTrigger>
           <AccordionContent>
             <div className="pb-5">
@@ -159,7 +161,7 @@ const SidebarFilters = ({
                   className="mt-2 text-[10px] uppercase tracking-widest text-[#6b6b73] hover:text-gray-900 transition-colors font-medium flex items-center gap-1.5"
                 >
                   {showAllBrands ? <Minus size={10} /> : <PlusIcon size={10} />}
-                  {showAllBrands ? 'Show less' : `View all (${brands.length})`}
+                  {showAllBrands ? t('Show less') : t('View all ({n})', { n: brands.length })}
                 </button>
               )}
             </div>
@@ -169,7 +171,7 @@ const SidebarFilters = ({
         {/* Price */}
         <AccordionItem value="price" className="border-b border-gray-100">
           <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900">
-            Price (AED)
+            {t('Price (AED)')}
           </AccordionTrigger>
           <AccordionContent>
             <div className="pb-5 pt-2 px-1">
@@ -182,12 +184,12 @@ const SidebarFilters = ({
               />
               <div className="flex items-center gap-2">
                 <div className="flex-1 border border-gray-200 rounded-[8px] px-3 py-2">
-                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">Min</div>
+                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">{t('Min')}</div>
                   <div className="text-[12px] font-semibold text-gray-900">AED {localPriceRange[0]}</div>
                 </div>
                 <span className="text-gray-300 text-sm">—</span>
                 <div className="flex-1 border border-gray-200 rounded-[8px] px-3 py-2">
-                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">Max</div>
+                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">{t('Max')}</div>
                   <div className="text-[12px] font-semibold text-gray-900">AED {localPriceRange[1]}</div>
                 </div>
               </div>
@@ -198,7 +200,7 @@ const SidebarFilters = ({
         {/* Availability */}
         <AccordionItem value="stock" className="border-none">
           <AccordionTrigger className="hover:no-underline py-4 text-[10px] uppercase tracking-[0.25em] font-bold text-gray-900">
-            Availability
+            {t('Availability')}
           </AccordionTrigger>
           <AccordionContent>
             <div className="pb-5">
@@ -207,7 +209,7 @@ const SidebarFilters = ({
                   <div className={checkBox(showInStock)}>
                     {showInStock && <Check size={9} className="text-white" strokeWidth={3.5} />}
                   </div>
-                  <span className={itemText(showInStock)}>In stock only</span>
+                  <span className={itemText(showInStock)}>{t('In stock only')}</span>
                 </div>
               </div>
             </div>
@@ -256,7 +258,7 @@ const FilterDropdown = ({ label, count = 0, active = false, align = 'left', chil
         <ChevronDown size={13} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-[calc(100%+8px)] z-30 w-[270px] bg-white border border-gray-200 rounded-xl shadow-lg p-4`}>
+        <div className={`absolute ${align === 'right' ? 'end-0' : 'start-0'} top-[calc(100%+8px)] z-30 w-[270px] bg-white border border-gray-200 rounded-xl shadow-lg p-4`}>
           {children}
         </div>
       )}
@@ -286,6 +288,7 @@ const PriceFilter = ({ priceRange, setPriceRange, maxPrice }) => {
 
 /** The page title with a ⌄ that jumps to another listing: best sellers, a brand or a collection. */
 const PageSwitcher = ({ title, brands, collections }) => {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -309,19 +312,19 @@ const PageSwitcher = ({ title, brands, collections }) => {
 
   return (
     <div ref={ref} className="relative inline-block">
-      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="group flex items-center gap-3 text-left">
-        <h1 className={`${headingFont} text-[30px] md:text-[44px] font-medium leading-tight text-[#111114]`}>{title}</h1>
+      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="group flex items-center gap-3 text-start">
+        <h1 className={`${headingFont} text-[30px] md:text-[44px] font-medium leading-tight text-[#111114]`}>{t(title)}</h1>
         <ChevronDown size={26} strokeWidth={1.5} className={`mt-1 shrink-0 text-[#111114] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-40 mt-2 w-[min(88vw,560px)] max-h-[70vh] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 shadow-lg grid gap-5 sm:grid-cols-3">
+        <div className="absolute start-0 top-full z-40 mt-2 w-[min(88vw,560px)] max-h-[70vh] overflow-y-auto rounded-xl border border-gray-200 bg-white p-5 shadow-lg grid gap-5 sm:grid-cols-3">
           {groups.map(g => (
             <div key={g.label}>
-              <p className="text-[12px] text-[#8a8a92]">{g.label}</p>
+              <p className="text-[12px] text-[#8a8a92]">{t(g.label)}</p>
               <ul className="mt-2 space-y-1.5">
                 {g.links.map(l => (
                   <li key={l.href}>
-                    <Link href={l.href} onClick={() => setOpen(false)} className="text-[14px] text-[#111114] hover:underline underline-offset-4">{l.name}</Link>
+                    <Link href={l.href} onClick={() => setOpen(false)} className="text-[14px] text-[#111114] hover:underline underline-offset-4">{t(l.name)}</Link>
                   </li>
                 ))}
               </ul>
@@ -334,11 +337,13 @@ const PageSwitcher = ({ title, brands, collections }) => {
 };
 
 /** One large rounded card per brand: photo, name, origin and product count. Click to filter; click again to clear. */
-const BrandCards = ({ brands, selected, onToggle, counts }) => (
+const BrandCards = ({ brands, selected, onToggle, counts }) => {
+  const t = useT();
+  return (
   <div>
     <div className="flex items-center justify-between gap-4">
-      <p className="text-[15px] text-[#111114]">Brand</p>
-      <Link href="/brands" className="text-[13px] text-[#5a5a64] underline underline-offset-4 hover:text-[#111114]">About our brands</Link>
+      <p className="text-[15px] text-[#111114]">{t('Brand')}</p>
+      <Link href="/brands" className="text-[13px] text-[#5a5a64] underline underline-offset-4 hover:text-[#111114]">{t('About our brands')}</Link>
     </div>
     <div className="mt-3 -mx-4 px-4 sm:mx-0 sm:px-0 flex gap-3 overflow-x-auto scrollbar-hide lg:grid lg:grid-cols-4 lg:overflow-visible">
       {brands.map(b => {
@@ -352,7 +357,7 @@ const BrandCards = ({ brands, selected, onToggle, counts }) => (
             type="button"
             onClick={() => onToggle(b.name)}
             aria-pressed={on}
-            className={`shrink-0 w-[270px] lg:w-auto flex items-center gap-3.5 rounded-full border bg-white pl-3 pr-6 py-3 text-left transition-colors ${
+            className={`shrink-0 w-[270px] lg:w-auto flex items-center gap-3.5 rounded-full border bg-white ps-3 pe-6 py-3 text-start transition-colors ${
               on ? 'border-[#111114] ring-1 ring-[#111114]' : 'border-[#e4e4e7] hover:border-[#a1a1aa]'
             }`}
           >
@@ -362,9 +367,9 @@ const BrandCards = ({ brands, selected, onToggle, counts }) => (
             <span className="min-w-0">
               <span className="block truncate text-[15px] font-semibold text-[#111114]">{b.name}</span>
               <span className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap text-[12.5px] text-[#8a8a92]">
-                {french && <><FranceFlag title="Made in France" /> Made in France ·</>}
-                {emirati && <><UAEFlag title="Made in the UAE" /> Made in the UAE ·</>}
-                {` ${n} ${n === 1 ? 'product' : 'products'}`}
+                {french && <><FranceFlag title={t('Made in France')} /> {t('Made in France')} ·</>}
+                {emirati && <><UAEFlag title={t('Made in the UAE')} /> {t('Made in the UAE')} ·</>}
+                {` ${t(n === 1 ? '{n} product' : '{n} products', { n })}`}
               </span>
             </span>
           </button>
@@ -372,11 +377,13 @@ const BrandCards = ({ brands, selected, onToggle, counts }) => (
       })}
     </div>
   </div>
-);
+  );
+};
 
 /* ─── Main Page ───────────────────────────────────────────────── */
 export default function AllProductsPage() {
   const { products: allProducts, categories: appCategories, concerns, fetchProducts, brands: brandList } = useAppContext();
+  const { t, dir: textDir } = useLocale();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
@@ -460,8 +467,8 @@ export default function AllProductsPage() {
     let f = [...allProducts];
     if (bestsellerOnly) f = f.filter(p => p.isBestseller);
     if (searchTerm) {
-      const t = searchTerm.toLowerCase();
-      f = f.filter(p => p.name.toLowerCase().includes(t) || (p.brand && p.brand.toLowerCase().includes(t)));
+      const term = searchTerm.toLowerCase();
+      f = f.filter(p => p.name.toLowerCase().includes(term) || (p.brand && p.brand.toLowerCase().includes(term)));
     }
     if (selectedCategories.length)
       f = f.filter(p => p.categoryNames && selectedCategories.some(cat => p.categoryNames.toLowerCase().includes(cat.toLowerCase())));
@@ -494,10 +501,11 @@ export default function AllProductsPage() {
       remove: () => setSelectedBrands(prev => prev.filter(x => x !== b)),
     })),
     ...(selectedConcern ? [{ label: selectedConcern.name, remove: () => setSelectedConcern(null) }] : []),
-    ...(showInStock ? [{ label: 'In stock', remove: () => setShowInStock(false) }] : []),
+    ...(showInStock ? [{ label: t('In stock'), remove: () => setShowInStock(false) }] : []),
   ];
 
   const hasActiveFilters = activeChips.length > 0 || searchTerm;
+  const countLabel = t(filteredAndSortedProducts.length === 1 ? '{n} product' : '{n} products', { n: filteredAndSortedProducts.length });
 
   return (
     <div className="bg-white min-h-screen text-gray-900 overflow-x-hidden">
@@ -511,8 +519,8 @@ export default function AllProductsPage() {
         />
         <p className="mt-1.5 text-[14px] text-[#6b6b73]">
           {bestsellerOnly
-            ? 'Our real top sellers, ranked by units sold.'
-            : allProducts.length > 0 ? `${allProducts.length} products from GERnétic, Zorah and Naya Lumière.` : '\u00a0'}
+            ? t('Our real top sellers, ranked by units sold.')
+            : allProducts.length > 0 ? t('{n} products from GERnétic, Zorah and Naya Lumière.', { n: allProducts.length }) : '\u00a0'}
         </p>
         {(brandList || []).some(b => brandCounts[b.name]) && (
           <div className="mt-7 md:mt-9 max-w-[1320px]">
@@ -534,7 +542,7 @@ export default function AllProductsPage() {
           <div className="flex items-center justify-between gap-3 pb-4 mb-5 border-b border-gray-100 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               <div className="hidden lg:flex items-center gap-2">
-                <FilterDropdown label="Price" active={priceRange[0] > 0 || priceRange[1] < maxPrice}>
+                <FilterDropdown label={t('Price')} active={priceRange[0] > 0 || priceRange[1] < maxPrice}>
                   <PriceFilter priceRange={priceRange} setPriceRange={setPriceRange} maxPrice={maxPrice} />
                 </FilterDropdown>
                 <button
@@ -546,27 +554,27 @@ export default function AllProductsPage() {
                   }`}
                 >
                   {showInStock && <Check size={12} strokeWidth={3} />}
-                  In stock only
+                  {t('In stock only')}
                 </button>
                 {hasActiveFilters && (
-                  <button type="button" onClick={clearFilters} className="ml-1 text-[12px] text-gray-500 underline underline-offset-4 hover:text-gray-900">
-                    Clear all
+                  <button type="button" onClick={clearFilters} className="ms-1 text-[12px] text-gray-500 underline underline-offset-4 hover:text-gray-900">
+                    {t('Clear all')}
                   </button>
                 )}
               </div>
               <div className="lg:hidden text-[12px] text-gray-500">
-                <span className="font-semibold text-gray-900">{filteredAndSortedProducts.length} products</span>
+                <span className="font-semibold text-gray-900">{countLabel}</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden lg:inline text-[12px] font-semibold text-gray-900">{filteredAndSortedProducts.length} products</span>
+              <span className="hidden lg:inline text-[12px] font-semibold text-gray-900">{countLabel}</span>
               {/* Mobile filter button */}
               <button
                 onClick={() => setIsFilterOpen(true)}
                 className="lg:hidden flex items-center gap-1.5 h-9 px-4 bg-white border border-gray-200 rounded-full text-[11px] font-semibold text-gray-700 hover:border-gray-700 transition-all"
               >
                 <Filter size={12} />
-                Filters
+                {t('Filters')}
                 {activeChips.length > 0 && (
                   <span className="w-4 h-4 rounded-full bg-gray-900 text-white text-[9px] flex items-center justify-center font-bold">
                     {activeChips.length}
@@ -577,32 +585,34 @@ export default function AllProductsPage() {
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
-                className="h-9 pl-3 pr-8 border border-gray-200 rounded-full text-[11px] font-medium text-gray-700 bg-white appearance-none cursor-pointer focus:outline-none focus:border-gray-700 transition-colors"
+                aria-label={t('Sort products')}
+                className="h-9 ps-3 pe-8 border border-gray-200 rounded-full text-[11px] font-medium text-gray-700 bg-white appearance-none cursor-pointer focus:outline-none focus:border-gray-700 transition-colors"
                 style={{
                   backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a5a64' stroke-width='2'><path d='m6 9 6 6 6-6'/></svg>")`,
                   backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 10px center',
+                  // The arrow sits at the end of the field, whichever way the page reads
+                  backgroundPosition: textDir === 'rtl' ? 'left 10px center' : 'right 10px center',
                 }}
               >
-                <option value="featured">Featured</option>
-                <option value="newest">Newest first</option>
-                <option value="rating">Best rated</option>
-                <option value="price-low">Price · low to high</option>
-                <option value="price-high">Price · high to low</option>
+                <option value="featured">{t('Featured')}</option>
+                <option value="newest">{t('Newest first')}</option>
+                <option value="rating">{t('Best rated')}</option>
+                <option value="price-low">{t('Price · low to high')}</option>
+                <option value="price-high">{t('Price · high to low')}</option>
               </select>
               {/* View toggle */}
               <div className="hidden sm:flex items-center gap-1 bg-gray-100 p-1 rounded-full">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`w-8 h-7 flex items-center justify-center rounded-full transition-all ${viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
-                  aria-label="Grid view"
+                  aria-label={t('Grid view')}
                 >
                   <Grid2X2 size={13} />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
                   className={`w-8 h-7 flex items-center justify-center rounded-full transition-all ${viewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
-                  aria-label="List view"
+                  aria-label={t('List view')}
                 >
                   <List size={13} />
                 </button>
@@ -618,9 +628,10 @@ export default function AllProductsPage() {
                   key={i}
                   className="inline-flex items-center gap-1.5 h-7 px-3 border border-gray-200 rounded-full text-[11px] font-medium text-gray-700"
                 >
-                  {chip.label}
+                  {t(chip.label)}
                   <button
                     onClick={chip.remove}
+                    aria-label={t('Remove filter {name}', { name: t(chip.label) })}
                     className="text-[#6b6b73] hover:text-gray-900 transition-colors leading-none"
                   >
                     ×
@@ -631,7 +642,7 @@ export default function AllProductsPage() {
                 onClick={clearFilters}
                 className="text-[11px] font-semibold text-purple-600 hover:text-purple-800 transition-colors"
               >
-                Clear all
+                {t('Clear all')}
               </button>
             </div>
           )}
@@ -650,13 +661,13 @@ export default function AllProductsPage() {
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 border border-gray-100 shadow-sm">
                 <Search size={22} strokeWidth={1.5} className="text-gray-300" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-2">No products found</h3>
-              <p className="text-sm text-gray-500 mb-6">Try adjusting your filters or search</p>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-2">{t('No products found')}</h3>
+              <p className="text-sm text-gray-500 mb-6">{t('Try adjusting your filters or search')}</p>
               <button
                 onClick={clearFilters}
                 className="px-8 py-3 bg-gray-900 text-white rounded-full text-[12px] font-semibold hover:bg-purple-700 transition-all"
               >
-                Clear filters
+                {t('Clear filters')}
               </button>
             </motion.div>
           ) : (
@@ -713,15 +724,15 @@ export default function AllProductsPage() {
                       />
                     </div>
                     <span className="text-[10px] uppercase tracking-[0.25em] text-[#6b6b73] font-medium">
-                      {displayedProducts.length} of {filteredAndSortedProducts.length}
+                      {t('{n} of {total}', { n: displayedProducts.length, total: filteredAndSortedProducts.length })}
                     </span>
                   </div>
                   <button
                     onClick={() => setVisibleCount(prev => prev + 12)}
                     className="group flex items-center gap-2 px-7 py-3 bg-gray-900 text-white rounded-full text-[12px] font-semibold hover:bg-purple-700 transition-all shadow-sm active:scale-95"
                   >
-                    Show more
-                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                    {t('Show more')}
+                    <ArrowRight size={13} className="flip-rtl group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform" />
                   </button>
                 </div>
               )}
@@ -742,22 +753,23 @@ export default function AllProductsPage() {
               onClick={() => setIsFilterOpen(false)}
             />
             <motion.div
-              initial={{ x: '100%' }}
+              initial={{ x: textDir === 'rtl' ? '-100%' : '100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              exit={{ x: textDir === 'rtl' ? '-100%' : '100%' }}
               transition={{ type: 'spring', damping: 35, stiffness: 300 }}
-              className="absolute right-0 top-0 bottom-0 w-[88%] max-w-sm bg-white shadow-2xl overflow-y-auto rounded-l-3xl flex flex-col"
+              className="absolute end-0 top-0 bottom-0 w-[88%] max-w-sm bg-white shadow-2xl overflow-y-auto rounded-s-3xl flex flex-col"
             >
               <div className="px-7 py-6 border-b border-gray-100 sticky top-0 bg-white z-10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">Filters</h2>
+                    <h2 className="text-xl font-bold text-gray-900">{t('Filters')}</h2>
                     <p className="text-[10px] uppercase tracking-[0.25em] text-purple-500 font-semibold mt-1">
-                      {filteredAndSortedProducts.length} products
+                      {countLabel}
                     </p>
                   </div>
                   <button
                     onClick={() => setIsFilterOpen(false)}
+                    aria-label={t('Close')}
                     className="w-10 h-10 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center"
                   >
                     <X size={18} strokeWidth={2} />
@@ -788,7 +800,7 @@ export default function AllProductsPage() {
                   onClick={() => setIsFilterOpen(false)}
                   className="w-full bg-gray-900 text-white py-4 rounded-2xl text-[13px] font-semibold hover:bg-purple-700 transition-all active:scale-95"
                 >
-                  Show {filteredAndSortedProducts.length} products
+                  {t(filteredAndSortedProducts.length === 1 ? 'Show {n} product' : 'Show {n} products', { n: filteredAndSortedProducts.length })}
                 </button>
               </div>
             </motion.div>

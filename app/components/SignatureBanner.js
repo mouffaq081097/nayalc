@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Container } from './ui/Container';
 import { getSlot } from '@/lib/homepageImageSlots';
-import { headingFont } from './home/SectionHeading';
+import { headingFont } from './home/headingFont';
 
 // The photo is admin-chosen from /admin/homepage — either uploaded there or
 // picked out of the Cloudinary library — and served through /api/homepage-images.

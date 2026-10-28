@@ -3,9 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useLocale } from '../context/LocaleContext';
 
 const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false, size = 'max-w-md' }) => {
   const [mounted, setMounted] = useState(false);
+  // A portal sits outside the page, so it takes the page's direction from the language here
+  const { dir, t } = useLocale();
 
   useEffect(() => {
     setMounted(true);
@@ -21,7 +24,7 @@ const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false, size =
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-6">
+    <div dir={dir} className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-6">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
@@ -44,16 +47,16 @@ const Modal = ({ isOpen, onClose, title, children, noBodyPadding = false, size =
 
         {/* Close button */}
         <button
-          className="absolute top-4 right-4 md:top-5 md:right-5 z-[60] w-9 h-9 flex items-center justify-center rounded-full border border-[#e5e5ea] bg-white text-[#5a5a64] hover:bg-[#f3f3f5] transition-colors"
+          className="absolute top-4 end-4 md:top-5 md:end-5 z-[60] w-9 h-9 flex items-center justify-center rounded-full border border-[#e5e5ea] bg-white text-[#5a5a64] hover:bg-[#f3f3f5] transition-colors"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t('Close')}
         >
           <X size={16} strokeWidth={2} />
         </button>
 
         {title && (
           <div className="px-6 pt-5 pb-4 border-b border-[#e5e5ea] sticky top-0 z-50 bg-white">
-            <div className="flex items-center gap-3 pr-10">
+            <div className="flex items-center gap-3 pe-10">
               <div
                 className="w-1 h-6 rounded-full flex-shrink-0"
                 style={{ background: 'linear-gradient(180deg,#c087fc,#9869f7)' }}

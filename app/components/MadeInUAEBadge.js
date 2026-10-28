@@ -1,16 +1,21 @@
 'use client';
+import { useT } from '../context/LocaleContext';
 
 // Inline pill badge — same treatment as MadeInFranceBadge, used under the brand
 // name on Naya Lumière Perfumes products.
 export function MadeInUAEBadge({ variant = 'light' }) {
   const isDark = variant === 'dark';
+  const t = useT();
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
-        padding: '4px 10px 4px 5px',
+        // The flag side is the narrow one, whichever way the page reads
+        paddingBlock: '4px',
+        paddingInlineStart: '5px',
+        paddingInlineEnd: '10px',
         borderRadius: '100px',
         background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(243,232,255,0.95)',
         border: `1px solid ${isDark ? 'rgba(216,180,254,0.30)' : 'rgba(147,51,234,0.25)'}`,
@@ -25,7 +30,7 @@ export function MadeInUAEBadge({ variant = 'light' }) {
       }}
     >
       <UAEFlag />
-      Made in UAE
+      {t('Made in UAE')}
     </span>
   );
 }

@@ -31,9 +31,9 @@ export const ForYouSection = () => {
         {/* Mobile: Carousel — consistent with every other product section */}
         <div className="md:hidden">
           <Carousel opts={{ align: 'start', loop: true }} className="w-full">
-            <CarouselContent className="-ml-1.5">
+            <CarouselContent className="-ms-1.5">
               {forYouProducts.map((product) => (
-                <CarouselItem key={product.id} className="pl-1.5 basis-1/2">
+                <CarouselItem key={product.id} className="ps-1.5 basis-1/2">
                   <div className="p-1.5">
                     <ProductCard
                       id={product.id}

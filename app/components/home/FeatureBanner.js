@@ -4,23 +4,27 @@ import Image from 'next/image';
 import { Container } from '../ui/Container';
 import { useAppContext } from '../../context/AppContext';
 import { useHomepageImage } from '../../hooks/useHomepageImages';
-import { headingFont, Pill } from './SectionHeading';
+import { Pill } from './SectionHeading';
+import { headingFont } from './headingFont';
 import { slugify } from '@/lib/slugify';
+import { useT } from '../../context/LocaleContext';
 
 const LAVENDER = 'rgb(147,104,236)';
 
-function Copy({ eyebrow, title, text, cta, dark }) {
+// `className` places the block; the copy itself follows the page's direction
+function Copy({ eyebrow, title, text, cta, dark, className = '' }) {
+  const t = useT();
   return (
-    <div className="grid gap-3 md:gap-3.5 max-w-[520px]">
+    <div className={`grid gap-3 md:gap-3.5 max-w-[520px] ${className}`}>
       {eyebrow && (
         <span className="text-[11.5px] font-semibold tracking-[0.14em] uppercase" style={{ color: dark ? '#d8c8ff' : LAVENDER }}>
-          {eyebrow}
+          {t(eyebrow)}
         </span>
       )}
       <h2 className={`${headingFont} text-[25px] md:text-[42px] font-medium uppercase leading-[1.1] text-balance ${dark ? 'text-white' : 'text-[#111114]'}`}>
-        {title}
+        {t(title)}
       </h2>
-      {text && <p className={`max-w-[40ch] text-[14px] md:text-[15px] leading-relaxed ${dark ? 'text-white/80' : 'text-[#4a4a52]'}`}>{text}</p>}
+      {text && <p className={`max-w-[40ch] text-[14px] md:text-[15px] leading-relaxed ${dark ? 'text-white/80' : 'text-[#4a4a52]'}`}>{t(text)}</p>}
       {cta && <Pill href={cta.href} variant={dark ? 'light' : 'solid'} className="mt-1.5">{cta.label}</Pill>}
     </div>
   );
@@ -34,17 +38,18 @@ function Copy({ eyebrow, title, text, cta, dark }) {
  * empty edge so the copy panel blends in.
  */
 export function FeatureBanner({ desktopSlot, mobileSlot, tone = 'light', bg, mobileBg, mobileTrimTop = 0, ...copy }) {
+  const t = useT();
   const desktop = useHomepageImage(desktopSlot);
   const mobile = useHomepageImage(mobileSlot);
   const dark = tone === 'dark';
 
   return (
-    <section aria-label={copy.title} className="relative">
-      {/* Desktop: the photo, with the copy on its empty left side */}
+    <section aria-label={t(copy.title)} className="relative">
+      {/* Desktop: the photo, with the copy on its empty left side (in Arabic too) */}
       <div className="hidden md:block relative" style={{ background: bg }}>
         <Image src={desktop.src} alt={desktop.alt} width={1584} height={672} sizes="100vw" className="w-full h-auto" />
         <div className="absolute inset-0 flex items-center">
-          <Container wide className="w-full"><Copy {...copy} dark={dark} /></Container>
+          <Container wide className="w-full"><Copy {...copy} dark={dark} className="mr-auto" /></Container>
         </div>
       </div>
       {/* Phones: copy panel, then the photo */}
@@ -72,17 +77,19 @@ export function FeatureBanner({ desktopSlot, mobileSlot, tone = 'light', bg, mob
  */
 export function BrandPhotoBanner({ brand: slugStart, eyebrow, title, text, ctaLabel }) {
   const { brands } = useAppContext();
+  const t = useT();
   const brand = brands.find((b) => (b.slug || slugify(b.name)).startsWith(slugStart));
   if (!brand?.imageurl) return null;
   const href = `/brand/${brand.slug || slugify(brand.name)}`;
   const copy = { eyebrow, title, text, cta: { label: ctaLabel, href } };
 
   return (
-    <section aria-label={title} className="relative">
+    <section aria-label={t(title)} className="relative">
       <div className="hidden md:flex relative min-h-[620px] items-center overflow-hidden">
         <Image src={brand.imageurl} alt={brand.name} fill sizes="100vw" className="object-cover" />
         <div className="absolute inset-0 bg-[linear-gradient(270deg,rgba(255,250,244,0.92)_0%,rgba(255,250,244,0.6)_38%,rgba(255,250,244,0)_62%)]" />
-        <Container wide className="relative w-full flex justify-end"><Copy {...copy} /></Container>
+        {/* On the right, over the wash, in Arabic too */}
+        <Container wide className="relative w-full flex ltr:justify-end rtl:justify-start"><Copy {...copy} /></Container>
       </div>
       <div className="md:hidden bg-[#fbf6ef]">
         <div className="relative aspect-[4/3]">

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Elements, useStripe, PaymentRequestButtonElement } from '@stripe/react-stripe-js';
 import { toast } from 'react-toastify';
+import { useT } from '../context/LocaleContext';
 
 /**
  * Standalone Apple Pay / Google Pay ("express checkout") button.
@@ -20,6 +21,7 @@ import { toast } from 'react-toastify';
  */
 function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess, onAvailable, show = true }) {
   const stripe = useStripe();
+  const t = useT();
   const [paymentRequest, setPaymentRequest] = useState(null);
 
   // Keep the latest callbacks/amount without re-creating the paymentRequest on every render
@@ -27,7 +29,9 @@ function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess, onAvaila
   const onSuccessRef = useRef(onSuccess);
   const onAvailableRef = useRef(onAvailable);
   const amountRef = useRef(amount);
+  const tRef = useRef(t);
   useEffect(() => {
+    tRef.current = t;
     onBeforePayRef.current = onBeforePay;
     onSuccessRef.current = onSuccess;
     onAvailableRef.current = onAvailable;
@@ -64,7 +68,7 @@ function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess, onAvaila
           body: JSON.stringify({ amount: amountRef.current, currency: 'aed' }),
         });
         const { clientSecret } = await res.json();
-        if (!clientSecret) { ev.complete('fail'); toast.error('Could not start the payment. Please try again.'); return; }
+        if (!clientSecret) { ev.complete('fail'); toast.error(tRef.current('Could not start the payment. Please try again.')); return; }
 
         const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
           clientSecret,
@@ -84,7 +88,7 @@ function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess, onAvaila
         }
       } catch {
         ev.complete('fail');
-        toast.error('Payment could not be completed. Please try again.');
+        toast.error(tRef.current('Payment could not be completed. Please try again.'));
       }
     });
 

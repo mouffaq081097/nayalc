@@ -7,6 +7,7 @@ import { useAppContext } from '../context/AppContext';
 import { MadeInFranceBadge } from '../components/MadeInFranceBadge';
 import { slugify } from '@/lib/slugify';
 import { BRAND_META, getBrandMeta } from '@/lib/brandMeta';
+import { useLocale, useT } from '../context/LocaleContext';
 
 const FILTER_CATEGORIES = [
   'All',
@@ -21,6 +22,7 @@ const FILTER_CATEGORIES = [
 const ALPHABET = ['All', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')];
 
 function ProductCard({ product }) {
+  const t = useT();
   const imgSrc = product.imageUrl || product.imageurl || product.image_url || product.images?.[0]?.url || null;
   return (
     <Link href={`/product/${product.id}`} className="group block">
@@ -35,7 +37,7 @@ function ProductCard({ product }) {
               sizes="(max-width: 768px) 50vw, 200px"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">No image</div>
+            <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">{t('No image')}</div>
           )}
         </div>
         <div className="p-3">
@@ -56,6 +58,7 @@ function ProductCard({ product }) {
 }
 
 function BrandCard({ brand, products }) {
+  const t = useT();
   const meta = getBrandMeta(brand.name);
 
   const brandProducts = products.filter(p =>
@@ -69,7 +72,7 @@ function BrandCard({ brand, products }) {
     <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-300">
       <div className="flex flex-col md:flex-row">
         {/* Left panel */}
-        <div className="md:w-64 lg:w-72 flex-shrink-0 bg-gray-50/60 border-b md:border-b-0 md:border-r border-gray-200 p-6 flex flex-col gap-4">
+        <div className="md:w-64 lg:w-72 flex-shrink-0 bg-gray-50/60 border-b md:border-b-0 md:border-e border-gray-200 p-6 flex flex-col gap-4">
           {/* Logo */}
           <div className="w-16 h-16 rounded-xl border border-gray-200 bg-white flex items-center justify-center shadow-sm overflow-hidden">
             {brand.imageurl ? (
@@ -83,7 +86,7 @@ function BrandCard({ brand, products }) {
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-1">{brand.name}</h3>
             <p className="text-xs text-gray-500">
-              {[meta.origin, meta.year && `Est. ${meta.year}`, meta.category].filter(Boolean).join(' · ')}
+              {[t(meta.origin), meta.year && t('Est. {year}', { year: meta.year }), t(meta.category)].filter(Boolean).join(' · ')}
             </p>
           </div>
 
@@ -91,7 +94,7 @@ function BrandCard({ brand, products }) {
           <div className="flex flex-wrap gap-1.5">
             {meta.tags.map(tag => (
               <span key={tag} className="text-[10px] font-semibold uppercase tracking-wide text-gray-600 border border-gray-200 bg-gray-100/60 rounded-md px-2 py-0.5">
-                {tag}
+                {t(tag)}
               </span>
             ))}
             {meta.origin === 'France' && <MadeInFranceBadge variant="light" />}
@@ -100,25 +103,25 @@ function BrandCard({ brand, products }) {
           <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
             <div>
               <p className="text-2xl font-bold text-gray-900">{brandProducts.length}</p>
-              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium">Products</p>
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium">{t('Products')}</p>
             </div>
             <Link href={`/brand/${slug}`} className="btn sm">
-              Shop All
-              <ArrowRight className="w-3.5 h-3.5" />
+              {t('Shop all')}
+              <ArrowRight className="w-3.5 h-3.5 flip-rtl" />
             </Link>
           </div>
         </div>
 
         {/* Right panel */}
         <div className="flex-1 p-6">
-          <p className="text-sm text-gray-500 leading-relaxed mb-5">
+          <p dir="auto" className="text-sm text-gray-500 leading-relaxed mb-5">
             {brand.description}
           </p>
 
           {featuredProducts.length > 0 && (
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 mb-3">
-                Featured Products
+                {t('Featured products')}
               </p>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 {featuredProducts.map(p => (
@@ -130,7 +133,7 @@ function BrandCard({ brand, products }) {
 
           {featuredProducts.length === 0 && (
             <div className="flex items-center justify-center h-28 rounded-xl border border-dashed border-gray-200 text-sm text-gray-400">
-              Products coming soon
+              {t('Products coming soon')}
             </div>
           )}
         </div>
@@ -141,6 +144,7 @@ function BrandCard({ brand, products }) {
 
 export default function BrandsClient() {
   const { brands, products } = useAppContext();
+  const { t, rich } = useLocale();
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeLetter, setActiveLetter] = useState('All');
 
@@ -173,12 +177,12 @@ export default function BrandsClient() {
 
         {/* Header */}
         <div className="mb-10">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">Discover</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-2">{t('Discover')}</p>
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 leading-tight">
-            Our Curated Brands
+            {t('Our Curated Brands')}
           </h1>
           <p className="text-base text-gray-500 max-w-xl leading-relaxed">
-            We partner with visionary founders who share our commitment to clean formulas, ethical sourcing, and uncompromising quality. Every brand is vetted, tested, and loved by our community.
+            {t('We partner with visionary founders who share our commitment to clean formulas, ethical sourcing, and uncompromising quality. Every brand is vetted, tested, and loved by our community.')}
           </p>
         </div>
 
@@ -196,7 +200,7 @@ export default function BrandsClient() {
                 }`}
                 style={activeCategory === cat ? { background: 'linear-gradient(135deg, rgb(216,180,254), rgb(147,104,236))' } : {}}
               >
-                {cat}
+                {t(cat)}
               </button>
             ))}
           </div>
@@ -221,7 +225,7 @@ export default function BrandsClient() {
                       : 'text-gray-300 cursor-default'
                   }`}
                 >
-                  {letter}
+                  {letter === 'All' ? t('All') : letter}
                 </button>
               );
             })}
@@ -230,8 +234,10 @@ export default function BrandsClient() {
 
         {/* Count */}
         <p className="text-sm text-gray-500 mb-6">
-          Showing <span className="font-semibold text-gray-800">{filteredBrands.length}</span> of{' '}
-          <span className="font-semibold text-gray-800">{(brands || []).length}</span> brands
+          {rich('Showing {shown} of {total} brands', {
+            shown: <span className="font-semibold text-gray-800">{filteredBrands.length}</span>,
+            total: <span className="font-semibold text-gray-800">{(brands || []).length}</span>,
+          })}
         </p>
 
         {/* Brand cards */}
@@ -242,7 +248,7 @@ export default function BrandsClient() {
 
           {filteredBrands.length === 0 && (
             <div className="text-center py-20 text-[rgba(59,7,100,0.4)]">
-              No brands found for the selected filters.
+              {t('No brands found for the selected filters.')}
             </div>
           )}
         </div>

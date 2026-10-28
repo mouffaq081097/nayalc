@@ -4,14 +4,17 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Star, Trash2, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { headingFont } from './home/SectionHeading';
+import { headingFont } from './home/headingFont';
 import { useSignIn } from '@/app/context/SignInContext';
+import { useLocale, useT } from '@/app/context/LocaleContext';
 
 const INK = '#111114';
 
 function Stars({ rating, size = 16, gap = 'gap-0.5' }) {
+  const t = useT();
+  // Right to left the stars run from the right, and a partial star fills from its right edge
   return (
-    <span className={`inline-flex ${gap}`} aria-label={`${rating} out of 5 stars`}>
+    <span className={`inline-flex ${gap}`} aria-label={t('{rating} out of 5 stars', { rating: Number(rating.toFixed(1)) })}>
       {[1, 2, 3, 4, 5].map((n) => {
         // Partial last star for averages like 4.6
         const fill = Math.max(0, Math.min(1, rating - (n - 1)));
@@ -28,15 +31,15 @@ function Stars({ rating, size = 16, gap = 'gap-0.5' }) {
   );
 }
 
-const timeAgo = (iso) => {
+const timeAgo = (iso, t) => {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (days < 1) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 30) return `${days} days ago`;
+  if (days < 1) return t('Today');
+  if (days === 1) return t('Yesterday');
+  if (days < 30) return t('{n} days ago', { n: days });
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months} month${months === 1 ? '' : 's'} ago`;
+  if (months < 12) return t(months === 1 ? '{n} month ago' : '{n} months ago', { n: months });
   const years = Math.floor(days / 365);
-  return `${years} year${years === 1 ? '' : 's'} ago`;
+  return t(years === 1 ? '{n} year ago' : '{n} years ago', { n: years });
 };
 
 // "kareem dalloul" → "Kareem D."; a single word or an email keeps its first part
@@ -55,11 +58,11 @@ function Select({ id, label, value, onChange, options }) {
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none h-[50px] w-full sm:w-[260px] border border-[#dcdcdc] bg-white pl-5 pr-11 text-[15px] text-[#111114] outline-none focus:border-[#111114]"
+        className="appearance-none h-[50px] w-full sm:w-[260px] border border-[#dcdcdc] bg-white ps-5 pe-11 text-[15px] text-[#111114] outline-none focus:border-[#111114]"
       >
         {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
-      <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
+      <ChevronDown size={18} className="pointer-events-none absolute end-4 top-1/2 -translate-y-1/2" />
     </label>
   );
 }
@@ -69,6 +72,7 @@ function Select({ id, label, value, onChange, options }) {
 // they tapped in that email (?review=4).
 function WriteReview({ productId, onDone, initialRating = 0, token = null }) {
   const { openSignIn } = useSignIn();
+  const { t, rich } = useLocale();
   const { user } = useAuth();
   const [rating, setRating] = useState(initialRating);
   const [hover, setHover] = useState(0);
@@ -81,14 +85,16 @@ function WriteReview({ productId, onDone, initialRating = 0, token = null }) {
   if (!user?.id && !token) {
     return (
       <p className="py-6 text-[14px] text-[#6b6b73]">
-        Please <Link href="/auth" onClick={(e) => { e.preventDefault(); openSignIn(); }} className="text-[#111114] underline underline-offset-4">sign in</Link> to write a review.
+        {rich('Please {signIn} to write a review.', {
+          signIn: <Link href="/auth" onClick={(e) => { e.preventDefault(); openSignIn(); }} className="text-[#111114] underline underline-offset-4">{t('sign in')}</Link>,
+        })}
       </p>
     );
   }
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!rating) { setError('Choose a star rating.'); return; }
+    if (!rating) { setError(t('Choose a star rating.')); return; }
     setBusy(true);
     setError('');
     try {
@@ -99,12 +105,12 @@ function WriteReview({ productId, onDone, initialRating = 0, token = null }) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Your review could not be sent. Please try again.');
+        setError(t(data.error || 'Your review could not be sent. Please try again.'));
         return;
       }
       onDone();
     } catch {
-      setError('Your review could not be sent. Please try again.');
+      setError(t('Your review could not be sent. Please try again.'));
     } finally {
       setBusy(false);
     }
@@ -113,29 +119,29 @@ function WriteReview({ productId, onDone, initialRating = 0, token = null }) {
   return (
     <form onSubmit={submit} className="py-6 grid gap-4 max-w-[640px]">
       <div>
-        <p className="mb-2 text-[14px] text-[#111114]">Your rating</p>
+        <p className="mb-2 text-[14px] text-[#111114]">{t('Your rating')}</p>
         <div className="flex gap-1" onMouseLeave={() => setHover(0)}>
           {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} type="button" onClick={() => setRating(n)} onMouseEnter={() => setHover(n)} aria-label={`${n} star${n === 1 ? '' : 's'}`} aria-pressed={rating === n}>
+            <button key={n} type="button" onClick={() => setRating(n)} onMouseEnter={() => setHover(n)} aria-label={t(n === 1 ? '{n} star' : '{n} stars', { n })} aria-pressed={rating === n}>
               <Star size={26} strokeWidth={0} style={{ fill: n <= (hover || rating) ? INK : '#e3e3e3' }} />
             </button>
           ))}
         </div>
       </div>
       <div>
-        <label htmlFor="review-comment" className="mb-2 block text-[14px] text-[#111114]">Your review</label>
+        <label htmlFor="review-comment" className="mb-2 block text-[14px] text-[#111114]">{t('Your review')}</label>
         <textarea
           id="review-comment"
           rows={4}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="What did you like, and how did it work for your skin?"
+          placeholder={t('What did you like, and how did it work for your skin?')}
           className="w-full border border-[#dcdcdc] p-4 text-[14.5px] outline-none focus:border-[#111114] resize-y"
         />
       </div>
       {error && <p className="text-[13px] text-[#b91c1c]">{error}</p>}
       <button type="submit" disabled={busy} className="w-fit h-11 px-7 bg-[#111114] text-white text-[14px] font-semibold hover:bg-[#2a2a31] disabled:opacity-60">
-        {busy ? 'Sending…' : 'Submit review'}
+        {busy ? t('Sending…') : t('Submit review')}
       </button>
     </form>
   );
@@ -149,6 +155,7 @@ function WriteReview({ productId, onDone, initialRating = 0, token = null }) {
  */
 export default function Reviews({ productId }) {
   const { user } = useAuth();
+  const t = useT();
   const isAdmin = user?.role === 'admin';
   const [reviews, setReviews] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -214,38 +221,38 @@ export default function Reviews({ productId }) {
 
   return (
     <div className="py-4 md:py-8">
-      <h2 className={`${headingFont} text-center text-[24px] md:text-[34px] font-medium uppercase text-[#111114]`}>Reviews</h2>
+      <h2 className={`${headingFont} text-center text-[24px] md:text-[34px] font-medium uppercase text-[#111114]`}>{t('Reviews')}</h2>
 
       <div className="mt-10 md:mt-16">
-        <p className="text-[15px] text-[#111114]">Customer reviews</p>
+        <p className="text-[15px] text-[#111114]">{t('Customer reviews')}</p>
 
         {/* Summary */}
         <div className="mt-6 flex flex-col md:flex-row md:items-center gap-8 md:gap-14 pb-8 border-b border-[#ececec]">
           <div className="flex flex-col items-center text-center w-fit">
             <span className="text-[56px] font-light leading-none text-[#111114] tabular-nums">{count ? (Number.isInteger(average) ? average.toFixed(1) : average.toFixed(2).replace(/0$/, '')) : '–'}</span>
             <span className="mt-3"><Stars rating={average} size={24} gap="gap-1.5" /></span>
-            <span className="mt-2 text-[14px] text-[#111114]">{count} review{count === 1 ? '' : 's'}</span>
+            <span className="mt-2 text-[14px] text-[#111114]">{t(count === 1 ? '{n} review' : '{n} reviews', { n: count })}</span>
           </div>
 
-          <ul className="grid gap-2 w-full max-w-[320px]" aria-label="Ratings breakdown">
+          <ul className="grid gap-2 w-full max-w-[320px]" aria-label={t('Ratings breakdown')}>
             {bars.map(({ n, pct }) => (
               <li key={n} className="flex items-center gap-4 text-[14px] text-[#111114]">
                 <span className="w-2 tabular-nums">{n}</span>
                 <span className="relative h-2 flex-1 bg-[#ececec]">
-                  <span className="absolute inset-y-0 left-0 bg-[#111114]" style={{ width: `${pct}%` }} />
+                  <span className="absolute inset-y-0 start-0 bg-[#111114]" style={{ width: `${pct}%` }} />
                 </span>
               </li>
             ))}
           </ul>
 
-          <div className="md:ml-auto">
+          <div className="md:ms-auto">
             <button
               type="button"
               onClick={() => setWriting((v) => !v)}
               aria-expanded={writing}
               className="h-[50px] px-7 bg-[#111114] text-white text-[15px] font-semibold hover:bg-[#2a2a31] transition-colors"
             >
-              {writing ? 'Close' : 'Write a review'}
+              {writing ? t('Close') : t('Write a review')}
             </button>
           </div>
         </div>
@@ -260,16 +267,16 @@ export default function Reviews({ productId }) {
             />
           </div>
         )}
-        {thanks && <p className="pt-5 text-[14px] text-[#15803d]">Thank you, your review has been added.</p>}
+        {thanks && <p className="pt-5 text-[14px] text-[#15803d]">{t('Thank you, your review has been added.')}</p>}
 
         {count > 0 && (
           <>
             {/* Sort + filter */}
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Select id="review-sort" label="Sort reviews" value={sort} onChange={setSort}
-                options={[['latest', 'Sort by: Latest'], ['highest', 'Sort by: Highest rating'], ['lowest', 'Sort by: Lowest rating']]} />
-              <Select id="review-rating" label="Filter by rating" value={only} onChange={(v) => { setOnly(v); setShown(5); }}
-                options={[['all', 'Rating: All'], ['5', '5 stars'], ['4', '4 stars'], ['3', '3 stars'], ['2', '2 stars'], ['1', '1 star']]} />
+              <Select id="review-sort" label={t('Sort reviews')} value={sort} onChange={setSort}
+                options={[['latest', t('Sort by: Latest')], ['highest', t('Sort by: Highest rating')], ['lowest', t('Sort by: Lowest rating')]]} />
+              <Select id="review-rating" label={t('Filter by rating')} value={only} onChange={(v) => { setOnly(v); setShown(5); }}
+                options={[['all', t('Rating: All')], ...[5, 4, 3, 2, 1].map((n) => [String(n), t(n === 1 ? '{n} star' : '{n} stars', { n })])]} />
             </div>
 
             {/* Reviews */}
@@ -287,14 +294,14 @@ export default function Reviews({ productId }) {
                     <div className="min-w-0">
                       <div className="flex items-center justify-between gap-4">
                         <Stars rating={Number(r.rating)} size={20} gap="gap-1" />
-                        <span className="text-[14px] text-[#6b6b73]">{timeAgo(r.created_at)}</span>
+                        <span className="text-[14px] text-[#6b6b73]">{timeAgo(r.created_at, t)}</span>
                       </div>
                       {r.comment
-                        ? <p className="mt-4 text-[15.5px] leading-relaxed text-[#111114] whitespace-pre-line">{r.comment}</p>
-                        : <p className="mt-4 text-[14px] text-[#6b6b73]">Rated {r.rating} out of 5.</p>}
+                        ? <p dir="auto" className="mt-4 text-[15.5px] leading-relaxed text-[#111114] whitespace-pre-line">{r.comment}</p>
+                        : <p className="mt-4 text-[14px] text-[#6b6b73]">{t('Rated {n} out of 5.', { n: r.rating })}</p>}
                       {isAdmin && (
                         <button type="button" onClick={() => remove(r.id)} className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-[#b91c1c] hover:underline">
-                          <Trash2 size={13} /> Delete review
+                          <Trash2 size={13} /> {t('Delete review')}
                         </button>
                       )}
                     </div>
@@ -302,11 +309,11 @@ export default function Reviews({ productId }) {
                 );
               })}
             </ul>
-            {list.length === 0 && <p className="py-8 text-[14px] text-[#6b6b73]">No reviews with this rating yet.</p>}
+            {list.length === 0 && <p className="py-8 text-[14px] text-[#6b6b73]">{t('No reviews with this rating yet.')}</p>}
             {list.length > shown && (
               <div className="mt-8 flex justify-center">
                 <button type="button" onClick={() => setShown((n) => n + 5)} className="h-10 px-6 rounded-full border-[1.5px] border-[#111114] text-[13px] font-semibold hover:bg-[#111114] hover:text-white transition-colors">
-                  Show more reviews
+                  {t('Show more reviews')}
                 </button>
               </div>
             )}
@@ -314,7 +321,7 @@ export default function Reviews({ productId }) {
         )}
 
         {loaded && count === 0 && !writing && (
-          <p className="py-10 text-center text-[15px] text-[#6b6b73]">No reviews yet. Be the first to share how it worked for you.</p>
+          <p className="py-10 text-center text-[15px] text-[#6b6b73]">{t('No reviews yet. Be the first to share how it worked for you.')}</p>
         )}
       </div>
     </div>

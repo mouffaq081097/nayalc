@@ -16,6 +16,7 @@ import { formatAED, viewCountLabel } from '../lib/utils';
 import { shortBrand } from '@/lib/seo';
 import { cardName } from './home/HomeProductCard';
 import { useSignIn } from '@/app/context/SignInContext';
+import { useLocale } from '@/app/context/LocaleContext';
 
 // Cloud Luxe accent for card badges (rank, best seller, saving)
 const LAVENDER = 'rgb(147,104,236)';
@@ -50,6 +51,7 @@ const TypewriterText = ({ text, speed = 10 }) => {
 
 const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, viewCount, isNew, isBestseller, rank, category, brandName, stock_quantity, backorderable = 0, backorder_lead_days, description, size, variant = 'light', concerns = [], initialWishlisted = false, onWishlistChange }) => {
   const { openSignIn } = useSignIn();
+  const { t, rich, date } = useLocale();
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(initialWishlisted);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -81,11 +83,11 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const secondImage = imageUrls.length > 1 ? imageUrls[1] : null;
 
   // One tag, top-right: sold out › pre-order › rank › best seller › new (no discount badge — the old price shows it)
-  const tag = !canBuy ? { label: 'Sold out', muted: true }
-    : preorderOnly ? { label: 'Pre-order' }
-    : rank ? { label: `No. ${rank}` }
-    : isBestseller ? { label: 'Best seller', soft: true }
-    : isNew ? { label: 'New' }
+  const tag = !canBuy ? { label: t('Sold out'), muted: true }
+    : preorderOnly ? { label: t('Pre-order') }
+    : rank ? { label: t('No. {rank}', { rank }) }
+    : isBestseller ? { label: t('Best seller'), soft: true }
+    : isNew ? { label: t('New') }
     : null;
   const roundBtn = 'relative after:absolute after:-inset-1 w-8 h-8 shrink-0 rounded-full border-[1.2px] border-[#111114] bg-[#f6f5f2] text-[#111114] flex items-center justify-center transition-colors hover:bg-[#111114] hover:text-white';
 
@@ -95,7 +97,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
     if (navigator.share) {
       navigator.share({
         title: name,
-        text: `Check out this luxury beauty product: ${name}`,
+        text: t('Check out this luxury beauty product: {name}', { name }),
         url: window.location.origin + productUrl,
       });
     }
@@ -117,10 +119,10 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
         const data = await response.json();
         setAiResult(data.response);
       } else {
-        setAiResult("Our AI specialist is currently unavailable. Please try again later.");
+        setAiResult(t('Our AI specialist is currently unavailable. Please try again later.'));
       }
     } catch {
-      setAiResult("An error occurred while curating your product insights.");
+      setAiResult(t('An error occurred while curating your product insights.'));
     } finally {
       setIsGeneratingAI(false);
     }
@@ -171,25 +173,25 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           {/* The whole panel opens the product; the buttons sit above this link */}
           <Link href={productUrl} aria-label={name} className="absolute inset-0 z-0" />
 
-          <p className="relative pr-14 text-[13.5px] md:text-[15px] font-semibold leading-[1.25] text-[#111114] line-clamp-2 pointer-events-none">
-            {cardName(name)}
+          <p className="relative pe-14 text-[13.5px] md:text-[15px] font-semibold leading-[1.25] text-[#111114] line-clamp-2 pointer-events-none">
+            <bdi>{cardName(name)}</bdi>
           </p>
           {brandName && (
             <p className="relative mt-[3px] flex items-center gap-1.5 text-[11.5px] md:text-[12px] text-[#6b6b73] min-w-0 pointer-events-none">
               <span className="truncate">{shortBrand(brandName)}</span>
-              {isFrench && <FranceFlag title="Made in France" />}
-              {isEmirati && <UAEFlag title="Made in the UAE" />}
+              {isFrench && <FranceFlag title={t('Made in France')} />}
+              {isEmirati && <UAEFlag title={t('Made in the UAE')} />}
             </p>
           )}
           {/* The Crystal Bar is made by hand */}
           {name && /crystal\s*bar/i.test(name) && (
             <p className="relative mt-1 text-[10.5px] font-semibold uppercase tracking-[0.12em] pointer-events-none" style={{ color: LAVENDER }}>
-              Homemade
+              {t('Homemade')}
             </p>
           )}
           {tag && (
             <span
-              className={`absolute z-10 top-3 right-3 md:top-4 md:right-4 rounded-full px-2 py-[3px] text-[10.5px] font-semibold ${tag.muted ? 'bg-gray-500 text-white' : tag.soft ? 'text-[#5b3fc4]' : 'text-white'}`}
+              className={`absolute z-10 top-3 end-3 md:top-4 md:end-4 rounded-full px-2 py-[3px] text-[10.5px] font-semibold ${tag.muted ? 'bg-gray-500 text-white' : tag.soft ? 'text-[#5b3fc4]' : 'text-white'}`}
               style={tag.muted ? undefined : { background: tag.soft ? 'rgba(147,104,236,0.14)' : LAVENDER }}
             >
               {tag.label}
@@ -220,7 +222,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  aria-label={preorderOnly ? `Pre-order ${name}` : `Add ${name} to bag`}
+                  aria-label={preorderOnly ? t('Pre-order {name}', { name }) : t('Add {name} to bag', { name })}
                   className={`${roundBtn} group-hover:bg-[#111114] group-hover:text-white`}
                 >
                   {addedToCart ? <Check size={15} strokeWidth={2} /> : <ShoppingBag size={14} strokeWidth={1.75} />}
@@ -229,21 +231,21 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <button
                 type="button"
                 onClick={handleWishlistToggle}
-                aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                aria-label={isWishlisted ? t('Remove from wishlist') : t('Add to wishlist')}
                 aria-pressed={isWishlisted}
                 className={roundBtn}
               >
                 <Heart size={14} strokeWidth={isWishlisted ? 0 : 1.75} className={isWishlisted ? 'fill-[#e63939]' : ''} />
               </button>
               {/* Desktop extras on hover */}
-              <button type="button" onClick={toggleQuickView} aria-label="Quick view" className={`${roundBtn} hidden md:flex opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
+              <button type="button" onClick={toggleQuickView} aria-label={t('Quick view')} className={`${roundBtn} hidden md:flex opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
                 <Eye size={14} strokeWidth={1.75} />
               </button>
-              <button type="button" onClick={handleAIGenerate} aria-label="AI insights" className={`${roundBtn} hidden md:flex opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
+              <button type="button" onClick={handleAIGenerate} aria-label={t('AI insights')} className={`${roundBtn} hidden md:flex opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
                 <Wand2 size={14} strokeWidth={1.75} />
               </button>
             </div>
-            <p className="text-right text-[14px] font-semibold text-[#111114] leading-tight pointer-events-none">
+            <p className="text-end text-[14px] font-semibold text-[#111114] leading-tight pointer-events-none">
               {formatAED(price)}
               {showComparePrice && <span className="block text-[11.5px] font-normal text-[#6b6b73] line-through">{formatAED(originalPrice)}</span>}
             </p>
@@ -258,15 +260,15 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               {rating.toFixed(1)} <span className="opacity-70">({reviewCount})</span>
             </span>
           )}
-          {viewCount >= 5 && <span className="font-medium text-[#15803d]">{viewCountLabel(viewCount)} viewed this month</span>}
+          {viewCount >= 5 && <span className="font-medium text-[#15803d]">{t('{views} viewed this month', { views: viewCountLabel(viewCount), n: viewCount })}</span>}
           {stock_quantity > 0 ? (
-            <span>Arrives <b className="font-semibold text-[#111114]">{delivery.rangeLabel}</b></span>
+            <span>{rich('Arrives {date}', { date: <b className="font-semibold text-[#111114]">{date(delivery.rangeLabel)}</b> })}</span>
           ) : preorderOnly ? (
-            <span>Ships by <b className="font-semibold text-[#111114]">{preorderShipBy}</b></span>
+            <span>{rich('Ships by {date}', { date: <b className="font-semibold text-[#111114]">{date(preorderShipBy)}</b> })}</span>
           ) : (
-            <span className="font-semibold text-gray-500">Out of stock</span>
+            <span className="font-semibold text-gray-500">{t('Out of stock')}</span>
           )}
-          {isLowStock && <span className="font-semibold text-[#b45309]">Only {stock_quantity} left</span>}
+          {isLowStock && <span className="font-semibold text-[#b45309]">{t('Only {n} left', { n: stock_quantity })}</span>}
         </div>
       </div>
 
@@ -285,9 +287,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 </motion.div>
               </div>
               <div>
-                <h3 className="text-[15px] font-semibold" style={{ color: 'var(--cl-text-deep)' }}>AI Insights</h3>
+                <h3 className="text-[15px] font-semibold" style={{ color: 'var(--cl-text-deep)' }}>{t('AI Insights')}</h3>
                 <div className="flex items-center gap-2">
-                  <p className="text-[10px] font-medium" style={{ color: 'var(--cl-text-muted)' }}>AI Concierge · Powered by Gemini</p>
+                  <p className="text-[10px] font-medium" style={{ color: 'var(--cl-text-muted)' }}>{t('AI Concierge · Powered by Gemini')}</p>
                   <div className="flex gap-1">
                     <div className="w-1 h-1 rounded-full animate-pulse" style={{ background: 'var(--cl-purple)' }} />
                     <div className="w-1 h-1 rounded-full animate-pulse [animation-delay:0.2s]" style={{ background: 'var(--cl-pink)' }} />
@@ -297,6 +299,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             </div>
             <button
               onClick={() => setIsAIModalOpen(false)}
+              aria-label={t('Close')}
               className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
               style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
             >
@@ -328,7 +331,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   />
                   <Sparkles size={22} className="absolute text-white" />
                 </div>
-                <p className="text-lg font-semibold" style={{ color: 'var(--cl-text-deep)' }}>Curating your insights…</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--cl-text-deep)' }}>{t('Curating your insights…')}</p>
               </div>
             ) : (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col h-full">
@@ -364,9 +367,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                     onClick={() => setIsAIModalOpen(false)}
                     className="cl-gradient-btn px-12 py-3 text-[11px] font-semibold"
                   >
-                    Close Consultation
+                    {t('Close Consultation')}
                   </button>
-                  <p className="text-[10px]" style={{ color: 'var(--cl-text-muted)' }}>Powered by Gemini Intelligence</p>
+                  <p className="text-[10px]" style={{ color: 'var(--cl-text-muted)' }}>{t('Powered by Gemini Intelligence')}</p>
                 </div>
               </motion.div>
             )}
@@ -390,9 +393,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             >
               <Image src={image || '/placeholder-image.jpg'} alt={seoAlt} fill className="object-contain" />
             </motion.div>
-            <div className="absolute top-6 left-6 flex flex-col gap-2 z-10">
-              {isNew && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--brand-gradient)' }}>New</Badge>}
-              {isBestseller && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--brand-gradient)' }}>Bestseller</Badge>}
+            <div className="absolute top-6 start-6 flex flex-col gap-2 z-10">
+              {isNew && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--brand-gradient)' }}>{t('New')}</Badge>}
+              {isBestseller && <Badge className="text-white px-3 py-1 text-[9px] font-bold border-none rounded-full" style={{ background: 'var(--brand-gradient)' }}>{t('Best seller')}</Badge>}
             </div>
           </div>
 
@@ -425,7 +428,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               </div>
 
               <p className="text-sm leading-[1.8] italic mb-8" style={{ color: 'var(--cl-text-light)' }}>
-                "{description || 'Experience the essence of transformative luxury beauty, formulated for radiance.'}"
+                "{description || t('Experience the essence of transformative luxury beauty, formulated for radiance.')}"
               </p>
 
               <div className="flex gap-8 mb-8">
@@ -433,13 +436,13 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}>
                     <Truck size={14} style={{ color: 'var(--cl-purple)' }} />
                   </div>
-                  Free shipping on {FREE_SHIPPING_FROM}+ items
+                  {t('Free shipping on {n}+ items', { n: FREE_SHIPPING_FROM })}
                 </div>
                 <div className="flex items-center gap-2.5 text-[9px] font-semibold" style={{ color: 'var(--cl-text-muted)' }}>
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}>
                     <ShieldCheck size={14} style={{ color: 'var(--cl-purple)' }} />
                   </div>
-                  Authentic Selection
+                  {t('Authentic Selection')}
                 </div>
               </div>
 
@@ -448,9 +451,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   className="flex items-center rounded-xl p-1"
                   style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
                 >
-                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-11 h-11 flex items-center justify-center transition-colors" style={{ color: 'var(--cl-text-light)' }}><Minus size={15} /></button>
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label={t('Decrease quantity')} className="w-11 h-11 flex items-center justify-center transition-colors" style={{ color: 'var(--cl-text-light)' }}><Minus size={15} /></button>
                   <span className="w-10 text-center text-sm font-bold" style={{ color: 'var(--cl-text-deep)' }}>{quantity}</span>
-                  <button onClick={() => setQuantity(quantity + 1)} className="w-11 h-11 flex items-center justify-center transition-colors" style={{ color: 'var(--cl-text-light)' }}><Plus size={15} /></button>
+                  <button onClick={() => setQuantity(quantity + 1)} aria-label={t('Increase quantity')} className="w-11 h-11 flex items-center justify-center transition-colors" style={{ color: 'var(--cl-text-light)' }}><Plus size={15} /></button>
                 </div>
                 <button
                   onClick={handleAddToCart}
@@ -458,9 +461,9 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                   className="cl-gradient-btn flex-1 h-14 text-[11px] font-semibold"
                 >
                   {addedToCart ? (
-                    <span className="flex items-center justify-center gap-2"><Check size={16} /> Added</span>
+                    <span className="flex items-center justify-center gap-2"><Check size={16} /> {t('Added')}</span>
                   ) : (
-                    `${preorderOnly ? 'Pre-order' : 'Add to Cart'} — ${formatAED(Math.round(price * quantity * 100) / 100)}`
+                    `${preorderOnly ? t('Pre-order') : t('Add to bag')} — ${formatAED(Math.round(price * quantity * 100) / 100)}`
                   )}
                 </button>
               </div>
@@ -470,8 +473,8 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
                 onClick={() => setIsQuickViewOpen(false)}
                 className="cl-gradient-btn flex items-center justify-center gap-2 py-3 text-[10px] font-semibold group"
               >
-                View Full Details
-                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                {t('View full details')}
+                <ArrowRight size={13} className="flip-rtl group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
               </Link>
             </motion.div>
           </div>

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { Play, Pause } from 'lucide-react';
 import { Container } from '../ui/Container';
 import { useHomepageImage } from '../../hooks/useHomepageImages';
-import { headingFont } from './SectionHeading';
+import { headingFont } from './headingFont';
+import { useT } from '../../context/LocaleContext';
 
 const LAVENDER = 'rgb(147,104,236)';
 
@@ -15,6 +16,7 @@ const posterOf = (src) => (src.includes('/video/upload/') ? src.replace('/video/
 
 /** One tall video: plays muted on loop while on screen; the corner button pauses or plays it. */
 function VideoTile({ src, alt }) {
+  const t = useT();
   const ref = useRef(null);
   const [playing, setPlaying] = useState(false);
   const pausedByUser = useRef(false);
@@ -57,8 +59,8 @@ function VideoTile({ src, alt }) {
       <button
         type="button"
         onClick={toggle}
-        aria-label={playing ? 'Pause video' : 'Play video'}
-        className="absolute right-3 bottom-3 md:right-4 md:bottom-4 w-8 h-8 md:w-9 md:h-9 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/75 transition-colors"
+        aria-label={playing ? t('Pause video') : t('Play video')}
+        className="absolute end-3 bottom-3 md:end-4 md:bottom-4 w-8 h-8 md:w-9 md:h-9 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/75 transition-colors"
       >
         {playing ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" className="ml-0.5" />}
       </button>
@@ -72,6 +74,7 @@ function VideoTile({ src, alt }) {
  * Admin → Homepage images ("Story videos"). Hidden until a video is uploaded.
  */
 export function StoryVideos({ title, text, href }) {
+  const t = useT();
   const first = useHomepageImage('story_video_1');
   const second = useHomepageImage('story_video_2');
   const videos = [first, second].filter((v) => v.src);
@@ -83,13 +86,13 @@ export function StoryVideos({ title, text, href }) {
         <div>
           <Link href={href} className="group inline-block">
             <h2 className={`${headingFont} text-[28px] md:text-[44px] font-medium uppercase leading-[1.1] text-balance`}>
-              {title}
-              <svg width="18" height="30" viewBox="0 0 12 20" fill="none" stroke={LAVENDER} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="inline-block ml-3 -mt-1.5 md:-mt-2 align-middle transition-transform group-hover:translate-x-1">
+              {t(title)}
+              <svg width="18" height="30" viewBox="0 0 12 20" fill="none" stroke={LAVENDER} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="inline-block ms-3 -mt-1.5 md:-mt-2 align-middle flip-rtl transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1">
                 <path d="M2 2l8 8-8 8" />
               </svg>
             </h2>
           </Link>
-          {text && <p className="mt-5 max-w-[34ch] text-[14px] md:text-[15px] leading-relaxed text-white/80">{text}</p>}
+          {text && <p className="mt-5 max-w-[34ch] text-[14px] md:text-[15px] leading-relaxed text-white/80">{t(text)}</p>}
         </div>
         <div className={`grid gap-2 md:gap-4 ${videos.length > 1 ? 'grid-cols-2' : 'grid-cols-1 md:max-w-[50%]'}`}>
           {videos.map((v, i) => <VideoTile key={i} src={v.src} alt={v.alt} />)}

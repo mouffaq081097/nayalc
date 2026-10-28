@@ -7,6 +7,7 @@ import { ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import { useLocale, useT } from '../../context/LocaleContext';
 
 /**
  * Sign in or create account (after Shopify), shown in the sign-in pop-up
@@ -25,8 +26,9 @@ const SOCIAL_PROVIDERS = {
 };
 
 const RESEND_AFTER_S = 30;
+// English keys for t() (lib/i18n/ar.js)
 const CODE_ERRORS = {
-  CODE_WRONG: "That code isn't right. Check the email and try again.",
+  CODE_WRONG: 'That code isn’t right. Check the email and try again.',
   CODE_EXPIRED: 'That code has expired. Send a new one.',
   CODE_LOCKED: 'Too many wrong tries. Send a new code.',
   ACCOUNT_SUSPENDED: 'This account is suspended. Please contact us.',
@@ -48,6 +50,7 @@ const Alert = ({ children, tone = 'error' }) => (children ? (
 
 function SocialButtons({ callbackUrl }) {
   const { loginWithProvider } = useAuth();
+  const t = useT();
   const [pending, setPending] = useState(null);
   const providers = [
     { id: 'google', label: 'Continue with Google', icon: <FcGoogle size={19} />, enabled: SOCIAL_PROVIDERS.google },
@@ -67,13 +70,13 @@ function SocialButtons({ callbackUrl }) {
             className={`flex h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-[#dedede] bg-white text-[15px] font-medium text-[#111114] transition-colors hover:bg-[#fafafa] disabled:opacity-60 ${focusRing}`}
           >
             {pending === p.id ? <Loader2 size={17} className="animate-spin" /> : p.icon}
-            {p.label}
+            {t(p.label)}
           </button>
         ))}
       </div>
       <div className="my-6 flex items-center gap-4">
         <div className="h-px flex-1 bg-[#dedede]" />
-        <span className="text-[13px] text-[#707070]">OR</span>
+        <span className="text-[13px] text-[#707070]">{t('OR')}</span>
         <div className="h-px flex-1 bg-[#dedede]" />
       </div>
     </>
@@ -82,6 +85,7 @@ function SocialButtons({ callbackUrl }) {
 
 /** Step 1: email (+ news opt-in) → a code is sent */
 function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPassword, callbackUrl }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const ref = useRef(null);
@@ -98,10 +102,10 @@ function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPasswor
         body: JSON.stringify({ email, marketing }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "We couldn't send the code. Please try again.");
+      if (!res.ok) throw new Error(data.error || 'We couldn’t send the code. Please try again.');
       onSent();
     } catch (err) {
-      setError(err.message);
+      setError(t(err.message));
     } finally {
       setBusy(false);
     }
@@ -111,7 +115,7 @@ function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPasswor
     <>
       <SocialButtons callbackUrl={callbackUrl} />
       <form onSubmit={submit} className="space-y-4">
-        <label htmlFor="auth-email" className="sr-only">Email</label>
+        <label htmlFor="auth-email" className="sr-only">{t('Email')}</label>
         <div className="relative">
           <input
             ref={ref}
@@ -120,32 +124,32 @@ function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPasswor
             inputMode="email"
             autoComplete="email"
             required
-            placeholder="Email"
+            placeholder={t('Email')}
             value={email}
             onChange={e => setEmail(e.target.value)}
             disabled={busy}
-            className={`${field} pr-14`}
+            className={`${field} pe-14`}
           />
           <button
             type="submit"
             disabled={busy || !email.trim()}
-            aria-label="Continue"
-            className={`absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#111114] transition-colors hover:bg-black/5 disabled:opacity-40 ${focusRing}`}
+            aria-label={t('Continue')}
+            className={`absolute end-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#111114] transition-colors hover:bg-black/5 disabled:opacity-40 ${focusRing}`}
           >
-            {busy ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={20} />}
+            {busy ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={20} className="flip-rtl" />}
           </button>
         </div>
 
         <label className="flex cursor-pointer items-center gap-3 text-[15px] text-[#111114]">
           <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)} className="h-5 w-5 rounded accent-[#111114]" />
-          Email me with news and offers
+          {t('Email me with news and offers')}
         </label>
 
         <Alert>{error}</Alert>
       </form>
 
       <div className="mt-5 text-center">
-        <button type="button" onClick={onPassword} className={textLink}>Sign in with password instead</button>
+        <button type="button" onClick={onPassword} className={textLink}>{t('Sign in with password instead')}</button>
       </div>
     </>
   );
@@ -153,6 +157,7 @@ function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPasswor
 
 /** Step 2: the 6-digit code; auto-submits on the sixth digit */
 function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
+  const { t, rich } = useLocale();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -163,8 +168,8 @@ function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
   useEffect(() => { ref.current?.focus(); }, []);
   useEffect(() => {
     if (wait <= 0) return undefined;
-    const t = setTimeout(() => setWait(w => w - 1), 1000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setWait(w => w - 1), 1000);
+    return () => clearTimeout(timer);
   }, [wait]);
 
   const verify = async (value) => {
@@ -179,7 +184,7 @@ function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
     }
     setBusy(false);
     setCode('');
-    setError(CODE_ERRORS[result?.error] || "We couldn't sign you in. Please try again.");
+    setError(t(CODE_ERRORS[result?.error] || 'We couldn’t sign you in. Please try again.'));
     ref.current?.focus();
   };
 
@@ -194,21 +199,21 @@ function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
         body: JSON.stringify({ email, marketing }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || "We couldn't send the code.");
-      setNotice('A new code is on its way.');
+      if (!res.ok) throw new Error(data.error || 'We couldn’t send the code.');
+      setNotice(t('A new code is on its way.'));
     } catch (err) {
-      setError(err.message);
+      setError(t(err.message));
     }
   };
 
   return (
     <form onSubmit={e => { e.preventDefault(); verify(code); }} className="space-y-4">
       <p className="text-[15px] leading-relaxed text-[#5a5a64]">
-        Sent to <span className="font-medium text-[#111114]">{email}</span>{' '}
-        <button type="button" onClick={onChangeEmail} className={textLink}>Change</button>
+        {rich('Sent to {email}', { email: <span className="font-medium text-[#111114]">{email}</span> })}{' '}
+        <button type="button" onClick={onChangeEmail} className={textLink}>{t('Change')}</button>
       </p>
 
-      <label htmlFor="auth-code" className="sr-only">6-digit code</label>
+      <label htmlFor="auth-code" className="sr-only">{t('6-digit code')}</label>
       <input
         ref={ref}
         id="auth-code"
@@ -217,7 +222,7 @@ function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
         autoComplete="one-time-code"
         pattern="[0-9]*"
         maxLength={6}
-        placeholder="6-digit code"
+        placeholder={t('6-digit code')}
         value={code}
         disabled={busy}
         onChange={e => {
@@ -225,21 +230,22 @@ function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
           setCode(next);
           if (next.length === 6) verify(next);
         }}
-        className={`${field} text-center text-[22px] tracking-[0.5em] placeholder:text-[15px] placeholder:tracking-normal lg:text-[22px]`}
+        className={`latin ${field} text-center text-[22px] tracking-[0.5em] placeholder:text-[15px] placeholder:tracking-normal lg:text-[22px]`}
       />
 
       <Alert>{error}</Alert>
       <Alert tone="success">{notice}</Alert>
 
       <button type="submit" disabled={busy || code.length !== 6} className={primary}>
-        {busy ? <Loader2 size={18} className="animate-spin" /> : 'Sign in'}
+        {busy ? <Loader2 size={18} className="animate-spin" /> : t('Sign in')}
       </button>
 
       <p className="text-center text-[14px] text-[#5a5a64]">
-        Didn&apos;t get it? Check your spam folder or{' '}
-        {wait > 0
-          ? <span className="tabular-nums">resend in {wait}s</span>
-          : <button type="button" onClick={resend} className={textLink}>send a new code</button>}
+        {rich('Didn’t get it? Check your spam folder or {action}', {
+          action: wait > 0
+            ? <span className="tabular-nums">{t('resend in {n}s', { n: wait })}</span>
+            : <button type="button" onClick={resend} className={textLink}>{t('send a new code')}</button>,
+        })}
       </p>
     </form>
   );
@@ -247,6 +253,7 @@ function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
 
 /** Fallback: email + password, for customers who prefer it */
 function PasswordStep({ email, setEmail, onBack, onForgot, onSignedIn }) {
+  const t = useT();
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -263,35 +270,36 @@ function PasswordStep({ email, setEmail, onBack, onForgot, onSignedIn }) {
       }
       onSignedIn();
     } catch (err) {
-      setError(err.message);
+      setError(t(err.message));
       setBusy(false);
     }
   };
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <label htmlFor="pw-email" className="sr-only">Email</label>
-      <input id="pw-email" type="email" inputMode="email" autoComplete="email" required placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} disabled={busy} className={field} />
-      <label htmlFor="pw-password" className="sr-only">Password</label>
+      <label htmlFor="pw-email" className="sr-only">{t('Email')}</label>
+      <input id="pw-email" type="email" inputMode="email" autoComplete="email" required placeholder={t('Email')} value={email} onChange={e => setEmail(e.target.value)} disabled={busy} className={field} />
+      <label htmlFor="pw-password" className="sr-only">{t('Password')}</label>
       <div className="relative">
-        <input id="pw-password" type={show ? 'text' : 'password'} autoComplete="current-password" required placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} disabled={busy} className={`${field} pr-12`} />
-        <button type="button" onClick={() => setShow(s => !s)} aria-label={show ? 'Hide password' : 'Show password'} className={`absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#707070] hover:text-[#111114] ${focusRing}`}>
+        <input id="pw-password" type={show ? 'text' : 'password'} autoComplete="current-password" required placeholder={t('Password')} value={password} onChange={e => setPassword(e.target.value)} disabled={busy} className={`${field} pe-12`} />
+        <button type="button" onClick={() => setShow(s => !s)} aria-label={show ? t('Hide password') : t('Show password')} className={`absolute end-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#707070] hover:text-[#111114] ${focusRing}`}>
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
       <Alert>{error}</Alert>
       <button type="submit" disabled={busy} className={primary}>
-        {busy ? <Loader2 size={18} className="animate-spin" /> : 'Sign in'}
+        {busy ? <Loader2 size={18} className="animate-spin" /> : t('Sign in')}
       </button>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button type="button" onClick={onBack} className={textLink}>Sign in with a code instead</button>
-        <button type="button" onClick={onForgot} className={textLink}>Forgot password?</button>
+        <button type="button" onClick={onBack} className={textLink}>{t('Sign in with a code instead')}</button>
+        <button type="button" onClick={onForgot} className={textLink}>{t('Forgot password?')}</button>
       </div>
     </form>
   );
 }
 
 function ForgotStep({ email, setEmail, onBack }) {
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -308,10 +316,10 @@ function ForgotStep({ email, setEmail, onBack }) {
         body: JSON.stringify({ email }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok) setMessage(data.message || 'Check your email for a reset link.');
-      else setError(data.error || 'Something went wrong. Please try again.');
+      if (res.ok) setMessage(t(data.message || 'Check your email for a reset link.'));
+      else setError(t(data.error || 'Something went wrong. Please try again.'));
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError(t('Something went wrong. Please try again.'));
     } finally {
       setBusy(false);
     }
@@ -319,25 +327,25 @@ function ForgotStep({ email, setEmail, onBack }) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <label htmlFor="forgot-email" className="sr-only">Email</label>
-      <input id="forgot-email" type="email" inputMode="email" autoComplete="email" required placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} disabled={busy} className={field} />
+      <label htmlFor="forgot-email" className="sr-only">{t('Email')}</label>
+      <input id="forgot-email" type="email" inputMode="email" autoComplete="email" required placeholder={t('Email')} value={email} onChange={e => setEmail(e.target.value)} disabled={busy} className={field} />
       <Alert>{error}</Alert>
       <Alert tone="success">{message}</Alert>
       <button type="submit" disabled={busy} className={primary}>
-        {busy ? <Loader2 size={18} className="animate-spin" /> : 'Send reset link'}
+        {busy ? <Loader2 size={18} className="animate-spin" /> : t('Send reset link')}
       </button>
       <div className="text-center">
-        <button type="button" onClick={onBack} className={textLink}>Back to sign in</button>
+        <button type="button" onClick={onBack} className={textLink}>{t('Back to sign in')}</button>
       </div>
     </form>
   );
 }
 
 const TITLES = {
-  email: ['Sign in or create account', "Enter your email and we'll send you a code."],
+  email: ['Sign in or create account', 'Enter your email and we’ll send you a code.'],
   code: ['Enter code', null],
   password: ['Sign in with password', null],
-  forgot: ['Reset your password', "We'll email you a link to choose a new one."],
+  forgot: ['Reset your password', 'We’ll email you a link to choose a new one.'],
 };
 
 /**
@@ -345,6 +353,7 @@ const TITLES = {
  * `onSignedIn` runs after a code or password sign-in.
  */
 export default function SignInPanel({ callbackUrl = '/', onSignedIn, titleId = 'auth-title' }) {
+  const { t, rich } = useLocale();
   const [step, setStep] = useState('email');
   const [email, setEmail] = useState('');
   const [marketing, setMarketing] = useState(true);
@@ -352,8 +361,8 @@ export default function SignInPanel({ callbackUrl = '/', onSignedIn, titleId = '
 
   return (
     <>
-      <h2 id={titleId} className="text-[22px] font-semibold leading-tight text-[#111114]">{title}</h2>
-      {subtitle && <p className="mt-1.5 text-[15px] text-[#5a5a64]">{subtitle}</p>}
+      <h2 id={titleId} className="text-[22px] font-semibold leading-tight text-[#111114]">{t(title)}</h2>
+      {subtitle && <p className="mt-1.5 text-[15px] text-[#5a5a64]">{t(subtitle)}</p>}
 
       <div className="mt-6">
         {step === 'email' && (
@@ -371,9 +380,10 @@ export default function SignInPanel({ callbackUrl = '/', onSignedIn, titleId = '
       </div>
 
       <p className="mt-8 text-[13px] leading-relaxed text-[#707070]">
-        By continuing, you agree to our{' '}
-        <Link href="/terms" className="underline underline-offset-2 hover:text-[#111114]">Terms of service</Link> and{' '}
-        <Link href="/privacy" className="underline underline-offset-2 hover:text-[#111114]">Privacy policy</Link>.
+        {rich('By continuing, you agree to our {terms} and {privacy}.', {
+          terms: <Link href="/terms" className="underline underline-offset-2 hover:text-[#111114]">{t('Terms of service')}</Link>,
+          privacy: <Link href="/privacy" className="underline underline-offset-2 hover:text-[#111114]">{t('Privacy policy')}</Link>,
+        })}
       </p>
     </>
   );

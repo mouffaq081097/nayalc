@@ -5,14 +5,17 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useLocale } from '../context/LocaleContext';
 
 export default function StoreCategoryNav({ onFilterClick }) {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showLeftFade, setShowLeftFade] = useState(false);
-  const [showRightFade, setShowRightFade] = useState(true);
+  // Fades over the row's start and end edges (left and right, swapped in Arabic)
+  const [showStartFade, setShowStartFade] = useState(false);
+  const [showEndFade, setShowEndFade] = useState(true);
   const scrollRef = useRef(null);
   const pathname = usePathname();
+  const { t, dir } = useLocale();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -60,8 +63,10 @@ export default function StoreCategoryNav({ onFilterClick }) {
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    setShowLeftFade(el.scrollLeft > 16);
-    setShowRightFade(el.scrollLeft < el.scrollWidth - el.clientWidth - 16);
+    // Right to left, scrollLeft runs from 0 down to negative numbers
+    const scrolled = Math.abs(el.scrollLeft);
+    setShowStartFade(scrolled > 16);
+    setShowEndFade(scrolled < el.scrollWidth - el.clientWidth - 16);
   };
 
   useEffect(() => {
@@ -96,20 +101,20 @@ export default function StoreCategoryNav({ onFilterClick }) {
     >
       <div className="relative max-w-[1400px] mx-auto">
 
-        {/* Left fade */}
+        {/* Start fade */}
         <div
-          className="absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none transition-opacity duration-300"
+          className="absolute start-0 top-0 bottom-0 w-16 z-10 pointer-events-none transition-opacity duration-300"
           style={{
-            background: 'linear-gradient(to right, rgba(255,255,255,0.97) 0%, transparent 100%)',
-            opacity: showLeftFade ? 1 : 0,
+            background: `linear-gradient(to ${dir === 'rtl' ? 'left' : 'right'}, rgba(255,255,255,0.97) 0%, transparent 100%)`,
+            opacity: showStartFade ? 1 : 0,
           }}
         />
-        {/* Right fade */}
+        {/* End fade */}
         <div
-          className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none transition-opacity duration-300"
+          className="absolute end-0 top-0 bottom-0 w-20 z-10 pointer-events-none transition-opacity duration-300"
           style={{
-            background: 'linear-gradient(to left, rgba(255,255,255,0.97) 0%, transparent 100%)',
-            opacity: showRightFade ? 1 : 0,
+            background: `linear-gradient(to ${dir === 'rtl' ? 'right' : 'left'}, rgba(255,255,255,0.97) 0%, transparent 100%)`,
+            opacity: showEndFade ? 1 : 0,
           }}
         />
 
@@ -139,7 +144,7 @@ export default function StoreCategoryNav({ onFilterClick }) {
                 borderColor: '#e5e5ea',
               }}
             >
-              All
+              {t('All')}
             </Link>
           </motion.div>
 
@@ -180,14 +185,14 @@ export default function StoreCategoryNav({ onFilterClick }) {
                     >
                       <Image
                         src={cat.image}
-                        alt={cat.name}
+                        alt={t(cat.name)}
                         fill
                         className="object-contain p-0.5"
                         style={{ mixBlendMode: isActive ? 'normal' : 'multiply' }}
                       />
                     </div>
                   )}
-                  <span className="whitespace-nowrap">{cat.name}</span>
+                  <span className="whitespace-nowrap">{t(cat.name)}</span>
                 </Link>
               </motion.div>
             );

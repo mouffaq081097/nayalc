@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { X, Loader2 } from 'lucide-react';
+import { useLocale, useT } from '../context/LocaleContext';
 
 const LAVENDER = 'rgb(147,104,236)';
 
@@ -18,6 +19,7 @@ const LAVENDER = 'rgb(147,104,236)';
  * clicked, so both entry points share one implementation.
  */
 export default function WelcomePopup({ isOpen, onClose }) {
+  const { t, rich } = useLocale();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState('');
@@ -38,14 +40,14 @@ export default function WelcomePopup({ isOpen, onClose }) {
       setStatus('success');
     } catch (err) {
       setStatus('error');
-      setErrorMsg(err.message || 'Something went wrong. Please try again.');
+      setErrorMsg(t(err.message || 'Something went wrong. Please try again.'));
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-end md:items-center justify-center md:p-4" role="dialog" aria-modal="true" aria-label="Welcome offer">
+    <div className="fixed inset-0 z-[300] flex items-end md:items-center justify-center md:p-4" role="dialog" aria-modal="true" aria-label={t('Welcome offer')}>
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Phones: a sheet from the bottom edge; desktop: a centred card with the photo */}
@@ -53,8 +55,8 @@ export default function WelcomePopup({ isOpen, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+          aria-label={t('Close')}
+          className="absolute top-3 end-3 z-10 w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
         >
           <X size={17} />
         </button>
@@ -63,7 +65,7 @@ export default function WelcomePopup({ isOpen, onClose }) {
         <div className="relative hidden md:block min-h-[440px]">
           <Image
             src="/kimia-kazemi-u93nTfWqR9w-unsplash.jpg"
-            alt="A guest receiving a facial treatment"
+            alt={t('A guest receiving a facial treatment')}
             fill
             sizes="50vw"
             className="object-cover"
@@ -73,31 +75,31 @@ export default function WelcomePopup({ isOpen, onClose }) {
 
         {/* Content side */}
         <div className="flex flex-col justify-center p-8 sm:p-10 text-center">
-          <p className="text-[11px] font-bold tracking-[0.32em] uppercase text-gray-900 mb-6">Naya Lumière</p>
+          <p className="latin text-[11px] font-bold tracking-[0.32em] uppercase text-gray-900 mb-6">Naya Lumière</p>
 
           {status === 'success' ? (
             <>
-              <h2 className="text-[22px] font-bold text-gray-900 mb-2">You&rsquo;re on the list!</h2>
-              <p className="text-[13.5px] text-[#6b6b73] mb-5">Use this code at checkout for 10% off your first order.</p>
+              <h2 className="text-[22px] font-bold text-gray-900 mb-2">{t('You’re on the list!')}</h2>
+              <p className="text-[13.5px] text-[#6b6b73] mb-5">{t('Use this code at checkout for 10% off your first order.')}</p>
               <div
                 className="mx-auto mb-6 inline-flex items-center gap-2 border-2 border-dashed rounded-xl px-6 py-3"
                 style={{ borderColor: LAVENDER }}
               >
-                <span className="text-[18px] font-bold tracking-[0.1em]" style={{ color: LAVENDER }}>
+                <span className="latin text-[18px] font-bold tracking-[0.1em]" style={{ color: LAVENDER }}>
                   WELCOME10
                 </span>
               </div>
               <button type="button" onClick={onClose} className="text-[12.5px] font-semibold cursor-pointer" style={{ color: LAVENDER }}>
-                Continue shopping →
+                {t('Continue shopping →')}
               </button>
             </>
           ) : (
             <>
               <h2 className="text-[24px] sm:text-[28px] font-bold text-gray-900 leading-tight mb-2">
-                Get 10% off your first order
+                {t('Get 10% off your first order')}
               </h2>
               <p className="text-[13.5px] text-[#6b6b73] mb-6 max-w-xs mx-auto">
-                Join our journal for early access to new arrivals and skincare guidance — plus 10% off to start.
+                {t('Join our journal for early access to new arrivals and skincare guidance — plus 10% off to start.')}
               </p>
 
               <form onSubmit={handleSubmit} className="w-full max-w-xs mx-auto">
@@ -106,7 +108,7 @@ export default function WelcomePopup({ isOpen, onClose }) {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email address"
+                  placeholder={t('Email address')}
                   className="w-full border border-gray-200 rounded-full px-5 py-3.5 text-[13.5px] text-gray-900 outline-none focus:border-[rgb(147,104,236)] transition-colors mb-3"
                 />
                 <button
@@ -116,7 +118,7 @@ export default function WelcomePopup({ isOpen, onClose }) {
                   style={{ background: LAVENDER }}
                 >
                   {status === 'loading' && <Loader2 size={16} className="animate-spin" />}
-                  Activate offer
+                  {t('Activate offer')}
                 </button>
               </form>
 
@@ -127,12 +129,13 @@ export default function WelcomePopup({ isOpen, onClose }) {
                 onClick={onClose}
                 className="mt-4 text-[12.5px] font-medium text-[#6b6b73] hover:text-[#111114] transition-colors cursor-pointer"
               >
-                No thanks
+                {t('No thanks')}
               </button>
 
               <p className="mt-6 text-[10.5px] text-[#6b6b73] leading-relaxed">
-                By entering your email, you consent to receive marketing communications. See our{' '}
-                <Link href="/privacy" onClick={onClose} className="underline hover:text-[#111114]">Privacy Policy</Link> for more information.
+                {rich('By entering your email, you consent to receive marketing communications. See our {privacy} for more information.', {
+                  privacy: <Link href="/privacy" onClick={onClose} className="underline hover:text-[#111114]">{t('Privacy Policy')}</Link>,
+                })}
               </p>
             </>
           )}
@@ -148,6 +151,7 @@ export default function WelcomePopup({ isOpen, onClose }) {
  * above the product page's sticky buy bar while that bar is showing.
  */
 export function WelcomeBar({ onOpen, onClose }) {
+  const t = useT();
   const [lifted, setLifted] = useState(false);
   useEffect(() => {
     const onBar = (e) => setLifted(!!e.detail?.visible);
@@ -158,15 +162,15 @@ export function WelcomeBar({ onOpen, onClose }) {
   return (
     <div
       role="region"
-      aria-label="Welcome offer"
-      className="md:hidden fixed inset-x-3 z-[145] flex items-center gap-2 rounded-xl bg-[#111114] py-2 pl-4 pr-1.5 text-white shadow-[0_8px_24px_rgba(17,17,20,0.25)] transition-[bottom] duration-200"
+      aria-label={t('Welcome offer')}
+      className="md:hidden fixed inset-x-3 z-[145] flex items-center gap-2 rounded-xl bg-[#111114] py-2 ps-4 pe-1.5 text-white shadow-[0_8px_24px_rgba(17,17,20,0.25)] transition-[bottom] duration-200"
       style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${lifted ? 76 : 12}px)` }}
     >
-      <p className="min-w-0 text-[13px] leading-snug">10% off your first order</p>
-      <button type="button" onClick={onOpen} className="ml-auto shrink-0 rounded-full bg-white px-4 py-2 text-[12.5px] font-semibold text-[#111114]">
-        Get code
+      <p className="min-w-0 text-[13px] leading-snug">{t('10% off your first order')}</p>
+      <button type="button" onClick={onOpen} className="ms-auto shrink-0 rounded-full bg-white px-4 py-2 text-[12.5px] font-semibold text-[#111114]">
+        {t('Get code')}
       </button>
-      <button type="button" onClick={onClose} aria-label="No thanks" className="shrink-0 flex h-10 w-10 items-center justify-center text-white/80 hover:text-white">
+      <button type="button" onClick={onClose} aria-label={t('No thanks')} className="shrink-0 flex h-10 w-10 items-center justify-center text-white/80 hover:text-white">
         <X size={16} />
       </button>
     </div>

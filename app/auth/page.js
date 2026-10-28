@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import BrandLogo from '../components/BrandLogo';
 import SignInPanel, { safePath } from '../components/auth/SignInPanel';
+import { useT } from '../context/LocaleContext';
 
 /**
  * /auth: the same sign-in card as the pop-up (SignInContext), as a page — for
@@ -14,6 +15,7 @@ import SignInPanel, { safePath } from '../components/auth/SignInPanel';
  */
 export default function AuthPage() {
   const router = useRouter();
+  const t = useT();
   const [callbackUrl, setCallbackUrl] = useState('/');
   useEffect(() => {
     setCallbackUrl(safePath(new URLSearchParams(window.location.search).get('callbackUrl')) || '/');
@@ -27,7 +29,7 @@ export default function AuthPage() {
             <BrandLogo priority />
           </Link>
           <Link href="/" className="inline-flex h-10 items-center gap-1.5 text-[14px] text-[#111114] underline-offset-4 hover:underline">
-            <ArrowLeft size={15} /> <span className="hidden sm:inline">Back to store</span><span className="sm:hidden">Store</span>
+            <ArrowLeft size={15} className="flip-rtl" /> <span className="hidden sm:inline">{t('Back to store')}</span><span className="sm:hidden">{t('Store')}</span>
           </Link>
         </div>
       </header>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { toast } from 'react-toastify';
+import { useT } from '../context/LocaleContext';
 
 const CARD_STYLE = {
   // No Stripe Link badge inside the field — one less thing to explain at checkout
@@ -32,6 +33,7 @@ const CARD_STYLE = {
 const CheckoutForm = ({ onSuccessfulPayment, clientSecret = null, formId = 'card-payment-form', onStatusChange, onBeforePay }) => {
   const stripe = useStripe();
   const elements = useElements();
+  const t = useT();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -76,7 +78,7 @@ const CheckoutForm = ({ onSuccessfulPayment, clientSecret = null, formId = 'card
       }
       setIsProcessing(false);
     } else {
-      toast.error('Payment could not be completed. Please try again.');
+      toast.error(t('Payment could not be completed. Please try again.'));
       setIsProcessing(false);
     }
   };

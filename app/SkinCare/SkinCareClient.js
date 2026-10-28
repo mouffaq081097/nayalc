@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import StoreHeader from '../components/StoreHeader';
-import { headingFont } from '@/app/components/home/SectionHeading';
+import { headingFont } from '@/app/components/home/headingFont';
 import StoreCategoryNav from '../components/StoreCategoryNav';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Droplets, Leaf, Award, Sparkles, Filter, ArrowRight, X, Search, Hash, Check, Minus, Plus as PlusIcon } from 'lucide-react';
+import { useT, useLocale } from '@/app/context/LocaleContext';
 import { useAppContext } from '../context/AppContext';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +36,7 @@ const SidebarFilters = ({
   clearFilters,
   allProducts,
 }) => {
+  const t = useT();
   const [localPriceRange, setLocalPriceRange] = useState(priceRange);
   const [showAllBrands, setShowMoreBrands] = useState(false);
 
@@ -73,16 +75,16 @@ const SidebarFilters = ({
   return (
     <div className="space-y-10">
       <div className="flex items-center justify-between pb-6 border-b border-gray-100">
-        <h2 className="text-[11px] tracking-[0.4em] font-black text-gray-900">Selection</h2>
-        <button onClick={clearFilters} className="text-[9px] tracking-widest text-brand-pink hover:text-gray-900 transition-all font-black border-b border-brand-pink/20">Reset</button>
+        <h2 className="text-[11px] tracking-[0.4em] font-black text-gray-900">{t('Selection')}</h2>
+        <button onClick={clearFilters} className="text-[9px] tracking-widest text-brand-pink hover:text-gray-900 transition-all font-black border-b border-brand-pink/20">{t('Reset')}</button>
       </div>
 
       <Accordion type="multiple" defaultValue={['brand', 'price', 'concern']} className="w-full">
         {concerns && concerns.length > 0 && (
           <AccordionItem value="concern" className="border-b border-gray-50 mb-2">
-            <AccordionTrigger className="hover:no-underline py-5 text-[10px] tracking-[0.3em] font-black text-gray-900 flex-1 text-left">Ritual Focus</AccordionTrigger>
+            <AccordionTrigger className="hover:no-underline py-5 text-[10px] tracking-[0.3em] font-black text-gray-900 flex-1 text-start">{t('Ritual Focus')}</AccordionTrigger>
             <AccordionContent>
-              <div className="space-y-3 pt-1 pb-4 pr-2">
+              <div className="space-y-3 pt-1 pb-4 pe-2">
                 {concerns.map((con) => (
                   <div key={con.id} className="flex items-center justify-between group/item cursor-pointer" onClick={() => {
                       const next = selectedConcerns.includes(con.id) ? selectedConcerns.filter((id) => id !== con.id) : [...selectedConcerns, con.id];
@@ -92,7 +94,7 @@ const SidebarFilters = ({
                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedConcerns.includes(con.id) ? 'bg-brand-pink border-brand-pink' : 'border-gray-200 bg-white'}`}>
                             {selectedConcerns.includes(con.id) && <Check size={10} className="text-white" strokeWidth={4} />}
                         </div>
-                        <span className={`ml-3 text-[12px] tracking-widest transition-colors ${selectedConcerns.includes(con.id) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>{con.name}</span>
+                        <span className={`ms-3 text-[12px] tracking-widest transition-colors ${selectedConcerns.includes(con.id) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>{t(con.name)}</span>
                     </div>
                     <span className="text-[9px] font-black text-gray-200 group-hover/item:text-brand-pink">{concernCounts[con.id] || 0}</span>
                   </div>
@@ -103,9 +105,9 @@ const SidebarFilters = ({
         )}
 
         <AccordionItem value="brand" className="border-b border-gray-50 mb-2">
-          <AccordionTrigger className="hover:no-underline py-5 text-[10px] tracking-[0.3em] font-black text-gray-900 flex-1 text-left">Designers</AccordionTrigger>
+          <AccordionTrigger className="hover:no-underline py-5 text-[10px] tracking-[0.3em] font-black text-gray-900 flex-1 text-start">{t('Designers')}</AccordionTrigger>
           <AccordionContent>
-            <div className="space-y-3 pt-1 pb-4 pr-2">
+            <div className="space-y-3 pt-1 pb-4 pe-2">
               {displayedBrands.map((brand) => (
                 <div key={brand} className="flex items-center justify-between group/item cursor-pointer" onClick={() => {
                     const next = selectedBrands.includes(brand) ? selectedBrands.filter((b) => b !== brand) : [...selectedBrands, brand];
@@ -115,7 +117,7 @@ const SidebarFilters = ({
                       <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedBrands.includes(brand) ? 'bg-gray-900 border-gray-900' : 'border-gray-200 bg-white'}`}>
                           {selectedBrands.includes(brand) && <Check size={10} className="text-white" strokeWidth={4} />}
                       </div>
-                      <span className={`ml-3 text-[12px] tracking-widest transition-colors ${selectedBrands.includes(brand) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>{brand}</span>
+                      <span className={`ms-3 text-[12px] tracking-widest transition-colors ${selectedBrands.includes(brand) ? 'text-gray-900 font-bold' : 'text-gray-500 group-hover/item:text-gray-900'}`}>{brand}</span>
                   </div>
                   <span className="text-[9px] font-black text-gray-200 group-hover/item:text-brand-pink">{brandCounts[brand] || 0}</span>
                 </div>
@@ -125,13 +127,13 @@ const SidebarFilters = ({
         </AccordionItem>
 
         <AccordionItem value="price" className="border-none mb-2">
-          <AccordionTrigger className="hover:no-underline py-5 text-[10px] tracking-[0.3em] font-black text-gray-900">Investment</AccordionTrigger>
+          <AccordionTrigger className="hover:no-underline py-5 text-[10px] tracking-[0.3em] font-black text-gray-900">{t('Investment')}</AccordionTrigger>
           <AccordionContent>
             <div className="pt-6 px-2 pb-4">
               <Slider defaultValue={priceRange} max={maxPrice} step={10} onValueChange={setLocalPriceRange} className="mb-8" />
               <div className="flex justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                <div className="flex flex-col"><span className="text-[7px] text-gray-400 font-black tracking-[0.2em]">Min</span><span className="text-[11px] font-black">AED {localPriceRange[0]}</span></div>
-                <div className="flex flex-col items-end"><span className="text-[7px] text-gray-400 font-black tracking-[0.2em]">Max</span><span className="text-[11px] font-black">AED {localPriceRange[1]}</span></div>
+                <div className="flex flex-col"><span className="text-[7px] text-gray-400 font-black tracking-[0.2em]">{t('Min')}</span><span className="text-[11px] font-black">AED {localPriceRange[0]}</span></div>
+                <div className="flex flex-col items-end"><span className="text-[7px] text-gray-400 font-black tracking-[0.2em]">{t('Max')}</span><span className="text-[11px] font-black">AED {localPriceRange[1]}</span></div>
               </div>
             </div>
           </AccordionContent>
@@ -150,6 +152,7 @@ const skincareBenefits = [
 
 export default function SkincareClient() {
   const { products: allProducts, concerns, categories, fetchProducts } = useAppContext();
+  const { t, dir } = useLocale();
   const [gridCols, setGridCols] = useState(4);
   const [sortBy, setSortBy] = useState('featured');
   const [searchTerm, setSearchTerm] = useState('');
@@ -232,8 +235,8 @@ export default function SkincareClient() {
               <motion.div key={index} className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-gray-100 shadow-xl flex flex-col items-center text-center space-y-5">
                 <div className="w-16 h-16 rounded-[1.5rem] bg-gray-50 flex items-center justify-center"><benefit.icon className={`${benefit.color}`} size={28} /></div>
                 <div className="space-y-2">
-                  <h3 className="text-[16px] font-bold text-gray-900">{benefit.title}</h3>
-                  <p className="text-[13px] text-gray-400 italic leading-relaxed">{benefit.description}</p>
+                  <h3 className="text-[16px] font-bold text-gray-900">{t(benefit.title)}</h3>
+                  <p className="text-[13px] text-gray-400 italic leading-relaxed">{t(benefit.description)}</p>
                 </div>
               </motion.div>
             ))}
@@ -245,13 +248,13 @@ export default function SkincareClient() {
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-12 border-b border-gray-100 pb-10">
             <div className="space-y-3">
-                <div className="flex items-center gap-3"><span className="w-10 h-px bg-brand-pink"></span><span className="text-[10px] font-black tracking-[0.4em] text-brand-pink">The Collection</span></div>
-                <h2 className={`${headingFont} text-[24px] md:text-[34px] font-medium uppercase leading-[1.1] text-[#111114]`}>All skincare</h2>
+                <div className="flex items-center gap-3"><span className="w-10 h-px bg-brand-pink"></span><span className="text-[10px] font-black tracking-[0.4em] text-brand-pink">{t('The Collection')}</span></div>
+                <h2 className={`${headingFont} text-[24px] md:text-[34px] font-medium uppercase leading-[1.1] text-[#111114]`}>{t('All skincare')}</h2>
             </div>
             
             <div className="flex items-center gap-4">
                 <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-2 px-6 py-2 bg-white rounded-full text-[12px] font-bold border border-gray-200 hover:border-brand-pink transition-all">
-                    <span>Refine</span> <Filter size={14} />
+                    <span>{t('Refine')}</span> <Filter size={14} />
                 </button>
                 <div className="flex items-center bg-gray-50 p-1 rounded-xl">
                     {[3, 4].map((num) => (
@@ -265,7 +268,7 @@ export default function SkincareClient() {
             {isLoading ? (
                 Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
             ) : filteredProducts.length === 0 ? (
-                <div className="col-span-full py-40 text-center bg-white rounded-[3rem] border border-dashed border-gray-200"><p className="text-gray-400 font-serif italic text-2xl">Selection Empty...</p></div>
+                <div className="col-span-full py-40 text-center bg-white rounded-[3rem] border border-dashed border-gray-200"><p className="text-gray-400 font-serif italic text-2xl">{t('Selection Empty...')}</p></div>
             ) : (
                 filteredProducts.map((product) => <ProductCard key={product.id} {...product} image={product.imageUrl} imageUrls={product.additionalImagesData?.map(img => img.url) || []} />)
             )}
@@ -277,10 +280,10 @@ export default function SkincareClient() {
         {isFilterOpen && (
             <div className="fixed inset-0 z-[1000]">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setIsFilterOpen(false)} />
-                <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#FAF9F6] shadow-2xl flex flex-col rounded-l-[3rem]">
+                <motion.div initial={{ x: dir === 'rtl' ? '-100%' : '100%' }} animate={{ x: 0 }} exit={{ x: dir === 'rtl' ? '-100%' : '100%' }} className="absolute end-0 top-0 bottom-0 w-full max-w-sm bg-[#FAF9F6] shadow-2xl flex flex-col rounded-s-[3rem]">
                     <div className="p-10 border-b flex items-center justify-between">
-                        <h2 className="text-4xl font-serif italic">Refine</h2>
-                        <button onClick={() => setIsFilterOpen(false)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center"><X size={20} /></button>
+                        <h2 className="text-4xl font-serif italic">{t('Refine')}</h2>
+                        <button onClick={() => setIsFilterOpen(false)} aria-label={t('Close')} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center"><X size={20} /></button>
                     </div>
                     <div className="p-10 flex-grow overflow-y-auto">
                         <SidebarFilters 
@@ -292,7 +295,7 @@ export default function SkincareClient() {
                         />
                     </div>
                     <div className="p-10 bg-white border-t">
-                        <button onClick={() => setIsFilterOpen(false)} className="w-full bg-gray-900 text-white py-6 rounded-2xl font-black tracking-widest hover:bg-brand-pink transition-all">Reveal Selection ({filteredProducts.length})</button>
+                        <button onClick={() => setIsFilterOpen(false)} className="w-full bg-gray-900 text-white py-6 rounded-2xl font-black tracking-widest hover:bg-brand-pink transition-all">{t('Reveal Selection ({n})', { n: filteredProducts.length })}</button>
                     </div>
                 </motion.div>
             </div>

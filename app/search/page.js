@@ -6,10 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import { useAppContext } from '../context/AppContext';
-import { headingFont } from '../components/home/SectionHeading';
+import { headingFont } from '../components/home/headingFont';
 import { searchCatalog } from '@/lib/search';
 import { slugify } from '@/lib/slugify';
 import { orderableQty } from '@/lib/backorderRules';
+import { useT } from '../context/LocaleContext';
 
 const SUGGESTIONS = ['Anti-Aging', 'Serums', 'Hydration', 'Fragrance', 'Gift Sets', 'GERnétic'];
 const GRID = 'grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4';
@@ -56,6 +57,7 @@ function SearchResults() {
   const query = (searchParams.get('q') || '').trim();
   const [input, setInput] = useState(query);
   const { products, concerns, categories, brands, loading } = useAppContext();
+  const t = useT();
 
   useEffect(() => { setInput(query); }, [query]);
 
@@ -91,44 +93,44 @@ function SearchResults() {
 
   const count = result.products.length;
   const summary = !query
-    ? 'Search products, brands, collections and skin concerns.'
+    ? t('Search products, brands, collections and skin concerns.')
     : loading
-      ? 'Searching…'
+      ? t('Searching…')
       : result.close
-        ? `No exact matches. Showing ${count} close ${count === 1 ? 'match' : 'matches'} for “${query}”.`
-        : `${count} ${count === 1 ? 'product' : 'products'} for “${query}”`;
+        ? t(count === 1 ? 'No exact matches. Showing {n} close match for “{q}”.' : 'No exact matches. Showing {n} close matches for “{q}”.', { n: count, q: query })
+        : t(count === 1 ? '{n} product for “{q}”' : '{n} products for “{q}”', { n: count, q: query });
 
   return (
     <div className="min-h-screen bg-white pb-20">
       <div className="max-w-[2400px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-[4%] pt-8 md:pt-12">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className={`${headingFont} text-[28px] md:text-[40px] font-medium uppercase tracking-[0.02em] text-[#111114]`}>Search</h1>
+          <h1 className={`${headingFont} text-[28px] md:text-[40px] font-medium uppercase tracking-[0.02em] text-[#111114]`}>{t('Search')}</h1>
           <p className="mt-2 text-[14px] text-[#6b6b73]" aria-live="polite">{summary}</p>
 
-          <form onSubmit={(e) => { e.preventDefault(); go(input); }} className="mt-6 flex items-center gap-3 border-b border-[#111114] pb-3 text-left">
+          <form onSubmit={(e) => { e.preventDefault(); go(input); }} className="mt-6 flex items-center gap-3 border-b border-[#111114] pb-3 text-start">
             <Search size={22} strokeWidth={1.5} className="shrink-0 text-[#111114]" />
-            <label htmlFor="search-page-input" className="sr-only">Search</label>
+            <label htmlFor="search-page-input" className="sr-only">{t('Search')}</label>
             <input
               id="search-page-input"
               type="search"
               inputMode="search"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Search"
+              placeholder={t('Search')}
               className="flex-1 min-w-0 bg-transparent text-[17px] text-[#111114] outline-none placeholder:text-[#6b6b73] [&::-webkit-search-cancel-button]:hidden"
             />
             {input && (
-              <button type="button" onClick={() => { setInput(''); go(''); }} aria-label="Clear search" className="shrink-0 p-1 text-[#111114]">
+              <button type="button" onClick={() => { setInput(''); go(''); }} aria-label={t('Clear search')} className="shrink-0 p-1 text-[#111114]">
                 <X size={22} strokeWidth={1.5} />
               </button>
             )}
-            <button type="submit" className="sr-only">Search</button>
+            <button type="submit" className="sr-only">{t('Search')}</button>
           </form>
 
           {!query && (
             <div className="mt-6 flex flex-wrap justify-center gap-2.5">
               {SUGGESTIONS.map((q) => (
-                <button key={q} type="button" onClick={() => go(q)} className={`${chip} bg-[#f6f5f2] text-[#111114] hover:bg-[#ebe9e4]`}>{q}</button>
+                <button key={q} type="button" onClick={() => go(q)} className={`${chip} bg-[#f6f5f2] text-[#111114] hover:bg-[#ebe9e4]`}>{t(q)}</button>
               ))}
             </div>
           )}
@@ -136,7 +138,7 @@ function SearchResults() {
           {query && links.length > 0 && (
             <div className="mt-6 flex flex-wrap justify-center gap-2.5">
               {links.map((l) => (
-                <Link key={l.key} href={l.href} className={`${chip} border border-[#111114] text-[#111114] hover:bg-[#111114] hover:text-white`}>{l.label}</Link>
+                <Link key={l.key} href={l.href} className={`${chip} border border-[#111114] text-[#111114] hover:bg-[#111114] hover:text-white`}>{t(l.label)}</Link>
               ))}
             </div>
           )}
@@ -151,12 +153,12 @@ function SearchResults() {
             </div>
           ) : query ? (
             <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-[20px] md:text-[24px] font-semibold text-[#111114]">No results for “{query}”</h2>
-              <p className="mt-2 text-[14px] text-[#6b6b73]">Check the spelling, or start from a skin concern.</p>
+              <h2 className="text-[20px] md:text-[24px] font-semibold text-[#111114]">{t('No results for “{q}”', { q: query })}</h2>
+              <p className="mt-2 text-[14px] text-[#6b6b73]">{t('Check the spelling, or start from a skin concern.')}</p>
               {taggedConcerns.length > 0 && (
                 <div className="mt-6 flex flex-wrap justify-center gap-2.5">
                   {taggedConcerns.map((c) => (
-                    <Link key={c.id} href={`/all-products?concern=${encodeURIComponent(c.slug || c.id)}`} className={`${chip} border border-[#e7e6e2] text-[#111114] hover:border-[#111114]`}>{c.name}</Link>
+                    <Link key={c.id} href={`/all-products?concern=${encodeURIComponent(c.slug || c.id)}`} className={`${chip} border border-[#e7e6e2] text-[#111114] hover:border-[#111114]`}>{t(c.name)}</Link>
                   ))}
                 </div>
               )}
@@ -166,7 +168,7 @@ function SearchResults() {
           {/* Best sellers fill an empty page, with or without a query */}
           {!loading && count === 0 && bestSellers.length > 0 && (
             <section className="mt-14">
-              <h2 className={`${headingFont} mb-5 text-center text-[20px] md:text-[26px] font-medium uppercase tracking-[0.02em] text-[#111114]`}>Best sellers</h2>
+              <h2 className={`${headingFont} mb-5 text-center text-[20px] md:text-[26px] font-medium uppercase tracking-[0.02em] text-[#111114]`}>{t('Best sellers')}</h2>
               <div className={GRID}>
                 {bestSellers.map((p) => <ProductCard key={p.id} {...cardProps(p)} />)}
               </div>

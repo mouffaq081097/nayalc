@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { LAVENDER, INK, BORDER, WELL, EYEBROW, SECTION_TITLE } from './theme';
+import { useT } from '@/app/context/LocaleContext';
 
 const lines = (text) => (text || '').split('\n').map(s => s.trim()).filter(Boolean);
 
@@ -12,20 +13,21 @@ const lines = (text) => (text || '').split('\n').map(s => s.trim()).filter(Boole
  * the full description, benefits and ingredients.
  */
 export default function ProductDetails({ product }) {
+  const t = useT();
   const sections = [
     (product.long_description || product.description) && {
       id: 'overview',
-      label: 'Overview',
+      label: t('Overview'),
       body: (
         <div className="space-y-3 max-w-3xl">
           {lines(product.long_description || product.description).map((p, i) => (
-            <p key={i} className="text-[15px] text-gray-600 leading-[1.75]">{p}</p>
+            <p key={i} dir="auto" className="text-[15px] text-gray-600 leading-[1.75]">{p}</p>
           ))}
           {(product.size || product.form) && (
             <dl className="flex flex-wrap gap-x-8 gap-y-2 pt-3">
-              {product.size && <Spec term="Size" value={product.size} />}
-              {product.form && <Spec term="Texture" value={product.form} />}
-              {product.brand && <Spec term="Brand" value={product.brand} />}
+              {product.size && <Spec term={t('Size')} value={product.size} />}
+              {product.form && <Spec term={t('Texture')} value={product.form} />}
+              {product.brand && <Spec term={t('Brand')} value={product.brand} />}
             </dl>
           )}
         </div>
@@ -33,7 +35,7 @@ export default function ProductDetails({ product }) {
     },
     product.benefits && {
       id: 'benefits',
-      label: 'Benefits',
+      label: t('Benefits'),
       body: (
         <ul className="grid sm:grid-cols-2 gap-3">
           {lines(product.benefits).map((b, i) => (
@@ -41,7 +43,7 @@ export default function ProductDetails({ product }) {
               <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-px" style={{ background: LAVENDER }}>
                 <Check size={11} className="text-white" strokeWidth={3} />
               </span>
-              <span className="text-[14px] text-gray-700 leading-relaxed">{b.replace(/^[-•*]\s*/, '')}</span>
+              <span dir="auto" className="text-[14px] text-gray-700 leading-relaxed">{b.replace(/^[-•*]\s*/, '')}</span>
             </li>
           ))}
         </ul>
@@ -49,7 +51,7 @@ export default function ProductDetails({ product }) {
     },
     (product.how_to_use || product.how_to_use_video) && {
       id: 'how-to-use',
-      label: 'How to use',
+      label: t('How to use'),
       body: (
         <div className={`grid gap-6 ${product.how_to_use_video ? 'lg:grid-cols-2' : ''}`}>
           {product.how_to_use && (
@@ -60,7 +62,7 @@ export default function ProductDetails({ product }) {
                     style={{ background: 'rgba(147,104,236,0.1)', color: LAVENDER }}>
                     {i + 1}
                   </span>
-                  <p className="text-[14px] text-gray-600 leading-relaxed pt-1">{step.replace(/^\d+[.)]\s*/, '')}</p>
+                  <p dir="auto" className="text-[14px] text-gray-600 leading-relaxed pt-1">{step.replace(/^\d+[.)]\s*/, '')}</p>
                 </li>
               ))}
             </ol>
@@ -74,11 +76,11 @@ export default function ProductDetails({ product }) {
     },
     product.ingredients && {
       id: 'ingredients',
-      label: 'Ingredients',
+      label: t('Ingredients'),
       body: (
         <div className="max-w-3xl space-y-3">
-          <p className="text-[13px] text-gray-500 leading-[1.8]">{product.ingredients}</p>
-          <p className="text-[11px] text-[#6b6b73]">Ingredient lists may change. Always check the packaging of the product you receive.</p>
+          <p dir="auto" className="text-[13px] text-gray-500 leading-[1.8]">{product.ingredients}</p>
+          <p className="text-[11px] text-[#6b6b73]">{t('Ingredient lists may change. Always check the packaging of the product you receive.')}</p>
         </div>
       ),
     },
@@ -98,8 +100,8 @@ export default function ProductDetails({ product }) {
   return (
     <section id="details" className="scroll-mt-28">
       <div className="space-y-1 mb-5">
-        <p className={EYEBROW}>The details</p>
-        <h2 className={SECTION_TITLE}>About this product</h2>
+        <p className={EYEBROW}>{t('The details')}</p>
+        <h2 className={SECTION_TITLE}>{t('About this product')}</h2>
       </div>
 
       {/* Desktop tabs */}
@@ -111,7 +113,7 @@ export default function ProductDetails({ product }) {
               className="relative px-4 py-3 text-[14px] font-semibold transition-colors"
               style={{ color: active === s.id ? INK : '#9ca3af' }}>
               {s.label}
-              {active === s.id && <span className="absolute left-3 right-3 -bottom-px h-[2px] rounded-full" style={{ background: LAVENDER }} />}
+              {active === s.id && <span className="absolute inset-x-3 -bottom-px h-[2px] rounded-full" style={{ background: LAVENDER }} />}
             </button>
           ))}
         </div>
@@ -129,7 +131,7 @@ export default function ProductDetails({ product }) {
           return (
             <div key={s.id} style={i > 0 ? { borderTop: `1px solid ${BORDER}` } : undefined}>
               <button onClick={() => toggleMobile(s.id)} aria-expanded={open}
-                className="w-full flex items-center justify-between px-4 py-4 text-left">
+                className="w-full flex items-center justify-between px-4 py-4 text-start">
                 <span className="text-[15px] font-semibold" style={{ color: INK }}>{s.label}</span>
                 <ChevronDown size={18} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
@@ -146,7 +148,7 @@ function Spec({ term, value }) {
   return (
     <div>
       <dt className="text-[11px] font-medium text-[#6b6b73]">{term}</dt>
-      <dd className="text-[14px] font-semibold text-gray-800">{value}</dd>
+      <dd dir="auto" className="text-[14px] font-semibold text-gray-800">{value}</dd>
     </div>
   );
 }

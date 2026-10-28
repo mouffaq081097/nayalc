@@ -4,6 +4,7 @@ import { createFetchWithAuth } from '../lib/api';
 import { toast } from 'react-toastify';
 import { calcCouponDiscount } from '@/lib/couponDiscount';
 import { orderableQty, preorderUnits } from '@/lib/backorderRules';
+import { useT } from './LocaleContext';
 
 export const CartContext = createContext();
 
@@ -40,6 +41,10 @@ const mergeCarts = (accountItems, guestItems) => {
 };
 
 export const CartProvider = ({ children }) => {
+    const t = useT();
+    // For the save callback, which shouldn't be rebuilt (and re-save the bag) when the language loads
+    const tRef = useRef(t);
+    tRef.current = t;
     const { user, isAuthenticated, logout, loading: authLoading } = useAuth();
     // Memoize fetchWithAuth
     const fetchWithAuth = useMemo(() => createFetchWithAuth(logout), [logout]);
@@ -128,7 +133,7 @@ export const CartProvider = ({ children }) => {
             });
         } catch (error) {
             console.error('Error saving cart to backend:', error);
-            toast.error('Could not save your cart. Please check your connection and try again.');
+            toast.error(tRef.current('Could not save your cart. Please check your connection and try again.'));
         }
     }, [isAuthenticated, user, fetchWithAuth]);
 
@@ -152,7 +157,7 @@ export const CartProvider = ({ children }) => {
         // Shelf stock plus what may still be pre-ordered (lib/backorderRules.js)
         const maxQty = orderableQty(product);
         if (maxQty <= 0) {
-            toast.error(`"${product.name}" is out of stock.`);
+            toast.error(t('“{name}” is out of stock.', { name: product.name }));
             return false;
         }
 
@@ -172,7 +177,7 @@ export const CartProvider = ({ children }) => {
 
                 // Prevent increasing quantity if already at stock limit
                 if (currentItem.quantity >= maxQty) {
-                    toast.error(`Cannot add more of "${product.name}", stock limit reached (${maxQty}).`);
+                    toast.error(t('You already have all {n} available of “{name}”.', { n: maxQty, name: product.name }));
                     return prevItems; // Return original items without change
                 }
 
@@ -184,7 +189,7 @@ export const CartProvider = ({ children }) => {
                 // Cap initial quantity at available stock
                 const validatedQuantity = Math.min(quantity, maxQty);
                 if (validatedQuantity <= 0) {
-                    toast.error(`Invalid quantity for "${product.name}".`);
+                    toast.error(t('Invalid quantity for “{name}”.', { name: product.name }));
                     return prevItems;
                 }
                 updatedItems = [...prevItems, {
@@ -243,7 +248,7 @@ export const CartProvider = ({ children }) => {
                         const maxQty = orderableQty(item);
                         const validatedQuantity = Math.min(newQuantity, maxQty);
                         if (validatedQuantity < newQuantity) {
-                            toast.info(`Only ${maxQty} available — quantity adjusted.`);
+                            toast.info(t('Only {n} available — quantity adjusted.', { n: maxQty }));
                         }
                         return { ...item, quantity: validatedQuantity };
                     }

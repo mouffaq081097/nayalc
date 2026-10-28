@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { BookOpen } from 'lucide-react';
 import { Container } from './ui/Container';
 import { useJournalArticles } from '../hooks/useJournalArticles';
-import { SectionHeading, Pill, headingFont } from './home/SectionHeading';
+import { SectionHeading, Pill } from './home/SectionHeading';
+import { headingFont } from './home/headingFont';
+import { useT } from '../context/LocaleContext';
 
 /**
  * The three latest journal articles: cover, title, a two-line summary and a
@@ -13,6 +15,7 @@ import { SectionHeading, Pill, headingFont } from './home/SectionHeading';
  */
 export function JournalSection() {
   const { articles, loading } = useJournalArticles();
+  const t = useT();
   if (!loading && articles.length === 0) return null;
 
   return (
@@ -31,9 +34,9 @@ export function JournalSection() {
                       <div className="w-full h-full flex items-center justify-center"><BookOpen size={28} strokeWidth={1.5} className="text-gray-400" /></div>
                     )}
                   </div>
-                  <h3 className={`${headingFont} text-[18px] md:text-[19px] font-medium leading-[1.25] text-[#111114] text-balance`}>{article.title}</h3>
-                  {article.excerpt && <p className="text-[14px] leading-relaxed text-[#6b6b73] line-clamp-2">{article.excerpt}</p>}
-                  <span className="text-[13px] font-semibold text-[#111114] underline underline-offset-4 decoration-gray-300 group-hover:decoration-gray-900">Read the article</span>
+                  <h3 className={`${headingFont} text-[18px] md:text-[19px] font-medium leading-[1.25] text-[#111114] text-balance`}><bdi>{article.title}</bdi></h3>
+                  {article.excerpt && <p className="text-[14px] leading-relaxed text-[#6b6b73] line-clamp-2"><bdi>{article.excerpt}</bdi></p>}
+                  <span className="text-[13px] font-semibold text-[#111114] underline underline-offset-4 decoration-gray-300 group-hover:decoration-gray-900">{t('Read the article')}</span>
                 </Link>
               ))}
         </div>

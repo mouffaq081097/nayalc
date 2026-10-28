@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAppContext } from '../context/AppContext';
 import CartSuggestionCarousel from './CartSuggestionCarousel';
 import { toCardProduct } from './PairItWithSection';
+import { useLocale } from '../context/LocaleContext';
 
 export function orderedLabel(value) {
   if (!value) return null;
@@ -21,6 +22,7 @@ export function orderedLabel(value) {
 /** "Buy it again" under the bag: past purchases one at a time, with when each was last ordered. */
 export default function BuyAgainSection({ products, cartItems }) {
   const { products: catalogue } = useAppContext();
+  const { t, date } = useLocale();
   // Hide what was already in the bag when this appeared; products added from here
   // stay in place instead of vanishing.
   const [initialCartIds] = useState(() => new Set(cartItems.map(i => i.id)));
@@ -34,8 +36,12 @@ export default function BuyAgainSection({ products, cartItems }) {
       id="buy-again"
       title="Buy it again"
       products={visible}
-      note={p => orderedLabel(p.lastOrderedAt)}
-      action={<Link href="/account/orders" className="mr-1 text-[13px] text-[#111114] underline underline-offset-4 hover:opacity-70">View orders</Link>}
+      note={p => {
+        const label = orderedLabel(p.lastOrderedAt);
+        // "Ordered 12 Oct" → the date in the visitor's language
+        return label && t('Ordered {date}', { date: date(label.replace(/^Ordered /, '')) });
+      }}
+      action={<Link href="/account/orders" className="me-1 text-[13px] text-[#111114] underline underline-offset-4 hover:opacity-70">{t('View orders')}</Link>}
     />
   );
 }
