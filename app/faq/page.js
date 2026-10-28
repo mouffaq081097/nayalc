@@ -25,8 +25,12 @@ const QUESTIONS = [
     a: `${formatShipping(one.cost)} for one item, ${formatShipping(two.cost)} for two, and free from ${FREE_SHIPPING_FROM} items. Delivery prices include VAT.`,
   },
   {
+    q: 'Do I need an account to order?',
+    a: 'No. Check out with just your email and address, and we’ll save the order under that email so you can track it. To pay cash on delivery or spend your points, sign in with the 6-digit code we email you. There’s no password.',
+  },
+  {
     q: 'Can I pay cash on delivery?',
-    a: 'Yes. Choose cash on delivery at checkout. It isn’t available for orders that include a pre-order item.',
+    a: 'Yes, when you’re signed in. Choose cash on delivery at checkout. It isn’t available for orders that include a pre-order item.',
   },
   {
     q: 'Can I pay in instalments?',

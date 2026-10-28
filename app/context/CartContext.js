@@ -7,6 +7,38 @@ import { orderableQty, preorderUnits } from '@/lib/backorderRules';
 
 export const CartContext = createContext();
 
+// A signed-out shopper's bag lives in this browser, so a reload or signing in
+// doesn't empty it; on sign-in it's merged into the account's bag.
+const GUEST_CART_KEY = 'nayalc_guest_cart';
+const readGuestCart = () => {
+    try {
+        const items = JSON.parse(localStorage.getItem(GUEST_CART_KEY) || '[]');
+        return Array.isArray(items) ? items.filter(i => i && i.id && Number(i.quantity) > 0) : [];
+    } catch {
+        return [];
+    }
+};
+const writeGuestCart = (items) => {
+    try {
+        if (items.length) localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+        else localStorage.removeItem(GUEST_CART_KEY);
+    } catch {}
+};
+// The account's bag plus anything added while signed out (the larger quantity wins, within stock)
+const mergeCarts = (accountItems, guestItems) => {
+    const merged = accountItems.map(item => ({ ...item }));
+    for (const g of guestItems) {
+        const match = merged.find(item => item.id === g.id);
+        if (match) {
+            const cap = orderableQty(match) || orderableQty(g) || Math.max(match.quantity, g.quantity);
+            match.quantity = Math.min(Math.max(match.quantity, Number(g.quantity)), cap);
+        } else {
+            merged.push(g);
+        }
+    }
+    return merged;
+};
+
 export const CartProvider = ({ children }) => {
     const { user, isAuthenticated, logout, loading: authLoading } = useAuth();
     // Memoize fetchWithAuth
@@ -53,7 +85,17 @@ export const CartProvider = ({ children }) => {
                     backorder_lead_days: item.backorder_lead_days,
                 }));
                 cartLoadedRef.current = true;
-                setCart(parsedCart);
+                // Bring in what was added while signed out, and save it to the account
+                const guestItems = readGuestCart();
+                if (guestItems.length) {
+                    const merged = mergeCarts(parsedCart, guestItems);
+                    writeGuestCart([]);
+                    setCart(merged);
+                    fetchWithAuth(`/api/users/${user.id}/cart`, { method: 'PUT', body: JSON.stringify({ cart: merged }) })
+                        .catch(error => console.error('Error saving merged cart:', error));
+                } else {
+                    setCart(parsedCart);
+                }
                 setCartLoadedFor(user.id);
             } catch (error) {
                 console.error('Error fetching user cart:', error);
@@ -63,7 +105,7 @@ export const CartProvider = ({ children }) => {
             }
         } else {
             cartLoadedRef.current = true;
-            setCart([]); // Clear cart if user logs out
+            setCart(readGuestCart()); // The bag kept in this browser while signed out
             setCartLoadedFor('guest');
         }
     }, [isAuthenticated, user, fetchWithAuth]);
@@ -89,6 +131,11 @@ export const CartProvider = ({ children }) => {
             toast.error('Could not save your cart. Please check your connection and try again.');
         }
     }, [isAuthenticated, user, fetchWithAuth]);
+
+    // Signed out: keep the bag in this browser
+    useEffect(() => {
+        if (cartLoadedFor === 'guest' && !isAuthenticated) writeGuestCart(cart);
+    }, [cart, cartLoadedFor, isAuthenticated]);
 
     // Debounced save — prevents concurrent PUT requests on rapid cart changes (M2)
     useEffect(() => {

@@ -29,7 +29,7 @@ const CARD_STYLE = {
  * (`<button type="submit" form={formId}>`), and `onStatusChange` tells the page
  * when the card is complete and while a payment is processing.
  */
-const CheckoutForm = ({ onSuccessfulPayment, clientSecret = null, formId = 'card-payment-form', onStatusChange }) => {
+const CheckoutForm = ({ onSuccessfulPayment, clientSecret = null, formId = 'card-payment-form', onStatusChange, onBeforePay }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -47,6 +47,12 @@ const CheckoutForm = ({ onSuccessfulPayment, clientSecret = null, formId = 'card
 
     setIsProcessing(true);
     setErrorMessage(null);
+
+    // e.g. a guest checkout files the email and address first; false stops before charging
+    if (onBeforePay && !(await onBeforePay())) {
+      setIsProcessing(false);
+      return;
+    }
 
     const cardElement = elements.getElement(CardElement);
     const { error: submitError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {

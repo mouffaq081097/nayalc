@@ -27,11 +27,14 @@ function TabbyReturn() {
     if (status === 'failure') { setPhase('error'); setErrorMsg('Payment failed. Please try a different payment method.'); return; }
     if (status !== 'success' || !paymentId) { setPhase('error'); setErrorMsg('Invalid return state.'); return; }
 
-    const finish = (orderId) => {
+    // A guest checkout comes back with a signed link to its confirmation page
+    const finish = (orderId, access) => {
       sessionStorage.removeItem('pendingTabbyOrder');
       clearCart();
       setPhase('success');
-      setTimeout(() => router.push(`/account/orders/${orderId}`), 1500);
+      setTimeout(() => router.push(access
+        ? `/order-confirmed/${orderId}?access=${encodeURIComponent(access)}`
+        : `/account/orders/${orderId}`), 1500);
     };
 
     async function completeOrder() {
@@ -47,7 +50,7 @@ function TabbyReturn() {
         const result = await res.json().catch(() => ({}));
 
         // 409 = the order already exists (Tabby's webhook or an earlier visit created it)
-        if ((res.ok || res.status === 409) && result.orderId) return finish(result.orderId);
+        if ((res.ok || res.status === 409) && result.orderId) return finish(result.orderId, result.access);
 
         // Checkouts started before orders were saved on the server only have the copy in this tab
         const raw = res.status === 404 ? sessionStorage.getItem('pendingTabbyOrder') : null;

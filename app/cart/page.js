@@ -319,7 +319,7 @@ export default function CartPage() {
   const artisanGap = Math.max(0, ARTISAN_GIFT_THRESHOLD - subtotal);
   const redeemableAed = Math.floor(loyaltyPoints / POINTS_BLOCK) * AED_PER_BLOCK;
   const pointsEarned = Math.floor(subtotal);
-  const checkoutLabel = isAuthenticated ? 'Checkout' : 'Sign in to checkout';
+  const checkoutLabel = 'Checkout';
 
   const handleBack = () => {
     if (window.history.length > 1) router.back();
@@ -329,8 +329,8 @@ export default function CartPage() {
   const handleCheckout = () => {
     if (!canCheckout) return;
     flushPendingRemovals();
-    if (isAuthenticated) router.push('/checkout');
-    else openSignIn('/checkout');
+    // Signed out goes straight in too: checkout takes an email (guest checkout) or offers sign-in
+    router.push('/checkout');
   };
 
   const handleApplyCoupon = async () => {

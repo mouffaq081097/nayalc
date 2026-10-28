@@ -9,6 +9,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CONTACT_EMAIL, WHATSAPP_DISPLAY, whatsappUrl } from '@/lib/contact';
+import { useSignIn } from '@/app/context/SignInContext';
 
 /* ── helpers ── */
 const fmtAed = (n) => `AED ${parseFloat(n || 0).toFixed(0)}`;
@@ -39,6 +40,10 @@ export default function OrderConfirmedPage() {
   const router      = useRouter();
   const { fetchWithAuth } = useAppContext();
   const { user } = useAuth();
+  const { openSignIn } = useSignIn();
+  // A guest checkout arrives with a signed link (?access=…) instead of a session
+  const [access, setAccess] = useState(null);
+  useEffect(() => { setAccess(new URLSearchParams(window.location.search).get('access') || ''); }, []);
 
   const [order,         setOrder]         = useState(null);
   const [prevPoints,    setPrevPoints]    = useState(null); // loaded from loyalty API
@@ -46,12 +51,15 @@ export default function OrderConfirmedPage() {
   const [error,         setError]         = useState(null);
 
   useEffect(() => {
-    if (!orderId) return;
-    fetchWithAuth(`/api/orders/${orderId}`)
+    if (!orderId || access === null) return;
+    const request = access
+      ? fetch(`/api/checkout/guest-order/${orderId}?access=${encodeURIComponent(access)}`)
+      : fetchWithAuth(`/api/orders/${orderId}`);
+    request
       .then(res => { if (!res.ok) throw new Error('Order not found'); return res.json(); })
       .then(data => { setOrder(data); setLoading(false); })
       .catch(e   => { setError(e.message); setLoading(false); });
-  }, [orderId, fetchWithAuth]);
+  }, [orderId, access, fetchWithAuth]);
 
   // Fetch current loyalty points to show "previous balance"
   useEffect(() => {
@@ -237,7 +245,7 @@ export default function OrderConfirmedPage() {
               className="flex gap-3"
             >
               <button
-                onClick={() => router.push(`/account/orders/${orderId}`)}
+                onClick={() => (user ? router.push(`/account/orders/${orderId}`) : openSignIn(`/account/orders/${orderId}`))}
                 className="flex-1 h-14 rounded-full border border-[#e5e5ea] text-[14px] font-semibold text-[#111114] hover:bg-[#f3f3f5] transition-colors"
               >
                 Track Order

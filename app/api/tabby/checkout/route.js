@@ -2,24 +2,31 @@ import { NextResponse } from 'next/server';
 import { createTabbyCheckout } from '@/lib/tabby';
 import { currentSessionUser } from '@/lib/adminAuth';
 import { savePendingTabbyOrder } from '@/lib/tabbyOrders';
+import { readCheckoutToken } from '@/lib/guestCheckout';
 
 export async function POST(req) {
-  const sessionUser = await currentSessionUser();
-  if (!sessionUser) {
-    return NextResponse.json({ error: 'Please sign in to pay with Tabby.' }, { status: 401 });
-  }
-
   try {
     const {
       amount, items, buyer, shippingAddress,
       taxAmount, shippingAmount, discountAmount, referenceId,
-      orderData,
+      orderData, guestToken,
     } = await req.json();
+
+    // A signed-in customer, or a guest with a checkout token (lib/guestCheckout.js)
+    const sessionUser = await currentSessionUser();
+    const guest = !sessionUser && guestToken ? readCheckoutToken(guestToken) : null;
+    if (!sessionUser && !guest) {
+      return NextResponse.json({ error: guestToken ? 'Your checkout timed out. Please check your details and try again.' : 'Please sign in to pay with Tabby.' }, { status: 401 });
+    }
+    const userId = sessionUser ? sessionUser.id : guest.userId;
+    const order = guest
+      ? { ...orderData, user_address_id: guest.addressId, redeemed_points: 0, guest: true }
+      : orderData;
 
     if (!amount || !items?.length || !buyer?.email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-    if (!orderData?.user_address_id || !Array.isArray(orderData.items) || orderData.items.length === 0) {
+    if (!order?.user_address_id || !Array.isArray(order.items) || order.items.length === 0) {
       return NextResponse.json({ error: 'Missing order details' }, { status: 400 });
     }
 
@@ -68,8 +75,8 @@ export async function POST(req) {
     // Saved before the customer leaves, so the order can be created however they come back
     await savePendingTabbyOrder({
       paymentId,
-      userId: sessionUser.id,
-      orderData: { ...orderData, user_id: sessionUser.id },
+      userId,
+      orderData: { ...order, user_id: userId },
       amount: parseFloat(amount),
     });
 

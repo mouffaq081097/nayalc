@@ -8,6 +8,7 @@ import { CAMPAIGNS_MIGRATION_SQL } from '@/lib/campaigns';
 import { REVIEW_REQUEST_MIGRATION_SQL } from '@/lib/reviewRequests';
 import { STOCK_ALERTS_MIGRATION_SQL } from '@/lib/stockAlerts';
 import { SIZE_GROUP_MIGRATION_SQL } from '@/lib/sizeGroups';
+import { GUEST_CHECKOUT_MIGRATION_SQL } from '@/lib/guestCheckout';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -134,6 +135,11 @@ export async function POST(request) {
                 // Sizes of one product linked together — also added on first use by ensureSizeGroupColumn() in lib/sizeGroups.js
                 name: '019_size_groups',
                 sql: SIZE_GROUP_MIGRATION_SQL,
+            },
+            {
+                // Guest checkout addresses kept out of an existing account's address book — also added on first use by ensureGuestCheckoutColumns() in lib/guestCheckout.js
+                name: '020_guest_checkout',
+                sql: GUEST_CHECKOUT_MIGRATION_SQL,
             },
         ];
 

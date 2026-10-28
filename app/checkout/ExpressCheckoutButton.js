@@ -15,7 +15,7 @@ import { toast } from 'react-toastify';
  * to place the order in one step.
  *
  * @param amount       total in the smallest AED unit (fils), i.e. Math.round(total * 100)
- * @param onBeforePay  sync guard; return false to abort (e.g. no address selected)
+ * @param onBeforePay  guard (may be async); return false to abort (e.g. no address selected)
  * @param onSuccess    async(piId) called after the wallet payment succeeds
  */
 function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess, onAvailable, show = true }) {
@@ -56,7 +56,7 @@ function ExpressButtonInner({ amount, disabled, onBeforePay, onSuccess, onAvaila
     });
 
     pr.on('paymentmethod', async (ev) => {
-      if (onBeforePayRef.current && !onBeforePayRef.current()) { ev.complete('fail'); return; }
+      if (onBeforePayRef.current && !(await onBeforePayRef.current())) { ev.complete('fail'); return; }
       try {
         const res = await fetch('/api/create-payment-intent', {
           method: 'POST',

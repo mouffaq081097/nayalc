@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { parsePhone } from '@/lib/phone';
 import { requireSelf } from '@/lib/requireSelf';
+import { VISIBLE_ADDRESS_SQL } from '@/lib/guestCheckout';
 
 // GET all addresses for a user
 export async function GET(request, { params }) {
@@ -25,7 +26,7 @@ export async function GET(request, { params }) {
                 shipping_address as "shippingAddress",
                 (SELECT COUNT(*) FROM orders o WHERE o.user_address_id = user_addresses.id) = 0 as "isDeletable"
              FROM user_addresses
-             WHERE user_id = $1
+             WHERE user_id = $1 AND ${VISIBLE_ADDRESS_SQL}
              ORDER BY is_default DESC, id DESC`,
             [userId]
         );
@@ -69,7 +70,7 @@ export async function POST(request, { params }) {
     try {
         // Auto-default the first address ever added for this user
         const { rows: existing } = await db.query(
-            'SELECT id FROM user_addresses WHERE user_id = $1 LIMIT 1',
+            `SELECT id FROM user_addresses WHERE user_id = $1 AND ${VISIBLE_ADDRESS_SQL} LIMIT 1`,
             [userId]
         );
         const shouldBeDefault = is_default || existing.length === 0;
