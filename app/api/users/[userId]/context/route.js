@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireSelf } from '@/lib/requireSelf';
 
 export async function GET(request, { params }) {
     const { userId } = await params;
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
     const client = await db.connect();
     try {
         const userRes = await client.query(

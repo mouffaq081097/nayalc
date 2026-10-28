@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { parsePhone } from '@/lib/phone';
+import { requireSelf } from '@/lib/requireSelf';
 
 // UPDATE an address
 export async function PUT(request, { params }) {
     const { userId, addressId } = await params;
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
     const {
         address_line1,
         city,
@@ -54,6 +57,8 @@ export async function PUT(request, { params }) {
 // DELETE an address
 export async function DELETE(request, { params }) {
     const { userId, addressId } = await params;
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
     try {
         // Check if the address is referenced by any orders
         const { rowCount: orderCount } = await db.query(

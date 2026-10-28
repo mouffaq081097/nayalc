@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { parsePhone } from '@/lib/phone';
+import { requireSelf } from '@/lib/requireSelf';
 
 // GET all addresses for a user
 export async function GET(request, { params }) {
     const { userId } = await params;
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
     try {
         const { rows } = await db.query(
             `SELECT
@@ -36,6 +39,8 @@ export async function GET(request, { params }) {
 // POST a new address for a user
 export async function POST(request, { params }) {
     const { userId } = await params;
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
     const {
         address_line1, // This will be used for shipping_address
         city,

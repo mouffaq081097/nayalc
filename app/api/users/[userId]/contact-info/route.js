@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { parsePhone } from '@/lib/phone';
+import { requireSelf } from '@/lib/requireSelf';
 
 // GET contact info
 export async function GET(request, { params }) {
     const { userId } = await params;
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
     try {
         const { rows } = await db.query(
             `SELECT 
@@ -42,6 +45,8 @@ export async function GET(request, { params }) {
 // UPDATE contact info
 export async function PUT(request, { params }) {
     const { userId } = await params; // Await params
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
     const { name, phone } = await request.json();
 
     if (!phone) { // Only phone is required now
