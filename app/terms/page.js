@@ -1,4 +1,9 @@
 import { LegalPage, Section, Bullets } from '../components/LegalPage';
+import { SHIPPING_TIERS, formatShipping, TRANSIT_LABEL, FREE_SHIPPING_FROM } from '@/lib/shipping';
+import { RETURN_WINDOW_DAYS, REFUND_WITHIN_DAYS } from '@/lib/policies';
+
+// Delivery prices come from lib/shipping.js, the same figures the bag and checkout charge
+const [ONE_ITEM, TWO_ITEMS] = SHIPPING_TIERS;
 
 export const metadata = {
   title: 'Terms of Service | Naya Lumière Cosmetics UAE',
@@ -20,7 +25,7 @@ export default function TermsPage() {
       eyebrow="Legal"
       title="Terms of Service"
       intro="These terms govern your use of nayalc.com and every order you place with us. Please read them before purchasing."
-      lastUpdated="17 September 2026"
+      lastUpdated="28 October 2026"
     >
       <Section n={1} title="About these terms">
         <p>
@@ -89,14 +94,15 @@ export default function TermsPage() {
 
       <Section n={7} title="Delivery">
         <p>
-          We deliver across the UAE. Delivery is charged by the number of items in your order: AED
-          20 for a single item, AED 10 for two items, and free of charge on orders of three items or
-          more. The amount is shown in your cart and again at checkout before you pay.
+          We deliver across the UAE. Delivery is charged by the number of items in your order:{' '}
+          {formatShipping(ONE_ITEM.cost)} for a single item, {formatShipping(TWO_ITEMS.cost)} for two
+          items, and free of charge on orders of {FREE_SHIPPING_FROM} items or more, VAT included. The
+          amount is shown in your cart and again at checkout before you pay.
         </p>
         <p>
-          Orders placed before 2:00 PM UAE time are dispatched for delivery the next business day.
-          Orders placed after that cut-off are dispatched for the following business day. Business
-          days exclude Saturdays and Sundays.
+          Orders placed before 2:00 PM UAE time on a business day are dispatched the same day. Orders
+          placed after that cut-off, or at the weekend, are dispatched the next business day. Delivery
+          then usually takes {TRANSIT_LABEL}. Business days exclude Saturdays and Sundays.
         </p>
         <p>
           Delivery dates shown at checkout are estimates, not guarantees. Risk in the goods passes
@@ -106,8 +112,8 @@ export default function TermsPage() {
 
       <Section n={8} title="Returns, exchanges and cancellations">
         <p>
-          You may return unopened products in their original sealed condition within 14 days of
-          delivery for a refund or exchange.
+          You may return unopened products in their original sealed condition within{' '}
+          {RETURN_WINDOW_DAYS} days of delivery for a refund or exchange.
         </p>
         <p>
           For reasons of hygiene and safety, cosmetics, skincare and fragrance that have been
@@ -119,8 +125,8 @@ export default function TermsPage() {
           <a href="mailto:info@nayalc.com" className="font-semibold" style={{ color: 'rgb(147,104,236)' }}>
             info@nayalc.com
           </a>{' '}
-          with your order number. Refunds are issued to the original payment method within 14 days
-          of us receiving the goods; your bank or card issuer may take a further 5 to 10 business
+          with your order number. Refunds are issued to the original payment method within{' '}
+          {REFUND_WITHIN_DAYS} days of us receiving the goods; your bank or card issuer may take a further 5 to 10 business
           days to show the credit. Return shipping is paid by you, except for faulty items, where we
           pay.
         </p>

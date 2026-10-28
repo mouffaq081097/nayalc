@@ -2,15 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Instagram } from 'lucide-react';
+import { Instagram, MessageCircle } from 'lucide-react';
 import { headingFont } from './home/SectionHeading';
 import { INSTAGRAM_URL } from '@/lib/seo';
 import { TRANSIT_LABEL } from '../../lib/shipping';
+import { whatsappUrl } from '@/lib/contact';
 
 const COLUMNS = [
   { title: 'Boutique', links: [['All products', '/all-products'], ['Skincare', '/SkinCare'], ['Fragrance', '/fragrance'], ['New arrivals', '/new-arrivals'], ['Gift sets', '/gift-sets']] },
   { title: 'House', links: [['Brands', '/brands'], ['Journal', '/journal'], ['Skin quiz', '/skin-quiz'], ['Naya Rewards', '/loyalty']] },
-  { title: 'Help', links: [['My account', '/account'], ['My orders', '/account/orders'], ['Privacy policy', '/privacy'], ['Terms of service', '/terms']] },
+  { title: 'Help', links: [['Contact us', '/contact'], ['Shipping & returns', '/shipping-returns'], ['FAQ', '/faq'], ['My orders', '/account/orders'], ['My account', '/account']] },
 ];
 
 /** Email sign-up: the same /api/subscribe as the welcome popup, and the same real WELCOME10 code on success. */
@@ -73,6 +74,7 @@ function SignUp() {
 
 /** Black footer on every storefront page, opened by the big closing line. */
 export default function Footer() {
+  const whatsapp = whatsappUrl();
   return (
     <footer className="bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -83,9 +85,16 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-[1.4fr_repeat(3,1fr)] gap-x-8 gap-y-10">
           <div className="col-span-2 md:col-span-1 grid gap-6 content-start">
             <SignUp />
-            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label="Naya Lumière on Instagram" className="w-fit text-white/90 hover:text-white">
-              <Instagram size={20} strokeWidth={1.6} />
-            </a>
+            <div className="flex items-center gap-5">
+              <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" aria-label="Naya Lumière on Instagram" className="w-fit text-white/90 hover:text-white">
+                <Instagram size={20} strokeWidth={1.6} />
+              </a>
+              {whatsapp && (
+                <a href={whatsapp} target="_blank" rel="noopener noreferrer" aria-label="Message Naya Lumière on WhatsApp" className="w-fit text-white/90 hover:text-white">
+                  <MessageCircle size={20} strokeWidth={1.6} />
+                </a>
+              )}
+            </div>
           </div>
           {COLUMNS.map((col) => (
             <div key={col.title}>
@@ -100,7 +109,11 @@ export default function Footer() {
         </div>
 
         <div className="mt-14 md:mt-20 py-5 border-t border-[#2a2a2e] flex flex-wrap justify-between gap-2.5 text-[12px] text-[#a1a1aa]">
-          <span>© {new Date().getFullYear()} Naya Lumière Cosmetics</span>
+          <span className="flex flex-wrap gap-x-5 gap-y-1">
+            <span>© {new Date().getFullYear()} Naya Lumière Cosmetics</span>
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms of service</Link>
+          </span>
           <span>Delivery across the UAE in {TRANSIT_LABEL}</span>
         </div>
       </div>

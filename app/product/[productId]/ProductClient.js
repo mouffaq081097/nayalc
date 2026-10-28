@@ -8,7 +8,7 @@ import { useUser } from '../../context/UserContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import { Heart, Star, Plus, Minus, Check, ChevronRight, Truck, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
+import { Heart, Star, Plus, Minus, Check, ChevronRight, Truck, RotateCcw, ShieldCheck, Sparkles, MessageCircle } from 'lucide-react';
 import Reviews from '../../components/Reviews';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
@@ -18,7 +18,9 @@ import { MadeInFranceBadge } from '../../components/MadeInFranceBadge';
 import { MadeInUAEBadge } from '../../components/MadeInUAEBadge';
 import { RecentlyViewedSection } from '../../components/RecentlyViewedSection';
 import { orderableQty, isPreorderOnly, preorderUnits, leadDays } from '@/lib/backorderRules';
-import { getPreorderInfo } from '@/lib/shipping';
+import { getPreorderInfo, FREE_SHIPPING_FROM } from '@/lib/shipping';
+import { RETURN_WINDOW_DAYS } from '@/lib/policies';
+import { whatsappUrl } from '@/lib/contact';
 import { trackRecentlyViewed } from '../../hooks/useRecentlyViewed';
 
 import ProductGallery from './_components/ProductGallery';
@@ -136,6 +138,14 @@ export default function ProductClient({ params, initialProduct }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [product]);
+
+  // Let other bottom bars (the welcome offer on phones) sit above the sticky buy bar
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('nayalc:sticky-buy-bar', { detail: { visible: showStickyBar } }));
+  }, [showStickyBar]);
+  useEffect(() => () => {
+    window.dispatchEvent(new CustomEvent('nayalc:sticky-buy-bar', { detail: { visible: false } }));
+  }, []);
 
   const stock = product ? Number(product.stock_quantity ?? product.stockQuantity ?? NaN) : NaN;
   const hasStockInfo = Number.isFinite(stock);
@@ -305,7 +315,7 @@ export default function ProductClient({ params, initialProduct }) {
         <div className="px-4 sm:px-6 lg:px-[clamp(32px,5vw,80px)] pt-6 lg:pt-10 pb-12">
           <div className="lg:sticky lg:top-[calc(var(--header-h)+32px)] max-w-[520px]">
 
-            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[12px] text-gray-400 min-w-0">
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[12px] text-[#6b6b73] min-w-0">
               <Link href="/" className="hover:text-gray-700 shrink-0">Home</Link>
               {product.brand && product.brandSlug && (
                 <><ChevronRight size={12} className="shrink-0" /><Link href={`/brand/${product.brandSlug}`} className="hover:text-gray-700 shrink-0">{product.brand}</Link></>
@@ -337,12 +347,12 @@ export default function ProductClient({ params, initialProduct }) {
               <span className="text-[28px] md:text-[30px] font-semibold text-[#111114] tabular-nums leading-none">{aed(product.price)}</span>
               {hasDiscount && (
                 <>
-                  <span className="text-[16px] text-gray-400 line-through tabular-nums">{aed(product.comparedprice)}</span>
+                  <span className="text-[16px] text-[#6b6b73] line-through tabular-nums">{aed(product.comparedprice)}</span>
                   <span className="rounded-full px-2 py-0.5 text-[12px] font-semibold text-white" style={{ background: LAVENDER }}>−{discountPct}%</span>
                 </>
               )}
             </div>
-            <p className="mt-1.5 text-[12px] text-gray-400">VAT included{metaLine ? ` · ${metaLine}` : ''}</p>
+            <p className="mt-1.5 text-[12px] text-[#6b6b73]">VAT included{metaLine ? ` · ${metaLine}` : ''}</p>
 
             {/* Size: rectangular option chips */}
             {sizes.length > 1 && (
@@ -425,17 +435,44 @@ export default function ProductClient({ params, initialProduct }) {
 
             <ul className="mt-5 grid grid-cols-3 gap-2 text-center">
               {[
-                { icon: Truck, title: 'Free shipping', sub: 'On 3+ items' },
-                { icon: RotateCcw, title: '14-day returns', sub: 'Hassle-free' },
+                { icon: Truck, title: 'Free shipping', sub: `On ${FREE_SHIPPING_FROM}+ items`, href: '/shipping-returns#delivery' },
+                { icon: RotateCcw, title: `${RETURN_WINDOW_DAYS}-day returns`, sub: 'Unopened items', href: '/shipping-returns#returns' },
                 { icon: ShieldCheck, title: '100% authentic', sub: `From ${brandName}` },
-              ].map(({ icon: Icon, title, sub }) => (
-                <li key={title} className="flex flex-col items-center gap-1 py-3 px-1.5" style={{ background: WELL }}>
-                  <Icon size={16} strokeWidth={1.6} className="text-[#111114]" />
-                  <p className="text-[12px] font-semibold text-gray-800 leading-tight">{title}</p>
-                  <p className="text-[11px] text-gray-500 leading-tight line-clamp-1">{sub}</p>
-                </li>
-              ))}
+              ].map(({ icon: Icon, title, sub, href }) => {
+                const body = (
+                  <>
+                    <Icon size={16} strokeWidth={1.6} className="text-[#111114]" />
+                    <p className="text-[12px] font-semibold text-gray-800 leading-tight">{title}</p>
+                    <p className="text-[11px] text-gray-500 leading-tight line-clamp-1">{sub}</p>
+                  </>
+                );
+                return (
+                  <li key={title} style={{ background: WELL }}>
+                    {href
+                      ? <Link href={href} className="flex h-full flex-col items-center gap-1 py-3 px-1.5 hover:opacity-80">{body}</Link>
+                      : <div className="flex h-full flex-col items-center gap-1 py-3 px-1.5">{body}</div>}
+                  </li>
+                );
+              })}
             </ul>
+
+            {/* Questions: WhatsApp when it's set up (lib/contact.js), otherwise the contact page */}
+            {(() => {
+              const wa = whatsappUrl(`Hello, I have a question about ${product.name}: https://nayalc.com/product/${product.slug || product.id}`);
+              const label = <>Questions about this product? <b className="font-semibold">{wa ? 'Ask us on WhatsApp' : 'Contact us'}</b></>;
+              const cls = 'mt-3 flex items-center justify-between gap-3 border border-[#ececec] px-4 py-3 text-[13px] text-[#111114] hover:border-[#111114] transition-colors';
+              return wa ? (
+                <a href={wa} target="_blank" rel="noopener noreferrer" className={cls}>
+                  <span className="flex items-center gap-2.5"><MessageCircle size={17} strokeWidth={1.6} className="shrink-0" /><span>{label}</span></span>
+                  <ChevronRight size={16} className="shrink-0" />
+                </a>
+              ) : (
+                <Link href="/contact" className={cls}>
+                  <span className="flex items-center gap-2.5"><MessageCircle size={17} strokeWidth={1.6} className="shrink-0" /><span>{label}</span></span>
+                  <ChevronRight size={16} className="shrink-0" />
+                </Link>
+              );
+            })()}
           </div>
         </div>
       </div>

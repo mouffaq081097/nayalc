@@ -7,6 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 import { ArrowRight, Mail, Phone, MessageSquare, Loader2, Check } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { CONTACT_EMAIL, WHATSAPP_DISPLAY, whatsappUrl } from '@/lib/contact';
 
 /* ── helpers ── */
 const fmtAed = (n) => `AED ${parseFloat(n || 0).toFixed(0)}`;
@@ -335,20 +337,23 @@ export default function OrderConfirmedPage() {
               <SCard className="p-5">
                 <h3 className="text-[15px] font-semibold text-[#111114] mb-3">Need help?</h3>
                 <div className="space-y-2.5">
-                  <a href="mailto:support@nayalumiere.com"
+                  <a href={`mailto:${CONTACT_EMAIL}`}
                     className="flex items-center gap-2.5 text-[13px] text-[#2a2a31] hover:text-[#9869f7] transition-colors">
-                    <Mail size={14} className="text-[#8a8a93] flex-shrink-0" />
-                    support@nayalumiere.com
+                    <Mail size={14} className="text-[#6b6b73] flex-shrink-0" />
+                    {CONTACT_EMAIL}
                   </a>
-                  <a href="tel:+97145550000"
+                  {whatsappUrl() && (
+                    <a href={whatsappUrl(`Hello, I have a question about order ${orderRef}.`)} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2.5 text-[13px] text-[#2a2a31] hover:text-[#9869f7] transition-colors">
+                      <Phone size={14} className="text-[#6b6b73] flex-shrink-0" />
+                      WhatsApp {WHATSAPP_DISPLAY}
+                    </a>
+                  )}
+                  <Link href="/contact"
                     className="flex items-center gap-2.5 text-[13px] text-[#2a2a31] hover:text-[#9869f7] transition-colors">
-                    <Phone size={14} className="text-[#8a8a93] flex-shrink-0" />
-                    +971 4 555 0000
-                  </a>
-                  <div className="flex items-center gap-2.5 text-[13px] text-[#2a2a31]">
-                    <MessageSquare size={14} className="text-[#8a8a93] flex-shrink-0" />
-                    Live chat (9am–9pm GST)
-                  </div>
+                    <MessageSquare size={14} className="text-[#6b6b73] flex-shrink-0" />
+                    All the ways to reach us
+                  </Link>
                 </div>
               </SCard>
             </motion.div>
