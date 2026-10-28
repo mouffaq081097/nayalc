@@ -7,6 +7,7 @@ import { PURCHASING_MIGRATION_SQL } from '@/lib/erp/schema';
 import { CAMPAIGNS_MIGRATION_SQL } from '@/lib/campaigns';
 import { REVIEW_REQUEST_MIGRATION_SQL } from '@/lib/reviewRequests';
 import { STOCK_ALERTS_MIGRATION_SQL } from '@/lib/stockAlerts';
+import { SIZE_GROUP_MIGRATION_SQL } from '@/lib/sizeGroups';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -128,6 +129,11 @@ export async function POST(request) {
                 // "Email me when it's back" — also created on first use by ensureStockAlertsTable() in lib/stockAlerts.js
                 name: '018_stock_alerts',
                 sql: STOCK_ALERTS_MIGRATION_SQL,
+            },
+            {
+                // Sizes of one product linked together — also added on first use by ensureSizeGroupColumn() in lib/sizeGroups.js
+                name: '019_size_groups',
+                sql: SIZE_GROUP_MIGRATION_SQL,
             },
         ];
 

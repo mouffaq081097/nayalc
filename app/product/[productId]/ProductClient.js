@@ -31,13 +31,6 @@ import StockAlertForm from './_components/StockAlertForm';
 import { LAVENDER, LAVENDER_HOVER, aed, BUTTON, SECTION_TITLE, WELL } from './_components/theme';
 import { useSignIn } from '@/app/context/SignInContext';
 
-function parseSizes(sizeStr) {
-  if (!sizeStr) return [];
-  if (sizeStr.includes(',')) return sizeStr.split(',').map(s => s.trim());
-  if (sizeStr.includes('/')) return sizeStr.split('/').map(s => s.trim());
-  return [sizeStr.trim()];
-}
-
 function Stars({ rating, size = 14 }) {
   const rounded = Math.round(rating || 0);
   return (
@@ -68,7 +61,6 @@ export default function ProductClient({ params, initialProduct }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
-  const [selectedSize, setSelectedSize] = useState(null);
 
   const buyButtonRef = useRef(null);
 
@@ -98,13 +90,6 @@ export default function ProductClient({ params, initialProduct }) {
     };
     fetchProduct();
   }, [productId, user, initialProduct]);
-
-  useEffect(() => {
-    if (product?.size) {
-      const sizes = parseSizes(product.size);
-      if (sizes.length > 0) setSelectedSize(sizes[0]);
-    }
-  }, [product]);
 
   useEffect(() => {
     if (product?.id) trackRecentlyViewed(product);
@@ -200,7 +185,8 @@ export default function ProductClient({ params, initialProduct }) {
     [recommendations]
   );
 
-  const sizes = useMemo(() => product?.size ? parseSizes(product.size) : [], [product]);
+  // Other sizes are their own products, linked in the editor's Sizes card (lib/sizeGroups.js)
+  const sizeOptions = product?.sizeOptions?.length > 1 ? product.sizeOptions : [];
 
   /* ── Loading ── */
   if (loading) return (
@@ -237,7 +223,7 @@ export default function ProductClient({ params, initialProduct }) {
   const brandName = product.brand || 'Naya Lumière';
   const isHomemade = /crystal\s*bar/i.test(product.name || '');
   const lowStock = hasStockInfo && stock > 0 && stock <= 5;
-  const metaLine = [sizes.length === 1 && product.size, product.form].filter(Boolean).join(' · ');
+  const metaLine = [!sizeOptions.length && product.size, product.form].filter(Boolean).join(' · ');
   const hasLongCopy = Boolean(product.long_description || product.benefits || product.how_to_use || product.ingredients);
 
   const brandIsFrench = !!product.brand && /gern[eé]t/i.test(product.brand);
@@ -370,19 +356,26 @@ export default function ProductClient({ params, initialProduct }) {
             </div>
             <p className="mt-1.5 text-[12px] text-[#6b6b73]">VAT included{metaLine ? ` · ${metaLine}` : ''}</p>
 
-            {/* Size: rectangular option chips */}
-            {sizes.length > 1 && (
-              <div className="mt-6">
-                <p className="text-[13px] text-gray-600 mb-2.5">Size:</p>
-                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Size">
-                  {sizes.map(size => (
-                    <button key={size} onClick={() => setSelectedSize(size)} role="radio" aria-checked={selectedSize === size}
-                      className={`min-w-[64px] px-4 py-2 border text-[13px] transition-colors ${selectedSize === size ? 'border-[#111114] text-[#111114] font-medium' : 'border-[#dcdcdc] text-gray-600 hover:border-gray-500'}`}>
-                      {size}
-                    </button>
-                  ))}
+            {/* Size: each option is its own product, with its own price and stock */}
+            {sizeOptions.length > 0 && (
+              <nav aria-label="Sizes" className="mt-6">
+                <p className="text-[13px] text-gray-600 mb-2.5">Size: <span className="font-medium text-[#111114]">{product.size}</span></p>
+                <div className="flex flex-wrap gap-2">
+                  {sizeOptions.map((o) => {
+                    const current = Number(o.id) === Number(product.id);
+                    const cls = `min-w-[84px] px-4 py-2 border text-left text-[13px] transition-colors ${current ? 'border-[#111114] text-[#111114]' : 'border-[#dcdcdc] text-gray-700 hover:border-gray-500'}`;
+                    const body = (
+                      <>
+                        <span className={`block ${current ? 'font-semibold' : 'font-medium'}`}>{o.size || 'Size'}</span>
+                        <span className="block text-[11.5px] text-[#6b6b73] tabular-nums">{o.available ? aed(o.price) : 'Sold out'}</span>
+                      </>
+                    );
+                    return current
+                      ? <span key={o.id} aria-current="page" className={cls}>{body}</span>
+                      : <Link key={o.id} href={`/product/${o.slug || o.id}`} className={cls}>{body}</Link>;
+                  })}
                 </div>
-              </div>
+              </nav>
             )}
 
             {/* Short description, folded like Pitaka's highlights */}

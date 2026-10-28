@@ -10,6 +10,7 @@ import { useAppContext } from '@/app/context/AppContext';
 import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { apiErrorMessage, fmtAed, productStatus, stockState } from './productAdmin';
+import SizesCard from './SizesCard';
 import { DEFAULT_BACKORDER_LEAD_DAYS, DEFAULT_BACKORDER_LIMIT } from '@/lib/backorderRules';
 import {
   AutoGrowTextarea, Card, ERROR_COLOR, Field, FieldMessage, WARNING_COLOR, invalidStyle, secondary, subdued, text,
@@ -601,6 +602,8 @@ export default function ProductEditor({ product, onSaved }) {
                 )}
               </div>
             </Card>
+
+            {!isNew && <SizesCard productId={product.id} size={form.size} />}
 
             <Card title="Product details" description="Shown in the information tabs on the product page.">
               <div className="space-y-4">

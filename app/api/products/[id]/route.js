@@ -4,6 +4,7 @@ import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { Buffer } from 'buffer'; // Import Buffer for converting File to Buffer
 import { requireAdmin } from '@/lib/adminAuth';
 import { ensureBackorderColumns, readBackorderFields, allocateStock, BACKORDER_SELECT } from '@/lib/backorders';
+import { getSizeOptions } from '@/lib/sizeGroups';
 
 /**
  * @swagger
@@ -110,6 +111,8 @@ export async function GET(request, context) {
         product.images = imageRows.map(row => row.image_url);
         product.imagesData = imageRows.map(row => ({ url: row.image_url, alt: row.alt_text }));
         product.additionalImagesData = imageRows.filter(row => row.image_url !== product.imageUrl).map(row => ({ url: row.image_url, alt: row.alt_text }));
+        // Other sizes of this product (lib/sizeGroups.js)
+        product.sizeOptions = await getSizeOptions(product.id).catch(() => []);
 
         return NextResponse.json(product);
 

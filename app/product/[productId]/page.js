@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import ProductClient from './ProductClient';
 import { calcShipping, getPreorderInfo } from '@/lib/shipping';
 import { ensureBackorderColumns, BACKORDER_SELECT } from '@/lib/backorders';
+import { getSizeOptions } from '@/lib/sizeGroups';
 import { shelfStock, isPreorderOnly, leadDays } from '@/lib/backorderRules';
 import { SITE, plainText, productTitle } from '@/lib/seo';
 
@@ -53,7 +54,9 @@ async function getProductBySlugOrId(identifier) {
   `;
   const { rows: imageRows } = await db.query(imagesSql, [product.id]);
   product.images = imageRows.map(row => row.image_url);
-  
+  // Other sizes of this product (lib/sizeGroups.js); a failure just hides the choice
+  product.sizeOptions = await getSizeOptions(product.id).catch(() => []);
+
   return product;
 }
 
