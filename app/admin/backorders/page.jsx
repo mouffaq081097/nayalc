@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { AlertCircle, ClipboardList, PackageCheck, RefreshCw } from 'lucide-react';
+import { AlertCircle, BellRing, ClipboardList, PackageCheck, RefreshCw } from 'lucide-react';
 import PageLoader from '@/app/components/PageLoader';
 import { EmptyState } from '../_components/IndexToolbar';
 import { fmtDate } from '../users/_components/customerAdmin';
@@ -86,6 +86,7 @@ export default function BackordersPage() {
   const products = data?.products || [];
   const orders = data?.orders || [];
   const enabled = data?.enabled || [];
+  const waiting = data?.waiting || [];
   const unitsOwed = products.reduce((sum, p) => sum + p.owed, 0);
   const lateOrders = orders.filter(o => o.is_late).length;
 
@@ -201,6 +202,35 @@ export default function BackordersPage() {
                         </td>
                         <td className="whitespace-nowrap" style={secondary}>{PAYMENT[o.payment_method] || o.payment_method}</td>
                         <td className="text-right tabular-nums" style={text}>{fmtAed(o.total_amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Waiting for restock" hint="Shoppers who asked to be emailed when a sold-out product is back. They're emailed automatically when its stock goes up.">
+            {waiting.length === 0 ? (
+              <EmptyState icon={BellRing} title="Nobody is waiting" description="When a product sells out, shoppers can leave their email on its page." />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="sp-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th className="text-right">People waiting</th>
+                      <th className="text-right">On shelf</th>
+                      <th>Waiting since</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {waiting.map(p => (
+                      <tr key={p.id}>
+                        <td><Link href={`/admin/products/${p.id}`} className="font-medium hover:underline" style={text}>{p.name}</Link></td>
+                        <td className="text-right tabular-nums font-semibold" style={text}>{p.waiting}</td>
+                        <td className="text-right tabular-nums" style={secondary}>{p.stock_quantity}</td>
+                        <td className="whitespace-nowrap" style={secondary}>{fmtDate(p.since)}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -43,6 +43,8 @@ const emails = {
   'order-confirmation-tabby':mail.buildOrderConfirmationEmail('Layla', 10484, 990, 47.14, 0, 990, 0, items, address, 0, null, 'tabby', placedAt, []),
   'order-confirmation-preorder': mail.buildOrderConfirmationEmail('Layla', 10486, 990, 47.14, 0, 990, 0, items.map((item, i) => i === 0 ? { ...item, note: 'Pre-order · ships by Tue 27 Oct' } : item), address, 0, null, 'card', placedAt, [], 'Tue 27 Oct'),
   'preorder-ready':          mail.buildPreorderReadyEmail({ firstName: 'Layla', orderId: 10486, items }),
+  'back-in-stock':           mail.buildBackInStockEmail({ product: { name: 'Hydra Prestige Serum', price: 420, imageUrl: IMG, url: 'https://nayalc.com/product/hydra-prestige-serum' } }),
+  'review-request':          mail.buildReviewRequestEmail({ firstName: 'Layla', orderId: 10482, items: items.slice(0, 2).map((item) => ({ name: item.name, imageUrl: item.image || item.imageUrl, url: 'https://nayalc.com/product/glyco-cleansing-milk?rt=sample' })) }),
   'preorder-delay':          mail.buildPreorderDelayEmail({ firstName: 'Layla', orderId: 10486, newShipBy: 'Mon 2 Nov', items: items.slice(0, 1) }),
   'admin-preorder-late':     mail.buildPreorderAdminEmail({ late: [{ orderId: 10486, customerName: 'Layla', waitingFor: '1 × Hydra serum', wasDue: 'Tue 27 Oct', newShipBy: 'Mon 2 Nov' }] }),
   'admin-preorder-ready':    mail.buildPreorderAdminEmail({ ready: [{ orderId: 10486, customerName: 'Layla' }, { orderId: 10490, customerName: 'Omar' }] }),

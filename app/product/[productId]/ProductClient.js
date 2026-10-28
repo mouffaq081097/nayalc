@@ -27,6 +27,7 @@ import ProductGallery from './_components/ProductGallery';
 import DeliveryCard from './_components/DeliveryCard';
 import ProductDetails from './_components/ProductDetails';
 import BoughtTogether from './_components/BoughtTogether';
+import StockAlertForm from './_components/StockAlertForm';
 import { LAVENDER, LAVENDER_HOVER, aed, BUTTON, SECTION_TITLE, WELL } from './_components/theme';
 import { useSignIn } from '@/app/context/SignInContext';
 
@@ -262,10 +263,22 @@ export default function ProductClient({ params, initialProduct }) {
                   <p className="text-[13px] md:text-[14px] font-semibold text-gray-900 truncate">{product.name}</p>
                   <p className="text-[13px] text-gray-500 tabular-nums">{aed(product.price)}</p>
                 </div>
-                <button onClick={handleAddToCart} disabled={outOfStock}
-                  className={`h-11 px-6 text-[13px] font-semibold uppercase tracking-[0.04em] flex items-center gap-2 flex-shrink-0 transition-colors disabled:opacity-50 ${BUTTON}`}>
-                  {isAdded ? <><Check size={15} /> Added</> : ctaLabel}
-                </button>
+                {outOfStock ? (
+                  // Sold out: take the shopper to "Email me when it's back"
+                  <button
+                    onClick={() => {
+                      document.getElementById('stock-alert')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      setTimeout(() => document.getElementById('stock-alert-email')?.focus({ preventScroll: true }), 400);
+                    }}
+                    className={`h-11 px-6 text-[13px] font-semibold uppercase tracking-[0.04em] flex items-center gap-2 flex-shrink-0 transition-colors ${BUTTON}`}>
+                    Notify me
+                  </button>
+                ) : (
+                  <button onClick={handleAddToCart}
+                    className={`h-11 px-6 text-[13px] font-semibold uppercase tracking-[0.04em] flex items-center gap-2 flex-shrink-0 transition-colors disabled:opacity-50 ${BUTTON}`}>
+                    {isAdded ? <><Check size={15} /> Added</> : ctaLabel}
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -335,12 +348,15 @@ export default function ProductClient({ params, initialProduct }) {
               {isHomemade && <span className="font-semibold uppercase tracking-[0.12em] text-[10.5px]" style={{ color: LAVENDER }}>Homemade</span>}
             </p>
 
-            <a href="#reviews" className="mt-3 inline-flex items-center gap-2 w-fit group">
-              <Stars rating={rating} size={13} />
-              <span className="text-[12.5px] text-gray-500 group-hover:underline underline-offset-2">
-                {reviewCount > 0 ? `${rating.toFixed(1)} · ${reviewCount} review${reviewCount === 1 ? '' : 's'}` : 'No reviews yet'}
-              </span>
-            </a>
+            {/* Stars only once there's a review; empty grey stars read as "nobody buys this" */}
+            {reviewCount > 0 && (
+              <a href="#reviews" className="mt-3 inline-flex items-center gap-2 w-fit group">
+                <Stars rating={rating} size={13} />
+                <span className="text-[12.5px] text-[#6b6b73] group-hover:underline underline-offset-2">
+                  {`${rating.toFixed(1)} · ${reviewCount} review${reviewCount === 1 ? '' : 's'}`}
+                </span>
+              </a>
+            )}
 
             {/* Price */}
             <div className="mt-5 flex items-baseline flex-wrap gap-x-3 gap-y-1">
@@ -401,7 +417,13 @@ export default function ProductClient({ params, initialProduct }) {
             )}
 
             {/* Quantity + the big black button */}
-            <div className="mt-3 flex items-stretch gap-2.5" ref={buyButtonRef}>
+            {/* Sold out with no pre-orders: "Email me when it's back" instead of the buy row */}
+            {outOfStock && (
+              <div className="mt-3 flex items-end gap-2.5" ref={buyButtonRef}>
+                <div className="min-w-0 flex-1"><StockAlertForm productId={product.id} defaultEmail={user?.email || ''} /></div>
+              </div>
+            )}
+            <div className={`mt-3 flex items-stretch gap-2.5 ${outOfStock ? 'hidden' : ''}`} ref={outOfStock ? undefined : buyButtonRef}>
               <div className="flex items-center border border-[#dcdcdc]">
                 <button onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={quantity <= 1 || outOfStock}
                   aria-label="Decrease quantity" className="w-10 h-[52px] flex items-center justify-center text-gray-600 hover:text-gray-900 disabled:opacity-30">
@@ -423,7 +445,12 @@ export default function ProductClient({ params, initialProduct }) {
                 <Heart size={18} className={isWishlisted ? 'fill-current' : ''} />
               </button>
             </div>
-            {outOfStock && <p className="mt-2 text-[12px] text-gray-500">Save it to your wishlist and we&apos;ll keep it handy for when it&apos;s back.</p>}
+            {outOfStock && (
+              <button type="button" onClick={handleWishlistToggle} aria-pressed={isWishlisted} className="mt-3 inline-flex items-center gap-2 text-[13px] text-[#111114] underline underline-offset-4 decoration-gray-300 hover:decoration-[#111114]">
+                <Heart size={15} className={isWishlisted ? 'fill-[#e63939] text-[#e63939]' : ''} />
+                {isWishlisted ? 'Saved to your wishlist' : 'Save to wishlist'}
+              </button>
+            )}
 
             {product.price > 0 && (
               <div className="mt-4"><TabbyPromo price={product.price} source="product" lang="en" /></div>

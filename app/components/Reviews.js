@@ -64,16 +64,21 @@ function Select({ id, label, value, onChange, options }) {
   );
 }
 
-function WriteReview({ productId, onDone }) {
+// `token` comes from the review email's link (?rt=…): it lets the customer who
+// bought the product review it without signing in. `initialRating` is the star
+// they tapped in that email (?review=4).
+function WriteReview({ productId, onDone, initialRating = 0, token = null }) {
   const { openSignIn } = useSignIn();
   const { user } = useAuth();
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(initialRating);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  if (!user?.id) {
+  useEffect(() => { if (initialRating) setRating(initialRating); }, [initialRating]);
+
+  if (!user?.id && !token) {
     return (
       <p className="py-6 text-[14px] text-[#6b6b73]">
         Please <Link href="/auth" onClick={(e) => { e.preventDefault(); openSignIn(); }} className="text-[#111114] underline underline-offset-4">sign in</Link> to write a review.
@@ -90,9 +95,13 @@ function WriteReview({ productId, onDone }) {
       const res = await fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, rating, comment, userId: user.id }),
+        body: JSON.stringify({ productId, rating, comment, ...(token && { token }) }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || 'Your review could not be sent. Please try again.');
+        return;
+      }
       onDone();
     } catch {
       setError('Your review could not be sent. Please try again.');
@@ -148,6 +157,29 @@ export default function Reviews({ productId }) {
   const [sort, setSort] = useState('latest');
   const [only, setOnly] = useState('all');
   const [shown, setShown] = useState(5);
+  // From the review email: the star that was tapped and the customer's review token
+  const [fromEmail, setFromEmail] = useState({ rating: 0, token: null });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stars = Number(params.get('review'));
+    const token = params.get('rt');
+    if ((stars >= 1 && stars <= 5) || token) {
+      setFromEmail({ rating: stars >= 1 && stars <= 5 ? stars : 0, token: token || null });
+      setWriting(true);
+      document.getElementById('reviews')?.scrollIntoView({ block: 'start' });
+    }
+  }, []);
+
+  // Once sent, drop the email's parameters so a refresh doesn't reopen the form
+  const clearEmailParams = () => {
+    if (!fromEmail.token && !fromEmail.rating) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('review');
+    url.searchParams.delete('rt');
+    window.history.replaceState(null, '', url.pathname + (url.search || '') + url.hash);
+    setFromEmail({ rating: 0, token: null });
+  };
 
   const load = async () => {
     try {
@@ -220,7 +252,12 @@ export default function Reviews({ productId }) {
 
         {writing && (
           <div className="border-b border-[#ececec]">
-            <WriteReview productId={productId} onDone={() => { setWriting(false); setThanks(true); load(); }} />
+            <WriteReview
+              productId={productId}
+              initialRating={fromEmail.rating}
+              token={fromEmail.token}
+              onDone={() => { setWriting(false); setThanks(true); clearEmailParams(); load(); }}
+            />
           </div>
         )}
         {thanks && <p className="pt-5 text-[14px] text-[#15803d]">Thank you, your review has been added.</p>}

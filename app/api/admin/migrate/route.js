@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth';
 import { BACKORDER_MIGRATION_SQL } from '@/lib/backorders';
 import { PURCHASING_MIGRATION_SQL } from '@/lib/erp/schema';
 import { CAMPAIGNS_MIGRATION_SQL } from '@/lib/campaigns';
+import { REVIEW_REQUEST_MIGRATION_SQL } from '@/lib/reviewRequests';
+import { STOCK_ALERTS_MIGRATION_SQL } from '@/lib/stockAlerts';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -116,6 +118,16 @@ export async function POST(request) {
                 // Homepage campaign banners — also created on first use by ensureCampaignsTable() in lib/campaigns.js
                 name: '016_homepage_campaigns',
                 sql: CAMPAIGNS_MIGRATION_SQL,
+            },
+            {
+                // Review request emails — also added on first use by ensureReviewRequestColumn() in lib/reviewRequests.js
+                name: '017_review_requests',
+                sql: REVIEW_REQUEST_MIGRATION_SQL,
+            },
+            {
+                // "Email me when it's back" — also created on first use by ensureStockAlertsTable() in lib/stockAlerts.js
+                name: '018_stock_alerts',
+                sql: STOCK_ALERTS_MIGRATION_SQL,
             },
         ];
 
