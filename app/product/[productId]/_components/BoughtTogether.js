@@ -30,7 +30,7 @@ export default function BoughtTogether({ product, image, companions, onAddAll, d
   return (
     <section className="rounded-2xl p-5 md:p-6 bg-white" style={{ border: `1.5px solid ${BORDER}` }}>
       <h2 className="text-[18px] font-bold text-gray-900 mb-1">Frequently bought together</h2>
-      <p className="text-[12px] text-gray-400 mb-5">Tap an item to include or leave it out</p>
+      <p className="text-[12px] text-[#6b6b73] mb-5">Tap an item to include or leave it out</p>
 
       <ul className="space-y-2.5">
         {items.map((item, i) => {
@@ -72,7 +72,7 @@ export default function BoughtTogether({ product, image, companions, onAddAll, d
 
       <div className="mt-5 pt-5 flex items-center justify-between gap-4" style={{ borderTop: `1px solid ${BORDER}` }}>
         <div>
-          <p className="text-[11px] text-gray-400">Total for {chosen.length + 1} item{chosen.length ? 's' : ''}</p>
+          <p className="text-[11px] text-[#6b6b73]">Total for {chosen.length + 1} item{chosen.length ? 's' : ''}</p>
           <p className="text-[20px] font-bold tabular-nums text-gray-900">{aed(total)}</p>
           {chosen.length >= 2 && <p className="text-[11px] font-medium text-emerald-600">Qualifies for free shipping</p>}
         </div>

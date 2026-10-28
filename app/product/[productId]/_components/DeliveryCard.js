@@ -62,7 +62,7 @@ export default function DeliveryCard({ user, shippingAddresses = [], contactName
                 ? <span className="font-semibold text-emerald-600">Free shipping on this order</span>
                 : <>
                     <span className="font-medium text-gray-700">{formatShipping(shipCost)} shipping</span>
-                    <span className="text-gray-400"> · add {itemsToFree} more item{itemsToFree > 1 ? 's' : ''} for free shipping</span>
+                    <span className="text-[#6b6b73]"> · add {itemsToFree} more item{itemsToFree > 1 ? 's' : ''} for free shipping</span>
                   </>}
               <button onClick={() => setShowModal(true)}
                 className="ml-1.5 font-medium underline underline-offset-2 hover:opacity-70" style={{ color: LAVENDER }}>
@@ -152,7 +152,7 @@ export default function DeliveryCard({ user, shippingAddresses = [], contactName
             </p>
           </div>
 
-          <p className="text-[11px] text-gray-400 leading-relaxed">
+          <p className="text-[11px] text-[#6b6b73] leading-relaxed">
             <span className="font-semibold text-gray-600">Why we charge shipping:</span> We absorb the cost of delivery on multi-item orders rather than hide fees in product prices.
           </p>
         </div>

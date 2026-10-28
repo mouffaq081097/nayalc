@@ -11,6 +11,8 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isHomePath, formatAED } from '../lib/utils';
 import { orderableQty } from '@/lib/backorderRules';
+import { searchCatalog } from '@/lib/search';
+import { slugify } from '@/lib/slugify';
 import { shortBrand } from '@/lib/seo';
 import { cardName } from './home/HomeProductCard';
 import { useSignIn } from '@/app/context/SignInContext';
@@ -29,6 +31,15 @@ const NAV_LINKS = [
 // menus can't drift apart. Cosmetics has no landing page of its own — it points
 // at the all-products list pre-filtered to the NAYA Lumiere Cosmetics brand,
 // which AllProducts resolves case-insensitively against the brands it loaded.
+// Shown beside Menu on wide screens (the last two only from xl, where there's room)
+const QUICK_LINKS = [
+  { label: 'Skincare',  href: '/SkinCare' },
+  { label: 'Fragrance', href: '/fragrance' },
+  { label: 'Brands',    href: '/brands' },
+  { label: 'New in',    href: '/new-arrivals', wide: true },
+  { label: 'Offers',    href: '/sales', wide: true },
+];
+
 const SHOP_LINKS = [
   { name: 'All Products', href: '/all-products' },
   { name: 'Skincare',     href: '/SkinCare' },
@@ -76,7 +87,7 @@ const Header = forwardRef((_, ref) => {
 
   const { cartItems } = useCart();
   const { user, logout } = useAuth();
-  const { loyaltyData, concerns, brands, products } = useAppContext();
+  const { loyaltyData, concerns, brands, products, categories } = useAppContext();
   const router   = useRouter();
   const pathname = usePathname();
 
@@ -114,13 +125,16 @@ const Header = forwardRef((_, ref) => {
       .slice(0, 4),
     [products],
   );
-  const searchMatches = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return [];
-    return (products || [])
-      .filter((p) => [p.name, p.brandName, p.categoryNames].some((f) => String(f || '').toLowerCase().includes(q)))
-      .slice(0, 6);
-  }, [products, searchQuery]);
+  // Live matches: accents and capitals don't matter, and concerns / collections / brands count too
+  const search = useMemo(
+    () => searchCatalog(products || [], searchQuery, { concerns, categories, brands, limit: 6 }),
+    [products, searchQuery, concerns, categories, brands],
+  );
+  const searchLinks = [
+    ...search.brands.map((b) => ({ key: `b${b.id}`, label: b.name, href: `/brand/${b.slug || slugify(b.name)}` })),
+    ...search.collections.map((c) => ({ key: `c${c.id}`, label: c.name, href: `/collections/${c.slug || c.id}` })),
+    ...search.concerns.map((c) => ({ key: `k${c.id}`, label: c.name, href: `/all-products?concern=${encodeURIComponent(c.slug || c.id)}` })),
+  ].slice(0, 6);
   const openProduct = (p) => { router.push(`/product/${p.slug || p.id}`); setIsSearchOpen(false); setSearchQuery(''); };
 
   // Only one panel at a time
@@ -165,17 +179,34 @@ const Header = forwardRef((_, ref) => {
         }`}
       >
         <div className="flex items-center gap-2 px-3 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-3 md:px-10" style={{ height: 'var(--header-h)' }}>
-          {/* Menu */}
-          <button
-            type="button"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="justify-self-start inline-flex shrink-0 items-center gap-3 h-10 md:-ml-1.5 px-1.5 text-[13px] font-semibold tracking-[0.08em] uppercase"
-            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={isMenuOpen}
-          >
-            {isMenuOpen ? <X size={22} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.6} />}
-            <span className="hidden md:inline">{isMenuOpen ? 'Close' : 'Menu'}</span>
-          </button>
+          {/* Menu, and on wide screens the main sections beside it */}
+          <div className="justify-self-start flex items-center gap-6 min-w-0">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="inline-flex shrink-0 items-center gap-3 h-10 md:-ml-1.5 px-1.5 text-[13px] font-semibold tracking-[0.08em] uppercase"
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMenuOpen}
+            >
+              {isMenuOpen ? <X size={22} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.6} />}
+              <span className="hidden md:inline">{isMenuOpen ? 'Close' : 'Menu'}</span>
+            </button>
+            <nav aria-label="Main sections" className="hidden lg:flex items-center gap-6 text-[13.5px]">
+              {QUICK_LINKS.map((l) => {
+                const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    aria-current={active ? 'page' : undefined}
+                    className={`${l.wide ? 'hidden xl:inline' : ''} whitespace-nowrap underline-offset-[6px] decoration-1 transition-opacity hover:opacity-70 ${active ? 'underline' : ''}`}
+                  >
+                    {l.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
           {/* Logo */}
           <Link href="/" aria-label="Naya Lumière Cosmetics, home" className="mr-auto md:mr-0 rounded-md transition-opacity hover:opacity-80">
@@ -313,10 +344,26 @@ const Header = forwardRef((_, ref) => {
 
                   {searchQuery.trim() ? (
                     <section className="mt-8">
+                      {searchLinks.length > 0 && (
+                        <div className="mb-8 flex flex-wrap gap-2.5">
+                          {searchLinks.map((l) => (
+                            <Link
+                              key={l.key}
+                              href={l.href}
+                              onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
+                              className="px-5 py-2 rounded-full border border-[#111114] text-[14px] hover:bg-[#111114] hover:text-white transition-colors"
+                            >
+                              {l.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                       <h2 className="pb-3 border-b border-[#111114] text-[16px]">
-                        {searchMatches.length ? 'Products' : `No products match “${searchQuery.trim()}”`}
+                        {!search.products.length
+                          ? `No products match “${searchQuery.trim()}”`
+                          : search.close ? `Close matches for “${searchQuery.trim()}”` : 'Products'}
                       </h2>
-                      <SearchList items={searchMatches} onPick={openProduct} />
+                      <SearchList items={search.products} onPick={openProduct} />
                       <button type="button" onClick={handleSearch} className="mt-5 text-[14px] underline underline-offset-4 decoration-gray-300 hover:decoration-[#111114]">
                         See all results for “{searchQuery.trim()}”
                       </button>

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { X, Loader2 } from 'lucide-react';
 
 const LAVENDER = 'rgb(147,104,236)';
@@ -44,10 +45,11 @@ export default function WelcomePopup({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Welcome offer">
+    <div className="fixed inset-0 z-[300] flex items-end md:items-center justify-center md:p-4" role="dialog" aria-modal="true" aria-label="Welcome offer">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative w-full max-w-3xl bg-white rounded-2xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2">
+      {/* Phones: a sheet from the bottom edge; desktop: a centred card with the photo */}
+      <div className="relative w-full max-w-3xl bg-white rounded-t-2xl md:rounded-2xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2 pb-[env(safe-area-inset-bottom,0px)] md:pb-0">
         <button
           type="button"
           onClick={onClose}
@@ -76,7 +78,7 @@ export default function WelcomePopup({ isOpen, onClose }) {
           {status === 'success' ? (
             <>
               <h2 className="text-[22px] font-bold text-gray-900 mb-2">You&rsquo;re on the list!</h2>
-              <p className="text-[13.5px] text-gray-500 mb-5">Use this code at checkout for 10% off your first order.</p>
+              <p className="text-[13.5px] text-[#6b6b73] mb-5">Use this code at checkout for 10% off your first order.</p>
               <div
                 className="mx-auto mb-6 inline-flex items-center gap-2 border-2 border-dashed rounded-xl px-6 py-3"
                 style={{ borderColor: LAVENDER }}
@@ -94,7 +96,7 @@ export default function WelcomePopup({ isOpen, onClose }) {
               <h2 className="text-[24px] sm:text-[28px] font-bold text-gray-900 leading-tight mb-2">
                 Get 10% off your first order
               </h2>
-              <p className="text-[13.5px] text-gray-500 mb-6 max-w-xs mx-auto">
+              <p className="text-[13.5px] text-[#6b6b73] mb-6 max-w-xs mx-auto">
                 Join our journal for early access to new arrivals and skincare guidance — plus 10% off to start.
               </p>
 
@@ -123,19 +125,50 @@ export default function WelcomePopup({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-4 text-[12.5px] font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                className="mt-4 text-[12.5px] font-medium text-[#6b6b73] hover:text-[#111114] transition-colors cursor-pointer"
               >
                 No thanks
               </button>
 
-              <p className="mt-6 text-[10.5px] text-gray-400 leading-relaxed">
+              <p className="mt-6 text-[10.5px] text-[#6b6b73] leading-relaxed">
                 By entering your email, you consent to receive marketing communications. See our{' '}
-                <a href="#" className="underline hover:text-gray-600">Privacy Policy</a> for more information.
+                <Link href="/privacy" onClick={onClose} className="underline hover:text-[#111114]">Privacy Policy</Link> for more information.
               </p>
             </>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Phones: the welcome offer as a slim bar along the bottom instead of a card over
+ * the page. "Get code" opens the full form; ✕ dismisses it for good. It rises
+ * above the product page's sticky buy bar while that bar is showing.
+ */
+export function WelcomeBar({ onOpen, onClose }) {
+  const [lifted, setLifted] = useState(false);
+  useEffect(() => {
+    const onBar = (e) => setLifted(!!e.detail?.visible);
+    window.addEventListener('nayalc:sticky-buy-bar', onBar);
+    return () => window.removeEventListener('nayalc:sticky-buy-bar', onBar);
+  }, []);
+
+  return (
+    <div
+      role="region"
+      aria-label="Welcome offer"
+      className="md:hidden fixed inset-x-3 z-[145] flex items-center gap-2 rounded-xl bg-[#111114] py-2 pl-4 pr-1.5 text-white shadow-[0_8px_24px_rgba(17,17,20,0.25)] transition-[bottom] duration-200"
+      style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + ${lifted ? 76 : 12}px)` }}
+    >
+      <p className="min-w-0 text-[13px] leading-snug">10% off your first order</p>
+      <button type="button" onClick={onOpen} className="ml-auto shrink-0 rounded-full bg-white px-4 py-2 text-[12.5px] font-semibold text-[#111114]">
+        Get code
+      </button>
+      <button type="button" onClick={onClose} aria-label="No thanks" className="shrink-0 flex h-10 w-10 items-center justify-center text-white/80 hover:text-white">
+        <X size={16} />
+      </button>
     </div>
   );
 }

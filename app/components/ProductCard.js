@@ -87,7 +87,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
     : isBestseller ? { label: 'Best seller', soft: true }
     : isNew ? { label: 'New' }
     : null;
-  const roundBtn = 'w-8 h-8 shrink-0 rounded-full border-[1.2px] border-[#111114] bg-[#f6f5f2] text-[#111114] flex items-center justify-center transition-colors hover:bg-[#111114] hover:text-white';
+  const roundBtn = 'relative after:absolute after:-inset-1 w-8 h-8 shrink-0 rounded-full border-[1.2px] border-[#111114] bg-[#f6f5f2] text-[#111114] flex items-center justify-center transition-colors hover:bg-[#111114] hover:text-white';
 
   const handleShare = (e) => {
     e.preventDefault();
@@ -245,7 +245,7 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
             </div>
             <p className="text-right text-[14px] font-semibold text-[#111114] leading-tight pointer-events-none">
               {formatAED(price)}
-              {showComparePrice && <span className="block text-[11.5px] font-normal text-[#9a9aa2] line-through">{formatAED(originalPrice)}</span>}
+              {showComparePrice && <span className="block text-[11.5px] font-normal text-[#6b6b73] line-through">{formatAED(originalPrice)}</span>}
             </p>
           </div>
         </div>

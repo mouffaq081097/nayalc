@@ -91,7 +91,7 @@ export function HomeProductCard({ product, tone = 'light', variant = 'panel' }) 
       type="button"
       onClick={onAdd}
       aria-label={preorder ? `Pre-order ${product.name}` : `Add ${product.name} to bag`}
-      className="w-8 h-8 shrink-0 rounded-full border-[1.2px] border-[#111114] text-[#111114] bg-white/0 flex items-center justify-center transition-colors hover:bg-[#111114] hover:text-white md:group-hover:bg-[#111114] md:group-hover:text-white"
+      className="relative after:absolute after:-inset-1 w-8 h-8 shrink-0 rounded-full border-[1.2px] border-[#111114] text-[#111114] bg-white/0 flex items-center justify-center transition-colors hover:bg-[#111114] hover:text-white md:group-hover:bg-[#111114] md:group-hover:text-white"
     >
       {added ? <Check size={15} strokeWidth={2} /> : <ShoppingBag size={14} strokeWidth={1.75} />}
     </button>
@@ -99,7 +99,7 @@ export function HomeProductCard({ product, tone = 'light', variant = 'panel' }) 
   const priceEl = (
     <p className="text-right text-[14px] font-semibold leading-tight text-[#111114]">
       {formatAED(price)}
-      {onSale && <span className="block text-[11.5px] font-normal text-[#9a9aa2] line-through">{formatAED(was)}</span>}
+      {onSale && <span className="block text-[11.5px] font-normal text-[#6b6b73] line-through">{formatAED(was)}</span>}
     </p>
   );
 
@@ -112,7 +112,7 @@ export function HomeProductCard({ product, tone = 'light', variant = 'panel' }) 
               <p className="text-[#111114] text-[24px] md:text-[20px] xl:text-[24px] leading-[1.2] tracking-tight line-clamp-2">{cardName(product.name)}</p>
               <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] xl:text-[17px] text-[#111114]">
                 {formatAED(price)}
-                {onSale && <span className="text-[13px] text-[#9a9aa2] line-through">{formatAED(was)}</span>}
+                {onSale && <span className="text-[13px] text-[#6b6b73] line-through">{formatAED(was)}</span>}
                 {tag && (
                   <span
                     className={`rounded-full px-2 py-[2px] text-[10.5px] font-semibold text-white ${!canBuy ? 'bg-gray-500' : ''}`}

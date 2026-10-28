@@ -28,15 +28,15 @@ function Item({ item, onRemove, onQty, onNavigate }) {
         <div className="flex items-start gap-3">
           <Link href={href} onClick={onNavigate} className="flex-1 min-w-0">
             <p className="text-[14px] font-semibold leading-snug text-[#111114] line-clamp-2">{cardName(item.name)}</p>
-            {item.brand && <p className="mt-0.5 text-[12px] text-[#8a8a92]">{shortBrand(item.brand)}</p>}
+            {item.brand && <p className="mt-0.5 text-[12px] text-[#6b6b73]">{shortBrand(item.brand)}</p>}
           </Link>
-          <button type="button" onClick={() => onRemove(item.id)} aria-label={`Remove ${item.name}`} className="shrink-0 -mt-0.5 p-1 text-[#9a9aa2] hover:text-[#111114] transition-colors">
+          <button type="button" onClick={() => onRemove(item.id)} aria-label={`Remove ${item.name}`} className="shrink-0 -mt-0.5 p-1 text-[#6b6b73] hover:text-[#111114] transition-colors">
             <Trash2 size={16} strokeWidth={1.5} />
           </button>
         </div>
         <div className="mt-auto pt-3 flex items-center justify-between gap-3">
           <p className="text-[13.5px] text-[#111114] tabular-nums">
-            {was > Number(item.price) && <s className="mr-2 text-[#9a9aa2]">{formatAED(was)}</s>}
+            {was > Number(item.price) && <s className="mr-2 text-[#6b6b73]">{formatAED(was)}</s>}
             {formatAED(item.price)}
           </p>
           <div className="flex items-center gap-3" aria-label={`Quantity of ${item.name}`}>
@@ -92,7 +92,7 @@ function Recommended({ cartIds, onAdd }) {
           <p className="text-[14px] leading-snug text-[#111114] line-clamp-2">{cardName(p.name)}</p>
           <p className="mt-1 text-[13.5px] text-[#111114] tabular-nums">
             {formatAED(p.price)}
-            {was > Number(p.price) && <s className="ml-2 text-[#9a9aa2]">{formatAED(was)}</s>}
+            {was > Number(p.price) && <s className="ml-2 text-[#6b6b73]">{formatAED(was)}</s>}
           </p>
         </div>
         <button
@@ -221,7 +221,7 @@ export default function SideCart() {
                     ))}
                   </ul>
 
-                  <div className="pb-4 flex justify-end text-[13.5px] text-[#8a8a92]">
+                  <div className="pb-4 flex justify-end text-[13.5px] text-[#6b6b73]">
                     {confirmClear ? (
                       <span className="flex items-center gap-3">
                         Remove everything?

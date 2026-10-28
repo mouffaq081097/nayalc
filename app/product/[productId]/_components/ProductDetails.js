@@ -78,7 +78,7 @@ export default function ProductDetails({ product }) {
       body: (
         <div className="max-w-3xl space-y-3">
           <p className="text-[13px] text-gray-500 leading-[1.8]">{product.ingredients}</p>
-          <p className="text-[11px] text-gray-400">Ingredient lists may change. Always check the packaging of the product you receive.</p>
+          <p className="text-[11px] text-[#6b6b73]">Ingredient lists may change. Always check the packaging of the product you receive.</p>
         </div>
       ),
     },
@@ -145,7 +145,7 @@ export default function ProductDetails({ product }) {
 function Spec({ term, value }) {
   return (
     <div>
-      <dt className="text-[11px] font-medium text-gray-400">{term}</dt>
+      <dt className="text-[11px] font-medium text-[#6b6b73]">{term}</dt>
       <dd className="text-[14px] font-semibold text-gray-800">{value}</dd>
     </div>
   );

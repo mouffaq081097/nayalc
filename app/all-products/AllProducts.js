@@ -81,7 +81,7 @@ const SidebarFilters = ({
         <span className="text-[11px] uppercase tracking-[0.25em] font-bold text-gray-900">Filters</span>
         <button
           onClick={clearFilters}
-          className="text-[10px] uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors font-medium"
+          className="text-[10px] uppercase tracking-widest text-[#6b6b73] hover:text-gray-900 transition-colors font-medium"
         >
           Clear all
         </button>
@@ -156,7 +156,7 @@ const SidebarFilters = ({
               {brands.length > 8 && (
                 <button
                   onClick={() => setShowAllBrands(!showAllBrands)}
-                  className="mt-2 text-[10px] uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors font-medium flex items-center gap-1.5"
+                  className="mt-2 text-[10px] uppercase tracking-widest text-[#6b6b73] hover:text-gray-900 transition-colors font-medium flex items-center gap-1.5"
                 >
                   {showAllBrands ? <Minus size={10} /> : <PlusIcon size={10} />}
                   {showAllBrands ? 'Show less' : `View all (${brands.length})`}
@@ -182,12 +182,12 @@ const SidebarFilters = ({
               />
               <div className="flex items-center gap-2">
                 <div className="flex-1 border border-gray-200 rounded-[8px] px-3 py-2">
-                  <div className="text-[8px] uppercase tracking-widest text-gray-400 font-semibold mb-0.5">Min</div>
+                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">Min</div>
                   <div className="text-[12px] font-semibold text-gray-900">AED {localPriceRange[0]}</div>
                 </div>
                 <span className="text-gray-300 text-sm">—</span>
                 <div className="flex-1 border border-gray-200 rounded-[8px] px-3 py-2">
-                  <div className="text-[8px] uppercase tracking-widest text-gray-400 font-semibold mb-0.5">Max</div>
+                  <div className="text-[8px] uppercase tracking-widest text-[#6b6b73] font-semibold mb-0.5">Max</div>
                   <div className="text-[12px] font-semibold text-gray-900">AED {localPriceRange[1]}</div>
                 </div>
               </div>
@@ -621,7 +621,7 @@ export default function AllProductsPage() {
                   {chip.label}
                   <button
                     onClick={chip.remove}
-                    className="text-gray-400 hover:text-gray-900 transition-colors leading-none"
+                    className="text-[#6b6b73] hover:text-gray-900 transition-colors leading-none"
                   >
                     ×
                   </button>
@@ -712,7 +712,7 @@ export default function AllProductsPage() {
                         className="h-full bg-gray-400 rounded-full"
                       />
                     </div>
-                    <span className="text-[10px] uppercase tracking-[0.25em] text-gray-400 font-medium">
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-[#6b6b73] font-medium">
                       {displayedProducts.length} of {filteredAndSortedProducts.length}
                     </span>
                   </div>

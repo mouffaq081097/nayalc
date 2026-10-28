@@ -20,8 +20,28 @@ const byBest = (a, b) =>
  * selling product's photo on a warm round tile, the name and how many products
  * it holds. Swipes sideways on phones; centred on desktop.
  */
+// While the catalogue loads: the same row in grey, so the page doesn't move when it fills in
+function StripPlaceholder() {
+  return (
+    <section aria-hidden="true" className="bg-white border-b border-[#ececec]">
+      <Container wide>
+        <ul className="flex gap-3 md:gap-6 overflow-hidden -mx-4 px-4 sm:mx-0 sm:px-0 py-5 md:py-7 md:justify-center animate-pulse motion-reduce:animate-none">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <li key={i} className="shrink-0 flex w-[84px] md:w-[116px] flex-col items-center">
+              <span className="w-[72px] h-[72px] md:w-[96px] md:h-[96px] rounded-full bg-[#f6f5f2]" />
+              <span className="mt-2.5 h-3 w-14 bg-[#eeece8]" />
+              <span className="mt-2 h-2.5 w-10 bg-[#f1efeb]" />
+            </li>
+          ))}
+        </ul>
+      </Container>
+    </section>
+  );
+}
+
 export function CategoryStrip() {
-  const { categories, products } = useAppContext();
+  const { categories, products, loading } = useAppContext();
+  if (loading && !products?.length) return <StripPlaceholder />;
   if (!categories?.length || !products?.length) return null;
 
   const newest = new Set(
@@ -68,7 +88,7 @@ export function CategoryStrip() {
                 {c.isNew ? (
                   <span className="mt-1 text-[10.5px] md:text-[11px] font-semibold uppercase tracking-[0.12em] text-[rgb(147,104,236)]">New in</span>
                 ) : (
-                  <span className="mt-1 text-[11px] md:text-[11.5px] text-[#8a8a92]">{c.count} {c.count === 1 ? 'product' : 'products'}</span>
+                  <span className="mt-1 text-[11px] md:text-[11.5px] text-[#6b6b73]">{c.count} {c.count === 1 ? 'product' : 'products'}</span>
                 )}
               </Link>
             </li>
