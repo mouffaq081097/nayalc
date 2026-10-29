@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireSelf } from '@/lib/requireSelf';
 
 export async function DELETE(request, { params }) {
-    const { userId, productId } = params;
+    const { userId, productId } = await params;
 
     try {
         if (!userId || !productId) {
             return NextResponse.json({ message: 'User ID and Product ID are required.' }, { status: 400 });
         }
+        // Only the signed-in customer's own wishlist (or an admin)
+        const refused = await requireSelf(request, userId);
+        if (refused) return refused;
 
         const sql = 'DELETE FROM user_wishlists WHERE user_id = $1 AND product_id = $2 RETURNING user_id, product_id';
         const { rows } = await db.query(sql, [userId, productId]);

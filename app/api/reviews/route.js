@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import db from '@/lib/db';
 import { readReviewToken } from '@/lib/reviewTokens';
+import { refreshProductPages } from '@/lib/productPages';
+import { reviewerName } from '@/lib/reviewerName';
 
 const MAX_COMMENT = 2000;
 
@@ -56,6 +58,7 @@ export async function POST(request) {
         [Number(productId), stars, text, userId],
       );
 
+    refreshProductPages();
     return NextResponse.json(result.rows[0], { status: existing.length ? 200 : 201 });
   } catch (error) {
     console.error('Error creating review:', error);
@@ -79,6 +82,8 @@ export async function GET(request) {
         r.rating,
         r.comment,
         r.created_at,
+        u.first_name,
+        u.last_name,
         u.username
       FROM reviews r
       JOIN users u ON r.user_id = u.id
@@ -87,7 +92,11 @@ export async function GET(request) {
       [productId]
     );
 
-    return NextResponse.json(result.rows);
+    // "Sara M." only: the account's names and handle (which can be an email) never leave the server
+    return NextResponse.json(result.rows.map(({ first_name: _first, last_name: _last, username: _handle, ...review }) => ({
+      ...review,
+      name: reviewerName({ first_name: _first, last_name: _last, username: _handle }),
+    })));
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -112,6 +121,7 @@ export async function DELETE(request) {
     if (result.rowCount === 0) {
       return NextResponse.json({ message: 'Review not found.' }, { status: 404 });
     }
+    refreshProductPages();
     return NextResponse.json({ message: 'Review deleted successfully.' }, { status: 200 });
   } catch (error) {
     console.error('Error deleting review:', error);

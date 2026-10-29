@@ -205,7 +205,8 @@ export default function Reviews({ productId }) {
   };
 
   const count = reviews.length;
-  const average = count ? reviews.reduce((t, r) => t + Number(r.rating), 0) / count : 0;
+  // One decimal, rounded from whole-star totals like the database's average at the top of the page (4.6, not 4.57)
+  const average = count ? Math.round((reviews.reduce((t, r) => t + Number(r.rating), 0) * 10) / count) / 10 : 0;
   const bars = [5, 4, 3, 2, 1].map((n) => ({ n, pct: count ? (reviews.filter((r) => Number(r.rating) === n).length / count) * 100 : 0 }));
 
   const list = useMemo(() => {
@@ -229,7 +230,7 @@ export default function Reviews({ productId }) {
         {/* Summary */}
         <div className="mt-6 flex flex-col md:flex-row md:items-center gap-8 md:gap-14 pb-8 border-b border-[#ececec]">
           <div className="flex flex-col items-center text-center w-fit">
-            <span className="text-[56px] font-light leading-none text-[#111114] tabular-nums">{count ? (Number.isInteger(average) ? average.toFixed(1) : average.toFixed(2).replace(/0$/, '')) : '–'}</span>
+            <span className="text-[56px] font-light leading-none text-[#111114] tabular-nums">{count ? average.toFixed(1) : '–'}</span>
             <span className="mt-3"><Stars rating={average} size={24} gap="gap-1.5" /></span>
             <span className="mt-2 text-[14px] text-[#111114]">{t(count === 1 ? '{n} review' : '{n} reviews', { n: count })}</span>
           </div>
@@ -282,14 +283,15 @@ export default function Reviews({ productId }) {
             {/* Reviews */}
             <ul className="mt-4">
               {list.slice(0, shown).map((r) => {
-                const name = displayName(r.username);
+                // The API sends "Sara M." (lib/reviewerName.js); older responses had the handle
+                const name = r.name || displayName(r.username);
                 return (
                   <li key={r.id} className="grid md:grid-cols-[240px_1fr] gap-4 md:gap-8 py-8 border-b border-[#ececec]">
                     <div className="flex items-center gap-3 self-start">
                       <span className="w-12 h-12 shrink-0 rounded-full border-[1.5px] border-[#111114] bg-[#f6f5f2] flex items-center justify-center text-[15px] font-semibold text-[#111114]">
                         {name.charAt(0)}
                       </span>
-                      <span className="text-[16px] text-[#111114]">{name}</span>
+                      <span className="text-[16px] text-[#111114]"><bdi>{name}</bdi></span>
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center justify-between gap-4">

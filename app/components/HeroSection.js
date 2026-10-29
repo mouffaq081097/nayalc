@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
+import Image, { getImageProps } from 'next/image';
 import { headingFont } from './home/headingFont';
 import { useLocale, useT } from '../context/LocaleContext';
 
@@ -97,7 +97,30 @@ function getTextVariants(reduceMotion) {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function SlideBackground({ slide, reduceMotion, playing }) {
+const isVideoSrc = (src) => typeof src === 'string' && /\.(mp4|mov)$/i.test(src);
+
+/**
+ * A photo slide as one <picture>: phones fetch only the phone photo and laptops
+ * only the desktop one. (With two <Image>s, one hidden by CSS, a phone also
+ * downloaded the desktop photo.) The first slide loads first, at high priority.
+ */
+function HeroPicture({ slide, first }) {
+  const common = { alt: slide.headline || '', fill: true, sizes: '100vw', priority: first, fetchPriority: first ? 'high' : undefined };
+  const mobileSrc = slide.imageSrc || slide.imageSrcDesktop;
+  const desktopSrc = slide.imageSrcDesktop || slide.imageSrc;
+  if (!mobileSrc) return null;
+  const { props: { srcSet: desktop } } = getImageProps({ ...common, src: desktopSrc });
+  const { props: { srcSet: mobile, ...img } } = getImageProps({ ...common, src: mobileSrc });
+  return (
+    <picture>
+      <source media="(min-width: 768px)" srcSet={desktop} sizes="100vw" />
+      {/* getImageProps gives the optimised src, srcSet, sizes and alt */}
+      <img {...img} alt={img.alt} srcSet={mobile} className={`object-cover ${slide.imagePosition || ''}`} />
+    </picture>
+  );
+}
+
+function SlideBackground({ slide, reduceMotion, playing, first }) {
   const videos = useRef([]);
   // The pause button freezes the video too, not just the slide changes
   useEffect(() => {
@@ -108,8 +131,24 @@ function SlideBackground({ slide, reduceMotion, playing }) {
     });
   }, [playing]);
 
-  const isVideoDesktop = slide.is_video_desktop || (slide.imageSrcDesktop && (typeof slide.imageSrcDesktop === 'string' && (slide.imageSrcDesktop.endsWith('.mp4') || slide.imageSrcDesktop.endsWith('.mov'))));
-  const isVideoMobile = slide.is_video_mobile || (slide.imageSrc && (typeof slide.imageSrc === 'string' && (slide.imageSrc.endsWith('.mp4') || slide.imageSrc.endsWith('.mov'))));
+  const isVideoDesktop = slide.is_video_desktop || isVideoSrc(slide.imageSrcDesktop);
+  const isVideoMobile = slide.is_video_mobile || isVideoSrc(slide.imageSrc);
+  const video = (i, src) => (
+    <video
+      ref={(el) => { videos.current[i] = el; }}
+      src={src}
+      autoPlay={playing}
+      muted
+      loop
+      playsInline
+      className={`object-cover w-full h-full ${slide.imagePosition}`}
+    >
+      <track kind="captions" />
+    </video>
+  );
+  const photo = (src) => (
+    <Image src={src} alt={slide.headline} fill sizes="100vw" className={`object-cover ${slide.imagePosition}`} priority={first} />
+  );
 
   return (
     <motion.div
@@ -120,57 +159,19 @@ function SlideBackground({ slide, reduceMotion, playing }) {
       exit={{ opacity: 0 }}
       transition={{ duration: reduceMotion ? 0.15 : 0.65, ease: 'easeInOut' }}
     >
-      {/* Mobile Background */}
-      <div className="md:hidden w-full h-full relative">
-        {isVideoMobile ? (
-          <video
-            ref={(el) => { videos.current[0] = el; }}
-            src={slide.imageSrc}
-            autoPlay={playing}
-            muted
-            loop
-            playsInline
-            className={`object-cover w-full h-full ${slide.imagePosition}`}
-          >
-            <track kind="captions" />
-          </video>
-        ) : (
-          <Image
-            src={slide.imageSrc}
-            alt={slide.headline}
-            fill
-            sizes="100vw"
-            className={`object-cover ${slide.imagePosition}`}
-            priority={slide.id === 1 || slide.id === 'f1'}
-          />
-        )}
-      </div>
-
-      {/* Desktop Background */}
-      <div className="hidden md:block w-full h-full relative">
-        {isVideoDesktop ? (
-          <video
-            ref={(el) => { videos.current[1] = el; }}
-            src={slide.imageSrcDesktop || slide.imageSrc}
-            autoPlay={playing}
-            muted
-            loop
-            playsInline
-            className={`object-cover w-full h-full ${slide.imagePosition}`}
-          >
-            <track kind="captions" />
-          </video>
-        ) : (
-          <Image
-            src={slide.imageSrcDesktop || slide.imageSrc}
-            alt={slide.headline}
-            fill
-            sizes="100vw"
-            className={`object-cover ${slide.imagePosition}`}
-            priority={slide.id === 1 || slide.id === 'f1'}
-          />
-        )}
-      </div>
+      {!isVideoMobile && !isVideoDesktop ? (
+        <HeroPicture slide={slide} first={first} />
+      ) : (
+        <>
+          {/* A video on one side: each screen size gets its own element */}
+          <div className="md:hidden w-full h-full relative">
+            {isVideoMobile ? video(0, slide.imageSrc) : photo(slide.imageSrc)}
+          </div>
+          <div className="hidden md:block w-full h-full relative">
+            {isVideoDesktop ? video(1, slide.imageSrcDesktop || slide.imageSrc) : photo(slide.imageSrcDesktop || slide.imageSrc)}
+          </div>
+        </>
+      )}
 
       {/* Directional scrim for text legibility */}
       {SCRIM_CLASS[slide.scrimDirection] && (
@@ -305,7 +306,7 @@ export function HeroSection({ dbSlides = [] }) {
     >
       {/* ── Full-bleed background ── */}
       <AnimatePresence>
-        <SlideBackground key={`bg-${slide.id}`} slide={slide} reduceMotion={reduceMotion} playing={!stopped} />
+        <SlideBackground key={`bg-${slide.id}`} slide={slide} reduceMotion={reduceMotion} playing={!stopped} first={current === 0} />
       </AnimatePresence>
 
       {/* ── Scrims: top keeps the white header legible; desktop adds a left wash for the copy ── */}

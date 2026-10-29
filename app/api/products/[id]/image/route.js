@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { requireAdmin } from '@/lib/adminAuth';
+import { refreshProductPages } from '@/lib/productPages';
 
 export async function POST(request, { params }) {
   const unauthorized = await requireAdmin();
@@ -28,6 +29,7 @@ export async function POST(request, { params }) {
     const insertImageSql = 'INSERT INTO product_images (product_id, image_url, is_main) VALUES ($1, $2, TRUE) RETURNING id';
     await client.query(insertImageSql, [productId, imageUrl]);
 
+    refreshProductPages();
     return NextResponse.json({ message: 'Image uploaded successfully', imageUrl }, { status: 201 });
 
   } catch (error) {

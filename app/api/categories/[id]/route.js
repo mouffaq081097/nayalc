@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { requireAdmin } from '@/lib/adminAuth';
+import { hasRitualStepColumn, parseRitualStep } from '@/lib/ritualSteps';
 
 /**
  * @swagger
@@ -24,11 +25,12 @@ export async function GET(request, { params }) {
   try {
     // Try to find by ID first, then by slug
     let categorySql, categoryValues;
+    const ritualStep = (await hasRitualStepColumn()) ? ', ritual_step as "ritualStep"' : '';
     if (!isNaN(parseInt(idOrSlug))) {
-        categorySql = 'SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive" FROM categories WHERE id = $1';
+        categorySql = `SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive"${ritualStep} FROM categories WHERE id = $1`;
         categoryValues = [parseInt(idOrSlug)];
     } else {
-        categorySql = 'SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive" FROM categories WHERE slug = $1';
+        categorySql = `SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive"${ritualStep} FROM categories WHERE slug = $1`;
         categoryValues = [idOrSlug];
     }
 
@@ -151,6 +153,9 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ message: 'Category name is required.' }, { status: 400 });
     }
 
+    // Before BEGIN: adding the column locks the table, which would wait on this transaction's own row lock
+    const saveRitualStep = formData.has('ritual_step') && await hasRitualStepColumn();
+
     await client.query('BEGIN');
 
     const { rows: existingRows } = await client.query('SELECT name, slug, image_url, banner_url, parent_id FROM categories WHERE id = $1', [id]);
@@ -202,6 +207,11 @@ export async function PUT(request, { params }) {
 
     const updateCategorySql = 'UPDATE categories SET name = $1, description = $2, image_url = $3, banner_url = $4, slug = $5, parent_id = $6 WHERE id = $7';
     await client.query(updateCategorySql, [name, description, newImageUrl, newBannerUrl, slug, parentId ? parseInt(parentId) : null, id]);
+
+    // Ritual step (lib/ritualSteps.js): '' = automatic, from the names
+    if (saveRitualStep) {
+      await client.query('UPDATE categories SET ritual_step = $1 WHERE id = $2', [parseRitualStep(formData.get('ritual_step')), id]);
+    }
 
     // Replace product associations only when the request says which products belong here.
     // Without this check, saving from a form that doesn't send product_ids emptied the category.

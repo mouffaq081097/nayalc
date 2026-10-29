@@ -14,6 +14,7 @@ import { SearchBox } from '../../_components/IndexToolbar';
 import { ImageSlot, Thumb } from '../../_components/ImageSlot';
 import { apiErrorMessage, brandName, fmtAed, productStatus, stockState } from '../../products/_components/productAdmin';
 import { categoryStatus, isValidSlug, slugify } from './categoryAdmin';
+import { RITUAL_STEPS, suggestRitualStep } from '@/lib/ritualRules';
 
 // Every new image is uploaded in the same save request, and Vercel rejects request bodies over 4.5 MB
 const UPLOAD_WARNING_BYTES = 4 * 1024 * 1024;
@@ -24,7 +25,15 @@ const initialForm = (category) => ({
   slug: category?.slug || '',
   parentId: category?.parentId ? String(category.parentId) : '',
   isActive: category?.isActive !== false,
+  ritualStep: category?.ritualStep || '',
 });
+// "Automatic" says what the collection's name suggests; products still go by their own names first
+const ritualAutoLabel = (name) => {
+  const step = suggestRitualStep(name);
+  if (step === 'none') return 'Automatic: not part of the ritual';
+  const label = RITUAL_STEPS.find(s => s.key === step)?.label;
+  return label ? `Automatic: ${label}` : "Automatic: from each product's name";
+};
 const initialProductIds = (category) => (category?.products || []).map(p => p.id);
 const initialImage = (url) => (url ? { url } : null);
 
@@ -197,6 +206,7 @@ export default function CategoryEditor({ category, onSaved }) {
     fd.append('slug', form.slug.trim());
     fd.append('parent_id', form.parentId);
     fd.append('product_ids', productIds.join(','));
+    fd.append('ritual_step', form.ritualStep);
     if (image?.file) fd.append('image', image.file);
     else fd.append('image_url', image?.url || 'null');
     if (banner?.file) fd.append('banner', banner.file);
@@ -451,6 +461,20 @@ export default function CategoryEditor({ category, onSaved }) {
                   {adminCategories.filter(c => c.id !== category?.id).map(c => (
                     <option key={c.id} value={String(c.id)}>{c.name}</option>
                   ))}
+                </select>
+              </Field>
+            </Card>
+
+            <Card title="Ritual step">
+              <Field
+                label="Step"
+                htmlFor="ritualStep"
+                hint="Where this collection's products go in the homepage's Cleanse → Treat → Protect ritual and in “Complete your routine” on product pages."
+              >
+                <select id="ritualStep" value={form.ritualStep} onChange={e => setField('ritualStep', e.target.value)} className="sp-input cursor-pointer">
+                  <option value="">{ritualAutoLabel(form.name)}</option>
+                  {RITUAL_STEPS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+                  <option value="none">Not part of the ritual</option>
                 </select>
               </Field>
             </Card>

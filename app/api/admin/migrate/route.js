@@ -9,6 +9,7 @@ import { REVIEW_REQUEST_MIGRATION_SQL } from '@/lib/reviewRequests';
 import { STOCK_ALERTS_MIGRATION_SQL } from '@/lib/stockAlerts';
 import { SIZE_GROUP_MIGRATION_SQL } from '@/lib/sizeGroups';
 import { GUEST_CHECKOUT_MIGRATION_SQL } from '@/lib/guestCheckout';
+import { RITUAL_STEP_MIGRATION_SQL } from '@/lib/ritualSteps';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -140,6 +141,11 @@ export async function POST(request) {
                 // Guest checkout addresses kept out of an existing account's address book — also added on first use by ensureGuestCheckoutColumns() in lib/guestCheckout.js
                 name: '020_guest_checkout',
                 sql: GUEST_CHECKOUT_MIGRATION_SQL,
+            },
+            {
+                // Each collection's step in the Cleanse → Treat → Protect ritual — also added on first use by ensureRitualStepColumn() in lib/ritualSteps.js
+                name: '021_ritual_steps',
+                sql: RITUAL_STEP_MIGRATION_SQL,
             },
         ];
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
-import { LAVENDER, INK, BORDER, WELL, EYEBROW, SECTION_TITLE } from './theme';
+import { INK, BORDER, WELL, EYEBROW, SECTION_TITLE } from './theme';
 import { useT } from '@/app/context/LocaleContext';
 
 const lines = (text) => (text || '').split('\n').map(s => s.trim()).filter(Boolean);
@@ -39,8 +39,8 @@ export default function ProductDetails({ product }) {
       body: (
         <ul className="grid sm:grid-cols-2 gap-3">
           {lines(product.benefits).map((b, i) => (
-            <li key={i} className="flex items-start gap-3 rounded-xl p-3.5" style={{ background: WELL }}>
-              <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-px" style={{ background: LAVENDER }}>
+            <li key={i} className="flex items-start gap-3 p-3.5" style={{ background: WELL }}>
+              <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-px bg-[#111114]">
                 <Check size={11} className="text-white" strokeWidth={3} />
               </span>
               <span dir="auto" className="text-[14px] text-gray-700 leading-relaxed">{b.replace(/^[-•*]\s*/, '')}</span>
@@ -58,8 +58,7 @@ export default function ProductDetails({ product }) {
             <ol className="space-y-4">
               {lines(product.how_to_use).map((step, i) => (
                 <li key={i} className="flex items-start gap-4">
-                  <span className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[12px] font-bold tabular-nums"
-                    style={{ background: 'rgba(147,104,236,0.1)', color: LAVENDER }}>
+                  <span className="w-7 h-7 rounded-full border border-[#111114] text-[#111114] flex items-center justify-center flex-shrink-0 text-[12px] font-semibold tabular-nums">
                     {i + 1}
                   </span>
                   <p dir="auto" className="text-[14px] text-gray-600 leading-relaxed pt-1">{step.replace(/^\d+[.)]\s*/, '')}</p>
@@ -69,7 +68,7 @@ export default function ProductDetails({ product }) {
           )}
           {/^https?:\/\//.test(product.how_to_use_video || '') && (
             <video src={product.how_to_use_video} controls preload="metadata" playsInline
-              className="w-full rounded-2xl bg-black aspect-video" />
+              className="w-full bg-black aspect-video" />
           )}
         </div>
       ),
@@ -98,7 +97,8 @@ export default function ProductDetails({ product }) {
   });
 
   return (
-    <section id="details" className="scroll-mt-28">
+    // The page wraps this in #details (ProductClient), the target of "Read more" and the section links
+    <section>
       <div className="space-y-1 mb-5">
         <p className={EYEBROW}>{t('The details')}</p>
         <h2 className={SECTION_TITLE}>{t('About this product')}</h2>
@@ -111,9 +111,9 @@ export default function ProductDetails({ product }) {
             <button key={s.id} role="tab" id={`tab-${s.id}`} aria-selected={active === s.id} aria-controls={`panel-${s.id}`}
               onClick={() => setActive(s.id)}
               className="relative px-4 py-3 text-[14px] font-semibold transition-colors"
-              style={{ color: active === s.id ? INK : '#9ca3af' }}>
+              style={{ color: active === s.id ? INK : '#6b6b73' }}>
               {s.label}
-              {active === s.id && <span className="absolute inset-x-3 -bottom-px h-[2px] rounded-full" style={{ background: LAVENDER }} />}
+              {active === s.id && <span className="absolute inset-x-3 -bottom-px h-[2px] bg-[#111114]" />}
             </button>
           ))}
         </div>
@@ -125,17 +125,17 @@ export default function ProductDetails({ product }) {
       </div>
 
       {/* Mobile accordion */}
-      <div className="md:hidden rounded-2xl overflow-hidden" style={{ border: `1px solid ${BORDER}` }}>
-        {sections.map((s, i) => {
+      <div className="md:hidden border-t border-[#ececec]">
+        {sections.map((s) => {
           const open = openMobile.has(s.id);
           return (
-            <div key={s.id} style={i > 0 ? { borderTop: `1px solid ${BORDER}` } : undefined}>
+            <div key={s.id} className="border-b border-[#ececec]">
               <button onClick={() => toggleMobile(s.id)} aria-expanded={open}
-                className="w-full flex items-center justify-between px-4 py-4 text-start">
+                className="w-full flex items-center justify-between py-4 text-start">
                 <span className="text-[15px] font-semibold" style={{ color: INK }}>{s.label}</span>
-                <ChevronDown size={18} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                <ChevronDown size={18} className={`text-[#111114] transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
-              <div hidden={!open} className="px-4 pb-5">{s.body}</div>
+              <div hidden={!open} className="pb-5">{s.body}</div>
             </div>
           );
         })}

@@ -1,4 +1,5 @@
 import { headingFont } from '../../../components/home/headingFont';
+import { formatAED } from '../../../lib/utils';
 
 // Product page palette — taken from the homepage sections (BestSellers,
 // Categories, HeroSection) so the two read as one store:
@@ -14,11 +15,8 @@ export const BORDER = '#e5e7eb';                   // gray-200, homepage card bo
 export const DIVIDER = '#f3f4f6';                  // gray-100
 export const WELL = '#f6f5f2';                     // the warm off-white product panel used across the store
 
-/** Whole dirhams render bare, anything else keeps its fils: AED 120, AED 89.50. */
-export function aed(value) {
-  const n = Number(value) || 0;
-  return `AED ${Number.isInteger(n) ? n : n.toFixed(2)}`;
-}
+/** Whole dirhams render bare, anything else keeps its fils: AED 120, AED 89.50, AED 1,043.49. */
+export const aed = formatAED;
 
 /** Primary button — ink black, like every primary button on the storefront. */
 export const BUTTON = 'text-white bg-[#111114] hover:bg-[#2a2a31] disabled:hover:bg-[#111114]';

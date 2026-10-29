@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { requireAdmin } from '@/lib/adminAuth';
+import { hasRitualStepColumn, parseRitualStep } from '@/lib/ritualSteps';
 
 /**
  * @swagger
@@ -20,12 +21,14 @@ export async function GET(request) {
   const isAdmin = searchParams.get('admin') === 'true';
   try {
     const activeFilter = isAdmin ? '' : 'WHERE c.is_active = true';
+    // The ritual step (lib/ritualSteps.js) feeds the homepage ritual and "Complete your routine"
+    const step = (await hasRitualStepColumn()) ? ['c.ritual_step as "ritualStep",', ', c.ritual_step'] : ['', ''];
     const sql = `
-      SELECT c.id, c.name, c.slug, c.description, c.image_url as "imageUrl", c.banner_url as "bannerUrl", c.parent_id as "parentId", c.is_active as "isActive", COUNT(cp.product_id) as "productsCount"
+      SELECT c.id, c.name, c.slug, c.description, c.image_url as "imageUrl", c.banner_url as "bannerUrl", c.parent_id as "parentId", c.is_active as "isActive", ${step[0]} COUNT(cp.product_id) as "productsCount"
       FROM categories c
       LEFT JOIN category_products cp ON c.id = cp.category_id
       ${activeFilter}
-      GROUP BY c.id, c.name, c.slug, c.description, c.image_url, c.banner_url, c.parent_id, c.is_active
+      GROUP BY c.id, c.name, c.slug, c.description, c.image_url, c.banner_url, c.parent_id, c.is_active${step[1]}
       ORDER BY c.name ASC
     `;
     const { rows } = await db.query(sql);
@@ -106,6 +109,9 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Category name is required.' }, { status: 400 });
     }
 
+    // Before BEGIN: adding the column locks the table, which would wait on this transaction
+    const saveRitualStep = formData.has('ritual_step') && await hasRitualStepColumn();
+
     await client.query('BEGIN');
 
     // Generate unique slug
@@ -138,6 +144,10 @@ export async function POST(request) {
     const categorySql = 'INSERT INTO categories (name, description, image_url, banner_url, slug, parent_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id';
     const { rows: categoryRows } = await client.query(categorySql, [name, description, imageUrl, bannerUrl, slug, parentId ? parseInt(parentId) : null]);
     const newCategoryId = categoryRows[0].id;
+
+    if (saveRitualStep) {
+      await client.query('UPDATE categories SET ritual_step = $1 WHERE id = $2', [parseRitualStep(formData.get('ritual_step')), newCategoryId]);
+    }
 
     if (productIdsString) {
       const product_ids = productIdsString.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id) && id > 0);

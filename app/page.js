@@ -9,8 +9,12 @@ import { CategoryStrip } from './components/home/CategoryStrip';
 import { JournalSection } from './components/JournalSection';
 import { StoryVideos } from './components/home/StoryVideos';
 import { SocialFeed } from './components/SocialFeed';
+import { ServiceFacts } from './components/home/ServiceFacts';
+import { CustomerReviews } from './components/home/CustomerReviews';
+import { RitualSection } from './components/home/RitualSection';
 import db from '@/lib/db';
 import { getActiveCampaign } from '@/lib/campaigns';
+import { getReviewHighlights, MIN_REVIEW_HIGHLIGHTS } from '@/lib/reviewHighlights';
 
 // Re-read hero slides and the campaign at most a minute late, so a scheduled
 // campaign starts on time without a deploy (the banner hides itself when it ends).
@@ -27,12 +31,19 @@ async function getHeroSlides() {
 }
 
 export default async function HomePage() {
-    const [dbSlides, campaign] = await Promise.all([getHeroSlides(), getActiveCampaign()]);
+    const [dbSlides, campaign, highlights] = await Promise.all([
+        getHeroSlides(),
+        getActiveCampaign(),
+        getReviewHighlights().catch(() => []),
+    ]);
+    // Real reviews only appear once there are enough to fill the row
+    const reviews = highlights.length >= MIN_REVIEW_HIGHLIGHTS ? highlights : [];
 
     return (
-        // After Pitaka: the GERnétic range right after the hero; the perfume and
-        // Zorah photos are each followed by that brand's products; the shopping
-        // help (shop by concern) follows the GERnétic banner. The footer (Footer.js) closes with "Glow with Naya Lumière".
+        // After Pitaka: the GERnétic range right after the hero (returning customers'
+        // own rows first); the perfume and Zorah photos are each followed by that
+        // brand's products; the GERnétic banner leads into its buyable ritual. The
+        // footer (Footer.js) closes with "Glow with Naya Lumière".
         <div className="flex flex-col bg-white min-h-screen">
             <HeroSection dbSlides={dbSlides} />
 
@@ -42,15 +53,24 @@ export default async function HomePage() {
             {/* Only with items in the bag */}
             <FreeShippingNote />
 
-            {/* GERnétic first: the brand's range straight after the hero */}
-            <BrandProducts brand="gernetic" title="Explore GERnétic skincare" cardVariant="gallery" />
+            {/* Delivery, returns and Tabby, before anyone opens a product */}
+            <ServiceFacts />
 
-            {/* Only when they apply: a live campaign, a returning customer */}
-            <CampaignBanner campaign={campaign} />
+            {/* Returning customers: their own products first (each row only when it applies) */}
             <BuyAgainShelf />
             <RecentlyViewedShelf />
 
+            {/* GERnétic first: the brand's range straight after the hero */}
+            <BrandProducts brand="gernetic" title="Explore GERnétic skincare" cardVariant="gallery" />
+
+            {/* Only while a campaign is live */}
+            <CampaignBanner campaign={campaign} />
+
             <BestSellers />
+
+            {/* Help choosing, then what customers say */}
+            <ShopByConcern />
+            <CustomerReviews reviews={reviews} />
 
             {/* GERnétic */}
             <FeatureBanner
@@ -64,9 +84,8 @@ export default async function HomePage() {
                 text="Cleanse, treat, protect: the full GERnétic range, from the cleansing milk to the night cream."
                 cta={{ label: 'Shop the range', href: '/brand/gernetic-international' }}
             />
-
-            {/* Help choosing */}
-            <ShopByConcern />
+            {/* The banner's three steps, each with a product, to add in one tap */}
+            <RitualSection />
 
             {/* Naya Lumière Perfumes: the dark banner flows into the black product band */}
             <FeatureBanner

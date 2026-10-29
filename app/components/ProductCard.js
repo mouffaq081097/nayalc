@@ -17,6 +17,8 @@ import { shortBrand } from '@/lib/seo';
 import { cardName } from './home/HomeProductCard';
 import { useSignIn } from '@/app/context/SignInContext';
 import { useLocale } from '@/app/context/LocaleContext';
+import { isInGuestWishlist, toggleGuestWishlist, GUEST_WISHLIST_EVENT } from '@/lib/guestWishlist';
+import { guestSavedToast } from './GuestWishlist';
 
 // Cloud Luxe accent for card badges (rank, best seller, saving)
 const LAVENDER = 'rgb(147,104,236)';
@@ -68,6 +70,15 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
 
   const showComparePrice = originalPrice && originalPrice > price;
   const productUrl = `/product/${slug || id}`;
+
+  // Signed out, the heart shows (and keeps) the wishlist saved in this browser
+  useEffect(() => {
+    if (isAuthenticated) return undefined;
+    const sync = () => setIsWishlisted(isInGuestWishlist(id));
+    sync();
+    window.addEventListener(GUEST_WISHLIST_EVENT, sync);
+    return () => window.removeEventListener(GUEST_WISHLIST_EVENT, sync);
+  }, [isAuthenticated, id]);
   const seoAlt = altText || `${name} - ${brandName || 'Luxury Beauty'} | nayalc.com`;
   const isLowStock = stock_quantity > 0 && stock_quantity < 5;
   // Sold out, but it takes pre-orders (lib/backorderRules.js)
@@ -131,7 +142,14 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
   const handleWishlistToggle = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) { openSignIn(); return; }
+    if (!isAuthenticated) {
+      // No account needed to save: kept in this browser, moved into the account at sign-in
+      const saved = toggleGuestWishlist(id);
+      setIsWishlisted(saved);
+      onWishlistChange?.(id, saved);
+      if (saved) guestSavedToast({ t, rich, openSignIn });
+      return;
+    }
     try {
       const method = isWishlisted ? 'DELETE' : 'POST';
       const response = await fetch('/api/wishlist', {

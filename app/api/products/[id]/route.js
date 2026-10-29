@@ -5,6 +5,7 @@ import { Buffer } from 'buffer'; // Import Buffer for converting File to Buffer
 import { requireAdmin } from '@/lib/adminAuth';
 import { ensureBackorderColumns, readBackorderFields, allocateStock, BACKORDER_SELECT } from '@/lib/backorders';
 import { getSizeOptions } from '@/lib/sizeGroups';
+import { refreshProductPages } from '@/lib/productPages';
 
 /**
  * @swagger
@@ -276,6 +277,7 @@ export async function PUT(request, context) {
         } catch (allocErr) {
             console.error(`Stock allocation for product ${id} failed:`, allocErr);
         }
+        refreshProductPages();
         return NextResponse.json({ message: 'Product updated successfully', ...allocation }, { status: 200 });
 
     } catch (error) {
@@ -307,6 +309,7 @@ export async function PATCH(request, context) {
             }
             throw dbErr;
         }
+        refreshProductPages();
         return NextResponse.json({ message: 'Product status updated', is_active });
     } catch (error) {
         console.error(`Error toggling product ${id}:`, error);
@@ -338,6 +341,7 @@ export async function DELETE(request, context) {
         }
 
         await client.query('COMMIT');
+        refreshProductPages();
         return NextResponse.json({ message: 'Product deleted successfully' }, { status: 200 });
     } catch (error) {
         await client.query('ROLLBACK');

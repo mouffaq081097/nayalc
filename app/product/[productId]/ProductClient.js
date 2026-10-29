@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use, useRef, useMemo } from 'react';
+import { useState, useEffect, use, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -8,7 +8,7 @@ import { useUser } from '../../context/UserContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import { Heart, Star, Plus, Minus, Check, ChevronRight, Truck, RotateCcw, ShieldCheck, Sparkles, MessageCircle } from 'lucide-react';
+import { Heart, Star, Plus, Minus, Check, ChevronRight, Truck, RotateCcw, ShieldCheck, Sparkles, MessageCircle, Maximize2 } from 'lucide-react';
 import Reviews from '../../components/Reviews';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppContext } from '../../context/AppContext';
@@ -22,8 +22,12 @@ import { getPreorderInfo, FREE_SHIPPING_FROM } from '@/lib/shipping';
 import { RETURN_WINDOW_DAYS } from '@/lib/policies';
 import { whatsappUrl } from '@/lib/contact';
 import { trackRecentlyViewed } from '../../hooks/useRecentlyViewed';
+import { relatedProducts, routineCompanions } from '@/lib/recommendations';
+import { ritualStepOf } from '@/lib/ritualRules';
+import { isInGuestWishlist, toggleGuestWishlist } from '@/lib/guestWishlist';
+import { guestSavedToast } from '../../components/GuestWishlist';
 
-import ProductGallery from './_components/ProductGallery';
+import ProductGallery, { Lightbox } from './_components/ProductGallery';
 import DeliveryCard from './_components/DeliveryCard';
 import ProductDetails from './_components/ProductDetails';
 import BoughtTogether from './_components/BoughtTogether';
@@ -45,7 +49,7 @@ function Stars({ rating, size = 14 }) {
   );
 }
 
-export default function ProductClient({ params, initialProduct }) {
+export default function ProductClient({ params, initialProduct, boughtWith = [] }) {
   const { openSignIn } = useSignIn();
   const { t, rich, date, locale } = useLocale();
   const resolvedParams = use(params);
@@ -53,7 +57,7 @@ export default function ProductClient({ params, initialProduct }) {
   const { addToCart, cartItems } = useCart();
   const { user } = useAuth();
   const { shippingAddresses, contactInfo } = useUser();
-  const { products: allProducts } = useAppContext();
+  const { products: allProducts, categories } = useAppContext();
   const router = useRouter();
 
   const [product, setProduct] = useState(initialProduct || null);
@@ -63,6 +67,8 @@ export default function ProductClient({ params, initialProduct }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  // Laptops: the stacked photo opened full screen (null = closed)
+  const [zoomAt, setZoomAt] = useState(null);
 
   const buyButtonRef = useRef(null);
 
@@ -76,7 +82,8 @@ export default function ProductClient({ params, initialProduct }) {
         data.price = parseFloat(data.price);
         if (data.comparedprice) data.comparedprice = parseFloat(data.comparedprice);
         if (data.averageRating) data.averageRating = parseFloat(data.averageRating);
-        setProduct(data);
+        // Merge: the page's own query also has the brand link, collection and skin concerns
+        setProduct((prev) => (prev ? { ...prev, ...data } : data));
         if (user?.id) {
           const wr = await fetch(`/api/wishlist?userId=${user.id}`);
           if (wr.ok) {
@@ -115,12 +122,13 @@ export default function ProductClient({ params, initialProduct }) {
     } catch {}
   }, [product?.id]);
 
-  // Sticky bar appears once the main buy button has scrolled out of view upwards
+  // The sticky bar shows whenever the main buy button is off screen: past it, and also
+  // before reaching it, since on phones the page opens with the button below the first screen
   useEffect(() => {
     const el = buyButtonRef.current;
     if (!el || !product) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setShowStickyBar(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
       { threshold: 0 }
     );
     observer.observe(el);
@@ -158,8 +166,19 @@ export default function ProductClient({ params, initialProduct }) {
     setTimeout(() => setIsAdded(false), 2000);
   };
 
+  // Signed out, the heart reflects the wishlist saved in this browser
+  useEffect(() => {
+    if (!user && product?.id) setIsWishlisted(isInGuestWishlist(product.id));
+  }, [user, product?.id]);
+
   const handleWishlistToggle = async () => {
-    if (!user) { openSignIn(); return; }
+    if (!user) {
+      // No account needed to save: kept in this browser, moved into the account at sign-in
+      const saved = toggleGuestWishlist(product.id);
+      setIsWishlisted(saved);
+      if (saved) guestSavedToast({ t, rich, openSignIn });
+      return;
+    }
     try {
       const method = isWishlisted ? 'DELETE' : 'POST';
       const response = await fetch(
@@ -176,16 +195,35 @@ export default function ProductClient({ params, initialProduct }) {
     companions.forEach(p => addToCart({ ...p, stock_quantity: p.stockQuantity ?? p.stock_quantity }, 1));
   };
 
-  const recommendations = useMemo(() => {
-    if (!product || !allProducts) return [];
-    return allProducts.filter(p => p.id !== product.id && (p.brand === product.brand || p.categoryNames === product.categoryNames)).slice(0, 8);
-  }, [product, allProducts]);
+  // Other sizes are their own products (lib/sizeGroups.js): never suggested as extras
+  const sizeIds = useMemo(() => (product?.sizeOptions || []).map(o => Number(o.id)), [product]);
 
-  // Companions must be purchasable — an out-of-stock add would silently fail
-  const btCompanions = useMemo(
-    () => recommendations.filter(p => Number(p.stockQuantity ?? p.stock_quantity ?? 1) > 0).slice(0, 2),
-    [recommendations]
+  // "Frequently bought together" from real orders (page.js, lib/boughtTogether.js). Without
+  // enough orders: the other steps of the ritual, "Complete your routine" (lib/recommendations.js).
+  // Only products that can be bought — an out-of-stock add would silently fail.
+  const { companions, fromOrders } = useMemo(() => {
+    if (!product || !allProducts?.length) return { companions: [], fromOrders: false };
+    const ordered = boughtWith
+      .map(b => allProducts.find(p => Number(p.id) === Number(b.id)))
+      .filter(p => p && orderableQty(p) > 0 && !sizeIds.includes(Number(p.id)))
+      .slice(0, 2);
+    if (ordered.length) return { companions: ordered, fromOrders: true };
+    const routine = routineCompanions(product, allProducts, categories, { exclude: sizeIds }).slice(0, 2);
+    return { companions: routine.map(p => ({ ...p, step: ritualStepOf(p, categories) })), fromOrders: false };
+  }, [product, allProducts, categories, boughtWith, sizeIds]);
+
+  // "You may also like": shared skin concerns and collections first, in stock, best sellers first
+  const recommendations = useMemo(
+    () => relatedProducts(product, allProducts || [], { exclude: [...sizeIds, ...companions.map(c => Number(c.id))] }),
+    [product, allProducts, sizeIds, companions]
   );
+
+  const photoCount = product?.images?.length || 1;
+  const zoomTo = useCallback((next) => setZoomAt((i) => {
+    const n = typeof next === 'function' ? next(i ?? 0) : next;
+    return Math.min(photoCount - 1, Math.max(0, n));
+  }), [photoCount]);
+  const closeZoom = useCallback(() => setZoomAt(null), []);
 
   // Other sizes are their own products, linked in the editor's Sizes card (lib/sizeGroups.js)
   const sizeOptions = product?.sizeOptions?.length > 1 ? product.sizeOptions : [];
@@ -225,13 +263,27 @@ export default function ProductClient({ params, initialProduct }) {
   const brandName = product.brand || 'Naya Lumière';
   const isHomemade = /crystal\s*bar/i.test(product.name || '');
   const lowStock = hasStockInfo && stock > 0 && stock <= 5;
-  const metaLine = [!sizeOptions.length && product.size, product.form].filter(Boolean).join(' · ');
+  // Skin concerns from Admin → Products, shown as "Good for" chips
+  const goodFor = product.concerns || [];
   const hasLongCopy = Boolean(product.long_description || product.benefits || product.how_to_use || product.ingredients);
 
   const brandIsFrench = !!product.brand && /gern[eé]t/i.test(product.brand);
   const brandIsEmirati = !!product.brand && /naya\s*lumi[eè]?re?\s*perfumes?/i.test(product.brand);
   const ctaLabel = outOfStock ? t('Out of stock') : preorderOnly ? t('Pre-order') : t('Add to cart');
   const shipByLabel = date(preorderShipBy);
+
+  const overview = (open) => (
+    <details open={open} className="group mt-6 border-t border-[#ececec] pt-4">
+      <summary className="flex cursor-pointer list-none items-center justify-between text-[13.5px] font-semibold text-[#111114]">
+        {t('Overview')}
+        <Minus size={16} className="hidden group-open:block" /><Plus size={16} className="group-open:hidden" />
+      </summary>
+      <p dir="auto" className="mt-3 text-[14px] leading-relaxed text-gray-600">
+        {product.description}
+        {hasLongCopy && <a href="#details" className="ms-1.5 whitespace-nowrap text-[13px] font-medium text-[#111114] underline underline-offset-4">{t('Read more')}</a>}
+      </p>
+    </details>
+  );
 
   return (
     <div className="relative min-h-screen bg-white text-gray-900 overflow-x-clip">
@@ -292,7 +344,15 @@ export default function ProductClient({ params, initialProduct }) {
         </div>
         <div className="hidden lg:block">
           {allImages.map((src, i) => (
-            <div key={src + i} className="relative aspect-square" style={{ background: WELL }}>
+            // Each photo opens full screen, to read the box and the ingredients
+            <button
+              key={src + i}
+              type="button"
+              onClick={() => setZoomAt(i)}
+              aria-label={t('Open photo {n} of {count} full screen', { n: i + 1, count: allImages.length })}
+              className="group relative block w-full aspect-square cursor-zoom-in"
+              style={{ background: WELL }}
+            >
               <Image
                 src={src}
                 alt={i === 0 ? product.name : t('{name}, photo {n}', { name: product.name, n: i + 1 })}
@@ -309,8 +369,12 @@ export default function ProductClient({ params, initialProduct }) {
               {i === 0 && hasDiscount && (
                 <span className="absolute top-6 start-6 rounded-full px-2.5 py-1 text-[12px] font-semibold text-white" style={{ background: LAVENDER }} dir="ltr">−{discountPct}%</span>
               )}
-            </div>
+              <span aria-hidden="true" className="absolute top-6 end-6 flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[11.5px] font-medium text-[#111114] shadow-sm opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                <Maximize2 size={13} /> {t('Click to zoom')}
+              </span>
+            </button>
           ))}
+          <Lightbox images={allImages} name={product.name} open={zoomAt !== null} index={zoomAt ?? 0} onIndex={zoomTo} onClose={closeZoom} />
         </div>
 
         {/* Buying panel — stays in view while the photos scroll past */}
@@ -357,7 +421,38 @@ export default function ProductClient({ params, initialProduct }) {
                 </>
               )}
             </div>
-            <p className="mt-1.5 text-[12px] text-[#6b6b73]">{t('VAT included')}{metaLine && <> · <bdi>{metaLine}</bdi></>}</p>
+            <p className="mt-1.5 text-[12px] text-[#6b6b73]">{t('VAT included')}</p>
+
+            {/* Who it's for and what it is, at a glance */}
+            {(goodFor.length > 0 || product.form || (!sizeOptions.length && product.size)) && (
+              <dl className="mt-5 grid gap-2.5 text-[13px]">
+                {goodFor.length > 0 && (
+                  <div className="flex items-baseline gap-3">
+                    <dt className="w-[76px] shrink-0 text-[#6b6b73]">{t('Good for')}</dt>
+                    <dd className="flex flex-wrap gap-1.5">
+                      {goodFor.map((c) => (
+                        <Link key={c.id} href={`/all-products?concern=${encodeURIComponent(c.slug || c.id)}`}
+                          className="rounded-full border border-[#d4d4d8] px-3 py-1 text-[12.5px] text-[#111114] transition-colors hover:border-[#111114]">
+                          {t(c.name)}
+                        </Link>
+                      ))}
+                    </dd>
+                  </div>
+                )}
+                {product.form && (
+                  <div className="flex items-baseline gap-3">
+                    <dt className="w-[76px] shrink-0 text-[#6b6b73]">{t('Texture')}</dt>
+                    <dd className="font-medium text-[#111114]"><bdi>{t(product.form)}</bdi></dd>
+                  </div>
+                )}
+                {!sizeOptions.length && product.size && (
+                  <div className="flex items-baseline gap-3">
+                    <dt className="w-[76px] shrink-0 text-[#6b6b73]">{t('Size')}</dt>
+                    <dd className="font-medium text-[#111114]"><bdi>{product.size}</bdi></dd>
+                  </div>
+                )}
+              </dl>
+            )}
 
             {/* Size: each option is its own product, with its own price and stock */}
             {sizeOptions.length > 0 && (
@@ -381,19 +476,8 @@ export default function ProductClient({ params, initialProduct }) {
               </nav>
             )}
 
-            {/* Short description, folded like Pitaka's highlights */}
-            {product.description && (
-              <details open className="group mt-6 border-t border-[#ececec] pt-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-[13.5px] font-semibold text-[#111114]">
-                  {t('Overview')}
-                  <Minus size={16} className="hidden group-open:block" /><Plus size={16} className="group-open:hidden" />
-                </summary>
-                <p dir="auto" className="mt-3 text-[14px] leading-relaxed text-gray-600">
-                  {product.description}
-                  {hasLongCopy && <a href="#details" className="ms-1.5 whitespace-nowrap text-[13px] font-medium text-[#111114] underline underline-offset-4">{t('Read more')}</a>}
-                </p>
-              </details>
-            )}
+            {/* Short description. Laptops: open, above the buy button. Phones: folded, under the delivery card (below), so the button comes first */}
+            {product.description && <div className="hidden lg:block">{overview(true)}</div>}
 
             {/* Stock */}
             {hasStockInfo && (
@@ -456,6 +540,8 @@ export default function ProductClient({ params, initialProduct }) {
               <DeliveryCard user={user} shippingAddresses={shippingAddresses} contactName={contactInfo?.name} cartItems={cartItems} quantity={quantity} />
             </div>
 
+            {product.description && <div className="lg:hidden">{overview(false)}</div>}
+
             <ul className="mt-5 grid grid-cols-3 gap-2 text-center">
               {[
                 { icon: Truck, title: t('Free shipping'), sub: t('On {n}+ items', { n: FREE_SHIPPING_FROM }), href: '/shipping-returns#delivery' },
@@ -511,12 +597,12 @@ export default function ProductClient({ params, initialProduct }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Details + bundle ── */}
         <div id="details" className="scroll-mt-28 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 pb-14 md:pb-20">
-          <div className={`min-w-0 ${btCompanions.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
+          <div className={`min-w-0 ${companions.length > 0 ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
             <ProductDetails product={product} />
           </div>
-          {btCompanions.length > 0 && (
+          {companions.length > 0 && (
             <div className="min-w-0 lg:col-span-5">
-              <BoughtTogether product={product} image={allImages[0]} companions={btCompanions} onAddAll={handleBundleAdd} disabled={outOfStock} />
+              <BoughtTogether product={product} image={allImages[0]} companions={companions} fromOrders={fromOrders} onAddAll={handleBundleAdd} disabled={outOfStock} />
             </div>
           )}
         </div>

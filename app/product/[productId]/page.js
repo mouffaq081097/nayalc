@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import db from '@/lib/db';
 import ProductClient from './ProductClient';
@@ -6,11 +7,21 @@ import { ensureBackorderColumns, BACKORDER_SELECT } from '@/lib/backorders';
 import { getSizeOptions } from '@/lib/sizeGroups';
 import { shelfStock, isPreorderOnly, leadDays } from '@/lib/backorderRules';
 import { SITE, plainText, productTitle } from '@/lib/seo';
+import { getBoughtTogether } from '@/lib/boughtTogether';
+
+// Each page is kept ready for a minute, like the homepage, and rebuilt as soon as
+// the product is saved in Admin (revalidatePath in the product routes). Stock and
+// price are checked again in the bag and at checkout.
+export const revalidate = 60;
+// Pages are built on their first visit, not at deploy time
+export async function generateStaticParams() {
+  return [];
+}
 
 // JSON-LD goes straight into the HTML, so a "</script>" inside product text must not be able to end the tag
 const jsonLd = (data) => ({ __html: JSON.stringify(data).replace(/</g, '\\u003c') });
 
-async function getProductBySlugOrId(identifier) {
+async function loadProduct(identifier) {
   await ensureBackorderColumns();
   // Try slug first, then fallback to ID if it's numeric
   let productSql = `
@@ -56,9 +67,18 @@ async function getProductBySlugOrId(identifier) {
   product.images = imageRows.map(row => row.image_url);
   // Other sizes of this product (lib/sizeGroups.js); a failure just hides the choice
   product.sizeOptions = await getSizeOptions(product.id).catch(() => []);
+  // Its skin concerns (Admin → Products), shown as "Good for" chips
+  product.concerns = await db.query(
+    `SELECT c.id, c.name, c.slug FROM product_concerns pc JOIN concerns c ON c.id = pc.concern_id
+      WHERE pc.product_id = $1 ORDER BY c.name`,
+    [product.id],
+  ).then((r) => r.rows, () => []);
 
   return product;
 }
+
+// The page title and the page itself ask for the same product: read it once per visit
+const getProductBySlugOrId = cache(loadProduct);
 
 export async function generateMetadata({ params }) {
   const { productId } = await params;
@@ -111,6 +131,8 @@ export default async function ProductPage({ params }) {
 
   // A real 404 rather than a page that says "not found" with a 200, which Google files as a soft 404
   if (!product) notFound();
+  // Products found in the same orders as this one (lib/boughtTogether.js)
+  const boughtWith = await getBoughtTogether(product.id).catch(() => []);
 
   const productUrl = `${SITE}/product/${product.slug || product.id}`;
   const nextYear = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
@@ -212,7 +234,7 @@ export default async function ProductPage({ params }) {
           load, so they never reached the HTML Google reads */}
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(productJsonLd)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(breadcrumbJsonLd)} />
-      <ProductClient params={Promise.resolve({ productId })} initialProduct={product} />
+      <ProductClient params={Promise.resolve({ productId })} initialProduct={product} boughtWith={boughtWith} />
     </>
   );
 }

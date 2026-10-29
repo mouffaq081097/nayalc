@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Maximize2 } from 'lucide-react';
@@ -8,9 +8,8 @@ import { LAVENDER, BORDER, WELL } from './theme';
 import { useLocale, useT } from '@/app/context/LocaleContext';
 
 /**
- * Product gallery: vertical thumbnail rail on desktop, swipe + dots + a
- * horizontal thumbnail strip on mobile, and a full-screen lightbox with
- * keyboard navigation.
+ * Product gallery (phones and tablets): swipe + dots + a thumbnail strip, and
+ * the full-screen Lightbox below on a tap.
  */
 export default function ProductGallery({ images, name, discountPct, badge }) {
   const { t, dir } = useLocale();
@@ -25,22 +24,6 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
   // A different product (client navigation) starts on its first image
   const firstImage = images[0];
   useEffect(() => { setIndex(0); }, [firstImage]);
-
-  useEffect(() => {
-    if (!zoomed) return;
-    const onKey = (e) => {
-      if (e.key === 'Escape') setZoomed(false);
-      if (e.key === 'ArrowRight') go(i => i + sign);
-      if (e.key === 'ArrowLeft') go(i => i - sign);
-    };
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [zoomed, sign]);
 
   const onSwipe = (_, { offset }) => {
     if (offset.x < -50) go(i => i + sign);
@@ -143,70 +126,108 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
         </div>
       </div>
 
-      {/* Lightbox */}
-      <AnimatePresence>
-        {zoomed && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[500] flex items-center justify-center p-3 md:p-8"
-            style={{ background: 'rgba(29,6,51,0.7)', backdropFilter: 'blur(8px)' }}
-            onClick={() => setZoomed(false)}
-            role="dialog" aria-modal="true" aria-label={t('{name} images', { name })}>
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
-              className="relative flex flex-col bg-white rounded-3xl overflow-hidden shadow-2xl"
-              style={{ width: 'min(860px, 96vw)', maxHeight: '92vh' }}
-              onClick={e => e.stopPropagation()}>
-
-              <button onClick={() => setZoomed(false)} aria-label={t('Close')}
-                className="absolute top-3 end-3 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow flex items-center justify-center">
-                <X size={16} className="text-gray-600" />
-              </button>
-              {count > 1 && (
-                <div className="absolute top-3 start-3 z-10 px-2.5 py-1 rounded-full text-white text-[11px] font-semibold tabular-nums" style={{ background: 'rgba(17,24,39,0.6)' }}>
-                  {index + 1} / {count}
-                </div>
-              )}
-
-              <div className="relative flex items-center justify-center" style={{ background: WELL, height: count > 1 ? 'min(70vh, 640px)' : 'min(80vh, 720px)' }}>
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div key={index}
-                    initial={{ opacity: 0, x: 20 * sign }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 * sign }}
-                    transition={{ duration: 0.18 }}
-                    className="absolute inset-0"
-                    drag={count > 1 ? 'x' : false} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.12}
-                    onDragEnd={onSwipe}>
-                    {images[index] && (
-                      <Image src={images[index]} alt={t('{name} — image {n}', { name, n: index + 1 })}
-                        fill sizes="860px" className="object-contain p-2 md:p-6 pointer-events-none select-none" />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-                {count > 1 && (
-                  <>
-                    <ArrowButton side="prev" always disabled={index === 0} onClick={() => go(i => i - 1)} />
-                    <ArrowButton side="next" always disabled={index === count - 1} onClick={() => go(i => i + 1)} />
-                  </>
-                )}
-              </div>
-
-              {count > 1 && (
-                <div className="flex items-center justify-center gap-2 px-4 py-3 border-t overflow-x-auto" style={{ borderColor: BORDER }}>
-                  {images.map((img, i) => (
-                    <button key={i} onClick={() => go(i)} aria-label={t('Show image {n}', { n: i + 1 })}
-                      className="relative w-14 h-14 rounded-lg overflow-hidden border-2 shrink-0 transition-all"
-                      style={{ borderColor: index === i ? LAVENDER : 'transparent', background: WELL }}>
-                      <Image src={img} alt="" fill sizes="56px" className="object-contain p-1" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Lightbox images={images} name={name} open={zoomed} index={index} onIndex={go} onClose={() => setZoomed(false)} />
     </>
+  );
+}
+
+/**
+ * The full-screen photo viewer: arrows, swipe, thumbnails, ← → and Esc. Used by
+ * the phone gallery above and by the stacked photos on laptops (ProductClient).
+ * `onIndex(n | fn)` moves to a photo; the owner keeps the index.
+ */
+export function Lightbox({ images, name, open, index, onIndex, onClose }) {
+  const { t, dir } = useLocale();
+  const sign = dir === 'rtl' ? -1 : 1;
+  const count = images.length;
+  // The latest callbacks, so the key listener isn't re-added on every render
+  const actions = useRef({ onIndex, onClose });
+  actions.current = { onIndex, onClose };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') actions.current.onClose();
+      if (e.key === 'ArrowRight') actions.current.onIndex(i => i + sign);
+      if (e.key === 'ArrowLeft') actions.current.onIndex(i => i - sign);
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open, sign]);
+
+  const onSwipe = (_, { offset }) => {
+    if (offset.x < -50) onIndex(i => i + sign);
+    else if (offset.x > 50) onIndex(i => i - sign);
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[500] flex items-center justify-center p-3 md:p-8"
+          style={{ background: 'rgba(17,17,20,0.78)' }}
+          onClick={onClose}
+          role="dialog" aria-modal="true" aria-label={t('{name} images', { name })}>
+          <motion.div
+            initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.97, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+            className="relative flex flex-col bg-white overflow-hidden shadow-2xl"
+            style={{ width: 'min(960px, 96vw)', maxHeight: '94vh' }}
+            onClick={e => e.stopPropagation()}>
+
+            <button onClick={onClose} aria-label={t('Close')}
+              className="absolute top-3 end-3 z-10 w-10 h-10 rounded-full bg-white hover:bg-[#f6f5f2] shadow flex items-center justify-center">
+              <X size={17} className="text-[#111114]" />
+            </button>
+            {count > 1 && (
+              <div className="absolute top-4 start-4 z-10 px-2.5 py-1 rounded-full text-white text-[11px] font-semibold tabular-nums bg-black/55">
+                {index + 1} / {count}
+              </div>
+            )}
+
+            <div className="relative flex items-center justify-center" style={{ background: WELL, height: count > 1 ? 'min(74vh, 720px)' : 'min(84vh, 800px)' }}>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div key={index}
+                  initial={{ opacity: 0, x: 20 * sign }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 * sign }}
+                  transition={{ duration: 0.18 }}
+                  className="absolute inset-0"
+                  drag={count > 1 ? 'x' : false} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.12}
+                  onDragEnd={onSwipe}>
+                  {images[index] && (
+                    <Image src={images[index]} alt={t('{name} — image {n}', { name, n: index + 1 })}
+                      fill sizes="(min-width: 1024px) 960px, 100vw" className="object-contain p-2 md:p-8 pointer-events-none select-none mix-blend-multiply" />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+              {count > 1 && (
+                <>
+                  <ArrowButton side="prev" always disabled={index === 0} onClick={() => onIndex(i => i - 1)} />
+                  <ArrowButton side="next" always disabled={index === count - 1} onClick={() => onIndex(i => i + 1)} />
+                </>
+              )}
+            </div>
+
+            {count > 1 && (
+              <div className="flex items-center justify-center gap-2 px-4 py-3 border-t overflow-x-auto" style={{ borderColor: BORDER }}>
+                {images.map((img, i) => (
+                  <button key={i} onClick={() => onIndex(i)} aria-label={t('Show image {n}', { n: i + 1 })} aria-current={index === i}
+                    className="relative w-14 h-14 overflow-hidden border shrink-0 transition-colors"
+                    style={{ borderColor: index === i ? '#111114' : 'transparent', background: WELL }}>
+                    <Image src={img} alt="" fill sizes="56px" className="object-contain p-1 mix-blend-multiply" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

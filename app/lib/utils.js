@@ -23,7 +23,10 @@ export const formatPrice = (price) => {
  */
 export const formatAED = (amount) => {
     const value = Number(amount) || 0;
-    return `AED ${Number.isInteger(value) ? value : value.toFixed(2)}`;
+    // Whole dirhams bare, otherwise two decimals; thousands grouped like the bag ("AED 1,043.49").
+    // No toLocaleString, so the server and the browser always print the same thing.
+    const [whole, fils] = (Number.isInteger(value) ? String(value) : value.toFixed(2)).split('.');
+    return `AED ${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}${fils ? `.${fils}` : ''}`;
 };
 
 export const truncateText = (text, maxLength = 48) => {

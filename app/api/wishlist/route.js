@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireSelf } from '@/lib/requireSelf';
+
+// Each customer reads and changes only their own wishlist (admins any): the userId
+// comes from the request, so it is checked against the session (lib/requireSelf.js).
 
 /**
  * @swagger
@@ -20,6 +24,8 @@ export async function GET(request) {
     if (!userId) {
         return NextResponse.json({ message: 'User ID is required.' }, { status: 400 });
     }
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
 
     try {
         const sql = `
@@ -77,6 +83,8 @@ export async function POST(request) {
     if (!userId || !productId) {
         return NextResponse.json({ message: 'User ID and Product ID are required.' }, { status: 400 });
     }
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
 
     try {
         const { rows } = await db.query('SELECT * FROM user_wishlists WHERE user_id = $1 AND product_id = $2', [userId, productId]);
@@ -125,6 +133,8 @@ export async function DELETE(request) {
     if (!userId || !productId) {
         return NextResponse.json({ message: 'User ID and Product ID are required.' }, { status: 400 });
     }
+    const refused = await requireSelf(request, userId);
+    if (refused) return refused;
 
     try {
         const result = await db.query('DELETE FROM user_wishlists WHERE user_id = $1 AND product_id = $2', [userId, productId]);

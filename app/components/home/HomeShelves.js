@@ -88,37 +88,40 @@ const Paren = ({ dir }) => (
 );
 
 /**
- * Phones (after Pitaka's Explore row): one large card at a time, swiped or moved
- * with the thin ( ) arrows at the card's middle; a "2 / 8" count underneath.
+ * Phones (after Pitaka's Explore row): large cards at 85% of the width, so the
+ * next one peeks in and the row reads as swipeable; swiped or moved with the
+ * thin ( ) arrows at the card's middle, with a "2 / 8" count underneath.
  */
+const CARD_GAP = 12;
 function GalleryCarousel({ products }) {
   const { t, dir: textDir } = useLocale();
   const scroller = useRef(null);
   const [index, setIndex] = useState(0);
   // Right to left, scrollLeft runs from 0 down to negative numbers
   const sign = textDir === 'rtl' ? -1 : 1;
-  const go = (step) => {
+  const step = () => (scroller.current?.firstElementChild?.offsetWidth || 1) + CARD_GAP;
+  const go = (delta) => {
     const el = scroller.current;
     if (!el) return;
-    const next = Math.max(0, Math.min(products.length - 1, index + step));
-    el.scrollTo({ left: sign * next * el.clientWidth, behavior: 'smooth' });
+    const next = Math.max(0, Math.min(products.length - 1, index + delta));
+    el.scrollTo({ left: sign * next * step(), behavior: 'smooth' });
   };
   const onScroll = () => {
     const el = scroller.current;
-    if (el) setIndex(Math.round(Math.abs(el.scrollLeft) / el.clientWidth));
+    if (el) setIndex(Math.min(products.length - 1, Math.round(Math.abs(el.scrollLeft) / step())));
   };
-  // The arrows sit at the middle of the 3:4 panel: its width is the screen less the 16px gutters
-  const arrowTop = { top: 'calc((100vw - 32px) * 2 / 3)' };
+  // The arrows sit at the middle of the 3:4 panel: 85% of the screen less the 16px gutters
+  const arrowTop = { top: 'calc((100vw - 32px) * 0.85 * 2 / 3)' };
 
   return (
     <div className="md:hidden relative -mx-4">
       <div
         ref={scroller}
         onScroll={onScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-px-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {products.map((p) => (
-          <div key={p.id} className="w-full shrink-0 snap-center px-4">
+          <div key={p.id} className="w-[85%] shrink-0 snap-start">
             <HomeProductCard product={p} variant="gallery" />
           </div>
         ))}
@@ -132,7 +135,7 @@ function GalleryCarousel({ products }) {
             onClick={() => go(dir === 'prev' ? -1 : 1)}
             disabled={off}
             aria-label={dir === 'prev' ? t('Previous product') : t('Next product')}
-            className={`absolute -translate-y-1/2 ${dir === 'prev' ? 'start-6' : 'end-6'} w-9 h-14 flex items-center justify-center text-[#8a8a92] active:text-[#111114] transition-opacity disabled:opacity-0`}
+            className={`absolute -translate-y-1/2 ${dir === 'prev' ? 'start-4' : 'end-4'} w-11 h-16 flex items-center justify-center text-[#6b6b73] active:text-[#111114] transition-opacity disabled:opacity-0`}
             style={arrowTop}
           >
             <Paren dir={dir} />
@@ -177,7 +180,14 @@ export function BrandProducts({ brand: slugStart, title, tone = 'light', cardVar
         <Container wide>
           {title && <SectionHeading title={title} tone={tone} />}
           {cardVariant === 'gallery' && (
-            <div className="md:hidden"><CardPlaceholder tone={tone} gallery /><p className="mt-3 h-[18px]" /></div>
+            // Phones: the carousel's 85% cards, the next one peeking in
+            <div className="md:hidden -mx-4">
+              <div className="flex gap-3 overflow-hidden px-4">
+                <div className="w-[85%] shrink-0"><CardPlaceholder tone={tone} gallery /></div>
+                <div className="w-[85%] shrink-0"><CardPlaceholder tone={tone} gallery /></div>
+              </div>
+              <p className="mt-3 h-[18px]" />
+            </div>
           )}
           <div className={cardVariant === 'gallery' ? 'hidden md:block' : ''}>
             <PlaceholderGrid count={9} tone={tone} gallery={cardVariant === 'gallery'} desktopMax={8} />

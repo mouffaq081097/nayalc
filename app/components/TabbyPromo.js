@@ -41,20 +41,24 @@ let counter = 0;
  *   lang    {string}         'en' | 'ar'           (default: 'en')
  */
 export default function TabbyPromo({ price, source = 'product', lang = 'en' }) {
-  // Stable unique DOM id for this instance
-  const idRef = useRef(`TabbyPromo_${++counter}`);
   const divRef = useRef(null);
 
   useEffect(() => {
-    if (!price || !PUBLIC_KEY) return;
+    const box = divRef.current;
+    if (!price || !PUBLIC_KEY || !box) return;
 
+    // The id is given here, in the browser. A counter read while rendering also
+    // runs on the server, where it keeps counting across visits: the page kept
+    // the server's id and Tabby was told to fill the browser's, so on a direct
+    // visit it found nothing to fill.
+    if (!box.id) box.id = `TabbyPromo_${++counter}`;
     const formattedPrice = Number(price).toFixed(2);
-    const selector       = `#${idRef.current}`;
+    const selector       = `#${box.id}`;
 
     loadTabbyScript()
       .then(() => {
-        if (!divRef.current || !window.TabbyPromo) return;
-        divRef.current.innerHTML = ''; // clear previous render
+        if (!box.isConnected || !window.TabbyPromo) return;
+        box.innerHTML = ''; // clear previous render
         new window.TabbyPromo({
           selector,
           currency:        'AED',
@@ -69,9 +73,9 @@ export default function TabbyPromo({ price, source = 'product', lang = 'en' }) {
       .catch(() => { /* script blocked / network error — degrade silently */ });
 
     return () => {
-      if (divRef.current) divRef.current.innerHTML = '';
+      box.innerHTML = '';
     };
   }, [price, lang, source]);
 
-  return <div id={idRef.current} ref={divRef} />;
+  return <div ref={divRef} />;
 }
