@@ -6,7 +6,8 @@ import { calcShipping, getPreorderInfo } from '@/lib/shipping';
 import { ensureBackorderColumns, BACKORDER_SELECT } from '@/lib/backorders';
 import { getSizeOptions } from '@/lib/sizeGroups';
 import { shelfStock, isPreorderOnly, leadDays } from '@/lib/backorderRules';
-import { SITE, plainText, productTitle } from '@/lib/seo';
+import { SITE, plainText, productSeo } from '@/lib/seo';
+import { hasSeoColumns } from '@/lib/seoColumns';
 import { getBoughtTogether } from '@/lib/boughtTogether';
 
 // Each page is kept ready for a minute, like the homepage, and rebuilt as soon as
@@ -23,10 +24,12 @@ const jsonLd = (data) => ({ __html: JSON.stringify(data).replace(/</g, '\\u003c'
 
 async function loadProduct(identifier) {
   await ensureBackorderColumns();
+  // The admin's own search listing (Admin → SEO), when the columns are there
+  const seo = (await hasSeoColumns()) ? 'p.seo_title, p.seo_description,' : '';
   // Try slug first, then fallback to ID if it's numeric
   let productSql = `
     SELECT
-        p.id, p.name, p.slug, p.description, p.price, b.name as "brand", b.slug as "brandSlug", b.imageurl as "brandImageUrl", p.stock_quantity,
+        p.id, p.name, p.slug, ${seo} p.description, p.price, b.name as "brand", b.slug as "brandSlug", b.imageurl as "brandImageUrl", p.stock_quantity,
         p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, p.size, p.form,
         ${BACKORDER_SELECT},
         COALESCE(AVG(r.rating), 0)::numeric(10,1) as "averageRating",
@@ -58,13 +61,15 @@ async function loadProduct(identifier) {
   if (product.averageRating) product.averageRating = parseFloat(product.averageRating);
 
   const imagesSql = `
-    SELECT image_url
+    SELECT image_url, alt_text
     FROM product_images
     WHERE product_id = $1
     ORDER BY display_order ASC, id ASC;
   `;
   const { rows: imageRows } = await db.query(imagesSql, [product.id]);
   product.images = imageRows.map(row => row.image_url);
+  // Alt text written in Admin, photo by photo ('' = described from the name)
+  product.imageAlts = imageRows.map(row => row.alt_text || '');
   // Other sizes of this product (lib/sizeGroups.js); a failure just hides the choice
   product.sizeOptions = await getSizeOptions(product.id).catch(() => []);
   // Its skin concerns (Admin → Products), shown as "Good for" chips
@@ -91,31 +96,18 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  // Brand first, then the product — the words people actually search. The root layout's
-  // title template appends "| Naya Lumière Cosmetics", so the store name isn't repeated here.
-  const brandPart = product.brand ? `${product.brand} ` : '';
-  const title = product.name.toLowerCase().includes('zorah sublime')
-    ? 'Zorah Sublime Night Cream 50ml, Pure Argan Oil | Buy in UAE'
-    : `${productTitle(product.name, product.brand)} | Buy in UAE`;
-  
-  // Optimized description including brand and "UAE"
-  let description = product.description || '';
-  if (description.length < 100) {
-     description = `Buy ${brandPart}${product.name} online in the UAE. ${description} Authentic luxury skincare & beauty products at Naya Lumière Cosmetics.`;
-  }
-  
-  if (product.name.toLowerCase().includes('zorah sublime')) {
-    description = "Zorah Sublime Night Cream 50ml with Pure Argan Oil, Enhanced Skin Hydration, Revitalizing & Brightening, Vegan, Cruelty-Free, Ideal for All Skin Types. Buy in UAE.";
-  }
+  // The admin's own title and description (Admin → SEO) when written; otherwise brand first, then
+  // the product — the words people actually search — and "Buy in UAE" (lib/seo.js)
+  const { title, description } = productSeo(product);
 
   return {
-    title: title,
-    description: description.substring(0, 160),
+    title: { absolute: title },
+    description,
     keywords: [product.name, product.brand, `${product.brand} UAE`, `${product.name} Dubai`, 'buy online UAE', 'skincare UAE'],
     openGraph: {
-      title: title,
-      description: description.substring(0, 160),
-      images: product.images?.[0] ? [{ url: product.images[0] }] : [],
+      title,
+      description,
+      images: product.images?.[0] ? [{ url: product.images[0], alt: product.imageAlts?.[0] || product.name }] : [],
       type: 'website',
       locale: 'en_AE',
     },

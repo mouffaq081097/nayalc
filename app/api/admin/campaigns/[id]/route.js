@@ -15,10 +15,10 @@ export async function PUT(request, { params }) {
 
     await ensureCampaignsTable();
     const { rowCount } = await db.query(
-      `UPDATE homepage_campaigns SET title = $1, subtitle = $2, cta_label = $3, link = $4, image_url = $5,
-         starts_at = $6, ends_at = $7, show_countdown = $8, is_active = $9, updated_at = NOW()
-       WHERE id = $10`,
-      [v.title, v.subtitle, v.ctaLabel, v.link, v.imageUrl, v.startsAt, v.endsAt, v.showCountdown, v.isActive, id]
+      `UPDATE homepage_campaigns SET title = $1, subtitle = $2, cta_label = $3, link = $4, image_url = $5, image_alt = $6,
+         starts_at = $7, ends_at = $8, show_countdown = $9, is_active = $10, updated_at = NOW()
+       WHERE id = $11`,
+      [v.title, v.subtitle, v.ctaLabel, v.link, v.imageUrl, v.imageAlt, v.startsAt, v.endsAt, v.showCountdown, v.isActive, id]
     );
     if (!rowCount) return NextResponse.json({ message: 'Campaign not found.' }, { status: 404 });
     return NextResponse.json({ id: Number(id) });

@@ -6,6 +6,11 @@ import { requireAdmin } from '@/lib/adminAuth';
 import { ensureBackorderColumns, readBackorderFields, allocateStock, BACKORDER_SELECT } from '@/lib/backorders';
 import { getSizeOptions } from '@/lib/sizeGroups';
 import { refreshProductPages } from '@/lib/productPages';
+import { hasSeoColumns } from '@/lib/seoColumns';
+import { parseGoogleCategoryId } from '@/lib/googleTaxonomy';
+
+// The product's own search listing and Google category (Admin → SEO); '' = automatic
+const seoText = (value, max) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max) || null;
 
 /**
  * @swagger
@@ -32,11 +37,12 @@ export async function GET(request, context) {
     const params = await context.params;
     const { id } = params;
     await ensureBackorderColumns();
+    const seo = (await hasSeoColumns()) ? 'p.seo_title, p.seo_description, p.google_category_id,' : '';
     const client = await db.connect();
     try {
         const productSql = `
             SELECT
-                p.id, p.name, p.description, p.price, b.name as "brand", b.name as "brandName", b.id as "brand_id", b.imageurl as "brandImageUrl", p.stock_quantity,
+                p.id, p.name, p.slug, ${seo} p.description, p.price, b.name as "brand", b.name as "brandName", b.id as "brand_id", b.imageurl as "brandImageUrl", p.stock_quantity,
                 p.long_description, p.benefits, p.how_to_use, p.how_to_use_video, p.ingredients, p.comparedprice, p.size, p.form, p.status, p.is_active, p.signature_image_url as "signatureImageUrl",
                 p.backorder_limit, ${BACKORDER_SELECT},
                 pi.image_url as "imageUrl",
@@ -180,6 +186,13 @@ export async function PUT(request, context) {
         // 1. Update products table
         // Pre-order settings only when the form sends them, so other callers don't switch them off
         await ensureBackorderColumns();
+        // Search listing and Google category, only when the form sends them (Admin → SEO saves its own way)
+        if (formData.has('seo_title') && await hasSeoColumns()) {
+            await client.query(
+                'UPDATE products SET seo_title = $1, seo_description = $2, google_category_id = $3 WHERE id = $4',
+                [seoText(formData.get('seo_title'), 120), seoText(formData.get('seo_description'), 320), parseGoogleCategoryId(formData.get('google_category_id')), id]
+            );
+        }
         if (formData.has('allow_backorder')) {
             await client.query(
                 'UPDATE products SET allow_backorder = $1, backorder_lead_days = $2, backorder_limit = $3 WHERE id = $4',

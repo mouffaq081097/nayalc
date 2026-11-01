@@ -15,6 +15,8 @@ import { ImageSlot, Thumb } from '../../_components/ImageSlot';
 import { apiErrorMessage, brandName, fmtAed, productStatus, stockState } from '../../products/_components/productAdmin';
 import { categoryStatus, isValidSlug, slugify } from './categoryAdmin';
 import { RITUAL_STEPS, suggestRitualStep } from '@/lib/ritualRules';
+import { collectionGoogleCategory, suggestGoogleCategory } from '@/lib/googleTaxonomy';
+import { AltTextField, GoogleCategorySelect, categoryLabel } from '../../seo/_components/seoUi';
 
 // Every new image is uploaded in the same save request, and Vercel rejects request bodies over 4.5 MB
 const UPLOAD_WARNING_BYTES = 4 * 1024 * 1024;
@@ -26,6 +28,8 @@ const initialForm = (category) => ({
   parentId: category?.parentId ? String(category.parentId) : '',
   isActive: category?.isActive !== false,
   ritualStep: category?.ritualStep || '',
+  imageAlt: category?.imageAlt || '',
+  googleCategoryId: category?.googleCategoryId || null,
 });
 // "Automatic" says what the collection's name suggests; products still go by their own names first
 const ritualAutoLabel = (name) => {
@@ -33,6 +37,13 @@ const ritualAutoLabel = (name) => {
   if (step === 'none') return 'Automatic: not part of the ritual';
   const label = RITUAL_STEPS.find(s => s.key === step)?.label;
   return label ? `Automatic: ${label}` : "Automatic: from each product's name";
+};
+// "Not set" says what applies instead: the parent collection's category, or each product's own name
+const googleAutoLabel = (parentId, categories) => {
+  const byId = new Map(categories.map(c => [Number(c.id), c]));
+  const parent = parentId ? byId.get(Number(parentId)) : null;
+  const inherited = parent ? collectionGoogleCategory(parent, byId) : null;
+  return inherited ? `Same as ${parent.name}: ${categoryLabel(inherited)}` : 'Not set: each product goes by its name';
 };
 const initialProductIds = (category) => (category?.products || []).map(p => p.id);
 const initialImage = (url) => (url ? { url } : null);
@@ -207,6 +218,8 @@ export default function CategoryEditor({ category, onSaved }) {
     fd.append('parent_id', form.parentId);
     fd.append('product_ids', productIds.join(','));
     fd.append('ritual_step', form.ritualStep);
+    fd.append('image_alt', form.imageAlt.trim());
+    fd.append('google_category_id', form.googleCategoryId ? String(form.googleCategoryId) : '');
     if (image?.file) fd.append('image', image.file);
     else fd.append('image_url', image?.url || 'null');
     if (banner?.file) fd.append('banner', banner.file);
@@ -300,6 +313,13 @@ export default function CategoryEditor({ category, onSaved }) {
   const liveCount = assignedProducts.filter(p => productStatus(p).id === 'active' && stockState(p.stock_quantity).id !== 'out').length;
   const outOfStockCount = assignedProducts.filter(p => stockState(p.stock_quantity).id === 'out').length;
   const newUploadBytes = (image?.file?.size || 0) + (banner?.file?.size || 0);
+  // What the name suggests for Google, unless it's already set or the parent already gives it
+  const googleSuggestion = (() => {
+    const id = !form.googleCategoryId ? suggestGoogleCategory(form.name) : null;
+    const byId = new Map(adminCategories.map(c => [Number(c.id), c]));
+    const parent = form.parentId ? byId.get(Number(form.parentId)) : null;
+    return id && id !== (parent ? collectionGoogleCategory(parent, byId) : null) ? id : null;
+  })();
   const showSaveBar = isNew || isDirty;
 
   return (
@@ -382,6 +402,17 @@ export default function CategoryEditor({ category, onSaved }) {
                   value={banner}
                   onChange={setBanner}
                 />
+                {image && (
+                  <AltTextField
+                    id="imageAlt"
+                    value={form.imageAlt}
+                    onChange={v => setField('imageAlt', v)}
+                    imageUrl={image.url}
+                    context={{ kind: 'collection', label: `${form.name.trim() || 'This'} collection` }}
+                    placeholder={`e.g. ${form.name.trim() || 'Face care'} products laid out on a marble counter`}
+                    hint="Describes the category image (shown at the top of the collection page) for screen readers and Google Images."
+                  />
+                )}
                 {newUploadBytes > UPLOAD_WARNING_BYTES && (
                   <FieldMessage color={WARNING_COLOR}>
                     New images add up to {(newUploadBytes / 1024 / 1024).toFixed(1)} MB. Saves over about 4 MB can fail — use smaller files.
@@ -477,6 +508,26 @@ export default function CategoryEditor({ category, onSaved }) {
                   <option value="none">Not part of the ritual</option>
                 </select>
               </Field>
+            </Card>
+
+            <Card title="Google Merchant">
+              <Field
+                label="Google product category"
+                htmlFor="googleCategoryId"
+                hint="What Google Shopping lists this collection's products under. A product whose own name says more (a cleanser in Face care) keeps the more precise category."
+              >
+                <GoogleCategorySelect
+                  id="googleCategoryId"
+                  value={form.googleCategoryId}
+                  onChange={v => setField('googleCategoryId', v)}
+                  autoLabel={googleAutoLabel(form.parentId, adminCategories)}
+                />
+              </Field>
+              {googleSuggestion && (
+                <button type="button" onClick={() => setField('googleCategoryId', googleSuggestion)} className="mt-2 text-[12px] sp-link cursor-pointer text-left">
+                  Use the suggestion: {categoryLabel(googleSuggestion)}
+                </button>
+              )}
             </Card>
 
             <Card title="Summary">

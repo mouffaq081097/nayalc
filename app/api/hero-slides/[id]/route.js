@@ -1,73 +1,72 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import db from '@/lib/db';
 import { uploadMediaToCloudinary } from '@/lib/cloudinary';
+import { requireAdmin } from '@/lib/adminAuth';
+import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
+
+// Text fields a save may change; one that isn't in the request stays as it is, so
+// switching a slide on or off (which sends only is_active) no longer empties the rest
+const TEXT_FIELDS = [
+  'eyebrow', 'headline', 'body', 'cta_text', 'cta_href',
+  'image_position', 'text_position', 'cta_style', 'scrim_direction', 'text_theme',
+];
 
 export async function PUT(request, { params }) {
-  const { id } = params;
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
+  const { id } = await params;
+  const formData = await request.formData();
+  // Before BEGIN: adding the column locks the table
+  const saveAlt = formData.has('image_alt') && await hasSeoColumns();
   const client = await db.connect();
   try {
-    const formData = await request.formData();
-    const data = Object.fromEntries(formData.entries());
-
-    const {
-      eyebrow, headline, body, cta_text, cta_href,
-      image_position, text_position, cta_style, scrim_direction, text_theme,
-      sort_order, is_active
-    } = data;
-
     await client.query('BEGIN');
 
-    // Get current slide to know existing URLs
-    const { rows: current } = await client.query('SELECT * FROM hero_slides WHERE id = $1', [id]);
+    const { rows: current } = await client.query('SELECT id FROM hero_slides WHERE id = $1 FOR UPDATE', [id]);
     if (current.length === 0) {
+      await client.query('ROLLBACK');
       return NextResponse.json({ message: 'Slide not found' }, { status: 404 });
     }
 
-    let mobileSrc = current[0].image_src_mobile;
-    let isVideoMobile = current[0].is_video_mobile;
-    let desktopSrc = current[0].image_src_desktop;
-    let isVideoDesktop = current[0].is_video_desktop;
+    const sets = [];
+    const values = [];
+    const set = (column, value) => {
+      values.push(value);
+      sets.push(`${column} = $${values.length}`);
+    };
+
+    for (const field of TEXT_FIELDS) {
+      if (formData.has(field)) set(field, formData.get(field));
+    }
+    if (formData.has('sort_order')) set('sort_order', parseInt(formData.get('sort_order'), 10) || 0);
+    if (formData.has('is_active')) set('is_active', formData.get('is_active') === 'true');
+    if (saveAlt) set('image_alt', parseAltText(formData.get('image_alt')));
 
     const mobileFile = formData.get('mobileMedia');
-    const desktopFile = formData.get('desktopMedia');
-
     if (mobileFile && mobileFile.size > 0) {
-      const mobileBuffer = Buffer.from(await mobileFile.arrayBuffer());
-      const mobileUpload = await uploadMediaToCloudinary(mobileBuffer);
-      mobileSrc = mobileUpload.secure_url;
-      isVideoMobile = mobileUpload.resource_type === 'video';
+      const upload = await uploadMediaToCloudinary(Buffer.from(await mobileFile.arrayBuffer()));
+      set('image_src_mobile', upload.secure_url);
+      set('is_video_mobile', upload.resource_type === 'video');
     }
-
+    const desktopFile = formData.get('desktopMedia');
     if (desktopFile && desktopFile.size > 0) {
-      const desktopBuffer = Buffer.from(await desktopFile.arrayBuffer());
-      const desktopUpload = await uploadMediaToCloudinary(desktopBuffer);
-      desktopSrc = desktopUpload.secure_url;
-      isVideoDesktop = desktopUpload.resource_type === 'video';
+      const upload = await uploadMediaToCloudinary(Buffer.from(await desktopFile.arrayBuffer()));
+      set('image_src_desktop', upload.secure_url);
+      set('is_video_desktop', upload.resource_type === 'video');
     }
 
-    const sql = `
-      UPDATE hero_slides SET
-        eyebrow = $1, headline = $2, body = $3, cta_text = $4, cta_href = $5,
-        image_src_mobile = $6, image_src_desktop = $7, is_video_mobile = $8, is_video_desktop = $9,
-        image_position = $10, text_position = $11, cta_style = $12, scrim_direction = $13, text_theme = $14,
-        sort_order = $15, is_active = $16, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $17;
-    `;
-
-    const values = [
-      eyebrow, headline, body, cta_text, cta_href,
-      mobileSrc, desktopSrc, isVideoMobile, isVideoDesktop,
-      image_position, text_position, cta_style, scrim_direction, text_theme,
-      parseInt(sort_order) || 0, is_active === 'true',
-      id
-    ];
-
-    await client.query(sql, values);
+    if (sets.length) {
+      values.push(id);
+      await client.query(`UPDATE hero_slides SET ${sets.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length}`, values);
+    }
     await client.query('COMMIT');
+    try { revalidatePath('/'); } catch { /* outside a request */ }
 
     return NextResponse.json({ message: 'Hero slide updated' });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Error updating hero slide:', error);
     return NextResponse.json({ message: 'Error updating hero slide', error: error.message }, { status: 500 });
   } finally {
@@ -76,9 +75,13 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const { id } = params;
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
+  const { id } = await params;
   try {
     await db.query('DELETE FROM hero_slides WHERE id = $1', [id]);
+    try { revalidatePath('/'); } catch { /* outside a request */ }
     return NextResponse.json({ message: 'Hero slide deleted' });
   } catch (error) {
     console.error('Error deleting hero slide:', error);

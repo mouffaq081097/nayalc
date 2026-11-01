@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Loader2, Plus, UploadCloud, Pencil, Trash2 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { campaignStatus, dateToDubaiInput } from '@/lib/campaignRules';
+import { AltTextField } from '../seo/_components/seoUi';
 
 const STATUS_STYLE = {
   Live: 'bg-emerald-50 text-emerald-700',
@@ -12,7 +13,7 @@ const STATUS_STYLE = {
   Off: 'bg-gray-100 text-gray-500',
 };
 
-const EMPTY = { title: '', subtitle: '', ctaLabel: 'Shop now', link: '/sales', imageUrl: '', startsAt: '', endsAt: '', showCountdown: true, isActive: true };
+const EMPTY = { title: '', subtitle: '', ctaLabel: 'Shop now', link: '/sales', imageUrl: '', imageAlt: '', startsAt: '', endsAt: '', showCountdown: true, isActive: true };
 
 const fmt = (iso) =>
   new Date(iso).toLocaleString('en-GB', { timeZone: 'Asia/Dubai', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -126,6 +127,19 @@ function CampaignForm({ initial, onCancel, onSaved }) {
           <button type="button" onClick={() => fileRef.current?.click()} className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-purple-200 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50">
             <UploadCloud size={15} /> {form.imageUrl ? 'Replace photo' : 'Upload photo'}
           </button>
+          {form.imageUrl && (
+            <div className="mt-3">
+              <AltTextField
+                id="cmp-image-alt"
+                value={form.imageAlt}
+                onChange={v => setForm(f => ({ ...f, imageAlt: v }))}
+                imageUrl={form.imageUrl}
+                context={{ kind: 'campaign', label: form.title || 'Campaign banner', detail: form.subtitle }}
+                placeholder="Describe the photo"
+                hint="Left empty, the title is used."
+              />
+            </div>
+          )}
         </div>
       </div>
       {error && <p className="px-6 -mt-2 pb-3 text-sm text-red-600">{error}</p>}
@@ -168,6 +182,7 @@ export default function CampaignsSection() {
     ...c,
     subtitle: c.subtitle || '',
     imageUrl: c.imageUrl || '',
+    imageAlt: c.imageAlt || '',
     startsAt: dateToDubaiInput(c.startsAt),
     endsAt: dateToDubaiInput(c.endsAt),
   });

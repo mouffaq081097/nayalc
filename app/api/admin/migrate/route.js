@@ -10,6 +10,7 @@ import { STOCK_ALERTS_MIGRATION_SQL } from '@/lib/stockAlerts';
 import { SIZE_GROUP_MIGRATION_SQL } from '@/lib/sizeGroups';
 import { GUEST_CHECKOUT_MIGRATION_SQL } from '@/lib/guestCheckout';
 import { RITUAL_STEP_MIGRATION_SQL } from '@/lib/ritualSteps';
+import { SEO_MIGRATION_SQL } from '@/lib/seoColumns';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -146,6 +147,11 @@ export async function POST(request) {
                 // Each collection's step in the Cleanse → Treat → Protect ritual — also added on first use by ensureRitualStepColumn() in lib/ritualSteps.js
                 name: '021_ritual_steps',
                 sql: RITUAL_STEP_MIGRATION_SQL,
+            },
+            {
+                // Product search listings, Google Merchant categories and photo alt text (Admin → SEO) — also added on first use by ensureSeoColumns() in lib/seoColumns.js
+                name: '022_seo',
+                sql: SEO_MIGRATION_SQL,
             },
         ];
 

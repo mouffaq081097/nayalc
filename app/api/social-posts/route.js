@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { requireAdmin } from '@/lib/adminAuth';
+import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
 
 /**
  * GET /api/social-posts
@@ -19,6 +21,7 @@ export async function GET(request) {
         image_url TEXT NOT NULL,
         instagram_url TEXT,
         caption TEXT,
+        image_alt TEXT,
         likes TEXT DEFAULT '0',
         is_active BOOLEAN DEFAULT true,
         sort_order INTEGER DEFAULT 0,
@@ -44,6 +47,8 @@ export async function GET(request) {
  * Create a new social post. Accepts multipart form data with image upload.
  */
 export async function POST(request) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
   try {
     const formData = await request.formData();
     const imageFile = formData.get('image');
@@ -67,6 +72,11 @@ export async function POST(request) {
       RETURNING *
     `;
     const { rows } = await db.query(sql, [imageUrl, instagramUrl, caption, likes, sortOrder]);
+    // The photo's description for screen readers and Google Images (Admin → SEO → Image alt text)
+    if (formData.has('image_alt') && await hasSeoColumns()) {
+      const saved = await db.query('UPDATE social_posts SET image_alt = $1 WHERE id = $2 RETURNING *', [parseAltText(formData.get('image_alt')), rows[0].id]);
+      rows[0] = saved.rows[0];
+    }
 
     return NextResponse.json({ message: 'Social post created', post: rows[0] }, { status: 201 });
   } catch (error) {

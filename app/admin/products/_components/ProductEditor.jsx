@@ -15,6 +15,9 @@ import { DEFAULT_BACKORDER_LEAD_DAYS, DEFAULT_BACKORDER_LIMIT } from '@/lib/back
 import {
   AutoGrowTextarea, Card, ERROR_COLOR, Field, FieldMessage, WARNING_COLOR, invalidStyle, secondary, subdued, text,
 } from '../../_components/EditorFields';
+import { AiButton, CharCount, GoogleCategorySelect, SerpPreview, categoryLabel, useSeoAi } from '../../seo/_components/seoUi';
+import { autoSeoDescription, autoSeoTitle, productTitle, SEO_DESCRIPTION_LIMIT, SEO_TITLE_LIMIT } from '@/lib/seo';
+import { resolveGoogleCategory, sourceLabel } from '@/lib/googleTaxonomy';
 
 // Every new image is uploaded in the same save request, and Vercel rejects request bodies over 4.5 MB
 const UPLOAD_WARNING_BYTES = 4 * 1024 * 1024;
@@ -44,6 +47,10 @@ function initialForm(product) {
     how_to_use_video: product?.how_to_use_video || '',
     categoryIds: product?.category_ids || [],
     concernIds: product?.concern_ids || [],
+    // Search listing and Google category (Admin → SEO); empty = automatic
+    seo_title: product?.seo_title || '',
+    seo_description: product?.seo_description || '',
+    google_category_id: product?.google_category_id || null,
   };
 }
 
@@ -144,6 +151,8 @@ export default function ProductEditor({ product, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const { suggestAlt, suggestListing } = useSeoAi();
+  const [aiBusy, setAiBusy] = useState(''); // 'listing' | 'alt' while the AI writes
 
   // What the editor looked like when it opened (or was last saved), to detect unsaved changes
   const baselineRef = useRef(null);
@@ -188,6 +197,60 @@ export default function ProductEditor({ product, onSaved }) {
   const selectedIndex = selected ? media.indexOf(selected) : -1;
   const newUploadBytes = media.reduce((sum, m) => sum + (m.file?.size || 0), 0);
 
+  // ── Search listing and Google category (Admin → SEO) ──
+  const brandLabel = brands.find(b => String(b.id) === form.brandId)?.name || '';
+  const listingFacts = { name: form.name.trim(), brand: brandLabel, description: form.description };
+  const autoTitle = autoSeoTitle(listingFacts);
+  const autoDescription = autoSeoDescription(listingFacts);
+  const categoriesById = new Map(categories.map(c => [Number(c.id), c]));
+  const autoGoogle = resolveGoogleCategory(
+    { name: form.name, form: form.form, brand: brandLabel },
+    form.categoryIds.map(id => categoriesById.get(Number(id))).filter(Boolean),
+    categoriesById,
+  );
+
+  const suggestListingWithAi = async () => {
+    setAiBusy('listing');
+    try {
+      const r = await suggestListing(product?.id || null, {
+        name: form.name, brand: brandLabel, size: form.size, form: form.form, description: form.description,
+        long_description: form.long_description, benefits: form.benefits, ingredients: form.ingredients,
+        collections: form.categoryIds.map(id => categoriesById.get(Number(id))?.name).filter(Boolean),
+        concerns: form.concernIds.map(id => concerns.find(c => c.id === id)?.name).filter(Boolean),
+      });
+      setForm(prev => ({
+        ...prev,
+        seo_title: r.seoTitle,
+        seo_description: r.seoDescription,
+        // Stays automatic when the AI agrees with it, so a later collection change still applies
+        ...(r.googleCategoryId && r.googleCategoryId !== autoGoogle.id ? { google_category_id: r.googleCategoryId } : {}),
+      }));
+      toast.success('Suggestion added. Read it, then save.');
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setAiBusy('');
+    }
+  };
+
+  // A saved photo is shown to the AI; a new one, not uploaded yet, is described from the product details
+  const suggestSelectedAlt = async () => {
+    if (!selected) return;
+    setAiBusy('alt');
+    try {
+      const { alt } = await suggestAlt(selected.url || null, {
+        kind: 'product',
+        label: `${productTitle(form.name.trim(), brandLabel)}${form.size.trim() ? `, ${form.size.trim()}` : ''}`,
+        detail: `photo ${selectedIndex + 1} of ${media.length}`,
+      });
+      setAlt(selected.key, alt);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setAiBusy('');
+    }
+  };
+
   // ── Save ──
   const validate = () => {
     const found = {};
@@ -220,6 +283,9 @@ export default function ProductEditor({ product, onSaved }) {
     fd.append('brand_id', form.brandId);
     fd.append('categoryIds', form.categoryIds.join(','));
     fd.append('concernIds', form.concernIds.join(','));
+    fd.append('seo_title', form.seo_title.trim());
+    fd.append('seo_description', form.seo_description.trim());
+    fd.append('google_category_id', form.google_category_id ? String(form.google_category_id) : '');
 
     const [main, ...gallery] = media;
     if (main?.file) fd.append('mainImage', main.file);
@@ -507,14 +573,23 @@ export default function ProductEditor({ product, onSaved }) {
                       htmlFor="media-alt"
                       hint="Describes the image for screen readers and search engines. Click another image to edit its text."
                     >
-                      <input
-                        id="media-alt"
-                        type="text"
-                        value={selected.alt}
-                        onChange={e => setAlt(selected.key, e.target.value)}
-                        placeholder="e.g. Zorah Sublime Night Cream jar, 50 ml"
-                        className="sp-input"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          id="media-alt"
+                          type="text"
+                          value={selected.alt}
+                          onChange={e => setAlt(selected.key, e.target.value)}
+                          placeholder="e.g. Zorah Sublime Night Cream jar, 50 ml"
+                          maxLength={250}
+                          className="sp-input min-w-0 flex-1"
+                        />
+                        <AiButton
+                          onClick={suggestSelectedAlt}
+                          busy={aiBusy === 'alt'}
+                          disabled={!form.name.trim() && !selected.url}
+                          title="Write it with AI from the photo and the product details"
+                        />
+                      </div>
                     </Field>
                   </div>
                 </div>
@@ -644,15 +719,31 @@ export default function ProductEditor({ product, onSaved }) {
               </div>
             </Card>
 
-            <Card title="Search engine listing" description="A preview of how this product can appear in Google results.">
-              <div className="rounded-lg p-4" style={{ background: 'var(--sp-surface-sub)' }}>
-                <p className="text-[12px] truncate" style={secondary}>nayalc.com › product › {isNew ? 'new' : product.id}</p>
-                <p className="text-[17px] leading-snug mt-0.5 truncate" style={{ color: '#1a0dab' }}>
-                  {form.name.trim() || 'Product title'} | Naya Lumière Cosmetics
-                </p>
-                <p className="text-[13px] mt-1 line-clamp-2" style={secondary}>
-                  {(form.description.trim() || 'Your short description appears here.').slice(0, 160)}
-                </p>
+            <Card
+              title="Search engine listing"
+              description="How this product can appear in Google results. Leave a field empty to use the automatic text in grey."
+              action={<AiButton onClick={suggestListingWithAi} busy={aiBusy === 'listing'} disabled={!form.name.trim()} title="Write the title and description with AI from this product's details">Suggest with AI</AiButton>}
+            >
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-1.5">
+                    <label htmlFor="seo_title" className="text-[13px] font-medium" style={secondary}>Page title</label>
+                    <CharCount value={form.seo_title || autoTitle} limit={SEO_TITLE_LIMIT} />
+                  </div>
+                  <input type="text" {...bind('seo_title')} placeholder={autoTitle} maxLength={120} className="sp-input" />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-1.5">
+                    <label htmlFor="seo_description" className="text-[13px] font-medium" style={secondary}>Meta description</label>
+                    <CharCount value={form.seo_description || autoDescription} limit={SEO_DESCRIPTION_LIMIT} />
+                  </div>
+                  <AutoGrowTextarea {...bind('seo_description')} minRows={2} maxLength={320} placeholder={autoDescription} />
+                </div>
+                <SerpPreview
+                  path={`product › ${product?.slug || (isNew ? 'new' : product.id)}`}
+                  title={form.seo_title.trim() || (form.name.trim() ? autoTitle : 'Product title')}
+                  description={form.seo_description.trim() || (form.description.trim() ? autoDescription : 'Your short description appears here.')}
+                />
               </div>
             </Card>
           </div>
@@ -726,6 +817,21 @@ export default function ProductEditor({ product, onSaved }) {
                   </div>
                 </fieldset>
               </div>
+            </Card>
+
+            <Card title="Google Merchant">
+              <Field
+                label="Google product category"
+                htmlFor="google_category_id"
+                hint={form.google_category_id ? 'Chosen for this product. Choose Automatic to follow its name and collections again.' : `${sourceLabel(autoGoogle)}.`}
+              >
+                <GoogleCategorySelect
+                  id="google_category_id"
+                  value={form.google_category_id}
+                  onChange={v => setField('google_category_id', v)}
+                  autoLabel={`Automatic: ${categoryLabel(autoGoogle.id)}`}
+                />
+              </Field>
             </Card>
           </div>
         </div>

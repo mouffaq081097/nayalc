@@ -21,7 +21,8 @@ export async function GET() {
     const { rows } = await db.query('SELECT key, image_url, alt_text FROM homepage_images');
     const map = {};
     for (const row of rows) {
-      map[row.key] = { imageUrl: row.image_url, altText: row.alt_text || undefined };
+      // An empty image_url keeps the built-in photo and only changes its alt text
+      map[row.key] = { imageUrl: row.image_url || undefined, altText: row.alt_text || undefined };
     }
     return NextResponse.json(map, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } });
   } catch (error) {

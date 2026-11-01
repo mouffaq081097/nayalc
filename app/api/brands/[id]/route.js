@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { slugify } from '@/lib/slugify';
 import { requireAdmin } from '@/lib/adminAuth';
+import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
 
 /**
  * @swagger
@@ -26,7 +27,8 @@ import { requireAdmin } from '@/lib/adminAuth';
 export async function GET(request, context) {
   const { id } = await context.params;
   try {
-    const { rows } = await db.query('SELECT id, name, imageurl, is_active FROM brands WHERE id = $1', [id]);
+    const alt = (await hasSeoColumns()) ? ', image_alt' : '';
+    const { rows } = await db.query(`SELECT id, name, imageurl, is_active${alt} FROM brands WHERE id = $1`, [id]);
 
     if (rows.length === 0) {
       return NextResponse.json({ message: 'Brand not found' }, { status: 404 });
@@ -111,11 +113,14 @@ export async function PUT(request, context) {
       imageUrl = null;
     }
 
+    // Before BEGIN: adding a column locks the table
+    const saveAlt = formData.has('image_alt') && await hasSeoColumns();
     await client.query('BEGIN');
     const { rows } = await client.query(
       'UPDATE brands SET name = $1, imageurl = $2, slug = $3 WHERE id = $4 RETURNING *',
       [name, imageUrl, slug, id]
     );
+    if (saveAlt) await client.query('UPDATE brands SET image_alt = $1 WHERE id = $2', [parseAltText(formData.get('image_alt')), id]);
     // Products keep a copy of their brand name (used in carts and campaigns), so keep it in step
     await client.query('UPDATE products SET vendor = $1 WHERE brand_id = $2', [name, id]);
     await client.query('COMMIT');

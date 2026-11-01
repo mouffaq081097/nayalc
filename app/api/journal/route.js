@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { hasSeoColumns } from '@/lib/seoColumns';
 
 async function ensureTable() {
   await db.query(`
@@ -12,6 +13,7 @@ async function ensureTable() {
       excerpt TEXT,
       body TEXT,
       cover_image_url TEXT,
+      cover_image_alt TEXT,
       cta_label TEXT,
       cta_href TEXT,
       is_active BOOLEAN NOT NULL DEFAULT true,
@@ -28,8 +30,10 @@ async function ensureTable() {
 export async function GET() {
   try {
     await ensureTable();
+    // The cover photo's alt text (Admin → Journal, or SEO → Image alt text)
+    const alt = (await hasSeoColumns()) ? ' cover_image_alt as "coverImageAlt",' : '';
     const { rows } = await db.query(
-      `SELECT id, slug, title, tag, read_time as "readTime", excerpt, body, cover_image_url as "coverImageUrl",
+      `SELECT id, slug, title, tag, read_time as "readTime", excerpt, body, cover_image_url as "coverImageUrl",${alt}
               cta_label as "ctaLabel", cta_href as "ctaHref", sort_order as "sortOrder"
        FROM journal_articles
        WHERE is_active = true

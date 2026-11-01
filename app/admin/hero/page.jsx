@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { AltTextField } from '../seo/_components/seoUi';
 
 const ManageHeroSlides = () => {
   const [slides, setSlides] = useState([]);
@@ -27,7 +28,8 @@ const ManageHeroSlides = () => {
     scrim_direction: 'none',
     text_theme: 'light',
     sort_order: 0,
-    is_active: true
+    is_active: true,
+    image_alt: ''
   });
 
   const [mobileMedia, setMobileMedia] = useState(null);
@@ -65,7 +67,8 @@ const ManageHeroSlides = () => {
       scrim_direction: 'none',
       text_theme: 'light',
       sort_order: slides.length,
-      is_active: true
+      is_active: true,
+      image_alt: ''
     });
     setMobileMedia(null);
     setDesktopMedia(null);
@@ -88,7 +91,8 @@ const ManageHeroSlides = () => {
       scrim_direction: slide.scrim_direction || 'none',
       text_theme: slide.text_theme || 'light',
       sort_order: slide.sort_order || 0,
-      is_active: slide.is_active
+      is_active: slide.is_active,
+      image_alt: slide.image_alt || ''
     });
     setMobileMedia(null);
     setDesktopMedia(null);
@@ -342,6 +346,17 @@ const ManageHeroSlides = () => {
                   </div>
                 </div>
               </div>
+
+              {/* One description for the slide's photo, read out by screen readers and used by Google Images */}
+              <AltTextField
+                id="hero-image-alt"
+                value={formData.image_alt}
+                onChange={v => setFormData(prev => ({ ...prev, image_alt: v }))}
+                imageUrl={editingSlide && !desktopMedia && !editingSlide.is_video_desktop ? editingSlide.image_src_desktop : null}
+                context={{ kind: 'hero', label: (formData.headline || '').replace(/\n/g, ' ') || 'Homepage banner', detail: formData.eyebrow }}
+                placeholder="e.g. A woman applying GERnétic serum in soft morning light"
+                hint="Describes the photo for screen readers and Google Images. Left empty, the headline is used."
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

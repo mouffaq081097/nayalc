@@ -11,7 +11,7 @@ import { useLocale, useT } from '@/app/context/LocaleContext';
  * Product gallery (phones and tablets): swipe + dots + a thumbnail strip, and
  * the full-screen Lightbox below on a tap.
  */
-export default function ProductGallery({ images, name, discountPct, badge }) {
+export default function ProductGallery({ images, alts = [], name, discountPct, badge }) {
   const { t, dir } = useLocale();
   // Right to left, the next photo is the one to the left
   const sign = dir === 'rtl' ? -1 : 1;
@@ -77,7 +77,7 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
                   <div className="relative w-full h-full">
                     <Image
                       src={images[index]}
-                      alt={count > 1 ? t('{name} — image {n} of {count}', { name, n: index + 1, count }) : name}
+                      alt={alts[index] || (count > 1 ? t('{name} — image {n} of {count}', { name, n: index + 1, count }) : name)}
                       fill priority={index === 0}
                       sizes="(min-width: 1024px) 50vw, 100vw"
                       className="object-contain group-hover:scale-[1.04] transition-transform duration-500 pointer-events-none select-none"
@@ -126,7 +126,7 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
         </div>
       </div>
 
-      <Lightbox images={images} name={name} open={zoomed} index={index} onIndex={go} onClose={() => setZoomed(false)} />
+      <Lightbox images={images} alts={alts} name={name} open={zoomed} index={index} onIndex={go} onClose={() => setZoomed(false)} />
     </>
   );
 }
@@ -136,7 +136,7 @@ export default function ProductGallery({ images, name, discountPct, badge }) {
  * the phone gallery above and by the stacked photos on laptops (ProductClient).
  * `onIndex(n | fn)` moves to a photo; the owner keeps the index.
  */
-export function Lightbox({ images, name, open, index, onIndex, onClose }) {
+export function Lightbox({ images, alts = [], name, open, index, onIndex, onClose }) {
   const { t, dir } = useLocale();
   const sign = dir === 'rtl' ? -1 : 1;
   const count = images.length;
@@ -200,7 +200,7 @@ export function Lightbox({ images, name, open, index, onIndex, onClose }) {
                   drag={count > 1 ? 'x' : false} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.12}
                   onDragEnd={onSwipe}>
                   {images[index] && (
-                    <Image src={images[index]} alt={t('{name} — image {n}', { name, n: index + 1 })}
+                    <Image src={images[index]} alt={alts[index] || t('{name} — image {n}', { name, n: index + 1 })}
                       fill sizes="(min-width: 1024px) 960px, 100vw" className="object-contain p-2 md:p-8 pointer-events-none select-none mix-blend-multiply" />
                   )}
                 </motion.div>

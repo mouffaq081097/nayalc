@@ -181,7 +181,7 @@ const BrandHero = ({ brand, meta }) => {
       title={brand.name}
       subtitle={[t(meta.origin), meta.year && t('Est. {year}', { year: meta.year }), t(meta.category)].filter(Boolean).join(' · ')}
       image={brand.imageurl}
-      imageAlt={brand.name}
+      imageAlt={brand.image_alt || brand.name}
     />
   );
 };
@@ -502,6 +502,7 @@ export default function BrandClient({ brand: serverBrand }) {
                         price={product.price}
                         originalPrice={product.comparedprice}
                         image={product.imageUrl}
+                        altText={product.altText}
                         averageRating={product.averageRating}
                         reviewCount={product.reviewCount}
                         viewCount={product.viewCount}

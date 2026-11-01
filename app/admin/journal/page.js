@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import { AltTextField } from '../seo/_components/seoUi';
 import { Search, Edit, Trash2, PlusCircle, Loader2, MoreHorizontal, BookOpen, Eye, EyeOff, UploadCloud, Clock } from 'lucide-react';
 import Modal from '@/app/components/Modal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
@@ -20,6 +21,7 @@ const EMPTY_ARTICLE = {
   excerpt: '',
   body: '',
   coverImageUrl: '',
+  coverImageAlt: '',
   ctaLabel: '',
   ctaHref: '',
   isActive: true,
@@ -106,6 +108,7 @@ export default function JournalAdminPage() {
       excerpt: article.excerpt || '',
       body: Array.isArray(article.body) ? article.body.join('\n\n') : article.body || '',
       coverImageUrl: article.coverImageUrl || '',
+      coverImageAlt: article.coverImageAlt || '',
       ctaLabel: article.ctaLabel || '',
       ctaHref: article.ctaHref || '',
       isActive: article.isActive,
@@ -128,6 +131,7 @@ export default function JournalAdminPage() {
       formData.append('excerpt', current.excerpt);
       formData.append('body', current.body);
       formData.append('coverImageUrl', current.coverImageUrl);
+      formData.append('coverImageAlt', current.coverImageAlt || '');
       formData.append('ctaLabel', current.ctaLabel);
       formData.append('ctaHref', current.ctaHref);
       formData.append('sortOrder', String(current.sortOrder));
@@ -411,6 +415,17 @@ export default function JournalAdminPage() {
                 )}
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} disabled={isSubmitting || isCompressing} />
               </div>
+
+              {(imagePreview || current.coverImageUrl) && (
+                <AltTextField
+                  id="journal-cover-alt"
+                  value={current.coverImageAlt}
+                  onChange={(v) => setCurrent((prev) => ({ ...prev, coverImageAlt: v }))}
+                  imageUrl={imagePreview ? null : current.coverImageUrl}
+                  context={{ kind: 'journal', label: current.title || 'Journal article', detail: current.excerpt }}
+                  placeholder="Describe the cover photo"
+                />
+              )}
 
               <h3 className="text-xs font-semibold text-purple-600 flex items-center gap-3 pt-2">
                 <span className="w-8 h-px bg-purple-200"></span>

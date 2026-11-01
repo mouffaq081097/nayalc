@@ -10,10 +10,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { slugify } from '@/lib/slugify';
 import { Card, Field, FieldMessage, WARNING_COLOR, invalidStyle, secondary, subdued, text } from '../../_components/EditorFields';
 import { ImageSlot, Thumb } from '../../_components/ImageSlot';
+import { AltTextField } from '../../seo/_components/seoUi';
 import { apiErrorMessage, fmtAed, productStatus, stockState } from '../../products/_components/productAdmin';
 import { brandStatus } from './brandAdmin';
 
-const initialForm = (brand) => ({ name: brand?.name || '', isActive: brand?.is_active !== false });
+const initialForm = (brand) => ({ name: brand?.name || '', isActive: brand?.is_active !== false, imageAlt: brand?.image_alt || '' });
 const initialImage = (brand) => (brand?.imageurl ? { url: brand.imageurl } : null);
 const snapshot = (form, image) => JSON.stringify({ form, image: image ? image.url || image.file?.name : null });
 
@@ -70,6 +71,7 @@ export default function BrandEditor({ brand, onSaved }) {
   const buildFormData = () => {
     const fd = new FormData();
     fd.append('name', form.name.trim());
+    fd.append('image_alt', form.imageAlt.trim());
     if (image?.file) fd.append('image', image.file);
     else fd.append('image_url', image?.url || 'null');
     return fd;
@@ -226,6 +228,18 @@ export default function BrandEditor({ brand, onSaved }) {
                   <p style={subdued}>Without a photo, the homepage shows the brand&apos;s best-rated product instead.</p>
                 </div>
               </div>
+              {image && (
+                <div className="mt-4">
+                  <AltTextField
+                    id="imageAlt"
+                    value={form.imageAlt}
+                    onChange={v => setField('imageAlt', v)}
+                    imageUrl={image.url}
+                    context={{ kind: 'brand', label: form.name.trim() || 'This brand' }}
+                    placeholder={`e.g. ${form.name.trim() || 'Zorah'} products on a sunlit stone surface`}
+                  />
+                </div>
+              )}
             </Card>
 
             <Card

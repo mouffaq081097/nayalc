@@ -35,7 +35,8 @@ export async function GET() {
         fallbackUrl: slot.fallbackUrl,
         alt: override?.alt_text || slot.alt,
         imageUrl: override?.image_url || slot.fallbackUrl,
-        isCustom: !!override,
+        // A row with no image only carries alt text for the built-in photo (Admin → SEO → Image alt text)
+        isCustom: !!override?.image_url,
         updatedAt: override?.updated_at || null,
       };
     });

@@ -256,6 +256,8 @@ export default function ProductClient({ params, initialProduct, boughtWith = [] 
   );
 
   const allImages = product.images?.length ? product.images : (product.imageUrl ? [product.imageUrl] : []);
+  // The alt text written in Admin for each photo (page.js); '' falls back to the product name
+  const allAlts = product.images?.length && product.imageAlts?.length === product.images.length ? product.imageAlts : [];
   const hasDiscount = product.comparedprice > product.price;
   const discountPct = hasDiscount ? Math.round(((product.comparedprice - product.price) / product.comparedprice) * 100) : 0;
   const rating = Number(product.averageRating) || 0;
@@ -333,6 +335,7 @@ export default function ProductClient({ params, initialProduct, boughtWith = [] 
         <div className="lg:hidden min-w-0">
           <ProductGallery
             images={allImages}
+            alts={allAlts}
             name={product.name}
             discountPct={discountPct}
             badge={isHomemade && (
@@ -355,7 +358,7 @@ export default function ProductClient({ params, initialProduct, boughtWith = [] 
             >
               <Image
                 src={src}
-                alt={i === 0 ? product.name : t('{name}, photo {n}', { name: product.name, n: i + 1 })}
+                alt={allAlts[i] || (i === 0 ? product.name : t('{name}, photo {n}', { name: product.name, n: i + 1 }))}
                 fill
                 priority={i === 0}
                 sizes="55vw"
@@ -374,7 +377,7 @@ export default function ProductClient({ params, initialProduct, boughtWith = [] 
               </span>
             </button>
           ))}
-          <Lightbox images={allImages} name={product.name} open={zoomAt !== null} index={zoomAt ?? 0} onIndex={zoomTo} onClose={closeZoom} />
+          <Lightbox images={allImages} alts={allAlts} name={product.name} open={zoomAt !== null} index={zoomAt ?? 0} onIndex={zoomTo} onClose={closeZoom} />
         </div>
 
         {/* Buying panel — stays in view while the photos scroll past */}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAdmin } from '@/lib/adminAuth';
 
 export async function GET() {
   try {
@@ -21,6 +22,8 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
   try {
     const { name, description, image_url } = await request.json();
     if (!name) return NextResponse.json({ message: 'Name is required' }, { status: 400 });

@@ -76,7 +76,7 @@ function BrandCard({ brand, products }) {
           {/* Logo */}
           <div className="w-16 h-16 rounded-xl border border-gray-200 bg-white flex items-center justify-center shadow-sm overflow-hidden">
             {brand.imageurl ? (
-              <Image src={brand.imageurl} alt={brand.name} width={64} height={64} className="object-contain w-full h-full p-1" />
+              <Image src={brand.imageurl} alt={brand.image_alt || brand.name} width={64} height={64} className="object-contain w-full h-full p-1" />
             ) : (
               <span className="text-2xl font-bold text-gray-500">{initial}</span>
             )}

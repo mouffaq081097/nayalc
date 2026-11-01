@@ -23,6 +23,7 @@ const cardProps = (p) => ({
   price: p.price,
   originalPrice: p.comparedprice,
   image: p.imageUrl,
+  altText: p.altText,
   averageRating: p.averageRating,
   reviewCount: p.reviewCount,
   viewCount: p.viewCount,

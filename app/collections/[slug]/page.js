@@ -1,11 +1,14 @@
 import db from '@/lib/db';
 import CollectionClient from './CollectionClient';
+import { hasSeoColumns } from '@/lib/seoColumns';
 import Script from 'next/script';
 import { redirect } from 'next/navigation';
 
 async function getCategoryBySlug(slug) {
   try {
-    const categorySql = 'SELECT id, name, description, image_url as "imageUrl", slug FROM categories WHERE slug = $1 AND is_active = true';
+    // The photo's alt text (Admin → SEO → Image alt text)
+    const alt = (await hasSeoColumns()) ? ', image_alt as "imageAlt"' : '';
+    const categorySql = `SELECT id, name, description, image_url as "imageUrl", slug${alt} FROM categories WHERE slug = $1 AND is_active = true`;
     const { rows } = await db.query(categorySql, [slug]);
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {
@@ -16,7 +19,9 @@ async function getCategoryBySlug(slug) {
 
 async function getCategoryById(id) {
   try {
-    const categorySql = 'SELECT id, name, description, image_url as "imageUrl", slug FROM categories WHERE id = $1 AND is_active = true';
+    // The photo's alt text (Admin → SEO → Image alt text)
+    const alt = (await hasSeoColumns()) ? ', image_alt as "imageAlt"' : '';
+    const categorySql = `SELECT id, name, description, image_url as "imageUrl", slug${alt} FROM categories WHERE id = $1 AND is_active = true`;
     const { rows } = await db.query(categorySql, [id]);
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {

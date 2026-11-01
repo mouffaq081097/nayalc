@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { slugify } from '@/lib/slugify';
 import { requireAdmin } from '@/lib/adminAuth';
+import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
 
 /**
  * @swagger
@@ -33,9 +34,11 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const isAdmin = searchParams.get('admin') === 'true';
   try {
+    // The brand photo's alt text (Admin → SEO → Image alt text)
+    const alt = (await hasSeoColumns()) ? ', b.image_alt' : '';
     const sql = isAdmin
-      ? 'SELECT b.id, b.name, b.imageurl, b.is_active, (SELECT COUNT(*)::int FROM products p WHERE p.brand_id = b.id) AS "productsCount" FROM brands b ORDER BY b.name ASC'
-      : 'SELECT id, name, imageurl FROM brands WHERE is_active = true ORDER BY name ASC';
+      ? `SELECT b.id, b.name, b.imageurl${alt}, b.is_active, (SELECT COUNT(*)::int FROM products p WHERE p.brand_id = b.id) AS "productsCount" FROM brands b ORDER BY b.name ASC`
+      : `SELECT b.id, b.name, b.imageurl${alt} FROM brands b WHERE b.is_active = true ORDER BY b.name ASC`;
     let rows;
     try {
       const result = await db.query(sql);
@@ -119,6 +122,9 @@ export async function POST(request) {
       'INSERT INTO brands (name, imageurl, slug) VALUES ($1, $2, $3) RETURNING id, name, imageurl, is_active',
       [name, imageUrl, slug]
     );
+    if (formData.has('image_alt') && await hasSeoColumns()) {
+      await db.query('UPDATE brands SET image_alt = $1 WHERE id = $2', [parseAltText(formData.get('image_alt')), rows[0].id]);
+    }
 
     return NextResponse.json({ message: 'Brand added successfully', brand: rows[0] }, { status: 201 });
 

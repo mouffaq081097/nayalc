@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { hasSeoColumns } from '@/lib/seoColumns';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 function slugify(text) {
@@ -58,6 +59,11 @@ export async function PUT(request, context) {
 
     if (rows.length === 0) {
       return NextResponse.json({ message: 'Article not found.' }, { status: 404 });
+    }
+    // The cover photo's alt text, only when the editor sends it (switching an article on or off doesn't)
+    if (formData.has('coverImageAlt') && await hasSeoColumns()) {
+      const altText = String(formData.get('coverImageAlt') || '').replace(/\s+/g, ' ').trim().slice(0, 250) || null;
+      await db.query('UPDATE journal_articles SET cover_image_alt = $1 WHERE id = $2', [altText, id]);
     }
 
     return NextResponse.json({ message: 'Article updated' });

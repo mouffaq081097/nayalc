@@ -230,7 +230,7 @@ const CategoryHero = ({ category }) => {
       title={category.name}
       subtitle={category.description}
       image={category.bannerUrl || category.imageUrl}
-      imageAlt={category.name}
+      imageAlt={category.imageAlt || category.name}
     />
   );
 };
@@ -528,6 +528,7 @@ export default function CollectionClient({ category: serverCategory }) {
                         price={product.price}
                         originalPrice={product.comparedprice}
                         image={product.imageUrl}
+                        altText={product.altText}
                         averageRating={product.averageRating}
                         reviewCount={product.reviewCount}
                         viewCount={product.viewCount}

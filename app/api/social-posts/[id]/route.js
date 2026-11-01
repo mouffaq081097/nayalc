@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
+import { requireAdmin } from '@/lib/adminAuth';
+import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
 
 /**
  * GET /api/social-posts/[id]
  */
 export async function GET(request, context) {
-  const id = context.params.id;
+  const { id } = await context.params;
   try {
     const { rows } = await db.query('SELECT * FROM social_posts WHERE id = $1', [id]);
     if (rows.length === 0) {
@@ -24,7 +26,9 @@ export async function GET(request, context) {
  * Update a social post. Optionally replace the image.
  */
 export async function PUT(request, context) {
-  const id = context.params.id;
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+  const { id } = await context.params;
   try {
     const formData = await request.formData();
     const imageFile = formData.get('image');
@@ -55,6 +59,10 @@ export async function PUT(request, context) {
       RETURNING *
     `;
     const { rows } = await db.query(sql, [imageUrl, instagramUrl, caption, likes, sortOrder, id]);
+    if (formData.has('image_alt') && await hasSeoColumns()) {
+      const saved = await db.query('UPDATE social_posts SET image_alt = $1 WHERE id = $2 RETURNING *', [parseAltText(formData.get('image_alt')), id]);
+      rows[0] = saved.rows[0];
+    }
 
     return NextResponse.json({ message: 'Post updated', post: rows[0] });
   } catch (error) {
@@ -68,7 +76,9 @@ export async function PUT(request, context) {
  * Toggle active status.
  */
 export async function PATCH(request, context) {
-  const id = context.params.id;
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+  const { id } = await context.params;
   try {
     const { is_active } = await request.json();
     const { rowCount } = await db.query(
@@ -87,7 +97,9 @@ export async function PATCH(request, context) {
  * DELETE /api/social-posts/[id]
  */
 export async function DELETE(request, context) {
-  const id = context.params.id;
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+  const { id } = await context.params;
   try {
     const { rowCount } = await db.query('DELETE FROM social_posts WHERE id = $1 RETURNING id', [id]);
     if (rowCount === 0) {

@@ -24,9 +24,9 @@ export async function POST(request) {
 
     await ensureCampaignsTable();
     const { rows } = await db.query(
-      `INSERT INTO homepage_campaigns (title, subtitle, cta_label, link, image_url, starts_at, ends_at, show_countdown, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-      [v.title, v.subtitle, v.ctaLabel, v.link, v.imageUrl, v.startsAt, v.endsAt, v.showCountdown, v.isActive]
+      `INSERT INTO homepage_campaigns (title, subtitle, cta_label, link, image_url, image_alt, starts_at, ends_at, show_countdown, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+      [v.title, v.subtitle, v.ctaLabel, v.link, v.imageUrl, v.imageAlt, v.startsAt, v.endsAt, v.showCountdown, v.isActive]
     );
     return NextResponse.json({ id: rows[0].id }, { status: 201 });
   } catch (error) {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { hasSeoColumns } from '@/lib/seoColumns';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 
 async function ensureTable() {
@@ -13,6 +14,7 @@ async function ensureTable() {
       excerpt TEXT,
       body TEXT,
       cover_image_url TEXT,
+      cover_image_alt TEXT,
       cta_label TEXT,
       cta_href TEXT,
       is_active BOOLEAN NOT NULL DEFAULT true,
@@ -40,8 +42,10 @@ function slugify(text) {
 export async function GET() {
   try {
     await ensureTable();
+    // The cover photo's alt text (Admin → Journal, or SEO → Image alt text)
+    const alt = (await hasSeoColumns()) ? ' cover_image_alt as "coverImageAlt",' : '';
     const { rows } = await db.query(
-      `SELECT id, slug, title, tag, read_time as "readTime", excerpt, body, cover_image_url as "coverImageUrl",
+      `SELECT id, slug, title, tag, read_time as "readTime", excerpt, body, cover_image_url as "coverImageUrl",${alt}
               cta_label as "ctaLabel", cta_href as "ctaHref", is_active as "isActive", sort_order as "sortOrder",
               created_at as "createdAt", updated_at as "updatedAt"
        FROM journal_articles
@@ -96,6 +100,10 @@ export async function POST(request) {
        RETURNING id`,
       [slug, title, tag, readTime, excerpt, body, coverImageUrl, ctaLabel, ctaHref, isActive, sortOrder]
     );
+    if (formData.has('coverImageAlt') && await hasSeoColumns()) {
+      const altText = String(formData.get('coverImageAlt') || '').replace(/\s+/g, ' ').trim().slice(0, 250) || null;
+      await db.query('UPDATE journal_articles SET cover_image_alt = $1 WHERE id = $2', [altText, rows[0].id]);
+    }
 
     return NextResponse.json({ message: 'Article created', id: rows[0].id }, { status: 201 });
   } catch (error) {

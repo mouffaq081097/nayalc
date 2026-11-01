@@ -71,7 +71,7 @@ export default function JournalArticlePage({ params }) {
 
         <div className="relative aspect-[16/9] rounded-2xl overflow-hidden bg-gray-50 mb-8">
           {article.coverImageUrl ? (
-            <Image src={article.coverImageUrl} alt={article.title} fill sizes="768px" className="object-cover" />
+            <Image src={article.coverImageUrl} alt={article.coverImageAlt || article.title} fill sizes="768px" className="object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center" style={{ background: 'rgba(147,104,236,0.06)' }}>
               <BookOpen size={40} style={{ color: LAVENDER }} strokeWidth={1.5} />

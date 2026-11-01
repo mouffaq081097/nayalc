@@ -86,14 +86,14 @@ export function BrandPhotoBanner({ brand: slugStart, eyebrow, title, text, ctaLa
   return (
     <section aria-label={t(title)} className="relative">
       <div className="hidden md:flex relative min-h-[620px] items-center overflow-hidden">
-        <Image src={brand.imageurl} alt={brand.name} fill sizes="100vw" className="object-cover" />
+        <Image src={brand.imageurl} alt={brand.image_alt || brand.name} fill sizes="100vw" className="object-cover" />
         <div className="absolute inset-0 bg-[linear-gradient(270deg,rgba(255,250,244,0.92)_0%,rgba(255,250,244,0.6)_38%,rgba(255,250,244,0)_62%)]" />
         {/* On the right, over the wash, in Arabic too */}
         <Container wide className="relative w-full flex ltr:justify-end rtl:justify-start"><Copy {...copy} /></Container>
       </div>
       <div className="md:hidden bg-[#fbf6ef]">
         <div className="relative aspect-[4/3]">
-          <Image src={brand.imageurl} alt={brand.name} fill sizes="100vw" className="object-cover" />
+          <Image src={brand.imageurl} alt={brand.image_alt || brand.name} fill sizes="100vw" className="object-cover" />
         </div>
         <Container wide className="pt-7 pb-10"><Copy {...copy} /></Container>
       </div>

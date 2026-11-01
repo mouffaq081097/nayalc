@@ -4,6 +4,7 @@ import BrandClient from './BrandClient';
 import Script from 'next/script';
 import { redirect } from 'next/navigation';
 import { slugify } from '@/lib/slugify';
+import { hasSeoColumns } from '@/lib/seoColumns';
 
 // Brand URLs are matched by a slug computed from the name (see lib/slugify),
 // not a stored DB column — that column exists but nothing ever populates it,
@@ -11,7 +12,9 @@ import { slugify } from '@/lib/slugify';
 // brand whose name has a space or accent (e.g. "Naya Lumière Perfumes").
 const getActiveBrands = cache(async () => {
   try {
-    const { rows } = await db.query('SELECT id, name, imageurl FROM brands WHERE is_active = true');
+    // The photo's alt text (Admin → SEO → Image alt text)
+    const alt = (await hasSeoColumns()) ? ', image_alt' : '';
+    const { rows } = await db.query(`SELECT id, name, imageurl${alt} FROM brands WHERE is_active = true`);
     return rows;
   } catch (error) {
     console.error('Error fetching brands:', error);

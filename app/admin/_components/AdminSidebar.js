@@ -49,11 +49,18 @@ const STORE_NAV = [
   { to: '/admin/hero', text: 'Hero banner', icon: ImageIcon },
   { to: '/admin/homepage', text: 'Homepage images', icon: LayoutTemplate },
   { to: '/admin/journal', text: 'Journal', icon: BookOpen },
-  { to: '/admin/seo', text: 'SEO', icon: Globe },
+  {
+    to: '/admin/seo', text: 'SEO', icon: Globe,
+    children: [
+      { to: '/admin/seo/products', text: 'Product listings' },
+      { to: '/admin/seo/images', text: 'Image alt text' },
+      { to: '/admin/seo/merchant', text: 'Google Merchant' },
+    ],
+  },
   { to: '/admin/social', text: 'Social', icon: Share2 },
 ];
 
-const ALL_LINKS = [...MAIN_NAV.flatMap(item => [item, ...(item.children || [])]), ...STORE_NAV];
+const ALL_LINKS = [...MAIN_NAV, ...STORE_NAV].flatMap(item => [item, ...(item.children || [])]);
 
 // The most specific link matching the path, so /admin/orders/abandoned highlights only "Abandoned checkouts"
 const activeHref = (pathname) => ALL_LINKS
@@ -166,9 +173,18 @@ export default function AdminSidebar({ pathname, notifications, staffPages, onNa
             </Link>
           </div>
           <div className="space-y-0.5">
-            {STORE_NAV.map(item => (
-              <NavItem key={item.to} item={item} current={current === item.to} onNavigate={onNavigate} />
-            ))}
+            {STORE_NAV.map(item => {
+              const children = item.children || [];
+              const inSection = current === item.to || children.some(child => child.to === current);
+              return (
+                <div key={item.to} className="space-y-0.5">
+                  <NavItem item={item} current={current === item.to} inSection={inSection} onNavigate={onNavigate} />
+                  {inSection && children.map(child => (
+                    <SubItem key={child.to} item={child} current={current === child.to} onNavigate={onNavigate} />
+                  ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       </nav>

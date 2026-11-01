@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { uploadMediaToCloudinary } from '@/lib/cloudinary';
+import { requireAdmin } from '@/lib/adminAuth';
+import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
 
 export async function GET() {
   try {
@@ -13,9 +15,14 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  const unauthorized = await requireAdmin();
+  if (unauthorized) return unauthorized;
+
   const client = await db.connect();
   try {
     const formData = await request.formData();
+    // Before BEGIN: adding the column locks the table
+    const saveAlt = formData.has('image_alt') && await hasSeoColumns();
     const data = Object.fromEntries(formData.entries());
 
     const {
@@ -66,6 +73,8 @@ export async function POST(request) {
     ];
 
     const { rows } = await client.query(sql, values);
+    // The photo's description for screen readers and Google Images (Admin → SEO → Image alt text)
+    if (saveAlt) await client.query('UPDATE hero_slides SET image_alt = $1 WHERE id = $2', [parseAltText(formData.get('image_alt')), rows[0].id]);
 
     await client.query('COMMIT');
     return NextResponse.json({ message: 'Hero slide created', id: rows[0].id }, { status: 201 });

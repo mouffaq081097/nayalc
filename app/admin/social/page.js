@@ -6,6 +6,7 @@ import PageLoader from '@/app/components/PageLoader';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/app/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { AltTextField } from '../seo/_components/seoUi';
 
 const ManageSocial = () => {
  const [posts, setPosts] = useState([]);
@@ -20,6 +21,7 @@ const ManageSocial = () => {
  const [caption, setCaption] = useState('');
  const [likes, setLikes] = useState('');
  const [sortOrder, setSortOrder] = useState(0);
+ const [imageAlt, setImageAlt] = useState('');
 
  const fetchPosts = async () => {
  try {
@@ -46,11 +48,13 @@ const ManageSocial = () => {
  setCaption(editingPost.caption || '');
  setLikes(editingPost.likes || '');
  setSortOrder(editingPost.sort_order || 0);
+ setImageAlt(editingPost.image_alt || '');
  } else {
  setInstagramUrl('');
  setCaption('');
  setLikes('');
  setSortOrder(posts.length);
+ setImageAlt('');
  }
  setImageFile(null);
  }
@@ -114,6 +118,7 @@ const ManageSocial = () => {
  formData.append('caption', caption);
  formData.append('likes', likes);
  formData.append('sort_order', sortOrder);
+ formData.append('image_alt', imageAlt);
 
  try {
  const url = editingPost ? `/api/social-posts/${editingPost.id}` : '/api/social-posts';
@@ -314,6 +319,17 @@ const ManageSocial = () => {
  disabled={isSubmitting}
  />
  </div>
+
+ {/* Alt text: what the photo shows, for screen readers and Google Images */}
+ <AltTextField
+ id="social-image-alt"
+ value={imageAlt}
+ onChange={setImageAlt}
+ imageUrl={imageFile ? null : editingPost?.image_url}
+ context={{ kind: 'social', label: 'An Instagram post', detail: caption }}
+ placeholder="Describe the photo"
+ hint="Left empty, the caption is used."
+ />
 
  {/* Likes & Sort Order */}
  <div className="grid grid-cols-2 gap-4">

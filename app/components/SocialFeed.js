@@ -48,7 +48,7 @@ export function SocialFeed() {
                 aria-label={t('Instagram post {n}', { n: i + 1 })}
                 className="group relative block aspect-square overflow-hidden bg-[#f6f5f2]"
               >
-                <Image src={post.image_url} alt={post.caption || ''} fill sizes="(max-width: 768px) 33vw, 17vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                <Image src={post.image_url} alt={post.image_alt || post.caption || ''} fill sizes="(max-width: 768px) 33vw, 17vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 <span className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
               </a>
             ))}

@@ -696,6 +696,7 @@ export default function AllProductsPage() {
                         price={product.price}
                         originalPrice={product.comparedprice}
                         image={product.imageUrl}
+                        altText={product.altText}
                         averageRating={product.averageRating}
                         reviewCount={product.reviewCount}
                         viewCount={product.viewCount}

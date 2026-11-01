@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireAdmin } from '@/lib/adminAuth';
+import { hasSeoColumns } from '@/lib/seoColumns';
+import { parseGoogleCategoryId } from '@/lib/googleTaxonomy';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { ensureBackorderColumns, readBackorderFields, BACKORDER_SELECT } from '@/lib/backorders';
 
@@ -226,6 +228,8 @@ export async function POST(request) {
     const backorder = readBackorderFields(key => data[key]);
 
     await ensureBackorderColumns();
+    // Before BEGIN: adding a column locks the table
+    const saveSeo = formData.has('seo_title') && await hasSeoColumns();
     await client.query('BEGIN');
 
     let vendorName = null;
@@ -253,6 +257,14 @@ export async function POST(request) {
     const productValues = [name, slug, description, price, stock_quantity, status, vendorName, long_description, benefits, how_to_use, how_to_use_video || null, comparedprice, ingredients, brand_id, size, form, backorder.allow_backorder, backorder.backorder_lead_days, backorder.backorder_limit];
     const { rows: productRows } = await client.query(productSql, productValues);
     const productId = productRows[0].id;
+
+    // Its own search listing and Google category (Admin → SEO); '' = automatic
+    if (saveSeo) {
+      const seoText = (value, max) => String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, max) || null;
+      await client.query('UPDATE products SET seo_title = $1, seo_description = $2, google_category_id = $3 WHERE id = $4', [
+        seoText(formData.get('seo_title'), 120), seoText(formData.get('seo_description'), 320), parseGoogleCategoryId(formData.get('google_category_id')), productId,
+      ]);
+    }
 
     const categoryIds = categoryIdsString.split(',').map(id => parseInt(id.trim()));
     if (categoryIds.length > 0) {

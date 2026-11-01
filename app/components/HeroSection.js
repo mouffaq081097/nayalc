@@ -98,6 +98,8 @@ function getTextVariants(reduceMotion) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 const isVideoSrc = (src) => typeof src === 'string' && /\.(mp4|mov)$/i.test(src);
+// A headline's line breaks are for the banner's layout, not for its alt text
+const flat = (text) => String(text || '').replace(/\s+/g, ' ').trim();
 
 /**
  * A photo slide as one <picture>: phones fetch only the phone photo and laptops
@@ -105,7 +107,7 @@ const isVideoSrc = (src) => typeof src === 'string' && /\.(mp4|mov)$/i.test(src)
  * downloaded the desktop photo.) The first slide loads first, at high priority.
  */
 function HeroPicture({ slide, first }) {
-  const common = { alt: slide.headline || '', fill: true, sizes: '100vw', priority: first, fetchPriority: first ? 'high' : undefined };
+  const common = { alt: slide.imageAlt || flat(slide.headline), fill: true, sizes: '100vw', priority: first, fetchPriority: first ? 'high' : undefined };
   const mobileSrc = slide.imageSrc || slide.imageSrcDesktop;
   const desktopSrc = slide.imageSrcDesktop || slide.imageSrc;
   if (!mobileSrc) return null;
@@ -147,7 +149,7 @@ function SlideBackground({ slide, reduceMotion, playing, first }) {
     </video>
   );
   const photo = (src) => (
-    <Image src={src} alt={slide.headline} fill sizes="100vw" className={`object-cover ${slide.imagePosition}`} priority={first} />
+    <Image src={src} alt={slide.imageAlt || flat(slide.headline)} fill sizes="100vw" className={`object-cover ${slide.imagePosition}`} priority={first} />
   );
 
   return (
@@ -252,6 +254,8 @@ export function HeroSection({ dbSlides = [] }) {
     id: s.id,
     eyebrow: s.eyebrow,
     headline: s.headline,
+    // The photo's own description (Admin → Hero banner or SEO → Image alt text); the headline until there is one
+    imageAlt: s.image_alt || '',
     body: s.body,
     cta: { text: s.cta_text, href: s.cta_href },
     imageSrc: s.image_src_mobile,

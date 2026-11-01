@@ -82,7 +82,7 @@ export function CampaignBanner({ campaign }) {
           </div>
           <div className="order-1 md:order-2 relative aspect-[16/10] md:aspect-auto md:min-h-[340px] bg-gray-200">
             {campaign.imageUrl && (
-              <Image src={campaign.imageUrl} alt={campaign.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
+              <Image src={campaign.imageUrl} alt={campaign.imageAlt || campaign.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
             )}
           </div>
         </div>

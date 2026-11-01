@@ -1,208 +1,108 @@
 'use client';
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight, Images, ListChecks, ShoppingBag, Sparkles } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
-import { Search, ShieldCheck, Zap, BarChart3, Globe, Sparkles, AlertTriangle, CheckCircle2, ArrowRight, Loader2, Target, TrendingUp } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import PageLoader from '../../components/PageLoader';
+import { apiErrorMessage } from '../products/_components/productAdmin';
+import { secondary, subdued, text } from '../_components/EditorFields';
+import { SeoTabs } from './_components/seoUi';
 
-const SeoAnalyticsPage = () => {
-    const { fetchWithAuth } = useAppContext();
-    const [auditData, setAuditData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    const runAudit = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await fetchWithAuth('/api/admin/ai/seo-audit');
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.details || data.error || 'SEO Audit Protocol Failed');
-            setAuditData(data);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        runAudit();
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="min-h-[600px] flex flex-col items-center justify-center gap-6">
-                <div className="relative">
-                    <div className="w-20 h-20 border-4 border-cl-purple/20 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <Globe className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cl-purple animate-pulse" size={32} />
-                </div>
-                <div className="text-center space-y-2">
-                    <p className="text-sm font-black   text-gray-900">Scanning Global Index</p>
-                    <p className="text-xs text-gray-400 italic">AI Strategist is calculating neural rankings...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (error || !auditData) {
-        return (
-            <div className="min-h-[600px] flex flex-col items-center justify-center gap-6 text-center">
-                <div className="w-20 h-20 rounded-[2rem] bg-red-50 flex items-center justify-center text-red-500 border border-red-100">
-                    <AlertTriangle size={32} />
-                </div>
-                <div className="space-y-2">
-                    <p className="text-sm font-semibold text-gray-900">Audit failed</p>
-                    <p className="text-xs text-red-400 font-medium">{error || 'Connection timed out. Please try again.'}</p>
-                </div>
-                <button onClick={runAudit} className="cl-gradient-btn gap-2 px-6 py-2.5 text-[11px] mt-2 active:scale-[0.98]">
-                    <Zap size={13} /> Retry
-                </button>
-            </div>
-        );
-    }
-
-    const { audit, analysis } = auditData;
-
-    return (
-        <div className="space-y-10 pb-20">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
-                <div>
-                    <h2 className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>SEO Audit</h2>
-                    <p className="text-sm text-gray-400 mt-0.5">AI-powered analysis of your store's search visibility</p>
-                </div>
-                <button onClick={runAudit} className="cl-gradient-btn gap-2 px-5 py-2.5 text-[11px] active:scale-[0.98] whitespace-nowrap">
-                    <Zap size={13} /> Run Audit
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                {/* Score Card */}
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="lg:col-span-4 bg-white rounded-[3rem] border border-gray-100 p-10 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden group"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#f7f7f7] via-transparent to-transparent pointer-events-none"></div>
-                    <div className="relative z-10 space-y-6">
-                        <div className="relative w-40 h-40 mx-auto">
-                            <svg className="w-full h-full transform -rotate-90">
-                                <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-gray-50" />
-                                <motion.circle 
-                                    cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="8" fill="transparent" 
-                                    strokeDasharray={440}
-                                    initial={{ strokeDashoffset: 440 }}
-                                    animate={{ strokeDashoffset: 440 - (440 * (analysis?.score || 0)) / 100 }}
-                                    transition={{ duration: 2, ease: "easeOut" }}
-                                    className="text-cl-purple"
-                                />
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-5xl font-black text-gray-900 er">{analysis?.score || 0}</span>
-                                <span className="text-[10px] font-black text-gray-400  ">Global Health</span>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-gray-900">Neural Visibility Score</h3>
-                            <p className="text-sm text-gray-400 mt-2 max-w-[200px] mx-auto">Your overall optimization rank across the boutique ecosystem.</p>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Technical Audit Grid */}
-                <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[
-                        { title: "Catalog Optimization", val: audit.missingSlugs === 0 ? "Optimal" : `${audit.missingSlugs} Pending`, icon: Target, color: "text-cl-purple", bg: "bg-cl-bg-lavender", desc: "Product path structures and slug health" },
-                        { title: "Meta Descriptions", val: audit.shortDescriptions === 0 ? "Excellent" : `${audit.shortDescriptions} Short`, icon: BarChart3, color: "text-amber-600", bg: "bg-amber-50", desc: "Short-form catalog descriptions" },
-                        { title: "Dossier Depth", val: audit.missingLongDescriptions === 0 ? "Complete" : `${audit.missingLongDescriptions} Sparse`, icon: ShieldCheck, color: "text-blue-600", bg: "bg-blue-50", desc: "Luxury product storytelling health" },
-                        { title: "Visual Accessibility", val: audit.missingAltTexts === 0 ? "Perfect" : `${audit.missingAltTexts} Missing`, icon: Globe, color: audit.missingAltTexts > 0 ? "text-red-600" : "text-green-600", bg: audit.missingAltTexts > 0 ? "bg-red-50" : "bg-green-50", desc: "Image alt-text and SEO crawlability" }
-                    ].map((item, i) => (
-                        <motion.div 
-                            key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                            className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm flex items-start gap-6 hover:shadow-lg transition-all duration-500"
-                        >
-                            <div className={`w-14 h-14 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center flex-shrink-0`}>
-                                <item.icon size={24} />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-gray-400   mb-1">{item.title}</p>
-                                <h4 className="text-lg font-bold text-gray-900 leading-none mb-2">{item.val}</h4>
-                                <p className="text-xs text-gray-400 font-medium italic leading-relaxed">{item.desc}</p>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            </div>
-
-            {/* AI Strategic Roadmap */}
-            <section className="space-y-8">
-                <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-cl-purple flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                        <Sparkles size={20} />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900 ">AI Strategic Roadmap</h3>
-                        <p className="text-xs text-gray-400 mt-0.5">High-impact actions generated by the Naya Lumière Neural Network</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {analysis?.recommendations?.map((rec, i) => (
-                        <motion.div 
-                            key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + i * 0.1 }}
-                            className="bg-white rounded-[2.5rem] border border-gray-100 p-10 shadow-sm relative overflow-hidden flex flex-col group hover:border-indigo-200 transition-all duration-500"
-                        >
-                            <div className="absolute top-0 right-0 p-6">
-                                <span className={`px-3 py-1 rounded-full text-[8px] font-black   border ${
-                                    rec.impact === 'High' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-amber-50 text-amber-600 border-amber-100'
-                                }`}>
-                                    {rec.impact} Impact
-                                </span>
-                            </div>
-                            
-                            <div className="flex-grow space-y-4">
-                                <h4 className="text-lg font-bold text-gray-900 pr-12 group-hover:text-cl-purple transition-colors">{rec.title}</h4>
-                                <p className="text-sm text-gray-500 leading-relaxed font-medium italic opacity-80">"{rec.action}"</p>
-                            </div>
-
-                            <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
-                                <span className="text-[9px] font-black text-cl-purple  ">Execute Protocol</span>
-                                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-cl-purple group-hover:text-white transition-all">
-                                    <ArrowRight size={14} />
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            </section>
-
-            {/* Market Intelligence */}
-            <motion.section 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-                className="bg-gray-900 rounded-[3rem] p-12 text-white relative overflow-hidden"
-            >
-                <div className="absolute top-0 right-0 p-12 opacity-10">
-                    <TrendingUp size={200} />
-                </div>
-                <div className="relative z-10 grid lg:grid-cols-12 gap-12 items-center">
-                    <div className="lg:col-span-4 space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-cl-purple-light flex items-center justify-center shadow-lg"><Globe size={16} /></div>
-                            <span className="text-[10px] font-black   text-cl-purple-light">Market Intelligence</span>
-                        </div>
-                        <h2 className="text-3xl font-serif italic ">Competitive Landscape <br/> Analysis</h2>
-                    </div>
-                    <div className="lg:col-span-8 bg-white/5 backdrop-blur-xl rounded-[2rem] p-10 border border-white/10">
-                        <p className="text-lg font-medium leading-[1.8] text-gray-300 italic">
-                            "{analysis?.marketInsights || 'The network is still aggregating regional search data. Maintain focus on premium keyword density.'}"
-                        </p>
-                    </div>
-                </div>
-            </motion.section>
+const Tool = ({ href, icon: Icon, title, description, stats }) => (
+  <Link href={href} className="sp-card sp-card-pad flex flex-col gap-3 hover:shadow-md transition-shadow group">
+    <div className="flex items-start gap-3">
+      <span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#f1f1f1' }}>
+        <Icon size={17} style={secondary} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2 className="sp-section-title">{title}</h2>
+        <p className="text-[12.5px] mt-0.5" style={subdued}>{description}</p>
+      </div>
+      <ArrowRight size={16} className="shrink-0 mt-1 transition-transform group-hover:translate-x-0.5" style={subdued} />
+    </div>
+    <dl className="grid grid-cols-2 gap-x-4 gap-y-2 pt-3" style={{ borderTop: '1px solid var(--sp-border)' }}>
+      {stats.map(([label, value, tone]) => (
+        <div key={label}>
+          <dt className="text-[12px]" style={subdued}>{label}</dt>
+          <dd className="text-[18px] font-semibold tabular-nums" style={tone ? { color: tone } : text}>{value}</dd>
         </div>
-    );
-};
+      ))}
+    </dl>
+  </Link>
+);
 
-export default SeoAnalyticsPage;
+const ATTENTION = '#b42318';
+
+export default function SeoOverviewPage() {
+  const { fetchWithAuth } = useAppContext();
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchWithAuth('/api/admin/seo/overview')
+      .then(res => res.json())
+      .then(setData)
+      .catch(e => setError(apiErrorMessage(e, 'Could not load the SEO overview.')));
+  }, [fetchWithAuth]);
+
+  if (!data && !error) return <PageLoader />;
+
+  return (
+    <div className="max-w-[1080px] mx-auto space-y-4">
+      <div>
+        <h1 className="text-[20px] font-semibold leading-tight" style={text}>SEO</h1>
+        <p className="text-[13px] mt-0.5" style={subdued}>How your products and photos appear in Google Search, Google Images and Google Shopping.</p>
+      </div>
+      <SeoTabs current="/admin/seo" />
+
+      {error ? (
+        <div className="sp-card sp-card-pad text-[13px]" style={{ color: ATTENTION }}>{error}</div>
+      ) : (
+        <>
+          {!data.aiReady && (
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-[13px]" style={{ background: '#fff4e5', border: '1px solid #ffd79d', color: '#5e4200' }}>
+              <Sparkles size={16} className="shrink-0 mt-0.5" />
+              <span>AI suggestions are off: the Gemini API key (GEMINI_API_KEY) isn&apos;t set. Everything else here works without it.</span>
+            </div>
+          )}
+          <div className="grid gap-4 md:grid-cols-3">
+            <Tool
+              href="/admin/seo/products"
+              icon={ListChecks}
+              title="Product listings"
+              description="The title and description Google shows for each product page. AI writes them from your product details."
+              stats={[
+                ['Live products', data.products.live],
+                ['With their own title', data.products.customTitle],
+                ['With their own description', data.products.customDescription],
+                ['Still on automatic text', data.products.automatic, data.products.automatic ? '#8a6100' : null],
+              ]}
+            />
+            <Tool
+              href="/admin/seo/images"
+              icon={Images}
+              title="Image alt text"
+              description="A short description of every photo on the site, for screen readers and Google Images."
+              stats={[
+                ['Images', data.images.total],
+                ['Missing alt text', data.images.missing, data.images.missing ? ATTENTION : null],
+              ]}
+            />
+            <Tool
+              href="/admin/seo/merchant"
+              icon={ShoppingBag}
+              title="Google Merchant"
+              description="Each collection's Google product category, and what the product feed sends to Merchant Center."
+              stats={[
+                ['In the feed', data.merchant.inFeed],
+                ['Left out', data.merchant.leftOut, data.merchant.leftOut ? ATTENTION : null],
+                ['With a warning', data.merchant.withIssues, data.merchant.withIssues ? '#8a6100' : null],
+                ['On the brand default', data.merchant.brandDefault, data.merchant.brandDefault ? '#8a6100' : null],
+              ]}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

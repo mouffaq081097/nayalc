@@ -3,6 +3,8 @@ import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { requireAdmin } from '@/lib/adminAuth';
 import { hasRitualStepColumn, parseRitualStep } from '@/lib/ritualSteps';
+import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
+import { parseGoogleCategoryId } from '@/lib/googleTaxonomy';
 
 /**
  * @swagger
@@ -26,11 +28,12 @@ export async function GET(request, { params }) {
     // Try to find by ID first, then by slug
     let categorySql, categoryValues;
     const ritualStep = (await hasRitualStepColumn()) ? ', ritual_step as "ritualStep"' : '';
+    const seo = (await hasSeoColumns()) ? ', image_alt as "imageAlt", google_category_id as "googleCategoryId"' : '';
     if (!isNaN(parseInt(idOrSlug))) {
-        categorySql = `SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive"${ritualStep} FROM categories WHERE id = $1`;
+        categorySql = `SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive"${ritualStep}${seo} FROM categories WHERE id = $1`;
         categoryValues = [parseInt(idOrSlug)];
     } else {
-        categorySql = `SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive"${ritualStep} FROM categories WHERE slug = $1`;
+        categorySql = `SELECT id, name, slug, description, image_url as "imageUrl", banner_url as "bannerUrl", parent_id as "parentId", is_active as "isActive"${ritualStep}${seo} FROM categories WHERE slug = $1`;
         categoryValues = [idOrSlug];
     }
 
@@ -155,6 +158,7 @@ export async function PUT(request, { params }) {
 
     // Before BEGIN: adding the column locks the table, which would wait on this transaction's own row lock
     const saveRitualStep = formData.has('ritual_step') && await hasRitualStepColumn();
+    const saveSeo = (formData.has('image_alt') || formData.has('google_category_id')) && await hasSeoColumns();
 
     await client.query('BEGIN');
 
@@ -211,6 +215,13 @@ export async function PUT(request, { params }) {
     // Ritual step (lib/ritualSteps.js): '' = automatic, from the names
     if (saveRitualStep) {
       await client.query('UPDATE categories SET ritual_step = $1 WHERE id = $2', [parseRitualStep(formData.get('ritual_step')), id]);
+    }
+    // Alt text for its photo, and its Google product category (Admin → SEO); a field not sent stays as it is
+    if (saveSeo && formData.has('image_alt')) {
+      await client.query('UPDATE categories SET image_alt = $1 WHERE id = $2', [parseAltText(formData.get('image_alt')), id]);
+    }
+    if (saveSeo && formData.has('google_category_id')) {
+      await client.query('UPDATE categories SET google_category_id = $1 WHERE id = $2', [parseGoogleCategoryId(formData.get('google_category_id')), id]);
     }
 
     // Replace product associations only when the request says which products belong here.

@@ -3,6 +3,8 @@ import db from '@/lib/db';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { requireAdmin } from '@/lib/adminAuth';
 import { hasRitualStepColumn, parseRitualStep } from '@/lib/ritualSteps';
+import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
+import { parseGoogleCategoryId } from '@/lib/googleTaxonomy';
 
 /**
  * @swagger
@@ -23,12 +25,16 @@ export async function GET(request) {
     const activeFilter = isAdmin ? '' : 'WHERE c.is_active = true';
     // The ritual step (lib/ritualSteps.js) feeds the homepage ritual and "Complete your routine"
     const step = (await hasRitualStepColumn()) ? ['c.ritual_step as "ritualStep",', ', c.ritual_step'] : ['', ''];
+    // Alt text for the collection's photo, and its Google product category (Admin → SEO, lib/seoColumns.js)
+    const seo = (await hasSeoColumns())
+      ? ['c.image_alt as "imageAlt", c.google_category_id as "googleCategoryId",', ', c.image_alt, c.google_category_id']
+      : ['', ''];
     const sql = `
-      SELECT c.id, c.name, c.slug, c.description, c.image_url as "imageUrl", c.banner_url as "bannerUrl", c.parent_id as "parentId", c.is_active as "isActive", ${step[0]} COUNT(cp.product_id) as "productsCount"
+      SELECT c.id, c.name, c.slug, c.description, c.image_url as "imageUrl", c.banner_url as "bannerUrl", c.parent_id as "parentId", c.is_active as "isActive", ${step[0]} ${seo[0]} COUNT(cp.product_id) as "productsCount"
       FROM categories c
       LEFT JOIN category_products cp ON c.id = cp.category_id
       ${activeFilter}
-      GROUP BY c.id, c.name, c.slug, c.description, c.image_url, c.banner_url, c.parent_id, c.is_active${step[1]}
+      GROUP BY c.id, c.name, c.slug, c.description, c.image_url, c.banner_url, c.parent_id, c.is_active${step[1]}${seo[1]}
       ORDER BY c.name ASC
     `;
     const { rows } = await db.query(sql);
@@ -111,6 +117,7 @@ export async function POST(request) {
 
     // Before BEGIN: adding the column locks the table, which would wait on this transaction
     const saveRitualStep = formData.has('ritual_step') && await hasRitualStepColumn();
+    const saveSeo = (formData.has('image_alt') || formData.has('google_category_id')) && await hasSeoColumns();
 
     await client.query('BEGIN');
 
@@ -147,6 +154,12 @@ export async function POST(request) {
 
     if (saveRitualStep) {
       await client.query('UPDATE categories SET ritual_step = $1 WHERE id = $2', [parseRitualStep(formData.get('ritual_step')), newCategoryId]);
+    }
+    // Alt text for its photo, and its Google product category ('' = not set)
+    if (saveSeo) {
+      await client.query('UPDATE categories SET image_alt = $1, google_category_id = $2 WHERE id = $3', [
+        parseAltText(formData.get('image_alt')), parseGoogleCategoryId(formData.get('google_category_id')), newCategoryId,
+      ]);
     }
 
     if (productIdsString) {
