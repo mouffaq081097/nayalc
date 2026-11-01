@@ -325,7 +325,6 @@ const ManageSocial = () => {
  id="social-image-alt"
  value={imageAlt}
  onChange={setImageAlt}
- imageUrl={imageFile ? null : editingPost?.image_url}
  context={{ kind: 'social', label: 'An Instagram post', detail: caption }}
  placeholder="Describe the photo"
  hint="Left empty, the caption is used."

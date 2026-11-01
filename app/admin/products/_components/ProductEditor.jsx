@@ -15,7 +15,8 @@ import { DEFAULT_BACKORDER_LEAD_DAYS, DEFAULT_BACKORDER_LIMIT } from '@/lib/back
 import {
   AutoGrowTextarea, Card, ERROR_COLOR, Field, FieldMessage, WARNING_COLOR, invalidStyle, secondary, subdued, text,
 } from '../../_components/EditorFields';
-import { AiButton, CharCount, GoogleCategorySelect, SerpPreview, categoryLabel, useSeoAi } from '../../seo/_components/seoUi';
+import { CharCount, FillButton, GoogleCategorySelect, SerpPreview, categoryLabel } from '../../seo/_components/seoUi';
+import { writeAltText, writeSeoDescription, writeSeoTitle } from '@/lib/seoWriter';
 import { autoSeoDescription, autoSeoTitle, productTitle, SEO_DESCRIPTION_LIMIT, SEO_TITLE_LIMIT } from '@/lib/seo';
 import { resolveGoogleCategory, sourceLabel } from '@/lib/googleTaxonomy';
 
@@ -151,8 +152,6 @@ export default function ProductEditor({ product, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
-  const { suggestAlt, suggestListing } = useSeoAi();
-  const [aiBusy, setAiBusy] = useState(''); // 'listing' | 'alt' while the AI writes
 
   // What the editor looked like when it opened (or was last saved), to detect unsaved changes
   const baselineRef = useRef(null);
@@ -209,46 +208,22 @@ export default function ProductEditor({ product, onSaved }) {
     categoriesById,
   );
 
-  const suggestListingWithAi = async () => {
-    setAiBusy('listing');
-    try {
-      const r = await suggestListing(product?.id || null, {
-        name: form.name, brand: brandLabel, size: form.size, form: form.form, description: form.description,
-        long_description: form.long_description, benefits: form.benefits, ingredients: form.ingredients,
-        collections: form.categoryIds.map(id => categoriesById.get(Number(id))?.name).filter(Boolean),
-        concerns: form.concernIds.map(id => concerns.find(c => c.id === id)?.name).filter(Boolean),
-      });
-      setForm(prev => ({
-        ...prev,
-        seo_title: r.seoTitle,
-        seo_description: r.seoDescription,
-        // Stays automatic when the AI agrees with it, so a later collection change still applies
-        ...(r.googleCategoryId && r.googleCategoryId !== autoGoogle.id ? { google_category_id: r.googleCategoryId } : {}),
-      }));
-      toast.success('Suggestion added. Read it, then save.');
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setAiBusy('');
-    }
+  // "Fill in" writes the listing and alt text from this product's own details (lib/seoWriter.js):
+  // instant, free, and nothing leaves the site
+  const fillListing = () => {
+    const facts = {
+      name: form.name, brand: brandLabel, size: form.size, form: form.form, description: form.description,
+      concerns: form.concernIds.map(id => concerns.find(c => c.id === id)?.name).filter(Boolean),
+    };
+    setForm(prev => ({ ...prev, seo_title: writeSeoTitle(facts), seo_description: writeSeoDescription(facts) }));
   };
-
-  // A saved photo is shown to the AI; a new one, not uploaded yet, is described from the product details
-  const suggestSelectedAlt = async () => {
+  const fillSelectedAlt = () => {
     if (!selected) return;
-    setAiBusy('alt');
-    try {
-      const { alt } = await suggestAlt(selected.url || null, {
-        kind: 'product',
-        label: `${productTitle(form.name.trim(), brandLabel)}${form.size.trim() ? `, ${form.size.trim()}` : ''}`,
-        detail: `photo ${selectedIndex + 1} of ${media.length}`,
-      });
-      setAlt(selected.key, alt);
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setAiBusy('');
-    }
+    setAlt(selected.key, writeAltText({
+      kind: 'product',
+      label: `${productTitle(form.name.trim(), brandLabel)}${form.size.trim() ? `, ${form.size.trim()}` : ''}`,
+      detail: `photo ${selectedIndex + 1} of ${media.length}`,
+    }));
   };
 
   // ── Save ──
@@ -583,12 +558,7 @@ export default function ProductEditor({ product, onSaved }) {
                           maxLength={250}
                           className="sp-input min-w-0 flex-1"
                         />
-                        <AiButton
-                          onClick={suggestSelectedAlt}
-                          busy={aiBusy === 'alt'}
-                          disabled={!form.name.trim() && !selected.url}
-                          title="Write it with AI from the photo and the product details"
-                        />
+                        <FillButton onClick={fillSelectedAlt} disabled={!form.name.trim()} title="Write it from the product's name and size" />
                       </div>
                     </Field>
                   </div>
@@ -722,7 +692,7 @@ export default function ProductEditor({ product, onSaved }) {
             <Card
               title="Search engine listing"
               description="How this product can appear in Google results. Leave a field empty to use the automatic text in grey."
-              action={<AiButton onClick={suggestListingWithAi} busy={aiBusy === 'listing'} disabled={!form.name.trim()} title="Write the title and description with AI from this product's details">Suggest with AI</AiButton>}
+              action={<FillButton onClick={fillListing} disabled={!form.name.trim()} title="Write the title and description from this product's details" />}
             >
               <div className="space-y-4">
                 <div>

@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getIo } from '@/pages/api/socket';
 import { sendNewChatMessageNotificationEmail } from '@/lib/mail';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function GET(req, context) {
     const { conversationId } = await context.params;
@@ -51,98 +49,6 @@ export async function GET(req, context) {
     } finally {
         client.release();
     }
-}
-
-async function buildAiSystemPrompt(client, conversationId, conversationUserId, firstName, currentMessage) {
-    // Fetch last 20 messages for context
-    const historyResult = await client.query(
-        `SELECT sender_type as "senderType", message_text as "messageText"
-         FROM messages WHERE conversation_id = $1
-         ORDER BY created_at ASC LIMIT 20`,
-        [conversationId]
-    );
-
-    // Fetch loyalty/tier from users table
-    let tier = 'Member';
-    let points = 0;
-    try {
-        const loyaltyResult = await client.query(
-            `SELECT loyalty_points, loyalty_tier FROM users WHERE id = $1`,
-            [conversationUserId]
-        );
-        if (loyaltyResult.rows.length > 0) {
-            tier = loyaltyResult.rows[0].loyalty_tier || 'Member';
-            points = loyaltyResult.rows[0].loyalty_points || 0;
-        }
-    } catch (_) {}
-
-    // Fetch last 5 orders
-    let orderSummary = 'No recent orders.';
-    try {
-        const ordersResult = await client.query(
-            `SELECT id, total_amount, status, created_at FROM orders WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5`,
-            [conversationUserId]
-        );
-        if (ordersResult.rows.length > 0) {
-            orderSummary = ordersResult.rows.map(o =>
-                `Order #${o.id} — AED ${parseFloat(o.total_amount || 0).toFixed(2)} — ${o.status} (${new Date(o.created_at).toLocaleDateString()})`
-            ).join('\n');
-        }
-    } catch (_) {}
-
-    // Fetch top 40 products
-    let productList = '';
-    try {
-        let productsResult;
-        try {
-            productsResult = await client.query(
-                `SELECT id, name, brand, price, description FROM products WHERE is_active = true ORDER BY created_at DESC LIMIT 40`
-            );
-        } catch (e) {
-            if (e.message.includes('is_active')) {
-                productsResult = await client.query(
-                    `SELECT id, name, brand, price, description FROM products ORDER BY created_at DESC LIMIT 40`
-                );
-            } else {
-                throw e;
-            }
-        }
-        productList = productsResult.rows.map(p =>
-            `- ${p.name} by ${p.brand || 'Naya Lumière'} — AED ${parseFloat(p.price).toFixed(2)}: ${(p.description || '').slice(0, 80)}`
-        ).join('\n');
-    } catch (_) {}
-
-    const history = historyResult.rows.map(m => {
-        const role = m.senderType === 'customer' ? 'Client' : 'Naya';
-        return `${role}: ${m.messageText}`;
-    }).join('\n');
-
-    return `You are Naya, the AI Skin Specialist at Naya Lumière — a luxury skincare boutique in the UAE.
-Your tone is warm, knowledgeable, and sophisticated (think Chanel concierge, not a chatbot).
-
-CLIENT CONTEXT:
-- Name: ${firstName}
-- Loyalty Tier: ${tier} (${points} points)
-- Recent Orders:
-${orderSummary}
-
-OUR COLLECTION:
-${productList || 'A curated selection of luxury skincare products.'}
-
-CONVERSATION HISTORY:
-${history || 'No previous messages.'}
-
-LATEST MESSAGE FROM CLIENT: ${currentMessage}
-
-INSTRUCTIONS:
-1. Answer directly and helpfully. Do not repeat the question back.
-2. If the client mentions a skin concern, recommend 1-2 specific products by name and price from our collection above.
-3. Reference their loyalty tier or order history if genuinely relevant (e.g., "As a ${tier} member...").
-4. If asked about an order, acknowledge their recent orders but direct complex order issues to our team.
-5. If the user wants to speak to a human, warmly confirm you are connecting them (but do not change the status yourself).
-6. Keep replies concise — 2-4 sentences unless a detailed skincare routine is requested.
-7. Never reveal that you are an AI unless directly asked. You are the Naya Specialist.
-8. Always respond in English.`;
 }
 
 export async function POST(req, context) {

@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminAuth';
 import { listImages, saveAltTexts } from '@/lib/seoData';
-import { aiConfigured } from '@/lib/ai/gemini';
 
 /** GET /api/admin/seo/images — every image the store shows, with its alt text. */
 export async function GET() {
   const unauthorized = await requireAdmin();
   if (unauthorized) return unauthorized;
   try {
-    return NextResponse.json({ images: await listImages(), aiReady: aiConfigured() });
+    return NextResponse.json({ images: await listImages() });
   } catch (error) {
     console.error('Image list failed:', error);
     return NextResponse.json({ message: 'Could not load the images.' }, { status: 500 });

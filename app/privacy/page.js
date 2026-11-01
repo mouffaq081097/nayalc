@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
       eyebrow="Legal"
       title="Privacy Policy"
       intro="This policy explains what personal data we collect when you shop with Naya Lumière Cosmetics, why we collect it, who we share it with, and how you can control it."
-      lastUpdated="17 September 2026"
+      lastUpdated="1 November 2026"
     >
       <Section n={1} title="Who we are">
         <p>
@@ -83,17 +83,15 @@ export default function PrivacyPolicyPage() {
         />
       </Section>
 
-      <Section n={5} title="AI-assisted features">
+      <Section n={5} title="Skin quiz and recommendations">
         <p>
-          Some features — skin consultations, product guidance and the shopping assistant — are
-          powered by a third-party AI service (Google Gemini). When you use them, the content of
-          your question and relevant product information is sent to that provider to generate a
-          response.
+          The skin quiz, product recommendations and routine suggestions are worked out on our own
+          website, from your answers and the products in our catalogue. We don&apos;t send them to
+          any outside AI service.
         </p>
         <p>
-          Please do not enter medical information, health conditions or any sensitive personal
-          detail into these features. Their output is general cosmetic guidance and is not medical
-          advice.
+          They are general cosmetic guidance, not medical advice. Please don&apos;t enter medical
+          information, health conditions or any other sensitive personal detail into them.
         </p>
       </Section>
 

@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartContext } from '../context/CartContext';
-import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, X, Sparkles, Wand2, Loader2, Eye, Share2, Flame } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Plus, Check, Minus, Truck, ShieldCheck, ArrowRight, Sparkles, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
@@ -34,32 +34,12 @@ function useDeliveryEstimate() {
   return info;
 }
 
-const TypewriterText = ({ text, speed = 10 }) => {
-  const [displayedText, setDisplayedText] = useState('');
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (index < text.length) {
-      const timeout = setTimeout(() => {
-        setDisplayedText((prev) => prev + text[index]);
-        setIndex((prev) => prev + 1);
-      }, speed);
-      return () => clearTimeout(timeout);
-    }
-  }, [index, text, speed]);
-
-  return <div className="whitespace-pre-wrap">{displayedText}</div>;
-};
-
 const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = [], altText, averageRating, reviewCount, viewCount, isNew, isBestseller, rank, category, brandName, stock_quantity, backorderable = 0, backorder_lead_days, description, size, variant = 'light', concerns = [], initialWishlisted = false, onWishlistChange }) => {
   const { openSignIn } = useSignIn();
   const { t, rich, date } = useLocale();
   const { addToCart } = useContext(CartContext);
   const [isWishlisted, setIsWishlisted] = useState(initialWishlisted);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-  const [aiResult, setAiResult] = useState('');
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isHovered, setIsHovered] = useState(false);
@@ -111,31 +91,6 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
         text: t('Check out this luxury beauty product: {name}', { name }),
         url: window.location.origin + productUrl,
       });
-    }
-  };
-
-  const handleAIGenerate = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsAIModalOpen(true);
-    if (aiResult) return;
-    try {
-      setIsGeneratingAI(true);
-      const response = await fetch('/api/ai/product-info', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productName: name, brandName: brandName || 'Naya Lumière', description, price, category })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAiResult(data.response);
-      } else {
-        setAiResult(t('Our AI specialist is currently unavailable. Please try again later.'));
-      }
-    } catch {
-      setAiResult(t('An error occurred while curating your product insights.'));
-    } finally {
-      setIsGeneratingAI(false);
     }
   };
 
@@ -259,9 +214,6 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
               <button type="button" onClick={toggleQuickView} aria-label={t('Quick view')} className={`${roundBtn} hidden md:flex opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
                 <Eye size={14} strokeWidth={1.75} />
               </button>
-              <button type="button" onClick={handleAIGenerate} aria-label={t('AI insights')} className={`${roundBtn} hidden md:flex opacity-0 group-hover:opacity-100 focus-visible:opacity-100`}>
-                <Wand2 size={14} strokeWidth={1.75} />
-              </button>
             </div>
             <p className="text-end text-[14px] font-semibold text-[#111114] leading-tight pointer-events-none">
               {formatAED(price)}
@@ -289,111 +241,6 @@ const ProductCard = ({ id, slug, name, price, originalPrice, image, imageUrls = 
           {isLowStock && <span className="font-semibold text-[#b45309]">{t('Only {n} left', { n: stock_quantity })}</span>}
         </div>
       </div>
-
-      {/* ── AI Insights Modal ── */}
-      <Modal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} title="" size="max-w-2xl" noBodyPadding>
-        <div className="relative overflow-hidden min-h-[500px] flex flex-col" style={{ background: '#ffffff' }}>
-          {/* Header */}
-          <div className="relative z-10 px-8 pt-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
-              >
-                <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 4, repeat: Infinity }}>
-                  <Sparkles size={22} style={{ color: 'var(--cl-purple)' }} strokeWidth={1.5} />
-                </motion.div>
-              </div>
-              <div>
-                <h3 className="text-[15px] font-semibold" style={{ color: 'var(--cl-text-deep)' }}>{t('AI Insights')}</h3>
-                <div className="flex items-center gap-2">
-                  <p className="text-[10px] font-medium" style={{ color: 'var(--cl-text-muted)' }}>{t('AI Concierge · Powered by Gemini')}</p>
-                  <div className="flex gap-1">
-                    <div className="w-1 h-1 rounded-full animate-pulse" style={{ background: 'var(--cl-purple)' }} />
-                    <div className="w-1 h-1 rounded-full animate-pulse [animation-delay:0.2s]" style={{ background: 'var(--cl-pink)' }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsAIModalOpen(false)}
-              aria-label={t('Close')}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-              style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
-            >
-              <X size={18} style={{ color: 'var(--cl-text-light)' }} />
-            </button>
-          </div>
-
-          <div className="relative z-10 flex-grow px-8 py-8">
-            {isGeneratingAI ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-8">
-                <div className="relative w-32 h-32 flex items-center justify-center">
-                  <motion.div
-                    animate={{ rotate: 360, opacity: [0.3, 0.7, 0.3] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                    className="absolute inset-0 rounded-full"
-                    style={{ border: '1px solid', borderColor: 'var(--cl-purple)', borderTopColor: 'transparent' }}
-                  />
-                  <motion.div
-                    animate={{ rotate: -360, opacity: [0.2, 0.5, 0.2] }}
-                    transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-                    className="absolute inset-4 rounded-full"
-                    style={{ border: '1px solid', borderColor: 'var(--cl-pink)', borderBottomColor: 'transparent' }}
-                  />
-                  <motion.div
-                    animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="w-14 h-14 rounded-full"
-                    style={{ background: 'var(--cl-gradient)', filter: 'blur(8px)' }}
-                  />
-                  <Sparkles size={22} className="absolute text-white" />
-                </div>
-                <p className="text-lg font-semibold" style={{ color: 'var(--cl-text-deep)' }}>{t('Curating your insights…')}</p>
-              </div>
-            ) : (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col h-full">
-                {/* Product micro-header */}
-                <div
-                  className="flex items-center gap-4 mb-6 p-4 rounded-2xl"
-                  style={{ background: 'var(--cl-glass)', border: '1px solid var(--cl-glass-border)' }}
-                >
-                  <div className="w-14 h-14 rounded-xl overflow-hidden relative bg-white/60 p-1.5">
-                    <Image src={image} alt={name} fill className="object-contain" />
-                  </div>
-                  <div>
-                    <h4 className="text-[15px] font-semibold leading-tight" style={{ color: 'var(--cl-text-deep)' }}>{name}</h4>
-                    <p
-                      className="text-[11px] font-medium mt-0.5"
-                      style={{ backgroundImage: 'var(--brand-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}
-                    >{brandName || 'Naya Lumière Cosmetics'}</p>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div
-                  className="rounded-2xl p-6 flex-grow"
-                  style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid var(--cl-glass-border)' }}
-                >
-                  <div className="font-sans text-[14px] leading-[1.8]" style={{ color: 'var(--cl-text-light)' }}>
-                    <TypewriterText text={aiResult} speed={15} />
-                  </div>
-                </div>
-
-                <div className="mt-6 flex flex-col items-center gap-4 pb-2">
-                  <button
-                    onClick={() => setIsAIModalOpen(false)}
-                    className="cl-gradient-btn px-12 py-3 text-[11px] font-semibold"
-                  >
-                    {t('Close Consultation')}
-                  </button>
-                  <p className="text-[10px]" style={{ color: 'var(--cl-text-muted)' }}>{t('Powered by Gemini Intelligence')}</p>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </Modal>
 
       {/* ── Quick View Modal ── */}
       <Modal isOpen={isQuickViewOpen} onClose={() => setIsQuickViewOpen(false)} title="" size="max-w-5xl" noBodyPadding>

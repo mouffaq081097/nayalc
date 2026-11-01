@@ -5,8 +5,7 @@ import BrandLogo from '../components/BrandLogo';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, ShoppingBag, Sparkles, X, Gift, Star, Trash2,
-  Truck, Minus, Plus, Check,
+  ArrowLeft, ArrowRight, ShoppingBag, Gift, Star, Trash2, Truck, Minus, Plus, Check,
 } from 'lucide-react';
 import { calcShipping, nextShippingTier, SHIPPING_TIERS, ARTISAN_GIFT_THRESHOLD, ARTISAN_GIFT_NAME, formatShipping, getPreorderInfo } from '@/lib/shipping';
 import { orderableQty, preorderUnits, leadDays } from '@/lib/backorderRules';
@@ -15,6 +14,7 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import PairItWithSection from '../components/PairItWithSection';
+import BagRoutine from '../components/BagRoutine';
 import BuyAgainSection from '../components/BuyAgainSection';
 import TabbyPromo from '../components/TabbyPromo';
 import { useSignIn } from '@/app/context/SignInContext';
@@ -244,8 +244,6 @@ export default function CartPage() {
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [buyAgainRaw, setBuyAgainRaw] = useState([]);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiAdvice, setAiAdvice] = useState(null);
   // Ids removed but still inside their undo window (the cart itself isn't touched yet)
   const [pendingRemoval, setPendingRemoval] = useState(() => new Set());
 
@@ -344,25 +342,6 @@ export default function CartPage() {
     if (!code || isApplyingCoupon) return;
     setIsApplyingCoupon(true);
     try { await applyCoupon(code); } finally { setIsApplyingCoupon(false); }
-  };
-
-  const handleAiAdvice = async () => {
-    if (!visibleItems.length) return;
-    setIsAiLoading(true);
-    setAiAdvice(null);
-    try {
-      const res = await fetch('/api/ai/cart-advice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cartItems: visibleItems }),
-      });
-      const d = await res.json();
-      setAiAdvice(d.advice || t('Sorry, we couldn’t put advice together just now.'));
-    } catch {
-      setAiAdvice(t('Sorry, we couldn’t put advice together just now.'));
-    } finally {
-      setIsAiLoading(false);
-    }
   };
 
   if (cartItems.length === 0) {
@@ -650,47 +629,8 @@ export default function CartPage() {
 
             {/* ── Advice & cross-sell (under the items on desktop, after the summary on phones) ── */}
             <div className="mx-auto min-w-0 max-w-[600px] space-y-4 px-4 py-8 sm:px-6 lg:col-start-1 lg:row-start-2 lg:mx-0 lg:ms-auto lg:w-full lg:px-[38px] lg:pt-4 lg:pb-[38px]">
-              <AnimatePresence mode="wait" initial={false}>
-                {aiAdvice ? (
-                  <motion.div
-                    key="advice"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    className="flex items-start gap-3 rounded-xl bg-[#f6f5f2] p-4"
-                  >
-                    <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white" style={{ background: ACCENT }}>
-                      <Sparkles size={14} />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-semibold text-[#111114]">{t('Routine advice')}</p>
-                      <p className="mt-1 text-[13.5px] leading-relaxed text-[#2a2a31]">{aiAdvice}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAiAdvice(null)}
-                      aria-label={t('Dismiss advice')}
-                      className={`shrink-0 w-9 h-9 -mt-1 -me-1 rounded-full flex items-center justify-center text-[#a1a1aa] hover:bg-white hover:text-[#5a5a64] transition-colors ${focusRing}`}
-                    >
-                      <X size={15} />
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.button
-                    key="trigger"
-                    type="button"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={handleAiAdvice}
-                    disabled={isAiLoading || visibleItems.length === 0}
-                    className={`inline-flex items-center gap-2 h-10 px-4 rounded-full border border-[#e5e5ea] bg-white text-[13px] font-medium text-[#2a2a31] hover:border-[#c8c8cf] hover:bg-[#fafafb] disabled:opacity-50 transition-colors ${focusRing}`}
-                  >
-                    <Sparkles size={14} style={{ color: ACCENT }} className={isAiLoading ? 'motion-safe:animate-pulse' : ''} />
-                    {isAiLoading ? t('Building your routine advice…') : t('Get routine advice for your bag')}
-                  </motion.button>
-                )}
-              </AnimatePresence>
+              {/* Which ritual steps the bag covers, and the best seller for a missing one (free, from the catalogue) */}
+              <BagRoutine items={visibleItems} />
 
               <PairItWithSection currentCartItems={cartItems} />
               <BuyAgainSection products={buyAgainRaw} cartItems={cartItems} />

@@ -8,9 +8,9 @@
 - **UI/UX Fixes:** Fixed profile image overflow in Header, resolved `toLocaleString` undefined errors in loyalty/account pages, and improved modal accessibility.
 - **SEO Optimization:** Implemented global metadata, robots.txt, and automated sitemap generation for products, categories, and brands.
 
-## Phase 1: Chat UI Modernization & AI Integration
+## Phase 1: Chat UI Modernization
 - **UI Overhaul (`app/components/ChatWidget.js`):** Redesign the chat window to be more compact, modern, and floating. Add typing indicators and read receipts.
-- **AI Suggestions:** Integrate an AI endpoint (`app/api/ai`) to intercept incoming user messages and suggest answers based on store FAQs.
+- **Suggested answers (Done, without AI):** Admin → Inbox has quick replies (`lib/quickReplies.js`) written from the store's own delivery and returns rules. The owner turned the Gemini AI off because it spent API tokens without asking — don't add an AI endpoint back unless they ask for one.
 - **Admin Email Notifications (Done):** Admin notification triggers when a user sends a message and no admin is active.
 
 ## Phase 3: Category Clarity & Admin Portal Gaps

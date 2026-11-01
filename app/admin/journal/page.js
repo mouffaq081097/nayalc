@@ -421,7 +421,6 @@ export default function JournalAdminPage() {
                   id="journal-cover-alt"
                   value={current.coverImageAlt}
                   onChange={(v) => setCurrent((prev) => ({ ...prev, coverImageAlt: v }))}
-                  imageUrl={imagePreview ? null : current.coverImageUrl}
                   context={{ kind: 'journal', label: current.title || 'Journal article', detail: current.excerpt }}
                   placeholder="Describe the cover photo"
                 />

@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminAuth';
 import { listImages, loadSeoProducts } from '@/lib/seoData';
 import { loadMerchantItems } from '@/lib/merchantFeed';
-import { aiConfigured } from '@/lib/ai/gemini';
 
 /** GET /api/admin/seo/overview — the numbers on Admin → SEO. */
 export async function GET() {
@@ -13,7 +12,6 @@ export async function GET() {
     const live = products.filter((p) => p.visible);
     const inFeed = items.filter((i) => i.included);
     return NextResponse.json({
-      aiReady: aiConfigured(),
       products: {
         live: live.length,
         customTitle: live.filter((p) => p.seoTitle).length,

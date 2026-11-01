@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { requireAdmin } from '@/lib/adminAuth';
 import { loadSeoProducts, saveProductSeo } from '@/lib/seoData';
-import { aiConfigured } from '@/lib/ai/gemini';
 
 /**
  * GET /api/admin/seo/products — every product's search listing, photos and collections,
@@ -16,7 +15,7 @@ export async function GET() {
       loadSeoProducts(),
       db.query('SELECT id, name, parent_id AS "parentId", google_category_id AS "googleCategoryId" FROM categories ORDER BY name'),
     ]);
-    return NextResponse.json({ products, categories, aiReady: aiConfigured() });
+    return NextResponse.json({ products, categories });
   } catch (error) {
     console.error('SEO products load failed:', error);
     return NextResponse.json({ message: 'Could not load the products.' }, { status: 500 });

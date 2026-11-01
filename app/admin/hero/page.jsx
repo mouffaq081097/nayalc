@@ -352,7 +352,6 @@ const ManageHeroSlides = () => {
                 id="hero-image-alt"
                 value={formData.image_alt}
                 onChange={v => setFormData(prev => ({ ...prev, image_alt: v }))}
-                imageUrl={editingSlide && !desktopMedia && !editingSlide.is_video_desktop ? editingSlide.image_src_desktop : null}
                 context={{ kind: 'hero', label: (formData.headline || '').replace(/\n/g, ' ') || 'Homepage banner', detail: formData.eyebrow }}
                 placeholder="e.g. A woman applying GERnétic serum in soft morning light"
                 hint="Describes the photo for screen readers and Google Images. Left empty, the headline is used."

@@ -407,7 +407,6 @@ export default function CategoryEditor({ category, onSaved }) {
                     id="imageAlt"
                     value={form.imageAlt}
                     onChange={v => setField('imageAlt', v)}
-                    imageUrl={image.url}
                     context={{ kind: 'collection', label: `${form.name.trim() || 'This'} collection` }}
                     placeholder={`e.g. ${form.name.trim() || 'Face care'} products laid out on a marble counter`}
                     hint="Describes the category image (shown at the top of the collection page) for screen readers and Google Images."

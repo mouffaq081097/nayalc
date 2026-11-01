@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Images, ListChecks, ShoppingBag, Sparkles } from 'lucide-react';
+import { ArrowRight, Images, ListChecks, ShoppingBag } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import PageLoader from '../../components/PageLoader';
 import { apiErrorMessage } from '../products/_components/productAdmin';
@@ -59,18 +59,12 @@ export default function SeoOverviewPage() {
         <div className="sp-card sp-card-pad text-[13px]" style={{ color: ATTENTION }}>{error}</div>
       ) : (
         <>
-          {!data.aiReady && (
-            <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-[13px]" style={{ background: '#fff4e5', border: '1px solid #ffd79d', color: '#5e4200' }}>
-              <Sparkles size={16} className="shrink-0 mt-0.5" />
-              <span>AI suggestions are off: the Gemini API key (GEMINI_API_KEY) isn&apos;t set. Everything else here works without it.</span>
-            </div>
-          )}
           <div className="grid gap-4 md:grid-cols-3">
             <Tool
               href="/admin/seo/products"
               icon={ListChecks}
               title="Product listings"
-              description="The title and description Google shows for each product page. AI writes them from your product details."
+              description="The title and description Google shows for each product page. Fill in writes them from your product details, for free."
               stats={[
                 ['Live products', data.products.live],
                 ['With their own title', data.products.customTitle],

@@ -133,7 +133,6 @@ function CampaignForm({ initial, onCancel, onSaved }) {
                 id="cmp-image-alt"
                 value={form.imageAlt}
                 onChange={v => setForm(f => ({ ...f, imageAlt: v }))}
-                imageUrl={form.imageUrl}
                 context={{ kind: 'campaign', label: form.title || 'Campaign banner', detail: form.subtitle }}
                 placeholder="Describe the photo"
                 hint="Left empty, the title is used."

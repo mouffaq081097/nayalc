@@ -1,10 +1,9 @@
 'use client';
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Loader2, Sparkles } from 'lucide-react';
-import { useAppContext } from '@/app/context/AppContext';
+import { Wand2 } from 'lucide-react';
 import { GOOGLE_CATEGORIES, googleCategory } from '@/lib/googleTaxonomy';
-import { apiErrorMessage } from '../../products/_components/productAdmin';
+import { writeAltText } from '@/lib/seoWriter';
 import { secondary, subdued, WARNING_COLOR } from '../../_components/EditorFields';
 
 // Shared pieces of Admin → SEO and the editors' search, alt text and Google category fields
@@ -89,83 +88,31 @@ export const SerpPreview = ({ path, title, description }) => (
   </div>
 );
 
-/** A small "Suggest" button with the AI sparkle and a spinner while it works. */
-export const AiButton = ({ onClick, busy, disabled, children = 'Suggest', title }) => (
+/** "Fill in": writes the text from the details already there (lib/seoWriter.js), instantly and for free. */
+export const FillButton = ({ onClick, disabled, children = 'Fill in', title = 'Write it from the details already here' }) => (
   <button
     type="button"
     onClick={onClick}
-    disabled={busy || disabled}
+    disabled={disabled}
     title={title}
     className="sp-btn sp-btn-secondary shrink-0"
     style={{ padding: '5px 10px' }}
   >
-    {busy ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} style={{ color: '#7c3aed' }} />}
-    {busy ? 'Writing…' : children}
+    <Wand2 size={13} style={{ color: '#7c3aed' }} />
+    {children}
   </button>
 );
 
-/** The AI endpoints, with the API's own error messages. */
-export function useSeoAi() {
-  const { fetchWithAuth } = useAppContext();
-  const call = useCallback(async (url, body) => {
-    try {
-      const res = await fetchWithAuth(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      return await res.json();
-    } catch (error) {
-      throw new Error(apiErrorMessage(error, 'The AI suggestion failed. Please try again.'));
-    }
-  }, [fetchWithAuth]);
-  return {
-    /** { alt, sawImage } */
-    suggestAlt: useCallback((imageUrl, context) => call('/api/admin/seo/alt-text', { imageUrl, context }), [call]),
-    /** { seoTitle, seoDescription, googleCategoryId } */
-    suggestListing: useCallback((productId, draft) => call('/api/admin/seo/products/suggest', { productId, draft }), [call]),
-  };
-}
-
-/** One alt text box with its "Suggest" button, for the editors. */
-export function AltTextField({ id, value, onChange, imageUrl, context, placeholder, hint = 'Describes the image for people using screen readers, and for Google Images.' }) {
-  const { suggestAlt } = useSeoAi();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const suggest = async () => {
-    setBusy(true);
-    setError('');
-    try {
-      const { alt } = await suggestAlt(imageUrl || null, context);
-      onChange(alt);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
+/** One alt text box with its "Fill in" button, for the editors. `context` is { kind, label, detail }. */
+export function AltTextField({ id, value, onChange, context, placeholder, hint = 'Describes the image for people using screen readers, and for Google Images.' }) {
   return (
     <div>
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <label htmlFor={id} className="text-[13px] font-medium" style={secondary}>Alt text</label>
-        <AiButton onClick={suggest} busy={busy} disabled={!context?.label && !imageUrl} title="Write it with AI from the photo and the details" />
+        <FillButton onClick={() => onChange(writeAltText(context || {}))} disabled={!context?.label && !context?.detail} title="Write it from the details of this image" />
       </div>
       <input id={id} type="text" value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={250} className="sp-input" />
-      <p className="text-[12px] mt-1.5" style={error ? { color: '#b42318' } : subdued}>{error || hint}</p>
+      <p className="text-[12px] mt-1.5" style={subdued}>{hint}</p>
     </div>
   );
-}
-
-/** Runs `worker` over `items`, a few at a time, reporting progress. Stops early when `shouldStop()` says so. */
-export async function runQueue(items, worker, { concurrency = 3, onProgress, shouldStop } = {}) {
-  let next = 0;
-  let done = 0;
-  const lanes = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (next < items.length && !shouldStop?.()) {
-      const item = items[next++];
-      try {
-        await worker(item);
-      } finally {
-        done += 1;
-        onProgress?.(done, items.length);
-      }
-    }
-  });
-  await Promise.all(lanes);
 }

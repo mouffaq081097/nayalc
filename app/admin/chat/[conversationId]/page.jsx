@@ -7,7 +7,7 @@ import { useAuth } from '@/app/context/AuthContext';
 import { useAppContext } from '@/app/context/AppContext';
 import { Button } from '@/app/components/ui/button';
 import { Textarea } from '@/app/components/ui/textarea';
-import { Send, ArrowLeft, Loader2, Trash2, User, Clock, ShieldCheck, Zap, Mail, MessageCircle, ChevronUp, Sparkles, FileText, UserCheck, ShoppingBag, Star } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Trash2, User, Clock, ShieldCheck, Zap, Mail, MessageCircle, ChevronUp, Sparkles, UserCheck, ShoppingBag, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/app/components/ui/badge';
 import { Label } from '@/app/components/ui/label';
@@ -20,6 +20,7 @@ import {
 } from '@/app/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { QUICK_REPLIES, firstNameOf } from '@/lib/quickReplies';
 
 const AdminConversationPage = () => {
     const { conversationId } = useParams();
@@ -34,9 +35,6 @@ const AdminConversationPage = () => {
     const [error, setError] = useState(null);
     const [isSending, setIsSending] = useState(false);
     const [newStatus, setNewStatus] = useState('');
-    const [isAiDrafting, setIsAiDrafting] = useState(false);
-    const [isAiSummarizing, setIsAiSummarizing] = useState(false);
-    const [aiSummary, setAiSummary] = useState('');
     const [customerContext, setCustomerContext] = useState(null);
     const [isCustomerOnline, setIsCustomerOnline] = useState(false);
 
@@ -195,42 +193,6 @@ const AdminConversationPage = () => {
             console.error(err);
         } finally {
             setIsSending(false);
-        }
-    };
-
-    const handleAiDraft = async () => {
-        setIsAiDrafting(true);
-        try {
-            const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/ai-draft`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
-            if (res.ok) {
-                const { draft } = await res.json();
-                setNewMessage(draft);
-            }
-        } catch (err) {
-            console.error('AI draft error:', err);
-        } finally {
-            setIsAiDrafting(false);
-        }
-    };
-
-    const handleAiSummary = async () => {
-        setIsAiSummarizing(true);
-        try {
-            const res = await fetchWithAuth(`/api/chat/conversation/${conversationId}/ai-summary`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
-            if (res.ok) {
-                const { summary } = await res.json();
-                setAiSummary(summary);
-            }
-        } catch (err) {
-            console.error('AI summary error:', err);
-        } finally {
-            setIsAiSummarizing(false);
         }
     };
 
@@ -422,44 +384,19 @@ const AdminConversationPage = () => {
                     </div>
 
                     <div className="p-6 border-t border-gray-50 bg-white space-y-3">
-                        {/* AI Summary Card */}
-                        <AnimatePresence>
-                            {aiSummary && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line overflow-hidden"
+                        {/* Quick replies: a ready answer in the reply box, with the customer's first name (lib/quickReplies.js) */}
+                        <div className="flex gap-2 flex-wrap items-center">
+                            <span className="text-xs font-medium text-purple-400">Quick replies</span>
+                            {QUICK_REPLIES.map(reply => (
+                                <button
+                                    key={reply.label}
+                                    type="button"
+                                    onClick={() => setNewMessage(reply.text(firstNameOf(conversation.customerName)))}
+                                    className="px-3 py-1.5 bg-white border border-purple-200 text-purple-600 rounded-xl text-xs font-medium hover:bg-purple-50 transition-colors"
                                 >
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[9px] font-black   text-purple-500 flex items-center gap-1.5">
-                                            <Sparkles size={10} /> AI Summary
-                                        </span>
-                                        <button onClick={() => setAiSummary('')} className="text-gray-300 hover:text-gray-500 text-xs">✕</button>
-                                    </div>
-                                    {aiSummary}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* AI Co-Pilot buttons */}
-                        <div className="flex gap-2 flex-wrap">
-                            <button
-                                onClick={handleAiDraft}
-                                disabled={isAiDrafting}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 border border-purple-100 text-purple-600 rounded-xl text-[10px] font-black   hover:bg-purple-100 transition-all disabled:opacity-50"
-                            >
-                                {isAiDrafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                                AI Draft Reply
-                            </button>
-                            <button
-                                onClick={handleAiSummary}
-                                disabled={isAiSummarizing}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-100 text-gray-500 rounded-xl text-[10px] font-black   hover:bg-gray-100 transition-all disabled:opacity-50"
-                            >
-                                {isAiSummarizing ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
-                                Summarize
-                            </button>
+                                    {reply.label}
+                                </button>
+                            ))}
                             {conversation.status === 'ai_handling' && (
                                 <button
                                     onClick={handleTakeOver}
@@ -487,7 +424,9 @@ const AdminConversationPage = () => {
                             <button
                                 onClick={handleSendMessage}
                                 disabled={isSending || !newMessage.trim()}
-                                className="w-14 h-14 rounded-2xl bg-cl-purple flex items-center justify-center text-white shadow-xl shadow-indigo-200 hover:bg-gray-900 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+                                aria-label="Send"
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-200 hover:opacity-90 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale"
+                                style={{ background: 'linear-gradient(135deg,#9333ea,#db2777)' }}
                             >
                                 {isSending ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} />}
                             </button>

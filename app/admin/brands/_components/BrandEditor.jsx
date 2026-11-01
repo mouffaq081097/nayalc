@@ -234,7 +234,6 @@ export default function BrandEditor({ brand, onSaved }) {
                     id="imageAlt"
                     value={form.imageAlt}
                     onChange={v => setField('imageAlt', v)}
-                    imageUrl={image.url}
                     context={{ kind: 'brand', label: form.name.trim() || 'This brand' }}
                     placeholder={`e.g. ${form.name.trim() || 'Zorah'} products on a sunlit stone surface`}
                   />
