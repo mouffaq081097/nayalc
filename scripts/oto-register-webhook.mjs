@@ -32,7 +32,7 @@ if (!OTO_REFRESH_TOKEN || !OTO_WEBHOOK_SECRET) {
 const tokenRes = await fetch(`${base}/refreshToken`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ refresh_token: OTO_REFRESH_TOKEN }),
+  body: JSON.stringify({ refresh_token: OTO_REFRESH_TOKEN.trim().replace(/^(['"])(.*)\1$/s, '$2').trim() }),
 });
 const token = await tokenRes.json().catch(() => ({}));
 if (!token.access_token) {
