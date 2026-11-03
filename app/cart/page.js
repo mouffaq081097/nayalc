@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import BrandLogo from '../components/BrandLogo';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import PairItWithSection from '../components/PairItWithSection';
 import BagRoutine from '../components/BagRoutine';
 import BuyAgainSection from '../components/BuyAgainSection';
+import CartRestore from './CartRestore';
 import TabbyPromo from '../components/TabbyPromo';
 import { useSignIn } from '@/app/context/SignInContext';
 import { useLocale, useT } from '@/app/context/LocaleContext';
@@ -347,6 +348,7 @@ export default function CartPage() {
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
+        <Suspense fallback={null}><CartRestore /></Suspense>
         <CartHeader onBack={handleBack} />
         <main className="flex-1 flex flex-col items-center justify-center gap-5 px-6 py-16 text-center">
           <div className="w-20 h-20 rounded-full flex items-center justify-center bg-[#f6f5f2]">
@@ -374,6 +376,7 @@ export default function CartPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen bg-white pb-32 lg:pb-0">
+        <Suspense fallback={null}><CartRestore /></Suspense>
         <CartHeader onBack={handleBack} />
 
         {/* Checkout's split (Shopify's): items on white, right-aligned in the left half; the

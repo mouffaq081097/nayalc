@@ -2,7 +2,7 @@
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  AlertCircle, ChevronDown, ChevronLeft, ChevronRight, Mail, MessageCircle, Phone, RefreshCw, ShoppingCart,
+  AlertCircle, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Loader2, Mail, MessageCircle, Phone, RefreshCw, Send, ShoppingCart,
 } from 'lucide-react';
 import PageLoader from '@/app/components/PageLoader';
 import { EmptyState, SearchBox, ViewPill } from '../../_components/IndexToolbar';
@@ -14,7 +14,7 @@ const STATUS_BADGE = {
   recovered:   { label: 'Recovered',     cls: 'sp-badge-success' },
 };
 const STEP_LABEL = { address: 'Delivery address', payment: 'Payment' };
-const METHOD_LABEL = { card: 'Card', tabby: 'Tabby', cashOnDelivery: 'Cash on delivery' };
+const METHOD_LABEL = { card: 'Card', tabby: 'Tabby', cashOnDelivery: 'Cash on delivery', bankTransfer: 'Bank transfer' };
 
 // Views in the card's switcher: the first four filter checkouts, "Saved carts" swaps the table
 const CHECKOUT_VIEWS = [
@@ -95,6 +95,68 @@ const ContactCard = ({ customer, children }) => {
         )}
       </div>
       {children}
+    </div>
+  );
+};
+
+// "Still thinking it over?" email with the customer's live bag (lib/cartReminders.js)
+const ReminderBox = ({ customer, sessionId = null }) => {
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [sent, setSent] = useState(null);
+
+  if (customer.cart_reminders_off) {
+    return <p className="text-[12px] pt-3" style={{ ...subdued, borderTop: '1px solid #f1f1f1' }}>This customer turned off bag reminder emails.</p>;
+  }
+
+  const send = async () => {
+    setBusy(true); setError('');
+    try {
+      const res = await fetch('/api/admin/abandoned-checkouts/remind', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: customer.user_id, sessionId, couponCode: code.trim() || null }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'The reminder could not be sent.');
+      setSent(json);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="pt-3 space-y-2" style={{ borderTop: '1px solid #f1f1f1' }}>
+      <p className="text-[13px] font-medium" style={text}>Reminder email</p>
+      {customer.reminder_sent_at && !sent && (
+        <p className="text-[12px]" style={subdued}>
+          Last sent {fmtDateTime(customer.reminder_sent_at)}{customer.reminder_coupon ? ` with ${customer.reminder_coupon}` : ''}
+        </p>
+      )}
+      {sent ? (
+        <p className="text-[12px] flex items-center gap-1.5" style={{ color: '#15803d' }}>
+          <CheckCircle size={13} />Sent to {customer.email}{sent.coupon ? ` with ${sent.coupon}` : ''}
+        </p>
+      ) : (
+        <>
+          <input
+            value={code}
+            onChange={e => setCode(e.target.value.toUpperCase())}
+            onClick={e => e.stopPropagation()}
+            placeholder="Discount code (optional)"
+            className="sp-input w-full"
+            aria-label="Discount code to include"
+          />
+          <button type="button" onClick={send} disabled={busy} className="sp-btn sp-btn-primary w-full justify-center">
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}Send reminder email
+          </button>
+          <p className="text-[12px]" style={subdued}>Shows their bag at today’s prices with a button that refills it{code.trim() ? ' and applies the code' : ''}.</p>
+        </>
+      )}
+      {error && <p className="text-[12px]" style={{ color: '#b42318' }}>{error}</p>}
     </div>
   );
 };
@@ -272,7 +334,10 @@ const AbandonedCheckoutsPage = () => {
                             )}
                           </td>
                           <td className="whitespace-nowrap" style={secondary}>{count} item{count !== 1 ? 's' : ''}</td>
-                          <td className="whitespace-nowrap"><span className={`sp-badge ${badge.cls}`}><span className="dot" />{badge.label}</span></td>
+                          <td className="whitespace-nowrap">
+                            <span className={`sp-badge ${badge.cls}`}><span className="dot" />{badge.label}</span>
+                            {c.reminder_sent_at && <span className="block text-[12px] mt-1" style={subdued}>Reminder emailed</span>}
+                          </td>
                           <td className="text-right font-semibold whitespace-nowrap">{fmtAed(c.total ?? c.subtotal)}</td>
                         </tr>
                         {open && (
@@ -298,6 +363,7 @@ const AbandonedCheckoutsPage = () => {
                                     <p>Last active {fmtDateTime(c.updated_at)}</p>
                                     {c.payment_method && <p>Payment method: {METHOD_LABEL[c.payment_method] || c.payment_method}</p>}
                                   </div>
+                                  {c.status !== 'recovered' && <ReminderBox customer={c} sessionId={c.id} />}
                                 </ContactCard>
                               </div>
                             </td>
@@ -361,7 +427,7 @@ const AbandonedCheckoutsPage = () => {
                                       <span>Cart value</span><span>{fmtAed(cart.subtotal)}</span>
                                     </div>
                                   </div>
-                                  <ContactCard customer={cart} />
+                                  <ContactCard customer={cart}><ReminderBox customer={cart} /></ContactCard>
                                 </div>
                               </td>
                             </tr>

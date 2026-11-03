@@ -12,6 +12,8 @@ import { GUEST_CHECKOUT_MIGRATION_SQL } from '@/lib/guestCheckout';
 import { RITUAL_STEP_MIGRATION_SQL } from '@/lib/ritualSteps';
 import { SEO_MIGRATION_SQL } from '@/lib/seoColumns';
 import { MANUAL_ORDER_MIGRATION_SQL } from '@/lib/manualOrders';
+import { CART_REMINDER_MIGRATION_SQL } from '@/lib/cartReminders';
+import { EMAIL_CODE_GUARD_MIGRATION_SQL } from '@/lib/emailCodeGuard';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -158,6 +160,16 @@ export async function POST(request) {
                 // Orders typed in by the team (Admin → Orders → Create order) — also added on first use by ensureManualOrderColumns() in lib/manualOrders.js
                 name: '023_manual_orders',
                 sql: MANUAL_ORDER_MIGRATION_SQL,
+            },
+            {
+                // Abandoned-checkout reminder emails and their opt-out — also added on first use by ensureCartReminderColumns() in lib/cartReminders.js
+                name: '024_cart_reminders',
+                sql: CART_REMINDER_MIGRATION_SQL,
+            },
+            {
+                // Log of sign-in code requests, for bot limits — also created on first use by ensureEmailCodeRequestsTable() in lib/emailCodeGuard.js
+                name: '025_email_code_requests',
+                sql: EMAIL_CODE_GUARD_MIGRATION_SQL,
             },
         ];
 

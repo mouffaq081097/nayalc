@@ -8,6 +8,10 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { useLocale, useT } from '../../context/LocaleContext';
+import Turnstile, { TURNSTILE_SITE_KEY } from './Turnstile';
+
+// Hidden from people (off-screen, not focusable); bots that fill every field give themselves away
+const TRAP_STYLE = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap', opacity: 0, pointerEvents: 'none' };
 
 /**
  * Sign in or create account (after Shopify), shown in the sign-in pop-up
@@ -85,9 +89,12 @@ function SocialButtons({ callbackUrl }) {
 
 /** Step 1: email (+ news opt-in) → a code is sent */
 function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPassword, callbackUrl }) {
-  const t = useT();
+  const { t, locale } = useLocale();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [trap, setTrap] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstile = useRef(null);
   const ref = useRef(null);
   useEffect(() => { if (window.matchMedia('(min-width: 1024px)').matches) ref.current?.focus(); }, []);
 
@@ -99,13 +106,14 @@ function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPasswor
       const res = await fetch('/api/auth/email-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, marketing }),
+        body: JSON.stringify({ email, marketing, company: trap, turnstileToken }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'We couldn’t send the code. Please try again.');
       onSent();
     } catch (err) {
       setError(t(err.message));
+      turnstile.current?.reset();
     } finally {
       setBusy(false);
     }
@@ -114,7 +122,7 @@ function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPasswor
   return (
     <>
       <SocialButtons callbackUrl={callbackUrl} />
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} className="relative space-y-4">
         <label htmlFor="auth-email" className="sr-only">{t('Email')}</label>
         <div className="relative">
           <input
@@ -132,13 +140,18 @@ function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPasswor
           />
           <button
             type="submit"
-            disabled={busy || !email.trim()}
+            disabled={busy || !email.trim() || (TURNSTILE_SITE_KEY && !turnstileToken)}
             aria-label={t('Continue')}
             className={`absolute end-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[#111114] transition-colors hover:bg-black/5 disabled:opacity-40 ${focusRing}`}
           >
             {busy ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={20} className="flip-rtl" />}
           </button>
         </div>
+
+        <div style={TRAP_STYLE} aria-hidden="true">
+          <label>Company<input type="text" name="nl-extra-field" tabIndex={-1} autoComplete="off" value={trap} onChange={e => setTrap(e.target.value)} /></label>
+        </div>
+        <Turnstile ref={turnstile} onToken={setTurnstileToken} language={locale} />
 
         <label className="flex cursor-pointer items-center gap-3 text-[15px] text-[#111114]">
           <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)} className="h-5 w-5 rounded accent-[#111114]" />
@@ -157,7 +170,9 @@ function EmailStep({ email, setEmail, marketing, setMarketing, onSent, onPasswor
 
 /** Step 2: the 6-digit code; auto-submits on the sixth digit */
 function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
-  const { t, rich } = useLocale();
+  const { t, rich, locale } = useLocale();
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstile = useRef(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -196,13 +211,15 @@ function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
       const res = await fetch('/api/auth/email-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, marketing }),
+        body: JSON.stringify({ email, marketing, turnstileToken }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'We couldn’t send the code.');
       setNotice(t('A new code is on its way.'));
     } catch (err) {
       setError(t(err.message));
+    } finally {
+      turnstile.current?.reset();
     }
   };
 
@@ -240,11 +257,12 @@ function CodeStep({ email, marketing, onChangeEmail, onSignedIn }) {
         {busy ? <Loader2 size={18} className="animate-spin" /> : t('Sign in')}
       </button>
 
+      {wait <= 0 && <Turnstile ref={turnstile} onToken={setTurnstileToken} language={locale} />}
       <p className="text-center text-[14px] text-[#5a5a64]">
         {rich('Didn’t get it? Check your spam folder or {action}', {
           action: wait > 0
             ? <span className="tabular-nums">{t('resend in {n}s', { n: wait })}</span>
-            : <button type="button" onClick={resend} className={textLink}>{t('send a new code')}</button>,
+            : <button type="button" onClick={resend} disabled={!!TURNSTILE_SITE_KEY && !turnstileToken} className={textLink}>{t('send a new code')}</button>,
         })}
       </p>
     </form>

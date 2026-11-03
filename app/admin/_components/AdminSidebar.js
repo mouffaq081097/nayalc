@@ -36,7 +36,10 @@ const MAIN_NAV = [
       { to: '/admin/purchasing/team', text: 'Team & roles' },
     ],
   },
-  { to: '/admin/users', text: 'Customers', icon: Users },
+  {
+    to: '/admin/users', text: 'Customers', icon: Users,
+    children: [{ to: '/admin/sign-in-codes', text: 'Sign-in codes' }],
+  },
   { to: '/admin/reports', text: 'Reports', icon: BarChart3 },
   { to: '/admin/chat', text: 'Inbox', icon: MessageSquare, badge: 'chats' },
   { to: '/admin/marketing', text: 'Marketing', icon: Send },
