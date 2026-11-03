@@ -207,7 +207,8 @@ export default function CreateOrderPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'The order could not be created.');
+      // Show the database's reason too, so a failure can be diagnosed from the screen
+      if (!res.ok) throw new Error([data.message || 'The order could not be created.', data.error].filter(Boolean).join(' — '));
       setCreated(data);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {

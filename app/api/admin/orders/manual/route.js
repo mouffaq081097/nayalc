@@ -30,7 +30,10 @@ export async function POST(request) {
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     if (error instanceof ManualOrderError) return NextResponse.json({ message: error.message }, { status: error.status });
-    console.error('Manual order failed:', error);
-    return NextResponse.json({ message: 'The order could not be created.', error: error.message }, { status: 500 });
+    console.error('Manual order failed:', error, { code: error.code, detail: error.detail, column: error.column, constraint: error.constraint, table: error.table });
+    return NextResponse.json({
+      message: 'The order could not be created.',
+      error: [error.message, error.detail, error.constraint && `constraint ${error.constraint}`].filter(Boolean).join(' · '),
+    }, { status: 500 });
   }
 }
