@@ -450,7 +450,7 @@ const OrderDetailsPage = () => {
             <div className="mt-4 pt-4 space-y-3" style={{ borderTop: '1px solid var(--sp-border)' }}>
               <div>
                 <p className="text-[13px] font-semibold mb-1">Contact information</p>
-                <p className="text-[13px] sp-link break-all">{order.customerEmail}</p>
+                <p className="text-[13px] sp-link break-all">{order.customerEmail || 'No email (phone order)'}</p>
                 <p className="text-[13px] mt-0.5" style={{ color: 'var(--sp-text-secondary)' }}>{formatPhone(order.customerPhone, { fallback: 'No phone number' })}<PhoneNeedsCheck phone={order.customerPhone} /></p>
               </div>
               <div className="pt-3" style={{ borderTop: '1px solid var(--sp-border)' }}>

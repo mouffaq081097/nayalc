@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import db from '@/lib/db';
 import { formatPhone } from '@/lib/phone';
 import PrintButton from './PrintButton';
+import { realEmail } from '@/lib/noEmail';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -303,7 +304,7 @@ export default async function PackingSlipPage({ params }) {
  <div className="info-box">
  <div className="info-box-label">Customer</div>
  <p className="info-name">{order.customerName}</p>
- <p>{order.customerEmail}</p>
+ <p>{realEmail(order.customerEmail)}</p>
  {order.customerPhone && <p>{formatPhone(order.customerPhone)}</p>}
  {order.paymentMethod && (
  <p>Payment: {order.paymentMethod === 'cod' ? 'Cash on delivery' : 'Paid online'}</p>
