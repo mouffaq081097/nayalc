@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useAppContext } from '../context/AppContext';
 
 /**
- * Opens /cart?restore=12x1.34x2&code=WELCOME10 from a bag reminder email
+ * Opens /cart?restore=12x1.34x2&code=SPRING5 from a bag reminder email
  * (lib/cartReminders.js): puts back any of those items that aren't in the bag
  * already (this device may have an empty bag, e.g. signed out), applies the
  * code, then tidies the address bar.

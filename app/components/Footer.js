@@ -16,9 +16,9 @@ const COLUMNS = [
   { title: 'Help', links: [['Contact us', '/contact'], ['Shipping & returns', '/shipping-returns'], ['FAQ', '/faq'], ['My orders', '/account/orders'], ['My account', '/account']] },
 ];
 
-/** Email sign-up: the same /api/subscribe as the welcome popup, and the same real WELCOME10 code on success. */
+/** Newsletter sign-up (/api/subscribe). No sign-up discount: the clinic partnership gives 5%, so the site offers none. */
 function SignUp() {
-  const { t, rich } = useLocale();
+  const { t } = useLocale();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
@@ -46,7 +46,7 @@ function SignUp() {
   if (status === 'done') {
     return (
       <p className="text-[13.5px] text-white/85 max-w-[320px]">
-        {rich('You’re subscribed. Use code {code} for 10% off your first order.', { code: <b className="latin text-white tracking-wide">WELCOME10</b> })}
+        {t('You’re subscribed. Look out for new arrivals and skincare tips in your inbox.')}
       </p>
     );
   }
@@ -69,7 +69,7 @@ function SignUp() {
         </button>
       </div>
       <p className={`mt-2 text-[11.5px] ${status === 'error' ? 'text-[#fca5a5]' : 'text-[#a1a1aa]'}`}>
-        {status === 'error' ? message : t('Subscribe and get 10% off your first order.')}
+        {status === 'error' ? message : t('New arrivals, restocks and skincare tips.')}
       </p>
     </form>
   );

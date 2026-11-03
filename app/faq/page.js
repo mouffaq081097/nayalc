@@ -55,10 +55,6 @@ const QUESTIONS = [
     a: 'Some products can be ordered while they’re out of stock. The product page shows the date they’ll ship by, and the whole order ships in one parcel once everything is in. If the date moves, we email you, and you can cancel a waiting order from My orders.',
   },
   {
-    q: 'Is there a discount on my first order?',
-    a: 'Yes. Sign up with your email at the bottom of any page and use code WELCOME10 for 10% off your first order.',
-  },
-  {
     q: 'How do Naya Rewards points work?',
     a: `You earn 1 point for every AED ${AED_PER_POINT} you spend on products, and more as you move up the tiers. Every ${POINTS_BLOCK} points take AED ${AED_PER_BLOCK} off an order. Your first delivered order adds ${WELCOME_BONUS_POINTS} bonus points.`,
     more: { href: '/account/loyalty', label: 'Naya Rewards' },
