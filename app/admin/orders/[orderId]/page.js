@@ -269,7 +269,7 @@ const OrderDetailsPage = () => {
               {order.awaitingStock && <span className="sp-badge sp-badge-attention"><span className="dot" />Awaiting stock</span>}
             </div>
             <p className="text-[12px] mt-0.5" style={{ color: 'var(--sp-text-subdued)' }}>
-              {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} from Online Store
+              {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} {order.order_source === 'phone' ? 'created by the team (phone order)' : 'from Online Store'}
             </p>
           </div>
         </div>
@@ -291,6 +291,14 @@ const OrderDetailsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Main column */}
         <div className="lg:col-span-2 space-y-5">
+
+          {/* Internal note written when the team created the order (lib/manualOrders.js) */}
+          {order.admin_note && (
+            <div className="px-4 py-3 rounded-xl text-[13px]" style={{ background: '#fffbeb', color: '#78350f', border: '1px solid #fde68a' }}>
+              <p className="font-semibold">Internal note</p>
+              <p className="whitespace-pre-line mt-0.5">{order.admin_note}</p>
+            </div>
+          )}
 
           {/* A pre-order is held until every unit is in (lib/backorders.js) */}
           {order.awaitingStock && (

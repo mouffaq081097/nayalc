@@ -265,6 +265,14 @@ Active development phases include: chat UI modernization, admin portal improveme
 - Routes (admin only: middleware + `requireAdmin`): `GET /api/admin/seo/overview`, `GET|PUT /api/admin/seo/products`, `GET|PUT /api/admin/seo/images`, `GET|PUT /api/admin/seo/merchant`.
 - Hero slides, Instagram posts and skin concerns are written through public-path routes (`/api/hero-slides`, `/api/social-posts`, `/api/concerns`) that the middleware doesn't cover, so their POST/PUT/PATCH/DELETE call `requireAdmin()` themselves. A hero slide `PUT` changes only the fields sent (switching a slide on or off used to empty its text, button and layout).
 
+### Manual orders (phone / WhatsApp / in person) — `lib/manualOrders.js`
+- Admin → Orders → Create order (`/admin/orders/new`, also the "Create order" button on the orders list) → `POST /api/admin/orders/manual` → `createManualOrder()`. `GET /api/admin/orders/manual?q=` searches customers by email, name or phone (account or address phone) with their address books.
+- Customer: an existing account, or a new one (first name + UAE mobile required, email optional; an existing email — or, without email, an existing phone — reuses that account). New addresses are saved to the account's address book.
+- Stock follows checkout: shelf first, then pre-order room, never below zero; cash on delivery is refused when a line would be a pre-order. Unit prices can be changed per line (agreed on the call), delivery can be made free, discount codes are checked like checkout (active, not expired, under limit).
+- Payment: `cashOnDelivery` or `bankTransfer` (new method; "Transfer already received" sets `payment_confirmed`). Labels for `bankTransfer` are in `PAYMENT_COPY` (`lib/mail.js`) and the admin/account label maps.
+- Columns `orders.order_source` ('phone') and `orders.admin_note` (internal note shown on the admin order page) — added by `ensureManualOrderColumns()` and migration `023`. They are not copied when an order is archived to delivered/cancelled.
+- Confirmation email only when the customer has an email and "Email the customer" is ticked; the admin notification always goes out.
+
 ### OTO shipping — `lib/oto.js`
 - Admin order page → "Ship with OTO" (`POST /api/admin/orders/[orderId]/oto`) calls OTO `createOrder` with `createShipment: true` from `OTO_PICKUP_LOCATION_CODE`. COD orders (`payment_method = 'cashOnDelivery'`) go as `cod` with the total as `amount_due`.
 - OTO reports progress to `/api/oto/webhook` (public; HMAC-SHA256 of `orderId:status:timestamp` with `OTO_WEBHOOK_SECRET`, fails closed). It fills `tracking_number`/`courier_name`/`courier_website`/`oto_awb_url`, and `siteStatusFor()` moves the order to Shipped/Delivered. OTO cancel/return statuses are only recorded — cancelling refunds, so that stays manual.

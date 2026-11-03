@@ -13,7 +13,7 @@ const secondary = { color: 'var(--sp-text-secondary)' };
 const subdued = { color: 'var(--sp-text-subdued)' };
 
 const fmtAed = (value) => `AED ${Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const PAYMENT = { card: 'Card', tabby: 'Tabby', cashOnDelivery: 'Cash on delivery' };
+const PAYMENT = { card: 'Card', tabby: 'Tabby', cashOnDelivery: 'Cash on delivery', bankTransfer: 'Bank transfer' };
 
 const StatCell = ({ label, value, hint, first }) => (
   <div className="px-5 py-4 flex-[1_0_auto]" style={first ? undefined : { borderLeft: '1px solid var(--sp-border)' }}>

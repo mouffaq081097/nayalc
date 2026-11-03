@@ -28,6 +28,7 @@ function paymentLabel(method) {
   if (method === 'card')           return 'Credit/Debit Card';
   if (method === 'cashOnDelivery') return 'Cash on Delivery';
   if (method === 'tabby')          return 'Tabby – pay in instalments';
+  if (method === 'bankTransfer')   return 'Bank transfer';
   return method || 'Credit/Debit Card';
 }
 

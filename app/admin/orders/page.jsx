@@ -168,6 +168,7 @@ const PAYMENT_METHOD = (o) => {
   if (pm === 'tabby') return 'Tabby';
   if (pm === 'card' || pm === 'stripe') return 'Stripe';
   if (pm === 'cashondelivery' || pm === 'cash') return 'Cash on delivery';
+  if (pm === 'banktransfer') return 'Bank transfer';
   return o.paymentMethod || '';
 };
 const FULFILL_BADGE = (o) => {
@@ -282,7 +283,7 @@ const ManageOrders = () => {
         <div className="flex items-center gap-2">
           <button className="sp-btn sp-btn-secondary"><Download size={14} /> Export</button>
           <Link href="/admin/recover-order" className="sp-btn sp-btn-secondary">More actions</Link>
-          <button onClick={() => setTab('recover')} className="sp-btn sp-btn-primary">Create order</button>
+          <Link href="/admin/orders/new" className="sp-btn sp-btn-primary">Create order</Link>
         </div>
       </div>
 

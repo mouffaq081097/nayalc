@@ -17,7 +17,7 @@ import {
   CustomerAvatar, changeAdminAccess, changeSuspension, customerName, fmtDate, orderStatusBadge, timeAgo,
 } from '../_components/customerAdmin';
 
-const METHOD_LABEL = { card: 'Card', tabby: 'Tabby', cashOnDelivery: 'Cash on delivery', cash: 'Cash on delivery' };
+const METHOD_LABEL = { card: 'Card', tabby: 'Tabby', cashOnDelivery: 'Cash on delivery', cash: 'Cash on delivery', bankTransfer: 'Bank transfer' };
 
 const StatCell = ({ label, value, hint, first }) => (
   <div className="px-5 py-4 flex-1 min-w-[180px]" style={first ? undefined : { borderLeft: '1px solid var(--sp-border)' }}>

@@ -11,6 +11,7 @@ import { SIZE_GROUP_MIGRATION_SQL } from '@/lib/sizeGroups';
 import { GUEST_CHECKOUT_MIGRATION_SQL } from '@/lib/guestCheckout';
 import { RITUAL_STEP_MIGRATION_SQL } from '@/lib/ritualSteps';
 import { SEO_MIGRATION_SQL } from '@/lib/seoColumns';
+import { MANUAL_ORDER_MIGRATION_SQL } from '@/lib/manualOrders';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -152,6 +153,11 @@ export async function POST(request) {
                 // Product search listings, Google Merchant categories and photo alt text (Admin → SEO) — also added on first use by ensureSeoColumns() in lib/seoColumns.js
                 name: '022_seo',
                 sql: SEO_MIGRATION_SQL,
+            },
+            {
+                // Orders typed in by the team (Admin → Orders → Create order) — also added on first use by ensureManualOrderColumns() in lib/manualOrders.js
+                name: '023_manual_orders',
+                sql: MANUAL_ORDER_MIGRATION_SQL,
             },
         ];
 

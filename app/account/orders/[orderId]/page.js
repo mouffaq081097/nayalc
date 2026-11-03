@@ -26,6 +26,7 @@ function paymentLabel(method) {
   if (key === 'card') return 'Credit / debit card';
   if (key === 'cashondelivery' || key === 'cash') return 'Cash on delivery';
   if (key === 'tabby') return 'Tabby — pay in installments';
+  if (key === 'banktransfer') return 'Bank transfer';
   return method || 'Card';
 }
 
