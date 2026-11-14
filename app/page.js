@@ -61,7 +61,7 @@ export default async function HomePage() {
             <RecentlyViewedShelf />
 
             {/* GERnétic first: the brand's range straight after the hero */}
-            <BrandProducts brand="gernetic" title="Explore GERnétic skincare" cardVariant="gallery" />
+            <BrandProducts brand="gernetic" eyebrow="Made in France" title="Explore GERnétic skincare" cardVariant="gallery" />
 
             {/* Only while a campaign is live */}
             <CampaignBanner campaign={campaign} />

@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { ChevronDown, ExternalLink, Loader2, Package, Undo2, Wand2 } from 'lucide-react';
+import { ChevronDown, ExternalLink, Loader2, Package, Sparkles, Undo2, Wand2 } from 'lucide-react';
 import { useAppContext } from '../../../context/AppContext';
 import PageLoader from '../../../components/PageLoader';
 import { apiErrorMessage } from '../../products/_components/productAdmin';
@@ -43,6 +43,8 @@ export default function ProductListingsPage() {
   const [drafts, setDrafts] = useState({});
   const [filled, setFilled] = useState({});
   const [saving, setSaving] = useState(false);
+  const [overwrite, setOverwrite] = useState(false);
+  const [updatingAll, setUpdatingAll] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -148,6 +150,31 @@ export default function ProductListingsPage() {
     }
   };
 
+  // Writes and saves every product at once on the server (POST /api/admin/seo/products/fill-all)
+  const updateAll = async () => {
+    const question = overwrite
+      ? `Rewrite the page title, meta description and photo alt text of all ${products.length} products? Text written by hand will be replaced.`
+      : `Fill in every empty page title, meta description and photo alt text across all ${products.length} products? Text already written stays.`;
+    if (!window.confirm(question)) return;
+    setUpdatingAll(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/seo/products/fill-all', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ overwrite }),
+      });
+      const r = await res.json();
+      toast.success(r.products
+        ? `Updated ${r.products} product${r.products === 1 ? '' : 's'}: ${r.titles} titles, ${r.descriptions} descriptions, ${r.alts} alt texts`
+        : 'Every product already has its text.');
+      setDrafts({});
+      setFilled({});
+      await load();
+    } catch (e) {
+      toast.error(apiErrorMessage(e, 'The products could not be updated.'));
+    } finally {
+      setUpdatingAll(false);
+    }
+  };
+
   const allSelected = visible.length > 0 && visible.every(p => selected.has(p.id));
   const toggleAll = () => setSelected(prev => {
     const next = new Set(prev);
@@ -167,6 +194,24 @@ export default function ProductListingsPage() {
         <p className="text-[13px] mt-0.5" style={subdued}>The title and description Google shows for each product page, its Google product category, and its photos&apos; alt text.</p>
       </div>
       <SeoTabs current="/admin/seo/products" />
+
+      {!loadError && (
+        <div className="sp-card sp-card-pad flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-semibold" style={text}>Update every product</p>
+            <p className="text-[12px] mt-0.5" style={subdued}>
+              Writes and saves the page title, meta description and photo alt text of all {products.length} products from their own details. The Google Merchant feed also uses each product&apos;s description, benefits, how to use, size, texture and skin concerns, so filling those in the product editor improves Shopping listings too.
+            </p>
+            <label className="flex items-center gap-2 text-[13px] mt-2 cursor-pointer" style={secondary}>
+              <input type="checkbox" className="sp-check" checked={overwrite} onChange={e => setOverwrite(e.target.checked)} />
+              Also replace text that was written by hand
+            </label>
+          </div>
+          <button type="button" onClick={updateAll} disabled={updatingAll || saving || changed > 0} className="sp-btn sp-btn-primary shrink-0" title={changed > 0 ? 'Save or discard your changes first' : undefined}>
+            {updatingAll ? <><Loader2 size={14} className="animate-spin" />Updating…</> : <><Sparkles size={14} />Update all {products.length}</>}
+          </button>
+        </div>
+      )}
 
       {loadError ? (
         <div className="sp-card sp-card-pad text-[13px]" style={{ color: '#b42318' }}>{loadError}</div>

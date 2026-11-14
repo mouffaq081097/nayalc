@@ -168,7 +168,7 @@ const band = (tone) => (tone === 'dark' ? 'bg-black' : 'bg-white');
  * `tone="dark"` puts it on a black band (the perfumes, under their dark banner).
  * Hidden under three products.
  */
-export function BrandProducts({ brand: slugStart, title, tone = 'light', cardVariant }) {
+export function BrandProducts({ brand: slugStart, title, eyebrow, tone = 'light', cardVariant }) {
   const { brands, products, loading } = useAppContext();
   const t = useT();
   const dark = tone === 'dark';
@@ -178,7 +178,7 @@ export function BrandProducts({ brand: slugStart, title, tone = 'light', cardVar
     return (
       <section className={`py-8 md:py-12 ${band(tone)}`}>
         <Container wide>
-          {title && <SectionHeading title={title} tone={tone} />}
+          {title && <SectionHeading eyebrow={eyebrow} title={title} tone={tone} />}
           {cardVariant === 'gallery' && (
             // Phones: the carousel's 85% cards, the next one peeking in
             <div className="md:hidden -mx-4">
@@ -210,7 +210,7 @@ export function BrandProducts({ brand: slugStart, title, tone = 'light', cardVar
   return (
     <section className={`py-8 md:py-12 ${band(tone)}`}>
       <Container wide>
-        {title && <SectionHeading title={title} tone={tone} />}
+        {title && <SectionHeading eyebrow={eyebrow} title={title} tone={tone} />}
         {cardVariant === 'gallery' ? (
           <>
             <GalleryCarousel products={range.slice(0, 9)} />

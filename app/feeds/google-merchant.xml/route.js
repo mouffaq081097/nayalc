@@ -53,7 +53,19 @@ ${tags([
   // Sizes of one product (Admin → Products → Sizes) are one product in several sizes to Google
   ['item_group_id', p.itemGroupId],
   ['size', p.size],
+  // Short facts Google shows under the listing (lib/merchantContent.js: the product's benefits, concerns, size, origin)
+  ...p.highlights.map((line) => ['product_highlight', line]),
+  ['ships_from_country', 'AE'],
+  // For Shopping campaigns: bid by brand or by whether it's on sale
+  ['custom_label_0', p.brandName],
+  ['custom_label_1', p.onSale ? 'On sale' : 'Full price'],
+  ['custom_label_2', p.availability === 'backorder' ? 'Pre-order' : null],
 ])}
+${p.details.map((d) => `      <g:product_detail>
+        <g:section_name>${xml(d.section)}</g:section_name>
+        <g:attribute_name>${xml(d.name)}</g:attribute_name>
+        <g:attribute_value>${xml(d.value)}</g:attribute_value>
+      </g:product_detail>`).join('\n')}
       <g:shipping>
         <g:country>AE</g:country>
         <g:service>Standard</g:service>

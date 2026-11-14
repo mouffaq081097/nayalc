@@ -15,7 +15,7 @@ const LAVENDER = 'rgb(147,104,236)';
 function Copy({ eyebrow, title, text, cta, dark, className = '' }) {
   const t = useT();
   return (
-    <div className={`grid gap-3 md:gap-3.5 max-w-[520px] ${className}`}>
+    <div className={`home-reveal grid gap-3 md:gap-3.5 max-w-[520px] ${className}`}>
       {eyebrow && (
         <span className="text-[11.5px] font-semibold tracking-[0.14em] uppercase" style={{ color: dark ? '#d8c8ff' : LAVENDER }}>
           {t(eyebrow)}
