@@ -35,7 +35,7 @@ export function ShopByConcern() {
   return (
     <section className="py-8 md:py-12 bg-white">
       <Container wide>
-        <SectionHeading title="Shop by concern" />
+        <SectionHeading eyebrow="Find your match" title="Shop by concern" />
         <ul className="flex gap-3 md:gap-6 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-center">
           {tiles.map((c) => (
             <li key={c.id} className="snap-start shrink-0">

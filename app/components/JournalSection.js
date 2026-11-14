@@ -21,7 +21,7 @@ export function JournalSection() {
   return (
     <section className="pt-8 md:pt-12 bg-white">
       <Container wide>
-        <SectionHeading title="From the journal" />
+        <SectionHeading eyebrow="Stories and advice" title="From the journal" />
         <div className="grid grid-flow-col auto-cols-[82%] md:grid-flow-row md:grid-cols-3 md:auto-cols-auto gap-3.5 md:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory scroll-px-4 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {loading
             ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="aspect-[4/3] bg-[#f6f5f2] animate-pulse" />)
