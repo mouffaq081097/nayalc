@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import PageLoader from '@/app/components/PageLoader';
+import usePolling, { ADMIN_POLL_MS } from '@/app/lib/usePolling';
 import { Sparkline, TimeChart, Donut, BarList } from './_components/Charts';
 
 const DAY = 86_400_000;
@@ -106,20 +107,13 @@ const AdminDashboard = () => {
     })();
   }, [fetchWithAuth, user]);
 
-  // Realtime "live visitors" — polled every 25s.
-  useEffect(() => {
-    if (user?.role !== 'admin') return;
-    let stop = false;
-    const load = async () => {
-      try {
-        const r = await fetchWithAuth('/api/admin/analytics/live');
-        if (r.ok && !stop) setLive((await r.json()).live || 0);
-      } catch {}
-    };
-    load();
-    const id = setInterval(load, 25_000);
-    return () => { stop = true; clearInterval(id); };
-  }, [fetchWithAuth, user]);
+  // "Live visitors": refreshed while this tab is on screen (usePolling)
+  usePolling(async () => {
+    try {
+      const r = await fetchWithAuth('/api/admin/analytics/live');
+      if (r.ok) setLive((await r.json()).live || 0);
+    } catch {}
+  }, ADMIN_POLL_MS, { enabled: user?.role === 'admin' });
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();

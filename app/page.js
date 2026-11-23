@@ -16,9 +16,10 @@ import db from '@/lib/db';
 import { getActiveCampaign } from '@/lib/campaigns';
 import { getReviewHighlights, MIN_REVIEW_HIGHLIGHTS } from '@/lib/reviewHighlights';
 
-// Re-read hero slides and the campaign at most a minute late, so a scheduled
-// campaign starts on time without a deploy (the banner hides itself when it ends).
-export const revalidate = 60;
+// Rebuilt at most every 10 minutes (each rebuild wakes the database), and at once
+// when hero slides or campaigns are saved (refreshHomepage). A scheduled campaign
+// starts within 10 minutes without a deploy; the banner hides itself when it ends.
+export const revalidate = 600;
 
 async function getHeroSlides() {
     try {

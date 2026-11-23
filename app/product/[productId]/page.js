@@ -10,10 +10,10 @@ import { SITE, plainText, productSeo } from '@/lib/seo';
 import { hasSeoColumns } from '@/lib/seoColumns';
 import { getBoughtTogether } from '@/lib/boughtTogether';
 
-// Each page is kept ready for a minute, like the homepage, and rebuilt as soon as
-// the product is saved in Admin (revalidatePath in the product routes). Stock and
-// price are checked again in the bag and at checkout.
-export const revalidate = 60;
+// Each page is kept ready for an hour (each rebuild wakes the database) and rebuilt
+// as soon as a product is saved in Admin, an order is placed or stock arrives
+// (refreshProductPages). Stock and price are checked again in the bag and at checkout.
+export const revalidate = 3600;
 // Pages are built on their first visit, not at deploy time
 export async function generateStaticParams() {
   return [];

@@ -38,7 +38,7 @@ export async function GET(request) {
       ORDER BY c.name ASC
     `;
     const { rows } = await db.query(sql);
-    const headers = !isAdmin ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } : {};
+    const headers = !isAdmin ? { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' } : {};
     return NextResponse.json(rows, { headers });
   } catch (error) {
     // If it fails (likely missing columns), fallback to basic query
@@ -52,7 +52,7 @@ export async function GET(request) {
           ORDER BY c.name ASC
         `;
         const { rows } = await db.query(fallbackSql);
-        const headers = !isAdmin ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } : {};
+        const headers = !isAdmin ? { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' } : {};
         return NextResponse.json(rows.map(r => ({ ...r, description: '', bannerUrl: null, parentId: null, isActive: true })), { headers });
       } catch (fallbackError) {
         console.error('Fallback fetch error:', fallbackError);

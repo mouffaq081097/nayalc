@@ -10,6 +10,7 @@ import PageLoader from '@/app/components/PageLoader';
 import AdminSidebar from './_components/AdminSidebar';
 import BrandLogo from '../components/BrandLogo';
 import { canOpenPage, staffPages } from '@/lib/erp/roles';
+import usePolling, { ADMIN_POLL_MS } from '@/app/lib/usePolling';
 
 const SIDEBAR_W = '232px';
 
@@ -53,19 +54,13 @@ const AdminLayout = ({ children }) => {
     if (!canOpenPage(staff.access, pathname)) router.replace(staff.pages[0]?.to || '/');
   }, [staff, pathname, router]);
 
-  useEffect(() => {
-    if (isStaff) return undefined; // order and chat alerts are for admins
-    const poll = async () => {
-      if (!isAuthenticated) return;
-      try {
-        const r = await fetchWithAuth('/api/admin/notifications');
-        if (r.ok) setNotifications(await r.json());
-      } catch {}
-    };
-    if (isAuthenticated) poll();
-    const id = setInterval(poll, 30000);
-    return () => clearInterval(id);
-  }, [isAuthenticated, isStaff, fetchWithAuth]);
+  // Order and chat alerts are for admins; only while this tab is on screen (usePolling)
+  usePolling(async () => {
+    try {
+      const r = await fetchWithAuth('/api/admin/notifications');
+      if (r.ok) setNotifications(await r.json());
+    } catch {}
+  }, ADMIN_POLL_MS, { enabled: isAuthenticated && !isStaff });
 
   useEffect(() => {
     const handleClickOutside = (e) => {

@@ -4,7 +4,14 @@ import db from '@/lib/db';
 // Basic bot/crawler filter so automated traffic doesn't inflate view counts.
 const BOT_RE = /bot|crawl|spider|slurp|bing|google|baidu|yandex|duckduck|facebookexternalhit|embedly|quora|pinterest|preview|monitor|curl|wget|headless|lighthouse|pingdom|gtmetrix|semrush|ahrefs/i;
 
-async function ensureTable() {
+// Table setup runs once per server instance, not on every beacon
+let tableReady = null;
+function ensureTable() {
+  tableReady ||= createTable().catch((e) => { tableReady = null; throw e; });
+  return tableReady;
+}
+
+async function createTable() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS product_views (
       id BIGSERIAL PRIMARY KEY,

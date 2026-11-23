@@ -2,6 +2,9 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
+// Keep under the 10-minute "live" window in /api/admin/analytics/live
+const PING_EVERY_MS = 3 * 60 * 1000;
+
 const uid = () => (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
 const beacon = (url, payload) => {
@@ -30,26 +33,34 @@ export default function VisitTracker() {
       const sid = uid();
       sessionStorage.setItem('nlc_sid', sid);
 
+      // The visit also counts as the first presence ping (one request, not two)
+      sessionStorage.setItem('nlc_ping', String(Date.now()));
       beacon('/api/track/visit', { visitorId: vid, sessionId: sid, path: pathname, referrer: document.referrer || '' });
     } catch {}
   }, [pathname]);
 
-  // Heartbeat → keeps the session "live" for the realtime visitor count.
+  // Presence for the admin's "Live visitors" count. No timer: one ping per page change
+  // or return to the tab, at most every PING_EVERY_MS. A once-a-minute heartbeat from
+  // every open tab kept the database (Neon) awake all day and night.
   useEffect(() => {
     if (!pathname || /^\/(admin|account|auth)/.test(pathname)) return;
 
     const ping = () => {
-      if (document.visibilityState !== 'visible') return;
-      const vid = localStorage.getItem('nlc_vid');
-      const sid = sessionStorage.getItem('nlc_sid');
-      if (vid && sid) beacon('/api/track/ping', { visitorId: vid, sessionId: sid, path: pathname });
+      try {
+        if (document.visibilityState !== 'visible') return;
+        const vid = localStorage.getItem('nlc_vid');
+        const sid = sessionStorage.getItem('nlc_sid');
+        const lastPing = Number(sessionStorage.getItem('nlc_ping') || 0);
+        if (!vid || !sid || Date.now() - lastPing < PING_EVERY_MS) return;
+        sessionStorage.setItem('nlc_ping', String(Date.now()));
+        beacon('/api/track/ping', { visitorId: vid, sessionId: sid, path: pathname });
+      } catch {}
     };
 
     ping();
-    const id = setInterval(ping, 60_000);
     const onVisible = () => { if (document.visibilityState === 'visible') ping(); };
     document.addEventListener('visibilitychange', onVisible);
-    return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [pathname]);
 
   return null;

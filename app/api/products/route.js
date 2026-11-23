@@ -194,7 +194,7 @@ export async function GET(request) {
     }
 
     const headers = (!isAdmin && random !== 'true')
-      ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' }
+      ? { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' }
       : {};
     return NextResponse.json(rows, { headers });
   } catch (error) {
