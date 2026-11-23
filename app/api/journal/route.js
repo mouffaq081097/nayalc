@@ -42,7 +42,7 @@ export async function GET() {
     rows.forEach((r) => {
       r.body = r.body ? r.body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean) : [];
     });
-    return NextResponse.json(rows, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } });
+    return NextResponse.json(rows, { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' } });
   } catch (error) {
     console.error('Error fetching journal articles:', error);
     return NextResponse.json({ message: 'Error fetching journal articles', error: error.message }, { status: 500 });

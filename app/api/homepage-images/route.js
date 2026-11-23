@@ -24,7 +24,7 @@ export async function GET() {
       // An empty image_url keeps the built-in photo and only changes its alt text
       map[row.key] = { imageUrl: row.image_url || undefined, altText: row.alt_text || undefined };
     }
-    return NextResponse.json(map, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } });
+    return NextResponse.json(map, { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' } });
   } catch (error) {
     console.error('Error fetching homepage images:', error);
     return NextResponse.json({}, { status: 200 });

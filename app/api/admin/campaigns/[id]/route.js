@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { ensureCampaignsTable, parseCampaignInput, isOwnCloudinaryUrl } from '@/lib/campaigns';
+import { refreshHomepage } from '@/lib/productPages';
 
 /** PUT /api/admin/campaigns/[id] — admin only (middleware). Replaces the campaign's fields. */
 export async function PUT(request, { params }) {
@@ -21,6 +22,7 @@ export async function PUT(request, { params }) {
       [v.title, v.subtitle, v.ctaLabel, v.link, v.imageUrl, v.imageAlt, v.startsAt, v.endsAt, v.showCountdown, v.isActive, id]
     );
     if (!rowCount) return NextResponse.json({ message: 'Campaign not found.' }, { status: 404 });
+    refreshHomepage();
     return NextResponse.json({ id: Number(id) });
   } catch (error) {
     console.error('Error updating campaign:', error);
@@ -34,6 +36,7 @@ export async function DELETE(request, { params }) {
   try {
     await ensureCampaignsTable();
     await db.query('DELETE FROM homepage_campaigns WHERE id = $1', [id]);
+    refreshHomepage();
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('Error deleting campaign:', error);

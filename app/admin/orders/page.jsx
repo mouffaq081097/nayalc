@@ -7,6 +7,7 @@ import {
   RotateCcw, User, MapPin, AlertCircle, Loader2, CheckCircle, Download, Store, ShoppingCart,
 } from 'lucide-react';
 import PageLoader from '@/app/components/PageLoader';
+import usePolling, { ADMIN_POLL_MS } from '@/app/lib/usePolling';
 
 // ─── Recover Order from Cart ─────────────────────────────────────────────────
 const RecoverFromCart = () => {
@@ -233,10 +234,7 @@ const ManageOrders = () => {
 
   // Auto-refresh: Tabby/Stripe webhooks update payment status server-side; re-fetch
   // silently so those changes (e.g. Pending → Paid) appear without a manual reload.
-  useEffect(() => {
-    const id = setInterval(() => { fetchAllOrders(currentPage, ordersPerPage); }, 30_000);
-    return () => clearInterval(id);
-  }, [fetchAllOrders, currentPage, ordersPerPage]);
+  usePolling(() => { fetchAllOrders(currentPage, ordersPerPage); }, ADMIN_POLL_MS, { immediate: false });
 
   const filteredOrders = useMemo(() => {
     let list = allOrders.orders || [];

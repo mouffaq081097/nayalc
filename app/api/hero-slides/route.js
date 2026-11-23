@@ -3,6 +3,7 @@ import db from '@/lib/db';
 import { uploadMediaToCloudinary } from '@/lib/cloudinary';
 import { requireAdmin } from '@/lib/adminAuth';
 import { hasSeoColumns, parseAltText } from '@/lib/seoColumns';
+import { refreshHomepage } from '@/lib/productPages';
 
 export async function GET() {
   try {
@@ -77,6 +78,7 @@ export async function POST(request) {
     if (saveAlt) await client.query('UPDATE hero_slides SET image_alt = $1 WHERE id = $2', [parseAltText(formData.get('image_alt')), rows[0].id]);
 
     await client.query('COMMIT');
+    refreshHomepage();
     return NextResponse.json({ message: 'Hero slide created', id: rows[0].id }, { status: 201 });
   } catch (error) {
     await client.query('ROLLBACK');

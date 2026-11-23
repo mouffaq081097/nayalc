@@ -55,7 +55,7 @@ export async function GET(request) {
       }
     }
     const withSlugs = rows.map((row) => ({ ...row, slug: slugify(row.name) }));
-    const headers = !isAdmin ? { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } : {};
+    const headers = !isAdmin ? { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' } : {};
     return NextResponse.json(withSlugs, { headers });
   } catch (error) {
     console.error('Error fetching brands:', error);

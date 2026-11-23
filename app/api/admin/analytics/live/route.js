@@ -15,10 +15,12 @@ export async function GET() {
     // Keep the table small — drop sessions that have been idle for a day.
     await db.query(`DELETE FROM active_sessions WHERE last_seen < NOW() - INTERVAL '1 day'`);
 
+    // Visitors ping on page changes, at most every 3 minutes (VisitTracker), so
+    // "live" means seen in the last 10 minutes
     const { rows } = await db.query(`
       SELECT COUNT(DISTINCT COALESCE(visitor_id, session_id)) AS live
       FROM active_sessions
-      WHERE last_seen > NOW() - INTERVAL '3 minutes'
+      WHERE last_seen > NOW() - INTERVAL '10 minutes'
     `);
 
     return NextResponse.json({ live: Number(rows[0]?.live || 0) });

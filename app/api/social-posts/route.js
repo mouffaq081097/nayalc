@@ -35,7 +35,10 @@ export async function GET(request) {
       : 'SELECT * FROM social_posts WHERE is_active = true ORDER BY sort_order ASC, created_at DESC';
 
     const { rows } = await db.query(sql);
-    return NextResponse.json(rows);
+    // The public list (homepage Instagram strip) is served from Vercel's cache, so
+    // visits don't each wake the database; admin reads stay fresh
+    const headers = isAdmin ? {} : { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600' };
+    return NextResponse.json(rows, { headers });
   } catch (error) {
     console.error('Error fetching social posts:', error);
     return NextResponse.json({ message: 'Error fetching social posts', error: error.message }, { status: 500 });

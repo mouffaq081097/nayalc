@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { ensureCampaignsTable, listCampaigns, parseCampaignInput, isOwnCloudinaryUrl } from '@/lib/campaigns';
+import { refreshHomepage } from '@/lib/productPages';
 
 /** GET /api/admin/campaigns — admin only (middleware). Every campaign, newest start first. */
 export async function GET() {
@@ -28,6 +29,7 @@ export async function POST(request) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
       [v.title, v.subtitle, v.ctaLabel, v.link, v.imageUrl, v.imageAlt, v.startsAt, v.endsAt, v.showCountdown, v.isActive]
     );
+    refreshHomepage();
     return NextResponse.json({ id: rows[0].id }, { status: 201 });
   } catch (error) {
     console.error('Error creating campaign:', error);

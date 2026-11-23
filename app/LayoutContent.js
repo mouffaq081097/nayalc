@@ -2,6 +2,7 @@
 import { usePathname } from 'next/navigation';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useCart } from './context/CartContext';
+import { useAppContext } from './context/AppContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import SideCart from './components/SideCart';
@@ -18,19 +19,17 @@ const SIDEBAR_PAGES = ['/account/profile', '/account/settings'];
 export default function LayoutContent({ children }) {
   const pathname = usePathname();
   const { dir } = useLocale();
+  const { isChatOpen } = useAppContext();
+  // The chat opens only from Support on My account, so it loads (and connects to the
+  // server, which reads the database) the first time it's opened — not on every page
+  // for every signed-in shopper. It stays mounted afterwards so it can close smoothly.
   const [chatReady, setChatReady] = useState(false);
   useCart();
   // No welcome discount: the clinic partnership gives 5%, so the site must not offer more.
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if ('requestIdleCallback' in window) {
-      const id = requestIdleCallback(() => setChatReady(true));
-      return () => cancelIdleCallback(id);
-    }
-    const t = setTimeout(() => setChatReady(true), 2000);
-    return () => clearTimeout(t);
-  }, []);
+    if (isChatOpen) setChatReady(true);
+  }, [isChatOpen]);
 
   const isAuthPage    = pathname === '/auth';
   const isAdminPage   = pathname.startsWith('/admin');
